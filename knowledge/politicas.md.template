@@ -1,0 +1,61 @@
+# Modelo de base de conhecimento
+
+Copie este ficheiro para `politicas.md` (sem `.template`) e substitua cada secção
+por informação real da loja. O assistente **só** pode afirmar o que estiver aqui
+escrito — tudo o resto é escalado para revisão humana, que é o comportamento
+correto mas não resolve nada sozinho.
+
+Regras de escrita:
+
+- Uma afirmação por linha, em frases completas.
+- Números concretos: prazos em dias úteis, valores em euros, percentagens.
+- Se uma política tem exceções, escreva-as. O assistente não infere exceções.
+- Se não souber, deixe de fora. Uma secção vazia faz o assistente escalar; uma
+  secção errada faz o assistente mentir a um cliente.
+
+Divida em vários ficheiros `.md` quando esta lista passar de duas páginas — o
+carregador junta todos os ficheiros da pasta por ordem alfabética.
+
+---
+
+## Entregas
+
+- Prazo para Portugal continental:
+- Prazo para ilhas:
+- Prazo para a União Europeia:
+- Custo de portes e valor a partir do qual são gratuitos:
+- Transportadora utilizada e forma de seguimento da encomenda:
+- O que acontece se a encomenda não for entregue à primeira tentativa:
+
+## Devoluções e trocas
+
+- Prazo para devolver:
+- Estado em que o artigo tem de ser devolvido:
+- Quem paga os portes de devolução:
+- Prazo de reembolso após receção do artigo devolvido:
+- Artigos que não podem ser devolvidos:
+
+## Garantia
+
+- Duração da garantia:
+- O que a garantia cobre e o que não cobre:
+- Processo para acionar a garantia:
+
+## Pagamentos
+
+- Métodos de pagamento aceites:
+- Quando é que o pagamento é cobrado:
+- Política de faturação (NIF, fatura em nome de empresa):
+
+## Encomendas
+
+- Como consultar o estado de uma encomenda:
+- Até quando é possível alterar ou cancelar uma encomenda:
+- O que fazer se chegou um artigo errado ou danificado:
+
+## Contactos e horários
+
+- Horário de atendimento:
+- Telefone:
+- Prazo habitual de resposta a emails:
+- Morada da loja física, se existir:
