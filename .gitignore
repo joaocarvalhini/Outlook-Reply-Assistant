@@ -1,0 +1,13 @@
+# Secrets and local state
+.env
+state.json
+logs/
+
+# Client knowledge bases are private
+clients/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
