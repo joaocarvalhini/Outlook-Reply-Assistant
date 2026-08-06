@@ -68,7 +68,7 @@ class Pipeline:
         except GraphError as exc:
             # No body means no decision to make. Leave it unmarked so the next
             # poll retries it rather than burying a real customer email.
-            _LOG.error("detail fetch failed", extra={"message": email.id[:16], "error": exc})
+            _LOG.error("detail fetch failed", extra={"email_id": email.id[:16], "error": exc})
             return PipelineResult(Outcome.FAILED, rule="fetch", reason=str(exc))
 
         verdict = self.triage.screen_headers(email)
@@ -108,7 +108,7 @@ class Pipeline:
                 draft_id = self.outlook.create_reply_draft(email.id, draft.html)
                 _LOG.info(
                     "draft created",
-                    extra={"message": email.id[:16], "draft": draft_id[:16]},
+                    extra={"email_id": email.id[:16], "draft": draft_id[:16]},
                 )
         except GraphError as exc:
             return self._escalate(email, f"Nao foi possivel criar o rascunho: {exc}", usage)
@@ -123,7 +123,7 @@ class Pipeline:
         """Flag the original for a human. The reason lives in the log, not the mailbox."""
         _LOG.warning(
             "escalated",
-            extra={"message": email.id[:16], "reason": truncate(reason, 160)},
+            extra={"email_id": email.id[:16], "reason": truncate(reason, 160)},
         )
         return self._done(
             email,
@@ -144,7 +144,7 @@ class Pipeline:
                 # The ledger below still prevents a duplicate draft in this
                 # process; only a restart would re-examine this message.
                 _LOG.error(
-                    "could not mark message", extra={"message": email.id[:16], "error": exc}
+                    "could not mark message", extra={"email_id": email.id[:16], "error": exc}
                 )
 
         self.state.mark(email.id, email.received_at)
@@ -163,5 +163,5 @@ class Pipeline:
     def _dry_run(self, operation: str, email: EmailMessage) -> bool:
         if not self.dry_run:
             return False
-        _LOG.info("dry run", extra={"operation": operation, "message": email.id[:16]})
+        _LOG.info("dry run", extra={"operation": operation, "email_id": email.id[:16]})
         return True

@@ -70,7 +70,7 @@ class Classifier:
         _LOG.info(
             "classified",
             extra={
-                "message": email.id[:16],
+                "email_id": email.id[:16],
                 "category": verdict.category.value,
                 "reply": verdict.should_reply,
                 "urgency": verdict.urgency.value,
