@@ -6,6 +6,10 @@ logs/
 # Client knowledge bases are private
 clients/
 
+# Evaluation sets built from a real mailbox. Even anonymised, these are the
+# client's correspondence and do not belong in a shared repository.
+eval/real-*.json
+
 # Python
 __pycache__/
 *.py[cod]
