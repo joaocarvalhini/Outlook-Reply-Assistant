@@ -121,6 +121,40 @@ Test-ApplicationAccessPolicy -Identity apoio@loja.pt -AppId <client-id>
 
 Uma segunda verificação, com outra caixa qualquer, deve devolver `Denied`.
 
+### Se o Microsoft 365 foi comprado através de um revendedor
+
+Um inquilino cujo domínio interno seja do tipo `NETORGFT…….onmicrosoft.com` foi
+provisionado através da GoDaddy. Nesses casos o acesso ao Entra admin center pode
+estar limitado consoante o plano, e o registo de aplicações pode exigir um pedido
+ao suporte do revendedor.
+
+Confirme **antes** de planear a instalação: entre em `entra.microsoft.com` com a
+conta de administrador e verifique se consegue chegar a *App registrations → New
+registration*. Se não conseguir, o bloqueio é comercial e não técnico, e resolve-se
+com o revendedor.
+
+### Autenticação de email — verifique antes de ligar
+
+Este projeto produz respostas que a equipa envia a partir da caixa. Se o domínio
+não autenticar corretamente, essas respostas chegam ao spam e o trabalho todo não
+serve de nada. Duas verificações, ambas no DNS do domínio:
+
+```bash
+nslookup -type=txt exemplo.com          # SPF
+nslookup -type=cname selector1._domainkey.exemplo.com   # DKIM
+```
+
+- O registo **SPF** tem de incluir `include:spf.protection.outlook.com`. Um domínio
+  cujo MX aponta para `mail.protection.outlook.com` mas cujo SPF não inclui a
+  Microsoft falha a autenticação em todo o correio enviado — e com `-all` no fim,
+  falha de forma dura.
+- O **DKIM** tem de estar ativado para o domínio no portal Microsoft Defender, em
+  *Email & collaboration → Policies → Email authentication settings*. Sem os dois
+  registos `selector1` e `selector2`, não há assinatura nenhuma.
+
+Desde 2024 o Gmail exige que pelo menos um dos dois passe. A maioria dos clientes
+de uma loja online usa Gmail.
+
 ---
 
 ## Configuração
