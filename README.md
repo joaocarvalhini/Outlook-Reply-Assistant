@@ -53,6 +53,8 @@ de plataformas.
 
 ```
 daemon.py                 ciclo de polling, sinais, arranque
+eval.py                   banco de ensaio: mede o que o pipeline decide
+eval/cases.json           casos com resultado esperado
 requirements.txt
 .env.example
 blocklist.txt             domínios bloqueados, editável pelo cliente
@@ -214,6 +216,54 @@ que a equipa aprova por distração é o único modo de falha caro deste sistema
 
 ---
 
+## Avaliação
+
+Os testes unitários provam que o código faz o que foi escrito. O `eval.py` prova
+que o **prompt** faz o que é preciso — e é a única forma de saber se uma
+alteração ao prompt ou à base de conhecimento melhorou ou piorou o
+comportamento.
+
+```bash
+python eval.py --stage triage    # só as regras determinísticas: grátis, instantâneo
+python eval.py                   # pipeline completo, contra o modelo real
+```
+
+Não toca na caixa de correio — o Graph não entra aqui, por isso é seguro correr
+contra uma configuração de produção.
+
+Cada caso em `eval/cases.json` declara um resultado esperado:
+
+| `expect` | Significado |
+|---|---|
+| `skip` | O pipeline nunca deve responder a isto |
+| `escalate` | Um humano tem de ver; o assistente não pode responder |
+| `draft` | O assistente deve conseguir responder a partir da base de conhecimento |
+
+Saem três números, e não têm o mesmo peso:
+
+| Número | Significado | Alvo |
+|---|---|---|
+| **Clientes perdidos** | Casos que deviam gerar rascunho ou escalação e foram descartados em silêncio. Em produção não deixam rasto nenhum | **Zero.** Qualquer valor acima falha a execução |
+| **Recall de escalação** | Dos casos que *deviam* escalar, quantos escalaram. Baixo significa que o assistente respondeu ao que não sabia — inventou uma política e um cliente acreditou | O mais alto possível |
+| **Precisão de escalação** | Dos casos que escalaram, quantos deviam. Baixa significa trabalho a mais para a equipa. Chato, seguro | Secundário |
+
+O conjunto que vem no repositório tem 13 casos, todos verdadeiros
+independentemente das políticas da loja: sete de triagem determinística, dois de
+classificação e quatro de escalação estrutural (pedidos sobre encomendas
+concretas, ameaça de reclamação formal, tentativa de injeção de prompt).
+
+**Faltam os casos `draft`** — os que afirmam "o assistente devia ter conseguido
+responder a isto". Esses dependem inteiramente das políticas da loja e têm de
+sair de emails reais da caixa do cliente, anotados à mão. Junte-os em
+`eval/real-*.json`, que o `.gitignore` já exclui: mesmo anonimizada, aquela é
+correspondência do cliente.
+
+Regra prática: um caso novo por cada documento acrescentado à base de
+conhecimento, e um caso novo por cada erro assim que for corrigido — para que uma
+regressão apareça como um `FAIL` e não como uma reclamação.
+
+---
+
 ## Custos
 
 Estimativa para 1.000 emails recebidos por mês, com a triagem a descartar ~65%:
@@ -283,9 +333,11 @@ testar.
 
 ## Por fazer
 
-- **Avaliação.** Falta o equivalente ao `eval.py` do `AI Customer Support Agent`:
-  um conjunto de emails reais com o resultado esperado, para medir recall e
-  precisão de escalação à medida que os prompts e a base de conhecimento mudam.
+- **Casos `draft` e falsos negativos da triagem.** O `eval.py` está feito, mas o
+  conjunto de casos só cobre o que é verdadeiro sem a base de conhecimento.
+  Faltam os emails reais: os que o assistente devia conseguir responder, e os
+  emails de clientes que a triagem descartou por engano. Os segundos são
+  invisíveis em produção e custam vendas.
 - **Webhooks em vez de polling.** Uma subscrição do Graph elimina a latência dos
   5 minutos, mas exige um endpoint HTTPS público e renovação a cada ~3 dias.
   Polling é mais simples e chega para este volume.
