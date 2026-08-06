@@ -247,6 +247,11 @@ Saem três números, e não têm o mesmo peso:
 | **Recall de escalação** | Dos casos que *deviam* escalar, quantos escalaram. Baixo significa que o assistente respondeu ao que não sabia — inventou uma política e um cliente acreditou | O mais alto possível |
 | **Precisão de escalação** | Dos casos que escalaram, quantos deviam. Baixa significa trabalho a mais para a equipa. Chato, seguro | Secundário |
 
+Um caso que não chega a ter veredito por falha técnica é marcado `ERRO`, fica de
+fora da aritmética e faz a execução falhar. Sem isso, uma chave de API expirada
+daria "recall 100%" — todos os casos por responder escalam, e escalar parece
+correto.
+
 O conjunto que vem no repositório tem 13 casos, todos verdadeiros
 independentemente das políticas da loja: sete de triagem determinística, dois de
 classificação e quatro de escalação estrutural (pedidos sobre encomendas
@@ -294,10 +299,16 @@ Sem dependências de teste — a suite corre na biblioteca padrão:
 python -m unittest discover -s tests -t .
 ```
 
-52 testes. Cobrem todas as regras de triagem (incluindo o anti-ciclo e os
+58 testes. Cobrem todas as regras de triagem (incluindo o anti-ciclo e os
 subdomínios), a conversão de HTML para texto, o corte de citações, a sanitização
 da saída do modelo e a deteção do contrato de escalação. Não é preciso rede nem
 credenciais.
+
+`test_logging.py` percorre o código à procura de chaves `extra=` que colidam com
+atributos reservados do `LogRecord`. Existe por causa de um erro real: um
+`extra={"message": ...}` rebenta dentro do módulo `logging`, e só na primeira vez
+que aquela linha corre — o que, para o classificador, era o primeiro email
+classificado com sucesso, em produção, depois de todos os testes passarem.
 
 ---
 

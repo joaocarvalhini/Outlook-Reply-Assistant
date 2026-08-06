@@ -59,6 +59,11 @@ EXPECTATIONS = ("skip", "escalate", "draft")
 # Anything but "skip" is mail a human would have wanted to see.
 CUSTOMER_MAIL = ("escalate", "draft")
 
+# Not an expectation: a case that never got a verdict because the API failed.
+# In production such a message escalates, which is correct -- but scoring it as
+# a correct escalation here would let a dead API key report a passing run.
+ERROR = "error"
+
 
 @dataclass(frozen=True, slots=True)
 class Case:
@@ -153,7 +158,7 @@ class Harness:
         try:
             classification = self._classifier.classify(email)
         except ClassifierError as exc:
-            return Result(case, "escalate", "classifier", f"failed: {exc}")
+            return Result(case, ERROR, "classifier", truncate(str(exc), 110))
 
         usage = classification.usage
         if not classification.should_reply:
@@ -169,7 +174,7 @@ class Harness:
         try:
             draft = self._drafter.draft(email)
         except DrafterError as exc:
-            return Result(case, "escalate", "drafter", f"failed: {exc}", usage)
+            return Result(case, ERROR, "drafter", truncate(str(exc), 110), usage)
 
         usage = usage + draft.usage
         if draft.outcome is Outcome.DRAFTED:
@@ -201,6 +206,8 @@ def summarize(results: list[Result], *, triage_only: bool) -> int:
     for result in results:
         if triage_only and result.actual == "pass":
             marker, actual = "----", "reached the model"
+        elif result.actual == ERROR:
+            marker, actual = "ERRO", "sem veredito"
         else:
             marker = "PASS" if result.correct else "FAIL"
             actual = result.actual
@@ -212,7 +219,12 @@ def summarize(results: list[Result], *, triage_only: bool) -> int:
         if marker == "FAIL" and result.case.note:
             print(f"        nota: {result.case.note}")
 
-    judged = [r for r in results if not (triage_only and r.actual == "pass")]
+    errors = [r for r in results if r.actual == ERROR]
+    judged = [
+        r
+        for r in results
+        if r.actual != ERROR and not (triage_only and r.actual == "pass")
+    ]
     failures = [r for r in judged if not r.correct]
 
     should_escalate = [r for r in judged if r.case.expect == "escalate"]
@@ -228,8 +240,13 @@ def summarize(results: list[Result], *, triage_only: bool) -> int:
 
     print()
     print(f"{len(judged) - len(failures)}/{len(judged)} casos corretos")
-    if triage_only and len(judged) < len(results):
-        print(f"{len(results) - len(judged)} casos passaram a triagem (nao avaliados nesta etapa)")
+    deferred = len(results) - len(judged) - len(errors)
+    if triage_only and deferred:
+        print(f"{deferred} casos passaram a triagem (nao avaliados nesta etapa)")
+    if errors:
+        # Loud and separate. Without this a dead API key reads as a passing run,
+        # because every unanswered case escalates and escalation looks correct.
+        print(f"ERROS TECNICOS:         {len(errors)}  ->  resultados nao sao de confianca")
 
     label = 24
     if lost:
@@ -250,8 +267,9 @@ def summarize(results: list[Result], *, triage_only: bool) -> int:
         )
     print()
 
-    # A lost customer fails the run even if the arithmetic elsewhere looks fine.
-    return 1 if failures or lost else 0
+    # A lost customer fails the run even if the arithmetic elsewhere looks fine,
+    # and so does a technical error: a partial run proves nothing.
+    return 1 if failures or lost or errors else 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -265,6 +283,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--knowledge-dir", help="override KNOWLEDGE_DIR for this run")
     parser.add_argument("--reply-model", help="override REPLY_MODEL for this run")
+    parser.add_argument("--mailbox", help="override MAILBOX; fixtures interpolate it")
     parser.add_argument("--env-file", type=Path, default=None)
     args = parser.parse_args(argv)
 
@@ -275,13 +294,21 @@ def main(argv: list[str] | None = None) -> int:
         overrides["KNOWLEDGE_DIR"] = args.knowledge_dir
     if args.reply_model:
         overrides["REPLY_MODEL"] = args.reply_model
+    if args.mailbox:
+        overrides["MAILBOX"] = args.mailbox
+
+    # No stage of the evaluation touches Graph, so demanding a tenant, a client
+    # id and a secret would block a run that has everything it actually needs.
+    for name in ("GRAPH_TENANT_ID", "GRAPH_CLIENT_ID", "GRAPH_CLIENT_SECRET"):
+        overrides.setdefault(name, "unused-by-eval")
+
+    # The mailbox is real input: triage rules compare against it, and fixtures
+    # interpolate it. It is defaulted rather than required so the free stage
+    # runs on a fresh checkout, and echoed below so nobody has to guess.
+    overrides.setdefault("MAILBOX", "apoio@loja.pt")
+
     if args.stage == "triage":
-        # Triage needs the mailbox address and the category names, nothing else.
-        # Placeholders here keep the free stage runnable with no credentials.
-        overrides.setdefault("ANTHROPIC_API_KEY", "not-needed-for-triage")
-        for name in ("GRAPH_TENANT_ID", "GRAPH_CLIENT_ID", "GRAPH_CLIENT_SECRET"):
-            overrides.setdefault(name, "not-needed-for-triage")
-        overrides.setdefault("MAILBOX", "apoio@loja.pt")
+        overrides.setdefault("ANTHROPIC_API_KEY", "unused-by-triage-stage")
 
     try:
         config = Config.from_env(env_file=args.env_file, overrides=overrides)
@@ -300,7 +327,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.stage == "triage":
         harness = Harness(triage, config.mailbox)
-        print(f"A correr {len(cases)} caso(s), apenas triagem, com {args.cases}")
+        print(
+            f"A correr {len(cases)} caso(s), apenas triagem, "
+            f"com {args.cases} e caixa {config.mailbox}"
+        )
     else:
         import anthropic
 
@@ -334,7 +364,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(
             f"A correr {len(cases)} caso(s) com {config.classifier_model} "
-            f"e {config.reply_model}, a partir de {args.cases}"
+            f"e {config.reply_model}, a partir de {args.cases} e caixa {config.mailbox}"
         )
 
     results = [harness.evaluate(case) for case in cases]
