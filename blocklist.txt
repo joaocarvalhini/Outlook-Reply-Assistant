@@ -1,0 +1,10 @@
+# Domínios que nunca merecem resposta. Um por linha, "#" inicia comentário.
+# Subdomínios são cobertos automaticamente: "shopify.com" bloqueia "mail.shopify.com".
+#
+# As plataformas mais comuns (Shopify, Stripe, PayPal, Mailchimp, SendGrid,
+# CTT, DHL, UPS, DPD, Google, LinkedIn, Facebook) já estão na lista base do
+# código. Acrescente aqui apenas o que for específico desta loja.
+
+# Exemplos do que costuma faltar:
+# plataforma-de-reviews.pt
+# erp-do-fornecedor.com
