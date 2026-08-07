@@ -76,6 +76,8 @@ src/
 tests/
   test_triage.py          todas as regras de triagem
   test_text.py            HTML, citações, sanitização, escalação
+  test_state.py           registo de processados e a chave em que assenta
+  test_logging.py         varre o código à procura de chaves `extra=` reservadas
 ```
 
 ---
@@ -333,7 +335,7 @@ Sem dependências de teste — a suite corre na biblioteca padrão:
 python -m unittest discover -s tests -t .
 ```
 
-58 testes. Cobrem todas as regras de triagem (incluindo o anti-ciclo e os
+69 testes. Cobrem todas as regras de triagem (incluindo o anti-ciclo e os
 subdomínios), a conversão de HTML para texto, o corte de citações, a sanitização
 da saída do modelo e a deteção do contrato de escalação. Não é preciso rede nem
 credenciais.
@@ -365,6 +367,12 @@ para raciocinar sobre ele, e uma categoria na caixa que diz à equipa o que ver.
 
 **A categoria no original é o registo durável; o `state.json` é só o caminho
 rápido.** Apagar o ficheiro de estado é seguro. Apagar as categorias não é.
+
+**O registo é indexado pelo `internetMessageId`, não pelo `id` do Graph.** O `id`
+tem âmbito de pasta e é reatribuído quando a mensagem muda de sítio, portanto um
+registo indexado por ele deixa silenciosamente de fazer correspondência assim que
+alguém arruma a caixa de entrada. O `internetMessageId` é o Message-ID da norma e
+sobrevive à mudança.
 
 **O HTML de saída é reconstruído a partir de uma lista branca**, não filtrado. O
 corpo deriva de um email não confiável, e "um humano revê antes de enviar" é um
