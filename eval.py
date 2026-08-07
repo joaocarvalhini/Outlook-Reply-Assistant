@@ -1,374 +1,197 @@
 #!/usr/bin/env python3
-"""Evaluation harness: measures what the pipeline decides, against fixtures.
+"""Banco de ensaio: mede o que o assistente decide, contra casos conhecidos.
 
-    python eval.py                         # every stage, uses .env and eval/cases.json
-    python eval.py --stage triage          # deterministic rules only: free, instant
-    python eval.py --cases eval/real.json  # a curated set from the client's mailbox
+    python eval.py                  tudo, precisa de chave e base de conhecimento
+    python eval.py --triagem        só as regras determinísticas: grátis, instantâneo
 
-Runs the real triage, the real classifier and the real drafter against fixed
-emails with a known expected outcome. No mailbox is touched and no draft is
-created -- Graph is not involved at all, so this is safe to run against a live
-configuration.
+Corre a triagem e o modelo reais contra emails fixos com resultado esperado. Não
+toca na caixa de correio — o Graph não entra aqui — por isso é seguro correr
+contra uma configuração de produção.
 
-Each case declares one terminal expectation:
+Saem três números e não valem o mesmo:
 
-    skip      the pipeline should never reply to this
-    escalate  a human should look at it; the assistant must not answer
-    draft     the assistant should be able to answer from the knowledge base
+  clientes perdidos  casos que deviam gerar rascunho ou escalação e foram
+                     descartados. Em produção não deixam rasto que alguém veja.
+                     Alvo: zero. Qualquer valor acima reprova a execução.
+  recall             dos casos que deviam escalar, quantos escalaram. Baixo
+                     significa que o assistente respondeu ao que não sabia.
+  precisão           dos que escalaram, quantos deviam. Baixa dá trabalho a mais
+                     à equipa. Chato, seguro.
 
-Three numbers come out, and they are not equally important.
-
-  lost customers  cases that should have produced a draft or an escalation and
-                  were silently dropped instead. This is the number that costs
-                  money: in production a discarded customer email leaves no
-                  trace anyone looks at. Target is zero.
-  recall          of the cases that SHOULD escalate, how many did. Low recall
-                  means the assistant answered something it did not know --
-                  it invented a policy and a customer believed it.
-  precision       of the cases the assistant DID escalate, how many should have.
-                  Low precision means humans get work they did not need.
-                  Annoying, but safe.
-
-`--stage triage` needs neither an API key nor a knowledge base, which makes it
-the loop to run while tuning blocklist.txt.
+Uma falha técnica não é uma decisão: fica marcada como ERRO, fora da aritmética,
+e reprova a execução. Sem isso, uma chave expirada daria "recall 100%" — todos os
+casos por responder escalam, e escalar parece correto.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
-from dataclasses import dataclass, field
 from pathlib import Path
 
-from src.classifier import Classifier, ClassifierError
-from src.config import Config, ConfigError
-from src.drafter import Drafter, DrafterError
-from src.knowledge_base import KnowledgeBaseError, KnowledgeBaseLoader
-from src.logger import configure_logging
-from src.models import EmailMessage, Outcome, TokenUsage
-from src.prompts import ClassifierPromptBuilder, ReplyPromptBuilder
-from src.triage import Triage, load_blocklist
-from src.utils import truncate
+import assistente as a
 
-DEFAULT_CASES = Path("eval/cases.json")
-
-# The three terminal expectations, in the order a case travels through them.
-EXPECTATIONS = ("skip", "escalate", "draft")
-
-# Anything but "skip" is mail a human would have wanted to see.
-CUSTOMER_MAIL = ("escalate", "draft")
-
-# Not an expectation: a case that never got a verdict because the API failed.
-# In production such a message escalates, which is correct -- but scoring it as
-# a correct escalation here would let a dead API key report a passing run.
-ERROR = "error"
+ACOES = ("saltar", "escalar", "rascunhar")
+CORRESPONDENCIA_DE_CLIENTE = ("escalar", "rascunhar")
+ERRO = "erro"
 
 
-@dataclass(frozen=True, slots=True)
-class Case:
-    """One fixture: an email and what the pipeline is supposed to do with it."""
+def construir_msg(caso: dict, caixa: str) -> dict:
+    """Monta a mensagem tal como o Graph a teria entregue.
 
-    id: str
-    email: dict
-    expect: str
-    note: str = ""
-    # Optional. When set, the classifier's category is checked too, which is how
-    # a case pins down *why* a message was skipped rather than just that it was.
-    expect_category: str = ""
+    Os endereços aceitam {mailbox} e {domain}. Sem isso, um caso que afirma "o
+    remetente é um colega" só valeria para a loja contra a qual os casos foram
+    escritos, e deixaria calado de testar seja o que for para qualquer outra.
+    """
+    dominio = caixa.partition("@")[2]
+    email = caso["email"]
 
-    def to_message(self, mailbox: str) -> EmailMessage:
-        """Build the message the pipeline would have received from Graph.
+    def resolver(v: object) -> str:
+        return str(v).format(mailbox=caixa, domain=dominio).lower()
 
-        Addresses may contain `{mailbox}` and `{domain}`, substituted with the
-        configured values. Without that, a fixture asserting "sender is a
-        colleague" would only hold for whichever shop the fixtures were written
-        against, and would quietly stop testing anything for every other client.
-
-        `body` is the cleaned plain text, i.e. what `outlook.fetch_detail` would
-        already have produced -- fixtures are authored as text, not as the HTML
-        soup a mail client emits.
-        """
-        domain = mailbox.partition("@")[2]
-
-        def resolve(address: object) -> str:
-            return str(address).format(mailbox=mailbox, domain=domain).lower()
-
-        return EmailMessage(
-            id=f"eval-{self.id}",
-            conversation_id=f"conv-{self.id}",
-            internet_message_id=f"<{self.id}@eval.local>",
-            subject=str(self.email.get("subject", "")),
-            sender=resolve(self.email.get("from", "")),
-            sender_name=str(self.email.get("from_name", "")),
-            to=tuple(resolve(a) for a in self.email.get("to", [])),
-            cc=tuple(resolve(a) for a in self.email.get("cc", [])),
-            received_at="2026-08-06T10:00:00Z",
-            body=str(self.email.get("body", "")),
-            headers=tuple((str(k), str(v)) for k, v in self.email.get("headers", [])),
-            categories=tuple(self.email.get("categories", [])),
-        )
+    return {
+        "id": f"eval-{caso['id']}",
+        "message_id": f"<{caso['id']}@eval.local>",
+        "conversation_id": f"conv-{caso['id']}",
+        "assunto": email.get("subject", ""),
+        "de": resolver(email.get("from", "")),
+        "nome": email.get("from_name", ""),
+        "para": [resolver(x) for x in email.get("to", [])],
+        "cc": [resolver(x) for x in email.get("cc", [])],
+        "recebido": "2026-08-06T10:00:00Z",
+        "categorias": email.get("categories", []),
+        "cabecalhos": [(str(k), str(v)) for k, v in email.get("headers", [])],
+        "corpo": email.get("body", ""),
+    }
 
 
-@dataclass(frozen=True, slots=True)
-class Result:
-    case: Case
-    actual: str
-    stage: str
-    detail: str = ""
-    usage: TokenUsage = field(default_factory=TokenUsage)
+def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
+            cliente: object | None, prompt: str) -> tuple[str, str, str]:
+    """Devolve (obtido, etapa, detalhe)."""
+    msg = construir_msg(caso, cfg.mailbox)
 
-    @property
-    def correct(self) -> bool:
-        return self.actual == self.case.expect
+    motivo = a.triar(msg, cfg, bloqueados)
+    if motivo:
+        return "saltar", "triagem", motivo
 
+    motivo = a.triar_cabecalhos(msg)
+    if motivo:
+        return "saltar", "cabeçalhos", motivo
 
-class Harness:
-    """Runs one case through as much of the pipeline as the stage allows."""
+    if cliente is None:
+        return "passou", "triagem", "chegou ao modelo"
 
-    def __init__(
-        self,
-        triage: Triage,
-        mailbox: str,
-        classifier: Classifier | None = None,
-        drafter: Drafter | None = None,
-    ) -> None:
-        self._triage = triage
-        self._mailbox = mailbox
-        self._classifier = classifier
-        self._drafter = drafter
+    try:
+        acao, motivo, corpo = a.decidir(cliente, cfg, prompt, msg)
+    except Exception as exc:
+        return ERRO, "modelo", f"{type(exc).__name__}: {exc}"[:110]
 
-    def evaluate(self, case: Case) -> Result:
-        email = case.to_message(self._mailbox)
-
-        verdict = self._triage.screen(email)
-        if not verdict.accepted:
-            return Result(case, "skip", "triage", verdict.rule)
-
-        verdict = self._triage.screen_headers(email)
-        if not verdict.accepted:
-            return Result(case, "skip", "headers", verdict.rule)
-
-        if self._classifier is None or self._drafter is None:
-            # Triage-only run: the message survived every free rule, which is
-            # all this stage can assert. Anything expecting more is untested,
-            # not passing, so report the stage honestly.
-            return Result(case, "pass", "triage", "reached the model stages")
-
-        try:
-            classification = self._classifier.classify(email)
-        except ClassifierError as exc:
-            return Result(case, ERROR, "classifier", truncate(str(exc), 110))
-
-        usage = classification.usage
-        if not classification.should_reply:
-            return Result(case, "skip", "classifier", classification.category.value, usage)
-
-        if case.expect_category and classification.category.value != case.expect_category:
-            # Not a failure on its own -- the outcome may still be right -- but
-            # worth surfacing, because a drifting category is an early warning.
-            detail = f"{classification.category.value} (esperado {case.expect_category})"
-        else:
-            detail = classification.category.value
-
-        try:
-            draft = self._drafter.draft(email)
-        except DrafterError as exc:
-            return Result(case, ERROR, "drafter", truncate(str(exc), 110), usage)
-
-        usage = usage + draft.usage
-        if draft.outcome is Outcome.DRAFTED:
-            return Result(case, "draft", "drafter", detail, usage)
-        return Result(case, "escalate", "drafter", truncate(draft.reason, 90), usage)
+    if acao == "rascunhar" and not corpo.strip():
+        return "escalar", "modelo", "escolheu rascunhar sem corpo"
+    return acao, "modelo", motivo[:80]
 
 
-def load_cases(path: Path) -> list[Case]:
-    """Read and validate the fixture file. A bad case is a hard error."""
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    cases = [Case(**entry) for entry in raw]
-
-    seen: set[str] = set()
-    for case in cases:
-        if case.expect not in EXPECTATIONS:
-            raise ValueError(
-                f"case {case.id!r} has invalid expect {case.expect!r}; "
-                f"use one of {', '.join(EXPECTATIONS)}"
-            )
-        if case.id in seen:
-            raise ValueError(f"duplicate case id {case.id!r}")
-        seen.add(case.id)
-    return cases
-
-
-def summarize(results: list[Result], *, triage_only: bool) -> int:
-    """Print the report and return the exit code."""
+def relatar(resultados: list[tuple[dict, tuple[str, str, str]]], so_triagem: bool) -> int:
     print()
-    for result in results:
-        if triage_only and result.actual == "pass":
-            marker, actual = "----", "reached the model"
-        elif result.actual == ERROR:
-            marker, actual = "ERRO", "sem veredito"
+    for caso, (obtido, etapa, detalhe) in resultados:
+        if so_triagem and obtido == "passou":
+            marca, mostrado = "----", "chegou ao modelo"
+        elif obtido == ERRO:
+            marca, mostrado = "ERRO", "sem veredito"
         else:
-            marker = "PASS" if result.correct else "FAIL"
-            actual = result.actual
+            marca = "PASS" if obtido == caso["expect"] else "FALHA"
+            mostrado = obtido
         print(
-            f"{marker}  {result.case.id:<32} "
-            f"expect={result.case.expect:<9} actual={actual:<18} "
-            f"[{result.stage}] {result.detail}"
+            f"{marca}  {caso['id']:<32} esperado={caso['expect']:<10} "
+            f"obtido={mostrado:<18} [{etapa}] {detalhe}"
         )
-        if marker == "FAIL" and result.case.note:
-            print(f"        nota: {result.case.note}")
+        if marca == "FALHA" and caso.get("note"):
+            print(f"        nota: {caso['note']}")
 
-    errors = [r for r in results if r.actual == ERROR]
-    judged = [
-        r
-        for r in results
-        if r.actual != ERROR and not (triage_only and r.actual == "pass")
+    erros = [r for r in resultados if r[1][0] == ERRO]
+    julgados = [
+        r for r in resultados
+        if r[1][0] != ERRO and not (so_triagem and r[1][0] == "passou")
     ]
-    failures = [r for r in judged if not r.correct]
+    falhas = [r for r in julgados if r[1][0] != r[0]["expect"]]
 
-    should_escalate = [r for r in judged if r.case.expect == "escalate"]
-    did_escalate = [r for r in judged if r.actual == "escalate"]
-    caught = [r for r in should_escalate if r.actual == "escalate"]
+    deviam_escalar = [r for r in julgados if r[0]["expect"] == "escalar"]
+    escalaram = [r for r in julgados if r[1][0] == "escalar"]
+    acertos = [r for r in deviam_escalar if r[1][0] == "escalar"]
+    perdidos = [
+        r for r in julgados
+        if r[0]["expect"] in CORRESPONDENCIA_DE_CLIENTE and r[1][0] == "saltar"
+    ]
 
-    # The expensive failure: mail a human wanted to see, dropped without trace.
-    lost = [r for r in judged if r.case.expect in CUSTOMER_MAIL and r.actual == "skip"]
-
-    usage = TokenUsage()
-    for result in results:
-        usage = usage + result.usage
-
+    largura = 24
     print()
-    print(f"{len(judged) - len(failures)}/{len(judged)} casos corretos")
-    deferred = len(results) - len(judged) - len(errors)
-    if triage_only and deferred:
-        print(f"{deferred} casos passaram a triagem (nao avaliados nesta etapa)")
-    if errors:
-        # Loud and separate. Without this a dead API key reads as a passing run,
-        # because every unanswered case escalates and escalation looks correct.
-        print(f"ERROS TECNICOS:         {len(errors)}  ->  resultados nao sao de confianca")
-
-    label = 24
-    if lost:
-        names = ", ".join(r.case.id for r in lost)
-        print(f"{'CLIENTES PERDIDOS:':<{label}}{len(lost)}  ->  {names}")
+    print(f"{len(julgados) - len(falhas)}/{len(julgados)} casos corretos")
+    adiados = len(resultados) - len(julgados) - len(erros)
+    if so_triagem and adiados:
+        print(f"{adiados} casos passaram a triagem (não avaliados nesta etapa)")
+    if erros:
+        print(f"{'ERROS TÉCNICOS:':<{largura}}{len(erros)}  ->  resultados não são de confiança")
+    if perdidos:
+        nomes = ", ".join(r[0]["id"] for r in perdidos)
+        print(f"{'CLIENTES PERDIDOS:':<{largura}}{len(perdidos)}  ->  {nomes}")
     else:
-        print(f"{'clientes perdidos:':<{label}}0")
-
-    recall = f"{len(caught) / len(should_escalate):.0%}" if should_escalate else "n/a"
-    precision = f"{len(caught) / len(did_escalate):.0%}" if did_escalate else "n/a"
-    print(f"{'recall de escalacao:':<{label}}{recall}")
-    print(f"{'precisao de escalacao:':<{label}}{precision}")
-
-    if usage.input_tokens or usage.output_tokens:
-        print(
-            f"{'tokens:':<{label}}entrada={usage.input_tokens} "
-            f"saida={usage.output_tokens} cache={usage.cache_read_tokens}"
-        )
+        print(f"{'clientes perdidos:':<{largura}}0")
+    recall = f"{len(acertos) / len(deviam_escalar):.0%}" if deviam_escalar else "n/a"
+    precisao = f"{len(acertos) / len(escalaram):.0%}" if escalaram else "n/a"
+    print(f"{'recall de escalação:':<{largura}}{recall}")
+    print(f"{'precisão de escalação:':<{largura}}{precisao}")
     print()
 
-    # A lost customer fails the run even if the arithmetic elsewhere looks fine,
-    # and so does a technical error: a partial run proves nothing.
-    return 1 if failures or lost or errors else 0
+    return 1 if falhas or perdidos or erros else 0
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
-    parser.add_argument("--cases", type=Path, default=DEFAULT_CASES)
-    parser.add_argument(
-        "--stage",
-        choices=("triage", "all"),
-        default="all",
-        help="triage runs the deterministic rules only: no API key, no cost",
-    )
-    parser.add_argument("--knowledge-dir", help="override KNOWLEDGE_DIR for this run")
-    parser.add_argument("--reply-model", help="override REPLY_MODEL for this run")
-    parser.add_argument("--mailbox", help="override MAILBOX; fixtures interpolate it")
-    parser.add_argument("--env-file", type=Path, default=None)
-    args = parser.parse_args(argv)
+    p = argparse.ArgumentParser(description="Banco de ensaio do assistente")
+    p.add_argument("--casos", type=Path, default=Path("eval/casos.json"))
+    p.add_argument("--triagem", action="store_true", help="só as regras determinísticas")
+    p.add_argument("--caixa", help="sobrepõe MAILBOX; os casos interpolam-na")
+    args = p.parse_args(argv)
+    a.saida_utf8()
 
-    configure_logging("WARNING")
+    # Nenhuma etapa do ensaio toca no Graph, por isso exigir tenant, cliente e
+    # segredo bloquearia uma execução que tem tudo o que precisa.
+    for nome in ("GRAPH_TENANT_ID", "GRAPH_CLIENT_ID", "GRAPH_CLIENT_SECRET"):
+        os.environ.setdefault(nome, "nao-usado-pelo-eval")
+    os.environ.setdefault("MAILBOX", "apoio@loja.pt")
+    if args.caixa:
+        os.environ["MAILBOX"] = args.caixa
+    if args.triagem:
+        os.environ.setdefault("ANTHROPIC_API_KEY", "nao-usado-na-triagem")
 
-    overrides: dict[str, str | None] = {}
-    if args.knowledge_dir:
-        overrides["KNOWLEDGE_DIR"] = args.knowledge_dir
-    if args.reply_model:
-        overrides["REPLY_MODEL"] = args.reply_model
-    if args.mailbox:
-        overrides["MAILBOX"] = args.mailbox
-
-    # No stage of the evaluation touches Graph, so demanding a tenant, a client
-    # id and a secret would block a run that has everything it actually needs.
-    for name in ("GRAPH_TENANT_ID", "GRAPH_CLIENT_ID", "GRAPH_CLIENT_SECRET"):
-        overrides.setdefault(name, "unused-by-eval")
-
-    # The mailbox is real input: triage rules compare against it, and fixtures
-    # interpolate it. It is defaulted rather than required so the free stage
-    # runs on a fresh checkout, and echoed below so nobody has to guess.
-    overrides.setdefault("MAILBOX", "apoio@loja.pt")
-
-    if args.stage == "triage":
-        overrides.setdefault("ANTHROPIC_API_KEY", "unused-by-triage-stage")
-
+    cfg = a.carregar_config(True)
     try:
-        config = Config.from_env(env_file=args.env_file, overrides=overrides)
-        cases = load_cases(args.cases)
-    except (ConfigError, ValueError, OSError, json.JSONDecodeError) as exc:
-        print(f"Arranque falhou: {exc}", file=sys.stderr)
-        return 2
+        casos = json.loads(args.casos.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        sys.exit(f"Casos: {exc}")
 
-    triage = Triage(
-        mailbox=config.mailbox,
-        own_domain=config.mailbox_domain,
-        drafted_category=config.drafted_category,
-        escalated_category=config.escalated_category,
-        blocked_domains=load_blocklist(config.blocklist_file),
-    )
+    vistos: set[str] = set()
+    for caso in casos:
+        if caso["expect"] not in ACOES:
+            sys.exit(f"Caso {caso['id']!r}: expect inválido {caso['expect']!r}")
+        if caso["id"] in vistos:
+            sys.exit(f"Caso duplicado: {caso['id']!r}")
+        vistos.add(caso["id"])
 
-    if args.stage == "triage":
-        harness = Harness(triage, config.mailbox)
-        print(
-            f"A correr {len(cases)} caso(s), apenas triagem, "
-            f"com {args.cases} e caixa {config.mailbox}"
-        )
-    else:
+    bloqueados = a.carregar_blocklist(cfg.blocklist)
+    cliente = prompt = None
+    if not args.triagem:
         import anthropic
 
-        try:
-            knowledge_base = KnowledgeBaseLoader(directory=config.knowledge_dir).load()
-        except KnowledgeBaseError as exc:
-            print(f"Base de conhecimento: {exc}", file=sys.stderr)
-            return 2
+        cliente = anthropic.Anthropic(api_key=cfg.api_key)
+        prompt = a.construir_prompt(cfg)
 
-        messages_client = anthropic.Anthropic(api_key=config.api_key).messages
-        harness = Harness(
-            triage,
-            config.mailbox,
-            Classifier(
-                client=messages_client,
-                model=config.classifier_model,
-                prompts=ClassifierPromptBuilder(company_name=config.company_name),
-            ),
-            Drafter(
-                client=messages_client,
-                model=config.reply_model,
-                prompts=ReplyPromptBuilder(
-                    company_name=config.company_name,
-                    assistant_name=config.assistant_name,
-                    signature=config.signature,
-                ),
-                knowledge_base=knowledge_base,
-                max_tokens=config.max_tokens,
-                max_body_chars=config.max_body_chars,
-            ),
-        )
-        print(
-            f"A correr {len(cases)} caso(s) com {config.classifier_model} "
-            f"e {config.reply_model}, a partir de {args.cases} e caixa {config.mailbox}"
-        )
+    etapa = "só triagem" if args.triagem else cfg.modelo
+    print(f"{len(casos)} caso(s) · {etapa} · {args.casos} · caixa {cfg.mailbox}")
 
-    results = [harness.evaluate(case) for case in cases]
-    return summarize(results, triage_only=args.stage == "triage")
+    resultados = [(c, avaliar(c, cfg, bloqueados, cliente, prompt or "")) for c in casos]
+    return relatar(resultados, args.triagem)
 
 
 if __name__ == "__main__":
