@@ -37,6 +37,7 @@ e carrega em Enviar.
 
 ```
 assistente.py        tudo: config, triagem, texto, prompt, SQLite, Graph, Claude
+verificar.py         verificação prévia, para o dia da instalação
 test_assistente.py   43 testes, biblioteca padrão, sem rede
 eval.py              banco de ensaio: mede o que o assistente decide
 eval/casos.json      casos com resultado esperado
@@ -106,6 +107,17 @@ Test-ApplicationAccessPolicy -Identity info@tripat3s.com -AppId <client-id>
 
 Uma segunda verificação, com outra caixa qualquer, deve devolver `Denied`. É o
 passo mais importante do projeto e o mais fácil de esquecer.
+
+O `verificar.py` prova o mesmo a partir do lado da aplicação, que é o que
+interessa: tenta ler outra caixa e **reprova se conseguir**.
+
+```bash
+python verificar.py --outra-caixa geral@tripat3s.com
+```
+
+O endereço tem de ser de uma caixa que exista mesmo no inquilino. Uma que não
+exista devolve 404 e não prova nada — o script diz isso em vez de dar a
+verificação por boa.
 
 ### Se o Microsoft 365 foi comprado através de um revendedor
 
@@ -183,6 +195,8 @@ sozinho.
 
 ## Primeira execução
 
+0. `python verificar.py --outra-caixa <outra caixa real>` — tem de passar tudo
+   antes de se ligar seja o que for.
 1. `DRY_RUN=true` no `.env` (é o valor por omissão).
 2. `python assistente.py` — corre uma passagem e sai.
 3. Ler o log. Cada mensagem mostra a decisão e a regra que a produziu.

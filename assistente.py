@@ -698,17 +698,19 @@ def main(argv: list[str] | None = None) -> int:
     saida_utf8()
     cfg = carregar_config(args.dry)
     con = abrir_db(cfg.db)
-    graph = Graph(cfg)
 
     cursor = cursor_atual(con)
     if not cursor:
         # Primeira passagem: começa agora. Responder a um ano de arquivo seria
-        # caro e errado.
+        # caro e errado. Nem se chega a falar com o Graph.
         gravar_cursor(con, agora())
         log("cursor-inicial", em=agora())
         return 0
 
     try:
+        # O construtor do MSAL faz descoberta do tenant, portanto uma
+        # configuração errada falha aqui e não na primeira chamada.
+        graph = Graph(cfg)
         mensagens = graph.novas(cursor)
     except Exception as exc:
         log("erro-graph", erro=f"{type(exc).__name__}: {exc}")
