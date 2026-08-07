@@ -54,7 +54,7 @@ class Pipeline:
 
     def process(self, email: EmailMessage) -> PipelineResult:
         """Handle one message. Never raises."""
-        if self.state.was_processed(email.id):
+        if self.state.was_processed(email.ledger_key):
             return self._done(email, PipelineResult(Outcome.SKIPPED, rule="ledger"))
 
         verdict = self.triage.screen(email)
@@ -147,7 +147,7 @@ class Pipeline:
                     "could not mark message", extra={"email_id": email.id[:16], "error": exc}
                 )
 
-        self.state.mark(email.id, email.received_at)
+        self.state.mark(email.ledger_key, email.received_at)
         self.state.save()
         return result
 

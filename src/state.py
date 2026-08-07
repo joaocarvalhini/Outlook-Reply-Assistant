@@ -6,6 +6,9 @@ record — this file is the fast path that keeps a restart from re-listing weeks
 mail and re-fetching every message just to discover it was already handled.
 
 Losing this file is safe. Losing the categories is not.
+
+Entries are keyed on `EmailMessage.ledger_key`, which is the Message-ID rather
+than Graph's per-folder `id` — see the property's docstring for why.
 """
 
 from __future__ import annotations
@@ -60,14 +63,14 @@ class ProcessingState:
         )
         return state
 
-    def was_processed(self, message_id: str) -> bool:
-        return message_id in self._seen
+    def was_processed(self, key: str) -> bool:
+        return key in self._seen
 
-    def mark(self, message_id: str, received_at: str) -> None:
+    def mark(self, key: str, received_at: str) -> None:
         """Record a message as handled and advance the watermark."""
-        if message_id not in self._seen:
-            self._seen.add(message_id)
-            self.processed.append(message_id)
+        if key not in self._seen:
+            self._seen.add(key)
+            self.processed.append(key)
             if len(self.processed) > MAX_REMEMBERED_IDS:
                 dropped = self.processed[:-MAX_REMEMBERED_IDS]
                 self.processed = self.processed[-MAX_REMEMBERED_IDS:]

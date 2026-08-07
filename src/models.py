@@ -117,6 +117,21 @@ class EmailMessage:
     headers: tuple[tuple[str, str], ...] = ()
     categories: tuple[str, ...] = ()
 
+    @property
+    def ledger_key(self) -> str:
+        """The identifier the processing ledger is keyed on.
+
+        Not `id`. Graph's message id is scoped to a folder and is reassigned the
+        moment a message moves, so a ledger keyed on it silently stops matching
+        as soon as someone drags an email out of the inbox -- the entry is still
+        there, it just no longer refers to anything. `internetMessageId` is the
+        RFC 5322 Message-ID and survives the move.
+
+        Falls back to `id` because a message without a Message-ID is malformed;
+        a key that only holds until the message moves still beats no key at all.
+        """
+        return self.internet_message_id or self.id
+
     def header(self, name: str) -> str | None:
         """Case-insensitive header lookup. Returns the first match."""
         wanted = name.lower()
