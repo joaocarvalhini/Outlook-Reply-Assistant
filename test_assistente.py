@@ -11,10 +11,13 @@ não confiáveis, e o registo local — incluindo a chave em que assenta.
 
 from __future__ import annotations
 
+import re
 import sqlite3
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+
+from exportar import anonimizar, anonimizar_endereco, palpitar
 
 from assistente import (
     DOMINIOS_BASE,
@@ -288,6 +291,104 @@ class Registo(unittest.TestCase):
         linha = self.con.execute("SELECT acao, corpo FROM processados").fetchone()
         self.assertEqual(linha[0], "rascunhar")
         self.assertIn("entregas", linha[1])
+
+
+class Anonimizacao(unittest.TestCase):
+    """A anonimização do exportar.py.
+
+    Se isto se partir, vazam dados de clientes para um ficheiro — e em silêncio,
+    porque ninguém relê 200 emails à procura de um telefone que escapou.
+    """
+
+    def test_email_mantem_o_dominio(self) -> None:
+        """O domínio é o que a triagem lê; sem ele os casos não testam nada."""
+        self.assertEqual(
+            anonimizar("escreve para ana.silva@gmail.com"),
+            "escreve para <email>@gmail.com",
+        )
+
+    def test_telemovel(self) -> None:
+        self.assertEqual(anonimizar("liga 912345678"), "liga <TELEFONE>")
+
+    def test_fixo_com_espacos(self) -> None:
+        """O formato em que as pessoas realmente escrevem números."""
+        self.assertEqual(anonimizar("liga 21 234 5678"), "liga <TELEFONE>")
+
+    def test_telefone_com_indicativo_e_separadores(self) -> None:
+        for numero in ("+351 912 345 678", "96.123.4567", "213-456-789"):
+            with self.subTest(numero=numero):
+                self.assertNotIn("4", anonimizar(f"contacto {numero}"))
+
+    def test_iban(self) -> None:
+        self.assertEqual(
+            anonimizar("IBAN PT50 0002 0123 1234 5678 9015 4"), "IBAN <IBAN>"
+        )
+
+    def test_codigo_postal(self) -> None:
+        self.assertIn("<COD-POSTAL>", anonimizar("morada 2620-537 Ramada"))
+
+    def test_numero_de_encomenda(self) -> None:
+        self.assertEqual(
+            anonimizar("a encomenda 1029384 não chegou"),
+            "a encomenda <NUMERO> não chegou",
+        )
+
+    def test_nome_do_remetente_na_assinatura(self) -> None:
+        limpo = anonimizar("Cumprimentos,\nAna Silva", "Ana Silva")
+        self.assertNotIn("Ana", limpo)
+        self.assertNotIn("Silva", limpo)
+
+    def test_nao_troca_iniciais_curtas(self) -> None:
+        """Partes com menos de 3 letras trocariam palavras por todo o lado."""
+        self.assertIn("de", anonimizar("a encomenda de teste", "Ana de Sá"))
+
+    def test_numeros_inofensivos_ficam(self) -> None:
+        texto = "São 3 artigos, 25 euros, chegou dia 12"
+        self.assertEqual(anonimizar(texto), texto)
+
+    def test_nenhuma_sequencia_de_nove_digitos_sobrevive(self) -> None:
+        """Rede de segurança: qualquer coisa com forma de telefone ou NIF."""
+        for texto in (
+            "liga 912345678", "liga 21 234 5678", "NIF 218250016",
+            "+351 912 345 678", "96.123.4567",
+        ):
+            with self.subTest(texto=texto):
+                self.assertIsNone(
+                    re.search(r"(?:\d[\s.-]?){8}\d", anonimizar(texto)),
+                    f"vazou um número em {texto!r}",
+                )
+
+
+class EnderecoAnonimizado(unittest.TestCase):
+    def test_pessoa_e_tapada(self) -> None:
+        self.assertEqual(anonimizar_endereco("ana.silva@gmail.com"), "<pessoa>@gmail.com")
+
+    def test_generico_fica_intacto(self) -> None:
+        """`noreply@` é categoria, não identidade: tapá-lo apagava o caso."""
+        for endereco in ("noreply@shopify.com", "info@fornecedor.pt",
+                         "newsletter@revista.pt"):
+            with self.subTest(endereco=endereco):
+                self.assertEqual(anonimizar_endereco(endereco), endereco)
+
+    def test_endereco_sem_dominio(self) -> None:
+        self.assertEqual(anonimizar_endereco("invalido"), "<endereco>")
+
+
+class Palpite(unittest.TestCase):
+    def test_estado_de_encomenda(self) -> None:
+        for corpo in (
+            "onde está a minha encomenda?",
+            "ainda não chegou nada",
+            "qual é o código de seguimento?",
+        ):
+            with self.subTest(corpo=corpo):
+                self.assertEqual(palpitar("", corpo), "estado-encomenda")
+
+    def test_devolucao(self) -> None:
+        self.assertEqual(palpitar("", "quero devolver os fones"), "devolucao-garantia")
+
+    def test_outro(self) -> None:
+        self.assertEqual(palpitar("", "obrigado pelo bom serviço"), "outro")
 
 
 if __name__ == "__main__":

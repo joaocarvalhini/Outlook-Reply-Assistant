@@ -38,7 +38,8 @@ e carrega em Enviar.
 ```
 assistente.py        tudo: config, triagem, texto, prompt, SQLite, Graph, Claude
 verificar.py         verificação prévia, para o dia da instalação
-test_assistente.py   43 testes, biblioteca padrão, sem rede
+exportar.py          exporta emails reais anonimizados + conta a distribuição
+test_assistente.py   60 testes, biblioteca padrão, sem rede
 eval.py              banco de ensaio: mede o que o assistente decide
 eval/casos.json      casos com resultado esperado
 knowledge/           a totalidade do mundo do assistente
@@ -287,8 +288,32 @@ escalam, e escalar parece correto.
 
 Os 13 casos que vêm no repositório são todos verdadeiros independentemente das
 políticas da loja. **Faltam os casos `rascunhar`** — esses dependem das políticas
-e têm de sair de emails reais da caixa, anotados à mão. Juntam-se em
-`eval/real-*.json`, que o `.gitignore` já exclui.
+e têm de sair de emails reais da caixa.
+
+### Exportar emails reais
+
+```bash
+python exportar.py --quantos 200
+python eval.py --casos eval/real-2026-08.json
+```
+
+**Só lê.** Não escreve, não marca, não move nem apaga nada na caixa, e não faz
+uma única chamada ao Claude — correr isto não custa nada.
+
+Grava em `eval/real-AAAA-MM.json`, que o `.gitignore` exclui: mesmo anonimizada,
+aquela é correspondência de clientes. Cada caso sai com `expect` vazio, para ser
+etiquetado à mão, e com dois campos de apoio — `_triagem` diz se a triagem o
+descartaria, `_palpite` dá um palpite por palavras-chave.
+
+Ao mesmo tempo conta a distribuição real dos tipos de email, que é a pergunta que
+decide o âmbito deste projeto: se a maioria for sobre estado de encomendas, o
+assistente escala quase tudo e a conversa a ter com o cliente é outra.
+
+**A anonimização é pseudonimização, não garantia.** Substitui o que se reconhece
+por padrão — endereços, telefones, NIF, IBAN, códigos postais, números longos — e
+o nome do remetente onde aparecer no corpo. Um nome escrito a meio de uma frase
+pode escapar. O domínio do remetente é preservado de propósito: é o que a triagem
+lê, e sem ele os casos não testariam nada.
 
 ---
 
