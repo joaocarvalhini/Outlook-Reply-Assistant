@@ -1,0 +1,35 @@
+[Unit]
+Description=Assistente de rascunhos de apoio ao cliente (tripat3s)
+Documentation=https://github.com/joaocarvalhini/Outlook-Reply-Assistant
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Uma passagem e sai. Não é um serviço permanente — quem agenda é o .timer.
+Type=oneshot
+
+User=assistente
+Group=assistente
+WorkingDirectory=/opt/assistente
+ExecStart=/opt/assistente/.venv/bin/python /opt/assistente/assistente.py
+
+# Uma passagem normal demora segundos. Dez minutos significa que encravou.
+TimeoutStartSec=600
+
+# Nada disto é preciso para ler uma caixa de correio e falar com duas APIs.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+# A única coisa que precisa de escrever: o SQLite e os logs.
+ReadWritePaths=/opt/assistente
+
+# O stdout vai para o journal: journalctl -u tripat3s-assistente -f
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -43,6 +43,7 @@ eval.py              banco de ensaio: mede o que o assistente decide
 eval/casos.json      casos com resultado esperado
 knowledge/           a totalidade do mundo do assistente
 blocklist.txt        domínios bloqueados, editável sem tocar em código
+deploy/              agendamento: Windows (testes) e systemd (produção)
 ```
 
 ---
@@ -204,10 +205,53 @@ sozinho.
 5. Só então `DRY_RUN=false`.
 
 A primeira passagem coloca o cursor no instante atual e ignora o histórico:
-responder a um ano de arquivo seria caro e errado.
+responder a um ano de arquivo seria caro e errado. Se precisar de recomeçar do
+zero, apague o `assistente.db`.
 
-Depois, de 2 em 2 minutos. No Linux, um systemd timer; no Windows, o Agendador de
-Tarefas. Nunca um processo permanente.
+Depois, de 2 em 2 minutos. Nunca um processo permanente — os ficheiros de
+agendamento estão em `deploy/`.
+
+### Windows — para a fase de testes
+
+PowerShell **como administrador**, na pasta do projeto:
+
+```powershell
+.\deploy\agendar-windows.ps1
+```
+
+Regista a tarefa `tripat3s-assistente`, de 2 em 2 minutos, sem janela de consola
+a piscar. Os logs ficam em `logs/assistente-AAAA-MM.log`.
+
+```powershell
+Start-ScheduledTask -TaskName tripat3s-assistente        # correr já
+Get-ScheduledTask   -TaskName tripat3s-assistente        # estado
+Disable-ScheduledTask -TaskName tripat3s-assistente      # parar
+Unregister-ScheduledTask -TaskName tripat3s-assistente -Confirm:$false
+```
+
+Se a máquina estiver desligada durante a noite não se perde nada: o cursor fica
+onde estava e a passagem seguinte apanha tudo o que chegou entretanto.
+
+### Linux — para produção
+
+```bash
+sudo cp deploy/tripat3s-assistente.* /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now tripat3s-assistente.timer
+```
+
+Assume o projeto em `/opt/assistente` e um utilizador `assistente`. Ajustar no
+`.service` se for outro sítio.
+
+```bash
+systemctl list-timers tripat3s-assistente.timer   # próxima passagem
+journalctl -u tripat3s-assistente -f              # logs em direto
+sudo systemctl disable --now tripat3s-assistente.timer
+```
+
+O timer usa `OnUnitActiveSec`, e não `OnCalendar`, para que duas passagens nunca
+se sobreponham se uma demorar mais do que o intervalo. No Windows, o equivalente
+é o `MultipleInstances IgnoreNew`.
 
 Durante a primeira semana cada rascunho começa com a linha
 `--- rascunho automático · rever e apagar esta linha ---`. Se ela aparecer num

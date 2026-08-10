@@ -1,0 +1,22 @@
+[Unit]
+Description=Corre o assistente de rascunhos de 2 em 2 minutos
+Requires=tripat3s-assistente.service
+
+[Timer]
+# Dois minutos depois do arranque, e depois de 2 em 2 minutos a contar do fim
+# da passagem anterior. OnUnitActiveSec, e não OnCalendar, para que duas
+# passagens nunca se sobreponham se uma demorar mais do que o intervalo.
+OnBootSec=2min
+OnUnitActiveSec=2min
+
+# Espalha o arranque em até 30 segundos, para não bater sempre no mesmo
+# instante do minuto.
+RandomizedDelaySec=30s
+
+# Se a máquina estiver desligada à hora prevista, corre assim que arrancar.
+Persistent=true
+
+Unit=tripat3s-assistente.service
+
+[Install]
+WantedBy=timers.target
