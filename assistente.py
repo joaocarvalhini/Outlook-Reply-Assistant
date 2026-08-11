@@ -186,7 +186,13 @@ _CITACAO = (
     re.compile(r"^-{2,}\s*(mensagem original|original message)\s*-{2,}", re.I | re.M),
     re.compile(r"^_{5,}\s*$", re.M),
     re.compile(r"^\s*(de|from)\s*:.*\n\s*(enviad[ao]|sent)\s*:", re.I | re.M),
+    # Outlook: "Em 5 de agosto, Loja escreveu:" -- a linha começa por em/on.
     re.compile(r"^\s*(em|on)\b.{0,120}\b(escreveu|wrote)\s*:\s*$", re.I | re.M),
+    # Gmail: "Loja <info@loja.pt> escreveu em 10/08/2026 às 19:30:" -- o nome
+    # vem primeiro, "escreveu"/"wrote" está no meio da linha. Sem esta regra a
+    # citação inteira do Gmail passava, incluindo respostas anteriores da
+    # própria loja -- foi assim que apareceu, numa reclamação real de cliente.
+    re.compile(r"^.{0,120}<[^<>\s]+@[^<>\s]+>.{0,40}(escreveu|wrote)\b", re.I | re.M),
 )
 
 

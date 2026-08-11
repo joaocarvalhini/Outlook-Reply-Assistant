@@ -220,6 +220,23 @@ class Texto(unittest.TestCase):
         corpo = "Ainda não chegou.\n\nEm 5 de agosto, Loja escreveu:\n> antigo"
         self.assertEqual(cortar_citacao(corpo), "Ainda não chegou.")
 
+    def test_corta_citacao_do_gmail(self) -> None:
+        """O nome vem primeiro, não "Em"/"On" -- é assim que o Gmail cita.
+
+        Achado num email real de cliente: sem esta regra, a resposta anterior da
+        própria loja ficava colada à reclamação nova, e ia parar ao modelo.
+        """
+        corpo = (
+            "Ainda não recebi nada, já passou o prazo.\n\n"
+            "Atenciosamente,\nCristina Dias\n\n"
+            "tripat3s tripat3s <info@tripat3s.com> escreveu em seg., "
+            "10/08/2026 às 19:30 :\n\n"
+            "Boa tarde Cristina,\n\nSim, o prazo indicado já foi ultrapassado."
+        )
+        cortado = cortar_citacao(corpo)
+        self.assertIn("Ainda não recebi nada", cortado)
+        self.assertNotIn("Boa tarde Cristina", cortado)
+
     def test_corta_linhas_citadas_no_fim(self) -> None:
         self.assertEqual(cortar_citacao("Nova\n> antiga\n> antiga"), "Nova")
 
