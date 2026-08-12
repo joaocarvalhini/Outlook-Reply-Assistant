@@ -2,7 +2,7 @@
 
 Fonte: /pages/politica-de-reembolsos-e-devolucoes, /pages/perguntas-faq,
 /pages/termos-e-condicoes
-Última verificação: 6 de agosto de 2026
+Última verificação: 12 de agosto de 2026
 
 ## Prazo para devolver
 
@@ -33,7 +33,8 @@ Fonte: /pages/politica-de-reembolsos-e-devolucoes, /pages/perguntas-faq,
 
 - O reembolso é feito pelo mesmo método de pagamento usado na compra, salvo acordo
   em contrário.
-- O reembolso é processado depois de a loja receber e verificar o produto devolvido.
+- O reembolso é processado no prazo de 5 dias úteis, depois de a loja receber e
+  verificar o produto devolvido.
 
 ## Produto com defeito
 
