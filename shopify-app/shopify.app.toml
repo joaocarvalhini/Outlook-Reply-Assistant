@@ -13,8 +13,13 @@ api_version = "2026-07"
 #
 # read_orders sozinho só dá acesso aos últimos 60 dias de encomendas. Verificado
 # a 14/08/2026: a encomenda mais antiga visível era de 15/06, exatamente 60 dias
-# antes, e uma de julho já não era encontrada. Isto acerta em cheio nos casos
-# que mais escalam, porque os litígios de reembolso arrastam-se semanas.
+# antes, e uma de julho já não era encontrada.
+#
+# Quanto isto custa na prática, medido a 14/08/2026 sobre os emails já
+# processados: das 10 encomendas mencionadas por clientes, 9 estavam dentro da
+# janela (idade mediana 3 dias, máxima 28) e 1 ficou de fora. Os fios duram em
+# mediana 2 dias e 45% resolvem-se no próprio dia; só 5% passam dos 30. Ou seja,
+# o limite morde em cerca de 1 em 10 casos, não é o travão principal.
 #
 # Ver os 60 dias para trás exige read_all_orders, que é um scope protegido.
 # Declará-lo aqui não chega: foi testado e publicado a 14/08/2026, e a Shopify
