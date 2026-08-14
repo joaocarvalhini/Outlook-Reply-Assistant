@@ -259,6 +259,50 @@
     "note": "menciona um numero de encomenda mas a consulta a shopify nao devolveu dados (nao simulados neste caso); nao adivinhar a partir da base de conhecimento geral"
   },
   {
+    "id": "reembolso-parcial-nao-esta-na-base",
+    "email": {
+      "from": "bruno.alves@gmail.com",
+      "from_name": "Bruno Alves",
+      "subject": "Fones com problema",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, os fones nao encaixam bem na cabeca. Se eu ficar com eles em vez de devolver, fazem-me um reembolso parcial de metade do valor?"
+    },
+    "expect": "escalar",
+    "note": "reembolso parcial nao esta na base de conhecimento; dizer que NAO e possivel e inventar uma politica tanto como dizer que sim, e no historico a loja chegou a ofrecer reembolso parcial"
+  },
+  {
+    "id": "queixa-da-transportadora-com-dados-da-encomenda",
+    "email": {
+      "from": "marco.ferreira@gmail.com",
+      "from_name": "Marco Ferreira",
+      "subject": "Re: Um envio da encomenda #21967 foi entregue",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Recebi tudo certo e gostei dos produtos. Mas queria dizer que o estafeta da DPD foi muito mal-educado e atirou a caixa para o chao a frente da porta."
+    },
+    "dados_encomenda": "Encomenda #21967\nFeita em: 2026-08-11\nPagamento: pago\nEnvio: expedida\nCódigo de rastreio: RR112233445PT",
+    "expect": "escalar",
+    "note": "ter dados da encomenda nao autoriza responder ao resto do email; comportamento de transportadoras nao esta na base e prometer 'vamos reportar internamente' e um compromisso inventado"
+  },
+  {
+    "id": "artigo-errado-enviado-nao-e-elogio",
+    "email": {
+      "from": "lucas.moreira@gmail.com",
+      "from_name": "Lucas Moreira",
+      "subject": "Re: Um envio da encomenda #21910 foi entregue",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Ola, os fones sao muito bons e estou satisfeito com o som. So queria avisar que pedi na cor preta e vieram na cor branca."
+    },
+    "dados_encomenda": "Encomenda #21910\nFeita em: 2026-08-09\nPagamento: pago\nEnvio: expedida\nCódigo de rastreio: RR998877665PT",
+    "expect": "escalar",
+    "note": "elogio no inicio nao anula a reclamacao; foi enviado o artigo errado, e erro da loja e exige accao sobre a encomenda, nao um agradecimento pelo feedback"
+  },
+  {
     "id": "defeito-sem-prova-pede-video",
     "email": {
       "from": "tiago.brito@gmail.com",

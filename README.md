@@ -45,6 +45,7 @@ e carrega em Enviar.
 assistente.py        tudo: config, triagem, texto, prompt, SQLite, Graph, Shopify, Claude
 verificar.py         verificação prévia, para o dia da instalação
 exportar.py          exporta emails reais anonimizados + conta a distribuição
+reprocessar.py       repassa decisões antigas pelo código de hoje, sem escrever
 test_assistente.py   74 testes, biblioteca padrão, sem rede
 eval.py              banco de ensaio: mede o que o assistente decide
 eval/casos.json      casos com resultado esperado
@@ -295,9 +296,28 @@ Uma falha técnica é marcada `ERRO`, fica fora da aritmética e reprova a execu
 Sem isso, uma chave expirada daria "recall 100%" — todos os casos por responder
 escalam, e escalar parece correto.
 
-Os 13 casos que vêm no repositório são todos verdadeiros independentemente das
-políticas da loja. **Faltam os casos `rascunhar`** — esses dependem das políticas
-e têm de sair de emails reais da caixa.
+Os casos que vêm no repositório são todos verdadeiros independentemente das
+políticas da loja. Um caso pode trazer `dados_encomenda`, e nesse caso o ensaio
+faz de conta que a consulta à Shopify devolveu aquilo — permite testar o caminho
+com dados de encomenda sem depender da loja real.
+
+### Reprocessar decisões passadas
+
+```bash
+python reprocessar.py --acao escalar            # todos os escalados
+python reprocessar.py --acao escalar --detalhe  # com o corpo dos rascunhos novos
+```
+
+Responde a uma pergunta que o eval não responde: uma alteração ao prompt, à base
+de conhecimento ou uma integração nova mudou alguma coisa nos **casos reais** que
+já passaram por aqui? Vai buscar cada email à caixa pelo `Message-ID` e volta a
+correr a passagem inteira. Nunca cria rascunhos nem marca categorias.
+
+Duas cautelas ao ler o resultado. Mudar de decisão não é o mesmo que decidir
+melhor: é preciso ler os rascunhos novos, porque um rascunho errado é pior do
+que uma escalação. E o mesmo conjunto corrido duas vezes não dá o mesmo número —
+já se viram 9, 11 e 6 mudanças com o mesmo código. Serve para encontrar padrões,
+não para afinar contra o número.
 
 ### Exportar emails reais
 
