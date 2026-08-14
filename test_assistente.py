@@ -32,6 +32,7 @@ from assistente import (
     para_texto,
     registar,
     resumir_encomenda,
+    resumir_historico,
     saudacao,
     triar,
     triar_cabecalhos,
@@ -48,6 +49,7 @@ def cfg(**over: object) -> Config:
         "mailbox": CAIXA, "modelo": "claude-sonnet-5",
         "knowledge_dir": Path("knowledge"), "blocklist": Path("blocklist.txt"),
         "db": Path("t.db"), "max_body": 4000, "dry_run": True,
+        "fio_mensagens": 8, "fio_chars": 400,
         "empresa": "A Loja", "assinatura": "Equipa",
         "cat_rascunho": "IA-Rascunhado", "cat_humano": "Precisa de humano",
         "aviso": "--- rascunho automático ---",
@@ -242,6 +244,31 @@ class Texto(unittest.TestCase):
         self.assertIn("Ainda não recebi nada", cortado)
         self.assertNotIn("Boa tarde Cristina", cortado)
 
+    def test_corta_citacao_em_preview_achatado(self) -> None:
+        """O bodyPreview do Graph vem numa linha só e sem o <email>.
+
+        Sem isto, uma resposta de quatro palavras trazia colada a mensagem
+        inteira que estava a citar, e gastava o orçamento do fio a repetir o
+        que já está noutras linhas do histórico.
+        """
+        preview = (
+            "Por mim tudo bem tripat3s tripat3s escreveu em qui., "
+            "6/08/2026 às 03:30 : Boa noite, Lamentamos que o problema se mantenha."
+        )
+        cortado = cortar_citacao(preview)
+        self.assertIn("Por mim tudo bem", cortado)
+        self.assertNotIn("Lamentamos", cortado)
+
+    def test_nao_corta_escreveu_em_texto_normal(self) -> None:
+        # "escreveu em" só marca citação quando vem seguido de data
+        texto = "O meu filho escreveu em papel que gostou muito dos fones."
+        self.assertEqual(cortar_citacao(texto), texto)
+
+    def test_corta_citacao_achatada_em_ingles(self) -> None:
+        cortado = cortar_citacao("Hi, John Smith wrote on Thu, 6/08/2026 at 10:00 : Hello")
+        self.assertIn("Hi,", cortado)
+        self.assertNotIn("Hello", cortado)
+
     def test_corta_linhas_citadas_no_fim(self) -> None:
         self.assertEqual(cortar_citacao("Nova\n> antiga\n> antiga"), "Nova")
 
@@ -360,6 +387,77 @@ class ResumoDeEncomenda(unittest.TestCase):
         }
         resumo = resumir_encomenda(encomenda)
         self.assertIn("Cancelada em", resumo)
+
+
+class HistoricoDoFio(unittest.TestCase):
+    def test_marca_quem_falou(self) -> None:
+        saida = resumir_historico(
+            [
+                {"de": "cliente@gmail.com", "em": "2026-08-13 14:01", "texto": "já tem novidade?"},
+                {"de": CAIXA, "em": "2026-08-13 20:00", "texto": "seguem 2 novas unidades"},
+            ],
+            CAIXA,
+        )
+        self.assertIn("CLIENTE: já tem novidade?", saida)
+        self.assertIn("LOJA: seguem 2 novas unidades", saida)
+
+    def test_remetente_vazio_conta_como_loja(self) -> None:
+        saida = resumir_historico(
+            [{"de": "", "em": "2026-08-13 20:00", "texto": "resposta da loja"}], CAIXA
+        )
+        self.assertIn("LOJA:", saida)
+
+    def test_nome_distinto_do_exchange_conta_como_loja(self) -> None:
+        """Achado num fio real: a resposta da loja aparecia como CLIENTE.
+
+        O Graph devolve por vezes o X.500 do Exchange em vez do SMTP nas
+        mensagens enviadas pela própria caixa. Sem isto, o modelo podia
+        atribuir ao cliente compromissos que a loja assumiu.
+        """
+        saida = resumir_historico(
+            [{
+                "de": "/o=exchangelabs/ou=exchange administrative group/cn=abc",
+                "em": "2026-08-12 14:32",
+                "texto": "Alô! Amanhã :)",
+            }],
+            CAIXA,
+        )
+        self.assertIn("LOJA: Alô! Amanhã", saida)
+        self.assertNotIn("CLIENTE", saida)
+
+    def test_colega_do_mesmo_dominio_conta_como_loja(self) -> None:
+        saida = resumir_historico(
+            [{"de": f"geral@{CAIXA.partition('@')[2]}", "em": "2026-08-13 10:00",
+              "texto": "seguimos amanhã"}],
+            CAIXA,
+        )
+        self.assertIn("LOJA:", saida)
+
+    def test_cliente_continua_a_ser_cliente(self) -> None:
+        saida = resumir_historico(
+            [{"de": "pessoa@gmail.com", "em": "2026-08-13 10:00", "texto": "olá"}], CAIXA
+        )
+        self.assertIn("CLIENTE:", saida)
+
+    def test_fio_vazio(self) -> None:
+        self.assertEqual(resumir_historico([], CAIXA), "")
+
+    def test_ignora_mensagens_sem_texto(self) -> None:
+        saida = resumir_historico(
+            [
+                {"de": "cliente@gmail.com", "em": "2026-08-13 14:01", "texto": "   "},
+                {"de": "cliente@gmail.com", "em": "2026-08-13 15:00", "texto": "obrigado"},
+            ],
+            CAIXA,
+        )
+        self.assertEqual(len(saida.strip().split("\n")), 1)
+
+    def test_achata_quebras_de_linha(self) -> None:
+        saida = resumir_historico(
+            [{"de": "c@x.pt", "em": "2026-08-13 14:01", "texto": "olá\n\nboa tarde"}], CAIXA
+        )
+        self.assertNotIn("\n\n", saida)
+        self.assertIn("olá boa tarde", saida)
 
 
 class Registo(unittest.TestCase):

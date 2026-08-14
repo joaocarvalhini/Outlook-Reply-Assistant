@@ -22,6 +22,7 @@ timer (2 min)
   ├─ Graph: mensagens recebidas depois do cursor
   ├─ SQLite: já processei este internetMessageId? → sim, salta
   ├─ Triagem determinística: robôs, newsletters, domínio próprio → salta
+  ├─ Graph: mensagens anteriores do mesmo fio, marcadas LOJA ou CLIENTE
   ├─ Shopify: email menciona nº de encomenda? → consulta, só se o email bater
   │  certo com o da encomenda (client credentials grant, scope read_orders)
   ├─ Claude: 1 chamada → {"acao": "rascunhar"|"escalar"|"saltar", ...}
@@ -31,6 +32,11 @@ timer (2 min)
 A Shopify só responde a perguntas de leitura (estado do pagamento, se foi
 expedida, código de rastreio). Pedidos para cancelar, alterar ou reembolsar
 continuam sempre a escalar — a app só tem `read_orders`, nunca escrita.
+
+O contexto do fio existe porque muitas respostas de cliente são curtas — "e
+quando envia?", "por mim tudo bem", "enviei já" — e sozinhas não querem dizer
+nada. Serve também de travão: o que a loja já prometeu no fio é um compromisso
+assumido, e o rascunho parte daí em vez de o contradizer.
 
 Uma passagem e sai. Não há ciclo interno nem processo permanente: um arranque
 limpo de dois em dois minutos é mais robusto do que um processo que tem de
@@ -179,6 +185,8 @@ clientes de uma loja online usa Gmail.
 | `BLOCKLIST_FILE` | `blocklist.txt` | Domínios bloqueados |
 | `DB_FILE` | `assistente.db` | Cursor e registo de decisões |
 | `MAX_BODY_CHARS` | `4000` | Corte do corpo enviado ao modelo |
+| `THREAD_MESSAGES` | `8` | Mensagens anteriores do fio dadas ao modelo |
+| `THREAD_CHARS` | `400` | Corte de cada mensagem do fio |
 | `DRY_RUN` | `true` | `true` não escreve nada na caixa |
 | `COMPANY_NAME` | `a loja` | Aparece no prompt |
 | `SIGNATURE` | `tripat3s` | Assinatura do rascunho |

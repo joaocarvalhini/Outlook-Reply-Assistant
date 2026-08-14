@@ -82,8 +82,19 @@ def main(argv: list[str] | None = None) -> int:
             contagem["saltar"] += 1
             continue
 
+        historico = ""
+        if msg["conversation_id"]:
+            try:
+                historico = a.resumir_historico(
+                    graph.historico(msg, cfg.fio_mensagens, cfg.fio_chars), cfg.mailbox
+                )
+            except Exception:
+                historico = ""
+
         dados = ""
-        numero = a.extrair_numero_encomenda(msg["assunto"], msg["corpo"])
+        numero = a.extrair_numero_encomenda(msg["assunto"], msg["corpo"]) or (
+            a.extrair_numero_encomenda("", historico) if historico else None
+        )
         if numero:
             try:
                 encomenda = shopify.encomenda(numero, msg["de"])
@@ -95,15 +106,19 @@ def main(argv: list[str] | None = None) -> int:
                 dados = a.resumir_encomenda(encomenda)
 
         try:
-            acao, motivo, corpo = a.decidir(cliente, cfg, prompt, msg, dados)
+            acao, motivo, corpo = a.decidir(cliente, cfg, prompt, msg, dados, historico)
         except Exception as exc:
             contagem["erro-modelo"] += 1
             print(f"  ERRO  {assunto[:44]:44}  {type(exc).__name__}")
             continue
 
         contagem[acao] += 1
-        # marcadores: nº encontrado no email, dados vieram mesmo da Shopify
-        marca = ("nº " if numero else "   ") + ("shopify " if dados else "        ")
+        # marcadores: fio recuperado, nº encontrado, dados vieram da Shopify
+        marca = (
+            ("fio " if historico else "    ")
+            + ("nº " if numero else "   ")
+            + ("shopify " if dados else "        ")
+        )
         mudou = acao != args.acao
         if mudou:
             mudaram.append((assunto, motivo_antigo, acao, motivo, corpo))

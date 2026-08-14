@@ -259,6 +259,36 @@
     "note": "menciona um numero de encomenda mas a consulta a shopify nao devolveu dados (nao simulados neste caso); nao adivinhar a partir da base de conhecimento geral"
   },
   {
+    "id": "resposta-curta-no-fio-com-contexto",
+    "email": {
+      "from": "rita.nunes@gmail.com",
+      "from_name": "Rita Nunes",
+      "subject": "Re: Devolução",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "E onde fica a instalação?"
+    },
+    "historico": "[2026-08-04 10:12] CLIENTE: Boa tarde, os fones tem um problema no som e queria devolver.\n[2026-08-04 12:30] LOJA: Boa tarde, Compreendemos a situação. Nesse caso, será possível enviar o produto para as nossas instalações para análise.\n[2026-08-04 12:40] CLIENTE: Como posso enviar?\n[2026-08-04 19:04] LOJA: Boa tarde, Pode efetuar o envio através dos CTT. Recomendamos que faça o envio com registo.",
+    "expect": "rascunhar",
+    "note": "quatro palavras que sozinhas nao querem dizer nada; com o fio percebe-se que pergunta a morada das instalacoes, que esta na base de conhecimento"
+  },
+  {
+    "id": "fio-espera-accao-humana",
+    "email": {
+      "from": "lara.gomes@gmail.com",
+      "from_name": "Lara Gomes",
+      "subject": "Re: Encomenda InPods",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Sabe quando envia?"
+    },
+    "historico": "[2026-08-11 13:12] LOJA: Confirmamos que os fones já chegaram às nossas instalações e encontram-se neste momento em análise.\n[2026-08-13 14:01] CLIENTE: Olá boa tarde, já tem novidade?\n[2026-08-13 20:00] LOJA: A partida irão seguir 2 novas unidades.",
+    "expect": "escalar",
+    "note": "o fio da o contexto todo mas a resposta exige uma data de expedicao que so um humano sabe; ter contexto nao e o mesmo que poder responder"
+  },
+  {
     "id": "reembolso-parcial-nao-esta-na-base",
     "email": {
       "from": "bruno.alves@gmail.com",

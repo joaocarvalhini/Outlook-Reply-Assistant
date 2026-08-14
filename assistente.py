@@ -70,6 +70,8 @@ class Config:
     blocklist: Path
     db: Path
     max_body: int
+    fio_mensagens: int
+    fio_chars: int
     dry_run: bool
     empresa: str
     assinatura: str
@@ -110,6 +112,10 @@ def carregar_config(dry_run_flag: bool | None) -> Config:
         blocklist=Path(os.environ.get("BLOCKLIST_FILE", "blocklist.txt")),
         db=Path(os.environ.get("DB_FILE", "assistente.db")),
         max_body=int(os.environ.get("MAX_BODY_CHARS", "4000")),
+        # Oito mensagens cobrem os fios reais que vimos, incluindo um de 18 que
+        # se arrastou 11 dias: o que interessa é o fim, não o início.
+        fio_mensagens=int(os.environ.get("THREAD_MESSAGES", "8")),
+        fio_chars=int(os.environ.get("THREAD_CHARS", "400")),
         dry_run=dry if dry_run_flag is None else dry_run_flag,
         empresa=os.environ.get("COMPANY_NAME", "a loja").strip(),
         assinatura=os.environ.get("SIGNATURE", "tripat3s").strip(),
@@ -214,6 +220,14 @@ _CITACAO = (
     # citação inteira do Gmail passava, incluindo respostas anteriores da
     # própria loja -- foi assim que apareceu, numa reclamação real de cliente.
     re.compile(r"^.{0,120}<[^<>\s]+@[^<>\s]+>.{0,40}(escreveu|wrote)\b", re.I | re.M),
+    # O bodyPreview do Graph vem achatado numa linha só e sem o <email>, por
+    # isso nenhum dos padrões acima pega. O que sobra de distintivo é
+    # "escreveu em qui., 6/08/2026" -- verbo, preposição, dia da semana
+    # abreviado e data. Corta-se no verbo e deixa-se o nome que vem antes: não
+    # há forma segura de distinguir "Lara Gonçalves escreveu" de "Por mim tudo
+    # bem tripat3s escreveu", e comer palavras da mensagem do cliente é pior do
+    # que deixar duas palavras de lixo.
+    re.compile(r"\b(escreveu|wrote)\s+(em|on)\s+\w{2,4}\.?,?\s*\d", re.I),
 )
 
 
@@ -364,6 +378,24 @@ conhecimento, está lá só em parte, os documentos contradizem-se, ou o pedido
 exige consultar ou alterar a encomenda, o pagamento ou a conta desta pessoa, a
 que não tens acesso. Escalas também quando o cliente invoca direitos legais,
 ameaça reclamação formal, ou o assunto é sensível. O "corpo" fica vazio.
+
+# Quando existe "Conversa anterior neste fio"
+São as mensagens já trocadas neste caso, da mais antiga para a mais nova, cada
+uma marcada com LOJA ou CLIENTE. Lê-as antes do email novo: muitas respostas de
+cliente são curtas ("e quando envia?", "por mim tudo bem", "já enviei") e só
+fazem sentido com o que veio antes.
+
+Duas coisas que tens de respeitar:
+- O que a LOJA já disse no fio é um compromisso assumido. Nunca o contradigas
+  nem o repitas como se fosse novo. Se a loja já prometeu alguma coisa, a tua
+  resposta parte daí.
+- O histórico dá-te o contexto do caso, não te dá factos novos sobre políticas.
+  Se o cliente pergunta algo que a base de conhecimento não cobre, escalas na
+  mesma, por muito claro que o fio esteja.
+
+Se o fio mostra que o caso está à espera de uma acção da loja que só um humano
+pode fazer ou datar — enviar uma substituição, confirmar um reembolso, dar uma
+data de expedição que não está nos dados da encomenda — escalas.
 
 # Quando existem "Dados da encomenda" no pedido
 Foram consultados agora mesmo na Shopify e confirmados como sendo desta pessoa:
@@ -668,6 +700,36 @@ class Shopify:
         return encomenda
 
 
+def e_da_loja(endereco: str, caixa: str) -> bool:
+    """Distingue quem escreveu cada mensagem do fio.
+
+    Não basta comparar com a caixa: nas mensagens enviadas pela própria loja o
+    Graph devolve por vezes o nome distinto do Exchange
+    ("/O=EXCHANGELABS/OU=...") em vez do endereço SMTP. Sem apanhar esse caso,
+    respostas da loja apareciam ao modelo como se fossem do cliente — e o
+    modelo podia atribuir ao cliente compromissos que a loja assumiu.
+    """
+    endereco = (endereco or "").strip().lower()
+    if not endereco or "@" not in endereco:
+        return True
+    if endereco == caixa:
+        return True
+    return endereco.partition("@")[2] == caixa.partition("@")[2]
+
+
+def resumir_historico(anteriores: list[dict], caixa: str) -> str:
+    """Formata o fio para o prompt, dizendo quem falou em cada linha."""
+    if not anteriores:
+        return ""
+    linhas = []
+    for m in anteriores:
+        quem = "LOJA" if e_da_loja(m["de"], caixa) else "CLIENTE"
+        texto = " ".join(m["texto"].split())
+        if texto:
+            linhas.append(f"[{m['em']}] {quem}: {texto}")
+    return "\n".join(linhas)
+
+
 def resumir_encomenda(encomenda: dict) -> str:
     """Texto curto para o prompt: só os factos que respondem a "onde está a
     minha encomenda", nunca dados de pagamento nem morada completa.
@@ -767,6 +829,45 @@ class Graph:
         msg["corpo"] = corpo[:max_body]
         return msg
 
+    def historico(self, msg: dict, quantas: int, max_chars: int) -> list[dict]:
+        """As mensagens anteriores do mesmo fio, da mais antiga para a mais nova.
+
+        Sem isto, uma resposta como "Sabe quando envia?" chega ao modelo sozinha
+        e é indecifrável — o contexto está nas mensagens de cima, e o
+        cortar_citacao() deitou-as fora de propósito para poupar tokens.
+
+        Só o bodyPreview, que o Graph já devolve truncado: chega para perceber o
+        caso e não multiplica o custo da passagem pelo tamanho do fio.
+        """
+        # O $orderby combinado com o filtro por conversationId é recusado pelo
+        # Graph com InefficientFilter. Ordena-se aqui.
+        dados = self._pedir(
+            "GET",
+            f"{self.base}/messages",
+            params={
+                "$filter": f"conversationId eq '{msg['conversation_id']}'",
+                "$select": "internetMessageId,from,receivedDateTime,bodyPreview",
+                "$top": str(max(quantas * 2, 10)),
+            },
+        )
+        anteriores = [
+            m
+            for m in dados.get("value", [])
+            if m.get("internetMessageId") != msg["message_id"]
+        ]
+        anteriores.sort(key=lambda m: m.get("receivedDateTime", ""))
+        return [
+            {
+                "de": str((m.get("from") or {}).get("emailAddress", {}).get("address", "")).lower(),
+                "em": str(m.get("receivedDateTime", ""))[:16].replace("T", " "),
+                # O bodyPreview traz a citação colada a seguir ao texto novo. Sem
+                # cortar, uma resposta de quatro palavras gastava o orçamento
+                # todo a repetir mensagens que já estão noutras linhas do fio.
+                "texto": cortar_citacao(para_texto(str(m.get("bodyPreview") or "")))[:max_chars],
+            }
+            for m in anteriores[-quantas:]
+        ]
+
     def criar_rascunho(self, message_id: str, corpo_html: str) -> str:
         dados = self._pedir(
             "POST",
@@ -820,13 +921,18 @@ class Graph:
 
 
 def decidir(
-    cliente: object, cfg: Config, prompt: str, msg: dict, dados_encomenda: str = ""
+    cliente: object, cfg: Config, prompt: str, msg: dict,
+    dados_encomenda: str = "", historico: str = "",
 ) -> tuple[str, str, str]:
     """Devolve (acao, motivo, corpo). Levanta em caso de falha técnica."""
     # A saudação vai aqui e não no prompt de sistema: muda ao longo do dia e no
     # sistema invalidaria a cache da base de conhecimento a cada mudança.
-    pedido = (
-        f"Saudação a usar: {saudacao()}\n"
+    pedido = f"Saudação a usar: {saudacao()}\n"
+    if historico:
+        # Antes do email novo, para o modelo o ler já com o caso em mente.
+        pedido += f"\nConversa anterior neste fio:\n{historico}\n"
+    pedido += (
+        f"\nEmail novo, o que tens de responder:\n"
         f"De: {msg['nome']} <{msg['de']}>\n"
         f"Assunto: {msg['assunto']}\n"
         f"Corpo:\n{msg['corpo']}"
@@ -874,8 +980,23 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         registar(con, msg, "saltar", motivo, "")
         return "saltado"
 
+    historico = ""
+    if msg["conversation_id"]:
+        try:
+            anteriores = graph.historico(msg, cfg.fio_mensagens, cfg.fio_chars)
+            historico = resumir_historico(anteriores, cfg.mailbox)
+        except Exception as exc:
+            # Falhar a ir buscar o fio não impede decidir: sem contexto o modelo
+            # escala, que é o que fazia antes de isto existir.
+            log("erro-historico", email=msg["message_id"][:40],
+                erro=f"{type(exc).__name__}: {exc}")
+
     dados_encomenda = ""
-    numero = extrair_numero_encomenda(msg["assunto"], msg["corpo"])
+    # O número pode estar só nas mensagens antigas do fio: numa resposta curta
+    # como "e quando envia?" não aparece em lado nenhum do email novo.
+    numero = extrair_numero_encomenda(msg["assunto"], msg["corpo"]) or (
+        extrair_numero_encomenda("", historico) if historico else None
+    )
     if numero:
         try:
             encomenda = shopify.encomenda(numero, msg["de"])
@@ -889,7 +1010,7 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
             dados_encomenda = resumir_encomenda(encomenda)
 
     try:
-        acao, motivo, corpo = decidir(cliente, cfg, prompt, msg, dados_encomenda)
+        acao, motivo, corpo = decidir(cliente, cfg, prompt, msg, dados_encomenda, historico)
     except Exception as exc:
         # Uma falha técnica não é uma decisão. Fica por marcar para a passagem
         # seguinte tentar outra vez — nunca se perde um email por causa disto.

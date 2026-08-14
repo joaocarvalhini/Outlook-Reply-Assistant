@@ -85,7 +85,8 @@ def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
 
     try:
         acao, motivo, corpo = a.decidir(
-            cliente, cfg, prompt, msg, caso.get("dados_encomenda", "")
+            cliente, cfg, prompt, msg,
+            caso.get("dados_encomenda", ""), caso.get("historico", ""),
         )
     except Exception as exc:
         return ERRO, "modelo", f"{type(exc).__name__}: {exc}"[:110]
