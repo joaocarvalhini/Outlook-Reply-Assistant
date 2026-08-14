@@ -93,6 +93,27 @@ def verificar_anthropic(r: Relatorio, cfg: a.Config) -> None:
     r.ok("Chave da Anthropic", f"{cfg.modelo} respondeu")
 
 
+def verificar_shopify(r: Relatorio, cfg: a.Config) -> None:
+    shopify = a.Shopify(cfg)
+    try:
+        shopify._obter_token()
+    except Exception as exc:
+        r.falha("Autenticação na Shopify", f"{type(exc).__name__}: {str(exc)[:160]}")
+        return
+    r.ok("Autenticação na Shopify", f"token obtido para {cfg.shopify_store}")
+
+    try:
+        # Uma consulta a um número que não existe: confirma que o scope
+        # read_orders está mesmo ativo, sem depender de haver encomendas.
+        encontrada = shopify.encomenda("0", "ninguem@nao-existe.invalid")
+    except Exception as exc:
+        r.falha("Leitura de encomendas (read_orders)", f"{type(exc).__name__}: {str(exc)[:160]}")
+        return
+    r.ok("Leitura de encomendas (read_orders)", "consulta respondeu sem erro")
+    if encontrada is not None:
+        r.aviso("Encomenda de teste", "o número 0 devolveu uma encomenda real; inesperado")
+
+
 def verificar_graph(r: Relatorio, cfg: a.Config, outra: str | None) -> None:
     try:
         # O construtor do MSAL faz descoberta do tenant e falha aqui, não na
@@ -186,6 +207,7 @@ def main(argv: list[str] | None = None) -> int:
         verificar_base(r, cfg)
         verificar_anthropic(r, cfg)
         verificar_graph(r, cfg, args.outra_caixa)
+        verificar_shopify(r, cfg)
 
     print()
     if r.falhas:

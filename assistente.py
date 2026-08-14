@@ -61,6 +61,9 @@ class Config:
     tenant_id: str
     client_id: str
     client_secret: str
+    shopify_store: str
+    shopify_client_id: str
+    shopify_client_secret: str
     mailbox: str
     modelo: str
     knowledge_dir: Path
@@ -94,6 +97,9 @@ def carregar_config(dry_run_flag: bool | None) -> Config:
         tenant_id=obrigatorio("GRAPH_TENANT_ID"),
         client_id=obrigatorio("GRAPH_CLIENT_ID"),
         client_secret=obrigatorio("GRAPH_CLIENT_SECRET"),
+        shopify_store=obrigatorio("SHOPIFY_STORE"),
+        shopify_client_id=obrigatorio("SHOPIFY_CLIENT_ID"),
+        shopify_client_secret=obrigatorio("SHOPIFY_CLIENT_SECRET"),
         mailbox=obrigatorio("MAILBOX").lower(),
         # Sonnet 5 por omissão: com uma só chamada deixou de haver etapa barata a
         # proteger, e o mínimo de prefixo para o cache é 1024 tokens — a base de
@@ -350,13 +356,25 @@ esta empresa e não podes consultar nada.
 
 # As três ações
 "rascunhar" — é um cliente (ou potencial cliente) e sabes responder a partir da
-base de conhecimento. Escreves a resposta no campo "corpo".
+base de conhecimento, ou a partir dos "Dados da encomenda" quando existirem no
+pedido. Escreves a resposta no campo "corpo".
 
 "escalar" — é um cliente, mas não podes responder: o tema não está na base de
 conhecimento, está lá só em parte, os documentos contradizem-se, ou o pedido
 exige consultar ou alterar a encomenda, o pagamento ou a conta desta pessoa, a
 que não tens acesso. Escalas também quando o cliente invoca direitos legais,
 ameaça reclamação formal, ou o assunto é sensível. O "corpo" fica vazio.
+
+# Quando existem "Dados da encomenda" no pedido
+Foram consultados agora mesmo na Shopify e confirmados como sendo desta pessoa:
+podes usá-los para responder a perguntas sobre estado do pagamento, se já foi
+expedida e o código de rastreio, sem escalar por falta de acesso. Isto só
+resolve perguntas de leitura. Continua a escalar quando o cliente pede para
+cancelar, alterar, reembolsar ou trocar algo da encomenda — não tens permissão
+para alterar nada, só para ler.
+Se o email menciona uma encomenda mas não vieram "Dados da encomenda" no
+pedido, a consulta falhou ou o número não pertence a quem escreveu: escala,
+não adivinhes o estado da encomenda a partir da base de conhecimento geral.
 
 "saltar" — não é correspondência de cliente: newsletter, promoção, notificação
 automática de uma plataforma, angariação comercial a frio, comunicação de
@@ -432,8 +450,14 @@ Email de Ana Sousa, com "Saudação a usar: Boa tarde": "Quanto tempo demora a e
 Email de Rui Dias, com "Saudação a usar: Bom dia": "Os fones deixaram de funcionar ao fim de dois meses. Como funciona a garantia?"
 {{"acao": "rascunhar", "motivo": "reclamação de defeito sem prova; pedir fotografia e vídeo é o primeiro passo do processo", "corpo": "Bom dia, Rui,\\n\\nObrigado pelo seu contacto.\\n\\nLamentamos a situação. Para podermos analisar o que se passa, pedimos que nos envie uma fotografia dos fones e um vídeo onde seja possível ver o problema a acontecer.\\n\\nPedimos também que, antes disso, tente carregar a caixa com outro cabo e a deixe a carregar durante algumas horas seguidas, para despistar uma descarga total da bateria.\\n\\nAssim que recebermos essa informação, analisamos o caso e indicamos os próximos passos.\\n\\nFicamos a aguardar a sua resposta.\\n\\nCom os melhores cumprimentos,\\n{assinatura}"}}
 
+Email de Miguel Costa, com "Saudação a usar: Boa tarde" e "Dados da encomenda: Encomenda #21910\\nFeita em: 2026-08-10\\nPagamento: pago\\nEnvio: expedida\\nCódigo de rastreio: RR123456789PT": "Ainda não recebi a encomenda 21910, já foi enviada?"
+{{"acao": "rascunhar", "motivo": "estado da encomenda consultado na Shopify e confirmado como sendo deste cliente", "corpo": "Boa tarde, Miguel,\\n\\nObrigado pelo seu contacto.\\n\\nA sua encomenda #21910 já foi expedida e o pagamento está confirmado. O código de rastreio é RR123456789PT.\\n\\nContinuamos à disposição para qualquer esclarecimento.\\n\\nCom os melhores cumprimentos,\\n{assinatura}"}}
+
 Email: "Podem cancelar a encomenda 10293?"
-{{"acao": "escalar", "motivo": "pede ação sobre encomenda concreta; sem acesso ao sistema", "corpo": ""}}
+{{"acao": "escalar", "motivo": "pede ação sobre encomenda concreta; sem acesso para alterar ou cancelar", "corpo": ""}}
+
+Email sem "Dados da encomenda" no pedido: "Onde está a minha encomenda 30402?"
+{{"acao": "escalar", "motivo": "número de encomenda mencionado mas a consulta não devolveu dados desta pessoa", "corpo": ""}}
 
 Email: "Aceitam pagamento em cripto?"
 {{"acao": "escalar", "motivo": "base de conhecimento não refere pagamento em cripto", "corpo": ""}}
@@ -533,6 +557,123 @@ def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: 
     if msg["recebido"] > cursor_atual(con):
         gravar_cursor(con, msg["recebido"])
     con.commit()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Shopify — consulta de encomendas (só leitura)
+# ─────────────────────────────────────────────────────────────────────────────
+
+_NUMERO_ENCOMENDA = re.compile(
+    r"encomenda\s*(?:n[.ºo°]*\s*)?#?\s*(\d{4,7})|#\s*(\d{4,7})\b", re.I
+)
+
+_TRADUCAO_FINANCEIRO = {
+    "paid": "pago",
+    "pending": "pagamento pendente",
+    "refunded": "reembolsado",
+    "partially_refunded": "parcialmente reembolsado",
+    "voided": "anulado",
+    "authorized": "autorizado, ainda não cobrado",
+}
+_TRADUCAO_EXPEDICAO = {
+    "fulfilled": "expedida",
+    "partial": "parcialmente expedida",
+    "unfulfilled": "ainda não expedida",
+    None: "ainda não expedida",
+}
+
+
+def extrair_numero_encomenda(assunto: str, corpo: str) -> str | None:
+    """Procura um número de encomenda no assunto e no corpo do email.
+
+    O cliente escreve de várias formas: "encomenda 21910", "encomenda n.º
+    21910", "#21910". Nenhuma tentativa de adivinhar é feita além disto: se não
+    aparecer um número plausível, mais vale escalar do que arriscar buscar a
+    encomenda errada.
+    """
+    for texto in (assunto, corpo):
+        m = _NUMERO_ENCOMENDA.search(texto or "")
+        if m:
+            return m.group(1) or m.group(2)
+    return None
+
+
+class Shopify:
+    """Client credentials grant: só funciona porque a app e a loja pertencem à
+    mesma organização Shopify. O token expira ao fim de 24h; pede-se um novo
+    sempre que a passagem precisa de consultar uma encomenda.
+    """
+
+    def __init__(self, cfg: Config) -> None:
+        self.base = f"https://{cfg.shopify_store}/admin/api/2026-01"
+        self.http = httpx.Client(timeout=15.0)
+        self._cfg = cfg
+        self._token: str | None = None
+
+    def _obter_token(self) -> str:
+        if self._token:
+            return self._token
+        r = self.http.post(
+            f"https://{self._cfg.shopify_store}/admin/oauth/access_token",
+            data={
+                "grant_type": "client_credentials",
+                "client_id": self._cfg.shopify_client_id,
+                "client_secret": self._cfg.shopify_client_secret,
+            },
+        )
+        if r.status_code >= 400:
+            raise RuntimeError(f"Shopify token {r.status_code}: {r.text[:200]}")
+        self._token = r.json()["access_token"]
+        return self._token
+
+    def encomenda(self, numero: str, email_remetente: str) -> dict | None:
+        """Devolve a encomenda com este número, só se o email de quem a fez
+        corresponder ao remetente. Um número de encomenda não é segredo — não
+        confiar apenas nele evita mostrar o pedido de outra pessoa a quem
+        escreveu com um número adivinhado ou trocado.
+        """
+        r = self.http.get(
+            f"{self.base}/orders.json",
+            headers={"X-Shopify-Access-Token": self._obter_token()},
+            params={
+                "name": f"#{numero}",
+                "status": "any",
+                "fields": "name,email,created_at,cancelled_at,financial_status,"
+                          "fulfillment_status,fulfillments",
+            },
+        )
+        if r.status_code >= 400:
+            raise RuntimeError(f"Shopify orders {r.status_code}: {r.text[:200]}")
+        encomendas = r.json().get("orders", [])
+        if not encomendas:
+            return None
+        encomenda = encomendas[0]
+        if (encomenda.get("email") or "").lower() != email_remetente.lower():
+            return None
+        return encomenda
+
+
+def resumir_encomenda(encomenda: dict) -> str:
+    """Texto curto para o prompt: só os factos que respondem a "onde está a
+    minha encomenda", nunca dados de pagamento nem morada completa.
+    """
+    linhas = [
+        f"Encomenda {encomenda.get('name', '?')}",
+        f"Feita em: {(encomenda.get('created_at') or '')[:10]}",
+        f"Pagamento: {_TRADUCAO_FINANCEIRO.get(encomenda.get('financial_status'), encomenda.get('financial_status') or 'desconhecido')}",
+    ]
+    if encomenda.get("cancelled_at"):
+        linhas.append(f"Cancelada em: {encomenda['cancelled_at'][:10]}")
+    estado = encomenda.get("fulfillment_status")
+    linhas.append(f"Envio: {_TRADUCAO_EXPEDICAO.get(estado, estado or 'ainda não expedida')}")
+    for f in encomenda.get("fulfillments") or []:
+        rastreio = f.get("tracking_number")
+        if rastreio:
+            linhas.append(f"Código de rastreio: {rastreio}")
+        url = f.get("tracking_url")
+        if url:
+            linhas.append(f"Link de rastreio: {url}")
+    return "\n".join(linhas)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -663,7 +804,9 @@ class Graph:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def decidir(cliente: object, cfg: Config, prompt: str, msg: dict) -> tuple[str, str, str]:
+def decidir(
+    cliente: object, cfg: Config, prompt: str, msg: dict, dados_encomenda: str = ""
+) -> tuple[str, str, str]:
     """Devolve (acao, motivo, corpo). Levanta em caso de falha técnica."""
     # A saudação vai aqui e não no prompt de sistema: muda ao longo do dia e no
     # sistema invalidaria a cache da base de conhecimento a cada mudança.
@@ -673,6 +816,8 @@ def decidir(cliente: object, cfg: Config, prompt: str, msg: dict) -> tuple[str, 
         f"Assunto: {msg['assunto']}\n"
         f"Corpo:\n{msg['corpo']}"
     )
+    if dados_encomenda:
+        pedido += f"\n\nDados da encomenda (consultados na Shopify agora mesmo):\n{dados_encomenda}"
     resposta = cliente.messages.create(  # type: ignore[attr-defined]
         model=cfg.modelo,
         max_tokens=1024,
@@ -697,8 +842,9 @@ def decidir(cliente: object, cfg: Config, prompt: str, msg: dict) -> tuple[str, 
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def processar(msg: dict, cfg: Config, graph: Graph, con: sqlite3.Connection,
-              cliente: object, prompt: str, bloqueados: frozenset[str]) -> str:
+def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
+              con: sqlite3.Connection, cliente: object, prompt: str,
+              bloqueados: frozenset[str]) -> str:
     if ja_processado(con, msg["message_id"]):
         return "repetido"
 
@@ -713,8 +859,22 @@ def processar(msg: dict, cfg: Config, graph: Graph, con: sqlite3.Connection,
         registar(con, msg, "saltar", motivo, "")
         return "saltado"
 
+    dados_encomenda = ""
+    numero = extrair_numero_encomenda(msg["assunto"], msg["corpo"])
+    if numero:
+        try:
+            encomenda = shopify.encomenda(numero, msg["de"])
+        except Exception as exc:
+            # Uma falha a consultar a Shopify não deve impedir a decisão: o
+            # modelo escala na mesma por falta de dados, como fazia antes desta
+            # integração existir.
+            log("erro-shopify", email=msg["message_id"][:40], erro=f"{type(exc).__name__}: {exc}")
+            encomenda = None
+        if encomenda:
+            dados_encomenda = resumir_encomenda(encomenda)
+
     try:
-        acao, motivo, corpo = decidir(cliente, cfg, prompt, msg)
+        acao, motivo, corpo = decidir(cliente, cfg, prompt, msg, dados_encomenda)
     except Exception as exc:
         # Uma falha técnica não é uma decisão. Fica por marcar para a passagem
         # seguinte tentar outra vez — nunca se perde um email por causa disto.
@@ -781,12 +941,13 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     cliente = anthropic.Anthropic(api_key=cfg.api_key)
+    shopify = Shopify(cfg)
     prompt = construir_prompt(cfg)
     bloqueados = carregar_blocklist(cfg.blocklist)
 
     contagem: dict[str, int] = {}
     for msg in mensagens:
-        resultado = processar(msg, cfg, graph, con, cliente, prompt, bloqueados)
+        resultado = processar(msg, cfg, graph, shopify, con, cliente, prompt, bloqueados)
         contagem[resultado] = contagem.get(resultado, 0) + 1
 
     log("passagem", vistos=len(mensagens), dry_run=cfg.dry_run, **contagem)

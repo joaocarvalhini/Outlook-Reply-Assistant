@@ -230,6 +230,35 @@
     "note": "esta na base de conhecimento (entregas.md: envia para a Alemanha, 5-7 dias uteis); a resposta tem de sair em portugues mesmo com a pergunta em ingles"
   },
   {
+    "id": "estado-de-encomenda-com-dados-shopify",
+    "email": {
+      "from": "marta.pinho@gmail.com",
+      "from_name": "Marta Pinho",
+      "subject": "Encomenda 21930",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, a minha encomenda 21930 ja foi enviada? Obrigada."
+    },
+    "dados_encomenda": "Encomenda #21930\nFeita em: 2026-08-12\nPagamento: pago\nEnvio: expedida\nCódigo de rastreio: RR998877665PT\nLink de rastreio: https://tracking.dpd.pt/track-and-trace?reference=RR998877665PT",
+    "expect": "rascunhar",
+    "note": "dados da encomenda ja vieram confirmados da Shopify (simulado); responder com o estado e o rastreio e nao escalar"
+  },
+  {
+    "id": "estado-de-encomenda-sem-dados-shopify",
+    "email": {
+      "from": "goncalo.reis@gmail.com",
+      "from_name": "Gonçalo Reis",
+      "subject": "Encomenda 30402",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Ainda nao recebi a encomenda 30402, podem verificar?"
+    },
+    "expect": "escalar",
+    "note": "menciona um numero de encomenda mas a consulta a shopify nao devolveu dados (nao simulados neste caso); nao adivinhar a partir da base de conhecimento geral"
+  },
+  {
     "id": "defeito-sem-prova-pede-video",
     "email": {
       "from": "tiago.brito@gmail.com",

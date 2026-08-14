@@ -26,10 +26,12 @@ from assistente import (
     carregar_blocklist,
     cortar_citacao,
     cursor_atual,
+    extrair_numero_encomenda,
     ja_processado,
     para_html,
     para_texto,
     registar,
+    resumir_encomenda,
     saudacao,
     triar,
     triar_cabecalhos,
@@ -41,6 +43,8 @@ CAIXA = "apoio@loja.pt"
 def cfg(**over: object) -> Config:
     base: dict[str, object] = {
         "api_key": "x", "tenant_id": "x", "client_id": "x", "client_secret": "x",
+        "shopify_store": "x.myshopify.com", "shopify_client_id": "x",
+        "shopify_client_secret": "x",
         "mailbox": CAIXA, "modelo": "claude-sonnet-5",
         "knowledge_dir": Path("knowledge"), "blocklist": Path("blocklist.txt"),
         "db": Path("t.db"), "max_body": 4000, "dry_run": True,
@@ -294,6 +298,68 @@ class Saudacao(unittest.TestCase):
     def test_cobre_as_24_horas(self) -> None:
         for h in range(24):
             self.assertIn(saudacao(h), {"Bom dia", "Boa tarde", "Boa noite"})
+
+
+class NumeroDeEncomenda(unittest.TestCase):
+    def test_no_assunto(self) -> None:
+        self.assertEqual(
+            extrair_numero_encomenda("Encomenda #21910", "sem número aqui"), "21910"
+        )
+
+    def test_no_corpo_com_ordinal(self) -> None:
+        self.assertEqual(
+            extrair_numero_encomenda("Dúvida", "a minha encomenda n.º 21910 não chegou"),
+            "21910",
+        )
+
+    def test_palavra_encomenda_sem_hash(self) -> None:
+        self.assertEqual(
+            extrair_numero_encomenda("Estado", "estado da encomenda 21910, por favor"),
+            "21910",
+        )
+
+    def test_sem_numero(self) -> None:
+        self.assertIsNone(extrair_numero_encomenda("Dúvida", "quero saber sobre o produto"))
+
+    def test_numero_curto_nao_conta(self) -> None:
+        # com menos de 4 dígitos é demasiado fácil confundir com outra coisa
+        # (código postal, quantidade); mais vale não extrair do que extrair mal
+        self.assertIsNone(extrair_numero_encomenda("Dúvida", "tenho 42 anos"))
+
+
+class ResumoDeEncomenda(unittest.TestCase):
+    def test_inclui_rastreio_quando_existe(self) -> None:
+        encomenda = {
+            "name": "#21910", "created_at": "2026-08-09T10:00:00Z",
+            "financial_status": "paid", "fulfillment_status": "fulfilled",
+            "fulfillments": [{"tracking_number": "RR123", "tracking_url": "https://t.pt/RR123"}],
+        }
+        resumo = resumir_encomenda(encomenda)
+        self.assertIn("#21910", resumo)
+        self.assertIn("pago", resumo)
+        self.assertIn("expedida", resumo)
+        self.assertIn("RR123", resumo)
+
+    def test_sem_expedicao_nao_inventa_rastreio(self) -> None:
+        encomenda = {
+            "name": "#21911", "created_at": "2026-08-10T10:00:00Z",
+            "financial_status": "pending", "fulfillment_status": None,
+            "fulfillments": [],
+        }
+        resumo = resumir_encomenda(encomenda)
+        self.assertIn("ainda não expedida", resumo)
+        self.assertIn("pagamento pendente", resumo)
+        self.assertNotIn("rastreio", resumo.lower().split("\n")[-1])
+
+    def test_encomenda_cancelada(self) -> None:
+        encomenda = {
+            "name": "#21912", "created_at": "2026-08-11T10:00:00Z",
+            "cancelled_at": "2026-08-12T10:00:00Z",
+            "financial_status": "refunded", "fulfillment_status": None,
+            "fulfillments": [],
+        }
+        resumo = resumir_encomenda(encomenda)
+        self.assertIn("Cancelada em", resumo)
 
 
 class Registo(unittest.TestCase):

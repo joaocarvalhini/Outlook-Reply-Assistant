@@ -10,7 +10,7 @@ sequer permissão para isso.
 2026-08-06T14:02:15Z | passagem | vistos=14 dry_run=False saltado=11 rascunhado=2 escalado=1
 ```
 
-Um ficheiro Python de ~410 linhas de código. Sem base de dados servida, sem
+Um ficheiro Python de menos de 1000 linhas. Sem base de dados servida, sem
 filas, sem interface, sem permissão de envio.
 
 ---
@@ -22,9 +22,15 @@ timer (2 min)
   ├─ Graph: mensagens recebidas depois do cursor
   ├─ SQLite: já processei este internetMessageId? → sim, salta
   ├─ Triagem determinística: robôs, newsletters, domínio próprio → salta
+  ├─ Shopify: email menciona nº de encomenda? → consulta, só se o email bater
+  │  certo com o da encomenda (client credentials grant, scope read_orders)
   ├─ Claude: 1 chamada → {"acao": "rascunhar"|"escalar"|"saltar", ...}
   └─ "rascunhar" → Graph createReply · "escalar" → categoria para humano
 ```
+
+A Shopify só responde a perguntas de leitura (estado do pagamento, se foi
+expedida, código de rastreio). Pedidos para cancelar, alterar ou reembolsar
+continuam sempre a escalar — a app só tem `read_orders`, nunca escrita.
 
 Uma passagem e sai. Não há ciclo interno nem processo permanente: um arranque
 limpo de dois em dois minutos é mais robusto do que um processo que tem de
@@ -36,10 +42,10 @@ O rascunho é criado com `POST /messages/{id}/createReply`, o que significa que 
 e carrega em Enviar.
 
 ```
-assistente.py        tudo: config, triagem, texto, prompt, SQLite, Graph, Claude
+assistente.py        tudo: config, triagem, texto, prompt, SQLite, Graph, Shopify, Claude
 verificar.py         verificação prévia, para o dia da instalação
 exportar.py          exporta emails reais anonimizados + conta a distribuição
-test_assistente.py   60 testes, biblioteca padrão, sem rede
+test_assistente.py   74 testes, biblioteca padrão, sem rede
 eval.py              banco de ensaio: mede o que o assistente decide
 eval/casos.json      casos com resultado esperado
 knowledge/           a totalidade do mundo do assistente
@@ -163,6 +169,9 @@ clientes de uma loja online usa Gmail.
 | `GRAPH_TENANT_ID` | — | Directory (tenant) ID |
 | `GRAPH_CLIENT_ID` | — | Application (client) ID |
 | `GRAPH_CLIENT_SECRET` | — | Client secret |
+| `SHOPIFY_STORE` | — | Domínio `*.myshopify.com` da loja |
+| `SHOPIFY_CLIENT_ID` | — | Client ID da app privada (Dev Dashboard) |
+| `SHOPIFY_CLIENT_SECRET` | — | Client secret da app privada |
 | `MAILBOX` | — | Caixa a vigiar |
 | `MODELO` | `claude-sonnet-5` | Modelo da chamada única |
 | `KNOWLEDGE_DIR` | `knowledge` | Pasta de documentos `.md`/`.txt` |
@@ -171,7 +180,7 @@ clientes de uma loja online usa Gmail.
 | `MAX_BODY_CHARS` | `4000` | Corte do corpo enviado ao modelo |
 | `DRY_RUN` | `true` | `true` não escreve nada na caixa |
 | `COMPANY_NAME` | `a loja` | Aparece no prompt |
-| `SIGNATURE` | `Equipa de Apoio ao Cliente` | Assinatura do rascunho |
+| `SIGNATURE` | `tripat3s` | Assinatura do rascunho |
 | `DRAFTED_CATEGORY` | `IA-Rascunhado` | Categoria aplicada ao original |
 | `ESCALATED_CATEGORY` | `Precisa de humano` | Categoria de escalação |
 | `DRAFT_PREFIX` | aviso de revisão | Linha no topo de cada rascunho |
@@ -265,7 +274,7 @@ estabelecida.
 ## Testes e avaliação
 
 ```bash
-python -m unittest test_assistente     # 43 testes, sem rede nem credenciais
+python -m unittest test_assistente     # 74 testes, sem rede nem credenciais
 python eval.py --triagem               # regras determinísticas, grátis
 python eval.py                         # tudo, contra o modelo real
 ```

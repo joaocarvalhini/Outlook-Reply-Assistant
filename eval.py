@@ -84,7 +84,9 @@ def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
         return "passou", "triagem", "chegou ao modelo"
 
     try:
-        acao, motivo, corpo = a.decidir(cliente, cfg, prompt, msg)
+        acao, motivo, corpo = a.decidir(
+            cliente, cfg, prompt, msg, caso.get("dados_encomenda", "")
+        )
     except Exception as exc:
         return ERRO, "modelo", f"{type(exc).__name__}: {exc}"[:110]
 
@@ -155,9 +157,12 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
     a.saida_utf8()
 
-    # Nenhuma etapa do ensaio toca no Graph, por isso exigir tenant, cliente e
-    # segredo bloquearia uma execução que tem tudo o que precisa.
-    for nome in ("GRAPH_TENANT_ID", "GRAPH_CLIENT_ID", "GRAPH_CLIENT_SECRET"):
+    # Nenhuma etapa do ensaio toca no Graph nem na Shopify, por isso exigir
+    # estas credenciais bloquearia uma execução que tem tudo o que precisa.
+    for nome in (
+        "GRAPH_TENANT_ID", "GRAPH_CLIENT_ID", "GRAPH_CLIENT_SECRET",
+        "SHOPIFY_STORE", "SHOPIFY_CLIENT_ID", "SHOPIFY_CLIENT_SECRET",
+    ):
         os.environ.setdefault(nome, "nao-usado-pelo-eval")
     os.environ.setdefault("MAILBOX", "apoio@loja.pt")
     if args.caixa:
