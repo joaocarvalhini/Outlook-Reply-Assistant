@@ -52,6 +52,7 @@ assistente.py        tudo: config, triagem, texto, prompt, SQLite, Graph, Shopif
 verificar.py         verificação prévia, para o dia da instalação
 exportar.py          exporta emails reais anonimizados + conta a distribuição
 reprocessar.py       repassa decisões antigas pelo código de hoje, sem escrever
+medir_deriva.py       compara rascunhos regenerados com o que o lojista respondeu
 test_assistente.py   74 testes, biblioteca padrão, sem rede
 eval.py              banco de ensaio: mede o que o assistente decide
 eval/casos.json      casos com resultado esperado
@@ -326,6 +327,32 @@ melhor: é preciso ler os rascunhos novos, porque um rascunho errado é pior do
 que uma escalação. E o mesmo conjunto corrido duas vezes não dá o mesmo número —
 já se viram 9, 11 e 6 mudanças com o mesmo código. Serve para encontrar padrões,
 não para afinar contra o número.
+
+### Medir a deriva contra respostas reais
+
+```bash
+python medir_deriva.py              # todos os rascunhos com resposta real
+python medir_deriva.py --so-numero  # só a tabela, sem os textos
+```
+
+Regenera o rascunho de cada email já marcado `rascunhar` com o código de hoje
+(não o texto gravado, que pode ser de antes da última correção), vai buscar a
+resposta que o lojista realmente enviou a seguir na mesma conversa, e mostra as
+duas lado a lado. Um número de semelhança (0-100%, `difflib`) serve só para
+ordenar por onde começar a ler — não é nota de qualidade.
+
+Duas armadilhas reais, já encontradas:
+- Um rascunho criado manualmente fora do fluxo normal (por exemplo para o
+  cliente ver a qualidade) pode aparecer como se fosse "a resposta real" —
+  a função ignora mensagens que comecem pelo `DRAFT_PREFIX`, mas qualquer outro
+  texto colocado à mão na caixa passa despercebido.
+- A "resposta real" é a próxima mensagem da loja na mesma conversa, que pode
+  estar a responder a outra pergunta do mesmo fio, não à que gerou o rascunho.
+  Semelhança baixa não é prova de rascunho mau; é preciso ler.
+
+Enquanto a caixa está em `DRY_RUN` há poucas conversas fechadas para comparar —
+a amostra cresce à medida que o lojista vai respondendo aos fios reais. Faz
+sentido correr isto periodicamente, não uma vez só.
 
 ### Exportar emails reais
 
