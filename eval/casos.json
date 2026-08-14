@@ -230,6 +230,34 @@
     "note": "esta na base de conhecimento (entregas.md: envia para a Alemanha, 5-7 dias uteis); a resposta tem de sair em portugues mesmo com a pergunta em ingles"
   },
   {
+    "id": "devolucao-de-capa-personalizada-nao-e-possivel",
+    "email": {
+      "from": "sonia.reis@gmail.com",
+      "from_name": "Sónia Reis",
+      "subject": "Devolução de capa personalizada",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, encomendei uma capa personalizada mas afinal nao gostei do resultado. Posso devolver dentro dos 14 dias?"
+    },
+    "expect": "rascunhar",
+    "note": "excecao clara na base: capas personalizadas nao podem ser devolvidas por nao gostar, nao se aplica o prazo de 14 dias"
+  },
+  {
+    "id": "devolucao-de-capa-personalizada-com-defeito-nao-e-a-mesma-coisa",
+    "email": {
+      "from": "tomas.pinto@gmail.com",
+      "from_name": "Tomás Pinto",
+      "subject": "Capa personalizada com defeito",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "A minha capa personalizada veio com a impressao toda desfocada e riscada, parece defeito de fabrico. O que posso fazer?"
+    },
+    "expect": "rascunhar",
+    "note": "excecao de devolucao (nao gostar) nao se aplica a defeito de fabrico; pedir foto/video e o primeiro passo normal para reclamacao de defeito, nao escalar"
+  },
+  {
     "id": "estado-de-encomenda-com-dados-shopify",
     "email": {
       "from": "marta.pinho@gmail.com",

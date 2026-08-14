@@ -10,6 +10,14 @@ Fonte: /pages/politica-de-reembolsos-e-devolucoes, /pages/perguntas-faq,
   uma devolução.
 - O cliente tem direito a rescindir o contrato no prazo de 14 dias.
 
+## Capas personalizadas — exceção
+
+- Capas personalizadas não podem ser devolvidas. Não se aplica o prazo de 14
+  dias nem o direito de livre resolução a este produto, por ser feito por
+  medida. (Confirmado diretamente pela loja, 14 de agosto de 2026.)
+- Esta exceção é sobre devolução sem motivo. Um defeito de fabrico numa capa
+  personalizada segue a secção "Produto com defeito" abaixo, não esta.
+
 ## Estado exigido
 
 - O produto tem de estar em perfeitas condições e sem uso.
