@@ -11,6 +11,9 @@ Fonte: /pages/politica-de-envio, /pages/perguntas-faq
   atraso.
 - A encomenda é expedida depois de o pagamento ser validado, no primeiro dia
   útil seguinte à compra.
+- Encomendas feitas ao sábado, a qualquer hora do dia, são sempre expedidas na
+  segunda-feira seguinte. Não há hora de corte ao sábado. (Confirmado
+  diretamente pela loja, 14 de agosto de 2026.)
 - Para os restantes países, o prazo médio de entrega é de 5 a 7 dias úteis.
 - Os prazos podem variar consoante o país de destino.
 - As capas personalizadas seguem o mesmo prazo de entrega dos restantes
