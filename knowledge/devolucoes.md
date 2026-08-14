@@ -2,7 +2,7 @@
 
 Fonte: /pages/politica-de-reembolsos-e-devolucoes, /pages/perguntas-faq,
 /pages/termos-e-condicoes
-Última verificação: 12 de agosto de 2026
+Última verificação: 14 de agosto de 2026
 
 ## Prazo para devolver
 
@@ -23,18 +23,44 @@ Fonte: /pages/politica-de-reembolsos-e-devolucoes, /pages/perguntas-faq,
 - O contacto tem de ser feito nos primeiros 14 dias após a receção.
 - A loja envia as instruções e a autorização de devolução.
 
+## Para onde enviar a devolução
+
+A morada da loja é:
+
+    tripat3s
+    Praceta Lucília do Carmo, n.º 6, Loja D
+    2620-537 Ramada
+    Portugal
+
+Em alternativa, o cliente pode usar a morada que consta na etiqueta original da
+DPD, presente na embalagem em que recebeu a encomenda.
+
+Dentro da encomenda, o cliente deve incluir uma folha com:
+
+- Número da encomenda
+- Nome completo
+- Motivo da devolução, ou descrição da anomalia
+
 ## Portes de devolução
 
-- Os portes de devolução são da responsabilidade do cliente.
-- A loja paga os portes de devolução quando o artigo tem defeito ou quando foi
-  enviado por erro da loja.
+- Quem paga os portes só é decidido **depois** de a loja receber e verificar o
+  artigo. Nunca se promete ao cliente, à partida, que a loja assume os portes.
+- Se a verificação confirmar defeito de fabrico, ou erro de envio da loja, a
+  loja assume os portes.
+- Se a devolução for por arrependimento, ou por o produto não ter correspondido
+  às expectativas, os portes ficam a cargo do cliente.
+- Recomenda-se envio por correio registado normal, sem serviços adicionais como
+  notificação por SMS, que apenas encarecem o envio sem serem necessários.
 
 ## Reembolso
 
 - O reembolso é feito pelo mesmo método de pagamento usado na compra, salvo acordo
   em contrário.
-- O reembolso é processado no prazo de 5 dias úteis, depois de a loja receber e
-  verificar o produto devolvido.
+- O processo tem duas fases, e ambas devem ser explicadas ao cliente:
+  1. A loja analisa a devolução e emite o reembolso no prazo de até 5 dias úteis
+     após receber o produto.
+  2. O valor pode demorar até 10 dias úteis a ficar disponível na conta do
+     cliente, consoante o banco e o método de pagamento.
 
 ## Produto com defeito
 

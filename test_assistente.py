@@ -30,6 +30,7 @@ from assistente import (
     para_html,
     para_texto,
     registar,
+    saudacao,
     triar,
     triar_cabecalhos,
 )
@@ -263,6 +264,36 @@ class HtmlDeSaida(unittest.TestCase):
 
     def test_texto_vazio(self) -> None:
         self.assertEqual(para_html("   "), "")
+
+
+class Saudacao(unittest.TestCase):
+    """Regra do cliente: 8h-13h bom dia, 13h-20h boa tarde, resto boa noite."""
+
+    def test_manha(self) -> None:
+        for h in (8, 10, 12):
+            self.assertEqual(saudacao(h), "Bom dia", f"hora {h}")
+
+    def test_tarde(self) -> None:
+        for h in (13, 16, 19):
+            self.assertEqual(saudacao(h), "Boa tarde", f"hora {h}")
+
+    def test_noite(self) -> None:
+        for h in (20, 23, 0, 5, 7):
+            self.assertEqual(saudacao(h), "Boa noite", f"hora {h}")
+
+    def test_fronteiras(self) -> None:
+        # As fronteiras exatas são as que o cliente ditou: às 8 já é bom dia,
+        # às 13 já é boa tarde, às 20 já é boa noite.
+        self.assertEqual(saudacao(7), "Boa noite")
+        self.assertEqual(saudacao(8), "Bom dia")
+        self.assertEqual(saudacao(12), "Bom dia")
+        self.assertEqual(saudacao(13), "Boa tarde")
+        self.assertEqual(saudacao(19), "Boa tarde")
+        self.assertEqual(saudacao(20), "Boa noite")
+
+    def test_cobre_as_24_horas(self) -> None:
+        for h in range(24):
+            self.assertIn(saudacao(h), {"Bom dia", "Boa tarde", "Boa noite"})
 
 
 class Registo(unittest.TestCase):

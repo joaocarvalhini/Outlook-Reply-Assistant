@@ -1,11 +1,16 @@
 # Entregas
 
 Fonte: /pages/politica-de-envio, /pages/perguntas-faq
-Última verificação: 12 de agosto de 2026
+Última verificação: 14 de agosto de 2026
 
 ## Prazos
 
-- Em Portugal, o prazo de entrega é de 24 a 48 horas úteis.
+- Em Portugal, o prazo de entrega é de 24 a 48 horas úteis **contadas a partir
+  da expedição da encomenda**, e não a partir do momento da compra. Esta
+  distinção é importante e deve ser dita ao cliente sempre que ele questionar um
+  atraso.
+- A encomenda é expedida depois de o pagamento ser validado, no primeiro dia
+  útil seguinte à compra.
 - Para os restantes países, o prazo médio de entrega é de 5 a 7 dias úteis.
 - Os prazos podem variar consoante o país de destino.
 - As capas personalizadas seguem o mesmo prazo de entrega dos restantes

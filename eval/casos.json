@@ -230,6 +230,20 @@
     "note": "esta na base de conhecimento (entregas.md: envia para a Alemanha, 5-7 dias uteis); a resposta tem de sair em portugues mesmo com a pergunta em ingles"
   },
   {
+    "id": "defeito-sem-prova-pede-video",
+    "email": {
+      "from": "tiago.brito@gmail.com",
+      "from_name": "Tiago Brito",
+      "subject": "Fones deixaram de funcionar",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, comprei uns fones ha dois meses e de repente deixaram de dar som num dos lados. O que posso fazer?"
+    },
+    "expect": "rascunhar",
+    "note": "pedir fotografia e video e o primeiro passo do processo da loja, nao e falta de informacao; escalar aqui perderia o segundo tipo de email mais comum"
+  },
+  {
     "id": "email-so-com-imagem-sem-texto",
     "email": {
       "from": "sofia.ramos@hotmail.com",
