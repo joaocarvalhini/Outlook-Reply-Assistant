@@ -10,6 +10,17 @@ api_version = "2026-07"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+#
+# read_orders sozinho só dá acesso aos últimos 60 dias de encomendas. Verificado
+# a 14/08/2026: a encomenda mais antiga visível era de 15/06, exatamente 60 dias
+# antes, e uma de julho já não era encontrada. Isto acerta em cheio nos casos
+# que mais escalam, porque os litígios de reembolso arrastam-se semanas.
+#
+# Ver os 60 dias para trás exige read_all_orders, que é um scope protegido.
+# Declará-lo aqui não chega: foi testado e publicado a 14/08/2026, e a Shopify
+# continuou a devolver apenas "read_orders" no token. Tem de ser pedido e
+# aprovado primeiro, pelo dono da app no Dev Dashboard, em API access →
+# Access requests. Depois de aprovado, acrescentar aqui e voltar a publicar.
 scopes = "read_orders"
 optional_scopes = [ ]
 use_legacy_install_flow = false
