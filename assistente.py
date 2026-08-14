@@ -887,9 +887,11 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
             html_corpo = f"<p>{html.escape(cfg.aviso)}</p>" + html_corpo
         if not cfg.dry_run:
             rascunho = graph.criar_rascunho(msg["id"], html_corpo)
-            log("rascunho", email=msg["message_id"][:40], draft=rascunho[:20])
+            log("rascunho", email=msg["message_id"][:40], draft=rascunho[:20],
+                shopify=bool(dados_encomenda))
         else:
-            log("rascunho-simulado", email=msg["message_id"][:40])
+            log("rascunho-simulado", email=msg["message_id"][:40],
+                shopify=bool(dados_encomenda))
         registar(con, msg, "rascunhar", motivo, corpo)
         if not cfg.dry_run:
             graph.marcar(msg, cfg.cat_rascunho)
