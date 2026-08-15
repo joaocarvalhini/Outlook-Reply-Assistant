@@ -9,6 +9,10 @@ Fonte: /pages/politica-de-envio, /pages/perguntas-faq
   da expedição da encomenda**, e não a partir do momento da compra. Esta
   distinção é importante e deve ser dita ao cliente sempre que ele questionar um
   atraso.
+- "Horas úteis" não são horas corridas: fins de semana e feriados não contam
+  para o prazo. Um cliente que compare 24h corridas com o prazo indicado vai
+  sempre achar que está atrasado sem estar. (Confirmado diretamente pela loja,
+  15 de agosto de 2026.)
 - A encomenda é expedida depois de o pagamento ser validado, no primeiro dia
   útil seguinte à compra.
 - Encomendas feitas ao sábado, a qualquer hora do dia, são sempre expedidas na

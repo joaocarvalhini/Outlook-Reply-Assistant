@@ -20,8 +20,12 @@ from tempfile import TemporaryDirectory
 from exportar import anonimizar, anonimizar_endereco, palpitar
 
 from assistente import (
+    CATEGORIAS,
     DOMINIOS_BASE,
     Config,
+    Correspondencia,
+    emails_iguais,
+    resolver_encomenda,
     abrir_db,
     carregar_blocklist,
     cortar_citacao,
@@ -49,7 +53,7 @@ def cfg(**over: object) -> Config:
         "mailbox": CAIXA, "modelo": "claude-sonnet-5",
         "knowledge_dir": Path("knowledge"), "blocklist": Path("blocklist.txt"),
         "db": Path("t.db"), "max_body": 4000, "dry_run": True,
-        "fio_mensagens": 8, "fio_chars": 400,
+        "fio_mensagens": 8, "fio_chars": 400, "resolver_identidade": True,
         "empresa": "A Loja", "assinatura": "Equipa",
         "cat_rascunho": "IA-Rascunhado", "cat_humano": "Precisa de humano",
         "aviso": "--- rascunho automático ---",
@@ -458,6 +462,152 @@ class HistoricoDoFio(unittest.TestCase):
         )
         self.assertNotIn("\n\n", saida)
         self.assertIn("olá boa tarde", saida)
+
+
+class ShopifyFalsa:
+    """Dublê da Shopify. Não há rede nos testes."""
+
+    def __init__(self, por_numero=None, por_email=None, rebenta=False):
+        self._numero = por_numero or []
+        self._email = por_email or []
+        self._rebenta = rebenta
+        self.chamadas = []
+
+    def por_numero(self, numero):
+        self.chamadas.append(("numero", numero))
+        if self._rebenta:
+            raise RuntimeError("Shopify 500")
+        return list(self._numero)
+
+    def por_email(self, email):
+        self.chamadas.append(("email", email))
+        if self._rebenta:
+            raise RuntimeError("Shopify 500")
+        return list(self._email)
+
+
+def encomenda_falsa(**over):
+    base = {
+        "name": "#21910",
+        "email": "cliente@gmail.com",
+        "created_at": "2026-08-10T10:00:00Z",
+        "financial_status": "paid",
+        "fulfillment_status": "fulfilled",
+        "fulfillments": [],
+        "customer": {"first_name": "Marta", "last_name": "Pinho", "phone": None},
+        "shipping_address": {"zip": "2620-537", "phone": None},
+    }
+    base.update(over)
+    return base
+
+
+class ResolucaoDeIdentidade(unittest.TestCase):
+    """A regra mais cara de violar: nunca mostrar a encomenda de outra pessoa."""
+
+    def test_numero_e_email_da_compra_e_exata(self) -> None:
+        s = ShopifyFalsa(por_numero=[encomenda_falsa()])
+        r = resolver_encomenda(s, msg(de="cliente@gmail.com"), "", "21910")
+        self.assertEqual(r.confianca, "exata")
+        self.assertTrue(r.pode_revelar)
+
+    def test_numero_com_email_diferente_sem_indicios_nao_revela(self) -> None:
+        # O caso perigoso: o número não é segredo, qualquer um o pode citar.
+        s = ShopifyFalsa(por_numero=[encomenda_falsa()])
+        r = resolver_encomenda(s, msg(de="outra.pessoa@gmail.com"), "", "21910")
+        self.assertEqual(r.confianca, "media")
+        self.assertFalse(r.pode_revelar)
+
+    def test_numero_com_email_diferente_mas_nome_completo_bate(self) -> None:
+        s = ShopifyFalsa(por_numero=[encomenda_falsa()])
+        m = msg(de="marta.p@outro.pt", nome="Marta Pinho")
+        r = resolver_encomenda(s, m, "", "21910")
+        self.assertEqual(r.confianca, "alta")
+        self.assertTrue(r.pode_revelar)
+        self.assertIn("nome_completo_do_remetente", r.razoes)
+
+    def test_primeiro_nome_sozinho_nao_chega(self) -> None:
+        s = ShopifyFalsa(por_numero=[encomenda_falsa()])
+        m = msg(de="marta@outro.pt", nome="Marta")
+        r = resolver_encomenda(s, m, "", "21910")
+        self.assertFalse(r.pode_revelar)
+
+    def test_codigo_postal_no_texto_conta_como_indicio(self) -> None:
+        s = ShopifyFalsa(por_numero=[encomenda_falsa()])
+        m = msg(de="outro@gmail.com", nome="X", corpo="moro no 2620-537, é essa")
+        r = resolver_encomenda(s, m, "", "21910")
+        self.assertEqual(r.confianca, "alta")
+        self.assertIn("codigo_postal_no_texto", r.razoes)
+
+    def test_telefone_no_texto_conta_como_indicio(self) -> None:
+        enc = encomenda_falsa(customer={"first_name": "A", "last_name": "B",
+                                        "phone": "+351 912345678"})
+        s = ShopifyFalsa(por_numero=[enc])
+        m = msg(de="outro@gmail.com", nome="X", corpo="o meu contacto e 912345678")
+        r = resolver_encomenda(s, m, "", "21910")
+        self.assertEqual(r.confianca, "alta")
+
+    def test_varios_candidatos_nunca_escolhe(self) -> None:
+        s = ShopifyFalsa(por_numero=[encomenda_falsa(), encomenda_falsa(name="#21911")])
+        r = resolver_encomenda(s, msg(de="cliente@gmail.com"), "", "21910")
+        self.assertIsNone(r.encomenda)
+        self.assertFalse(r.pode_revelar)
+        self.assertIn("varios_candidatos", r.razoes)
+
+    def test_sem_numero_mas_email_com_uma_encomenda(self) -> None:
+        # Capacidade nova: antes disto, sem número nunca se procurava.
+        s = ShopifyFalsa(por_email=[encomenda_falsa()])
+        r = resolver_encomenda(s, msg(de="cliente@gmail.com"), "", None)
+        self.assertEqual(r.confianca, "alta")
+        self.assertTrue(r.pode_revelar)
+
+    def test_sem_numero_e_email_com_varias_encomendas_escala(self) -> None:
+        s = ShopifyFalsa(por_email=[encomenda_falsa(), encomenda_falsa(name="#22000")])
+        r = resolver_encomenda(s, msg(de="cliente@gmail.com"), "", None)
+        self.assertIsNone(r.encomenda)
+        self.assertFalse(r.pode_revelar)
+
+    def test_sem_numero_e_email_desconhecido(self) -> None:
+        s = ShopifyFalsa()
+        r = resolver_encomenda(s, msg(de="ninguem@gmail.com"), "", None)
+        self.assertIsNone(r.encomenda)
+        self.assertEqual(r.confianca, "nenhuma")
+
+    def test_numero_sem_correspondencia(self) -> None:
+        s = ShopifyFalsa(por_numero=[])
+        r = resolver_encomenda(s, msg(de="cliente@gmail.com"), "", "99999")
+        self.assertIsNone(r.encomenda)
+        self.assertIn("numero_sem_correspondencia", r.razoes)
+
+    def test_contact_email_tambem_conta_como_exato(self) -> None:
+        enc = encomenda_falsa(email="", contact_email="cliente@gmail.com")
+        s = ShopifyFalsa(por_numero=[enc])
+        r = resolver_encomenda(s, msg(de="cliente@gmail.com"), "", "21910")
+        self.assertEqual(r.confianca, "exata")
+
+    def test_numero_vindo_do_historico_do_fio(self) -> None:
+        s = ShopifyFalsa(por_numero=[encomenda_falsa()])
+        m = msg(de="cliente@gmail.com", corpo="e quando envia?")
+        r = resolver_encomenda(s, m, "[LOJA] sobre a encomenda 21910", "21910")
+        self.assertTrue(r.pode_revelar)
+
+
+class EmailsIguais(unittest.TestCase):
+    def test_ignora_maiusculas_e_espacos(self) -> None:
+        self.assertTrue(emails_iguais(" Cliente@Gmail.com ", "cliente@gmail.com"))
+
+    def test_vazio_nunca_e_igual(self) -> None:
+        self.assertFalse(emails_iguais("", ""))
+        self.assertFalse(emails_iguais(None, "a@b.pt"))
+
+
+class Taxonomia(unittest.TestCase):
+    def test_categorias_sao_unicas_e_maiusculas(self) -> None:
+        self.assertEqual(len(CATEGORIAS), len(set(CATEGORIAS)))
+        for c in CATEGORIAS:
+            self.assertEqual(c, c.upper())
+
+    def test_outro_existe_como_escape(self) -> None:
+        self.assertIn("OUTRO", CATEGORIAS)
 
 
 class Registo(unittest.TestCase):

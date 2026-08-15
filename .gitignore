@@ -3,6 +3,9 @@
 assistente.db
 logs/
 
+# Documentos gerados para entregar ao cliente, não fazem parte do código
+entregas/
+
 # Client knowledge bases are private
 clients/
 

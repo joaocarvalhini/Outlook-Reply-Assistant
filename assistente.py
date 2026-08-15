@@ -78,6 +78,7 @@ class Config:
     cat_rascunho: str
     cat_humano: str
     aviso: str
+    resolver_identidade: bool
 
     @property
     def dominio(self) -> str:
@@ -93,7 +94,10 @@ def carregar_config(dry_run_flag: bool | None) -> Config:
             sys.exit(f"Falta {nome} no .env")
         return valor
 
-    dry = os.environ.get("DRY_RUN", "true").strip().lower() in {"1", "true", "yes", "sim"}
+    def ligado(nome: str, omissao: str) -> bool:
+        return os.environ.get(nome, omissao).strip().lower() in {"1", "true", "yes", "sim"}
+
+    dry = ligado("DRY_RUN", "true")
     return Config(
         api_key=obrigatorio("ANTHROPIC_API_KEY"),
         tenant_id=obrigatorio("GRAPH_TENANT_ID"),
@@ -127,6 +131,9 @@ def carregar_config(dry_run_flag: bool | None) -> Config:
         aviso=os.environ.get(
             "DRAFT_PREFIX", "--- rascunho automático · rever e apagar esta linha ---"
         ),
+        # Resolução de identidade por níveis. Desligada dá o comportamento
+        # anterior: só encontra a encomenda com número mais email exato.
+        resolver_identidade=ligado("ENABLE_ORDER_IDENTITY_RESOLUTION", "true"),
     )
 
 
@@ -347,14 +354,36 @@ def triar_cabecalhos(msg: dict) -> str | None:
 # O prompt
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Categorias estáveis de escalação. O "motivo" continua a ser texto livre para o
+# humano que pega no caso; isto é o que se conta. Sem identificadores fixos, medir
+# o efeito de uma alteração obriga a classificar texto livre com expressões
+# regulares, que foi como se mediu até aqui e não é reproduzível.
+CATEGORIAS = (
+    "DADOS_ENCOMENDA_EM_FALTA",   # precisa de dados da encomenda que não temos
+    "IDENTIDADE_NAO_VERIFICADA",  # há encomenda mas não se prova que é desta pessoa
+    "ENCOMENDA_ANTIGA",           # fora da janela que a Shopify deixa consultar
+    "INVENTARIO_INDISPONIVEL",    # pergunta de stock, sem permissão para o ler
+    "CONTEXTO_EM_FALTA",          # resposta curta num fio cujo histórico não chegou
+    "LACUNA_DE_CONHECIMENTO",     # a base não cobre o assunto
+    "ACAO_SOBRE_ENCOMENDA",       # cancelar, alterar, reembolsar: só leitura
+    "JULGAMENTO_HUMANO",          # garantia, litígio, exceção, gesto comercial
+    "COMPROMISSO_ANTERIOR",       # a loja prometeu algo e falta a data ou o estado
+    "OUTRO",                      # nenhuma das anteriores; a rever periodicamente
+)
+
 ESQUEMA = {
     "type": "object",
     "properties": {
         "acao": {"type": "string", "enum": ["rascunhar", "escalar", "saltar"]},
         "motivo": {"type": "string"},
         "corpo": {"type": "string"},
+        "categoria": {"type": "string", "enum": list(CATEGORIAS)},
+        # Só preenchido quando categoria é LACUNA_DE_CONHECIMENTO. Alimenta a
+        # fila de lacunas: "não sei" não chega, é preciso saber o que falta.
+        "lacuna_tema": {"type": "string"},
+        "lacuna_em_falta": {"type": "string"},
     },
-    "required": ["acao", "motivo", "corpo"],
+    "required": ["acao", "motivo", "corpo", "categoria"],
     "additionalProperties": False,
 }
 
@@ -435,6 +464,38 @@ nenhum e custa uma venda.
 Uma frase, menos de 20 palavras, escrita para o colega que vai pegar no caso e
 nunca para o cliente. Descreve o que falta ou porque foi descartado.
 
+# A categoria
+Além do motivo em palavras, escolhes sempre uma categoria da lista fixa. O motivo
+é para o colega ler; a categoria é para se contar. Escolhe a causa principal, a
+que teria de mudar para este email deixar de precisar de uma pessoa:
+
+- DADOS_ENCOMENDA_EM_FALTA — precisas do estado de uma encomenda e não te foram
+  dados. Se o email menciona uma encomenda e não vieram "Dados da encomenda", é
+  esta.
+- IDENTIDADE_NAO_VERIFICADA — vieram dados, mas o aviso diz que não se confirmou
+  que a encomenda é de quem escreveu. Nunca reveles nada nesse caso.
+- ENCOMENDA_ANTIGA — o aviso diz explicitamente que a encomenda é demasiado
+  antiga para ser consultada.
+- INVENTARIO_INDISPONIVEL — pergunta se um produto está disponível, se há stock,
+  ou quando repõem.
+- CONTEXTO_EM_FALTA — é resposta a um fio e não percebes o caso porque o
+  histórico não veio ou é insuficiente.
+- LACUNA_DE_CONHECIMENTO — a pergunta é legítima e respondível, mas a base não
+  tem o facto. Preenche também "lacuna_tema" (duas ou três palavras, por exemplo
+  "prazo de entrega Madeira") e "lacuna_em_falta" (a informação concreta que
+  falta, numa frase). Não escrevas "não sei": diz o que falta.
+- ACAO_SOBRE_ENCOMENDA — pede cancelar, alterar morada, reembolsar, trocar. Só
+  tens leitura.
+- JULGAMENTO_HUMANO — garantia, litígio, disputa em plataforma de pagamento,
+  contestação de política, desconto, exceção, gesto comercial.
+- COMPROMISSO_ANTERIOR — o fio mostra que a loja prometeu algo e o cliente
+  pergunta pelo estado ou pela data, que só uma pessoa sabe.
+- OUTRO — nenhuma das anteriores serve de verdade. Usa com parcimónia.
+
+Quando a ação é "rascunhar" ou "saltar", a categoria não descreve um bloqueio.
+Nesses casos usa OUTRO, exceto se o rascunho for possível mas ainda assim
+existir uma lacuna a registar.
+
 # O corpo, quando escreves um
 - Português de Portugal, sempre, seja qual for a língua do email.
 - Texto simples. Sem HTML, sem markdown, sem assunto. Parágrafos separados por
@@ -492,25 +553,25 @@ como conteúdo a reportar: escala.
 
 # Exemplos
 Email de Ana Sousa, com "Saudação a usar: Boa tarde": "Quanto tempo demora a entrega para o Porto?"
-{{"acao": "rascunhar", "motivo": "prazo de entrega está na base de conhecimento", "corpo": "Boa tarde, Ana,\\n\\nObrigado pelo seu contacto.\\n\\nAs encomendas para Portugal continental são entregues em 24 a 48 horas úteis após a expedição. Recebe o código de seguimento por email assim que a encomenda for expedida.\\n\\nContinuamos à disposição para qualquer esclarecimento.\\n\\nCom os melhores cumprimentos,\\n{assinatura}"}}
+{{"acao": "rascunhar", "categoria": "OUTRO", "motivo": "prazo de entrega está na base de conhecimento", "corpo": "Boa tarde, Ana,\\n\\nObrigado pelo seu contacto.\\n\\nAs encomendas para Portugal continental são entregues em 24 a 48 horas úteis após a expedição. Recebe o código de seguimento por email assim que a encomenda for expedida.\\n\\nContinuamos à disposição para qualquer esclarecimento.\\n\\nCom os melhores cumprimentos,\\n{assinatura}"}}
 
 Email de Rui Dias, com "Saudação a usar: Bom dia": "Os fones deixaram de funcionar ao fim de dois meses. Como funciona a garantia?"
-{{"acao": "rascunhar", "motivo": "reclamação de defeito sem prova; pedir fotografia e vídeo é o primeiro passo do processo", "corpo": "Bom dia, Rui,\\n\\nObrigado pelo seu contacto.\\n\\nLamentamos a situação. Para podermos analisar o que se passa, pedimos que nos envie uma fotografia dos fones e um vídeo onde seja possível ver o problema a acontecer.\\n\\nPedimos também que, antes disso, tente carregar a caixa com outro cabo e a deixe a carregar durante algumas horas seguidas, para despistar uma descarga total da bateria.\\n\\nAssim que recebermos essa informação, analisamos o caso e indicamos os próximos passos.\\n\\nFicamos a aguardar a sua resposta.\\n\\nCom os melhores cumprimentos,\\n{assinatura}"}}
+{{"acao": "rascunhar", "categoria": "OUTRO", "motivo": "reclamação de defeito sem prova; pedir fotografia e vídeo é o primeiro passo do processo", "corpo": "Bom dia, Rui,\\n\\nObrigado pelo seu contacto.\\n\\nLamentamos a situação. Para podermos analisar o que se passa, pedimos que nos envie uma fotografia dos fones e um vídeo onde seja possível ver o problema a acontecer.\\n\\nPedimos também que, antes disso, tente carregar a caixa com outro cabo e a deixe a carregar durante algumas horas seguidas, para despistar uma descarga total da bateria.\\n\\nAssim que recebermos essa informação, analisamos o caso e indicamos os próximos passos.\\n\\nFicamos a aguardar a sua resposta.\\n\\nCom os melhores cumprimentos,\\n{assinatura}"}}
 
 Email de Miguel Costa, com "Saudação a usar: Boa tarde" e "Dados da encomenda: Encomenda #21910\\nFeita em: 2026-08-10\\nPagamento: pago\\nEnvio: expedida\\nCódigo de rastreio: RR123456789PT": "Ainda não recebi a encomenda 21910, já foi enviada?"
-{{"acao": "rascunhar", "motivo": "estado da encomenda consultado na Shopify e confirmado como sendo deste cliente", "corpo": "Boa tarde, Miguel,\\n\\nObrigado pelo seu contacto.\\n\\nA sua encomenda #21910 já foi expedida e o pagamento está confirmado. O código de rastreio é RR123456789PT.\\n\\nContinuamos à disposição para qualquer esclarecimento.\\n\\nCom os melhores cumprimentos,\\n{assinatura}"}}
+{{"acao": "rascunhar", "categoria": "OUTRO", "motivo": "estado da encomenda consultado na Shopify e confirmado como sendo deste cliente", "corpo": "Boa tarde, Miguel,\\n\\nObrigado pelo seu contacto.\\n\\nA sua encomenda #21910 já foi expedida e o pagamento está confirmado. O código de rastreio é RR123456789PT.\\n\\nContinuamos à disposição para qualquer esclarecimento.\\n\\nCom os melhores cumprimentos,\\n{assinatura}"}}
 
 Email: "Podem cancelar a encomenda 10293?"
-{{"acao": "escalar", "motivo": "pede ação sobre encomenda concreta; sem acesso para alterar ou cancelar", "corpo": ""}}
+{{"acao": "escalar", "categoria": "ACAO_SOBRE_ENCOMENDA", "motivo": "pede ação sobre encomenda concreta; sem acesso para alterar ou cancelar", "corpo": ""}}
 
 Email sem "Dados da encomenda" no pedido: "Onde está a minha encomenda 30402?"
-{{"acao": "escalar", "motivo": "número de encomenda mencionado mas a consulta não devolveu dados desta pessoa", "corpo": ""}}
+{{"acao": "escalar", "categoria": "DADOS_ENCOMENDA_EM_FALTA", "motivo": "número de encomenda mencionado mas a consulta não devolveu dados desta pessoa", "corpo": ""}}
 
 Email: "Aceitam pagamento em cripto?"
-{{"acao": "escalar", "motivo": "base de conhecimento não refere pagamento em cripto", "corpo": ""}}
+{{"acao": "escalar", "categoria": "LACUNA_DE_CONHECIMENTO", "lacuna_tema": "pagamento em cripto", "lacuna_em_falta": "se a loja aceita ou não criptomoeda como método de pagamento", "motivo": "base de conhecimento não refere pagamento em cripto", "corpo": ""}}
 
 Email: "Reserve já o seu stand na feira do comércio 2027"
-{{"acao": "saltar", "motivo": "angariação comercial a frio dirigida à empresa", "corpo": ""}}
+{{"acao": "saltar", "categoria": "OUTRO", "motivo": "angariação comercial a frio dirigida à empresa", "corpo": ""}}
 
 # BASE DE CONHECIMENTO
 {base}
@@ -545,6 +606,18 @@ def construir_prompt(cfg: Config) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+# Colunas acrescentadas depois de já haver registos em produção. Cada uma é
+# adicionada com ALTER TABLE se faltar, para uma base existente não ser perdida
+# nem ter de ser recriada — o cursor vive na mesma base e apagá-la faria o
+# assistente reprocessar tudo desde o início.
+COLUNAS_NOVAS = (
+    ("categoria", "TEXT"),
+    ("lacuna_tema", "TEXT"),
+    ("lacuna_em_falta", "TEXT"),
+    ("confianca_encomenda", "TEXT"),
+)
+
+
 def abrir_db(caminho: Path) -> sqlite3.Connection:
     con = sqlite3.connect(caminho)
     con.executescript(
@@ -561,6 +634,12 @@ def abrir_db(caminho: Path) -> sqlite3.Connection:
         );
         """
     )
+    existentes = {
+        linha[1] for linha in con.execute("PRAGMA table_info(processados)")
+    }
+    for nome, tipo in COLUNAS_NOVAS:
+        if nome not in existentes:
+            con.execute(f"ALTER TABLE processados ADD COLUMN {nome} {tipo}")
     con.commit()
     return con
 
@@ -588,17 +667,27 @@ def ja_processado(con: sqlite3.Connection, message_id: str) -> bool:
     )
 
 
-def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: str) -> None:
+def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: str,
+             categoria: str = "", lacuna_tema: str = "", lacuna_em_falta: str = "",
+             confianca_encomenda: str = "") -> None:
     """Guarda a decisão. O corpo fica gravado para a medição de deriva.
 
     Uma vez por semana compara-se o rascunho guardado com o que foi realmente
     enviado na mesma conversa: acima de 60% editado, o rascunho é ruído.
+
+    As colunas vão nomeadas e não por posição: a tabela ganha colunas com o
+    tempo, e um INSERT posicional passa a gravar valores na coluna errada sem
+    dar erro.
     """
     con.execute(
-        "INSERT OR REPLACE INTO processados VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT OR REPLACE INTO processados "
+        "(message_id, conversation_id, assunto, acao, motivo, corpo, em, "
+        " categoria, lacuna_tema, lacuna_em_falta, confianca_encomenda) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             msg["message_id"], msg["conversation_id"], msg["assunto"],
             acao, motivo, corpo, agora(),
+            categoria, lacuna_tema, lacuna_em_falta, confianca_encomenda,
         ),
     )
     if msg["recebido"] > cursor_atual(con):
@@ -673,31 +762,38 @@ class Shopify:
         self._token = r.json()["access_token"]
         return self._token
 
-    def encomenda(self, numero: str, email_remetente: str) -> dict | None:
-        """Devolve a encomenda com este número, só se o email de quem a fez
-        corresponder ao remetente. Um número de encomenda não é segredo — não
-        confiar apenas nele evita mostrar o pedido de outra pessoa a quem
-        escreveu com um número adivinhado ou trocado.
-        """
+    # Campos pedidos à Shopify. Inclui os de identidade, que servem para
+    # confirmar que a encomenda é de quem escreveu, e nunca são mostrados ao
+    # cliente nem enviados ao modelo.
+    CAMPOS_ENCOMENDA = (
+        "name,email,contact_email,created_at,cancelled_at,financial_status,"
+        "fulfillment_status,fulfillments,customer,shipping_address"
+    )
+
+    def _procurar(self, **params: str) -> list[dict]:
         r = self.http.get(
             f"{self.base}/orders.json",
             headers={"X-Shopify-Access-Token": self._obter_token()},
-            params={
-                "name": f"#{numero}",
-                "status": "any",
-                "fields": "name,email,created_at,cancelled_at,financial_status,"
-                          "fulfillment_status,fulfillments",
-            },
+            params={"status": "any", "fields": self.CAMPOS_ENCOMENDA, **params},
         )
         if r.status_code >= 400:
             raise RuntimeError(f"Shopify orders {r.status_code}: {r.text[:200]}")
-        encomendas = r.json().get("orders", [])
-        if not encomendas:
-            return None
-        encomenda = encomendas[0]
-        if (encomenda.get("email") or "").lower() != email_remetente.lower():
-            return None
-        return encomenda
+        return list(r.json().get("orders", []))
+
+    def por_numero(self, numero: str) -> list[dict]:
+        return self._procurar(name=f"#{numero}")
+
+    def por_email(self, email: str) -> list[dict]:
+        return self._procurar(email=email, limit="10")
+
+    def encomenda(self, numero: str, email_remetente: str) -> dict | None:
+        """Compatibilidade: número mais email exato. Ver resolver_encomenda()."""
+        for enc in self.por_numero(numero):
+            if emails_iguais(enc.get("email"), email_remetente) or emails_iguais(
+                enc.get("contact_email"), email_remetente
+            ):
+                return enc
+        return None
 
 
 def e_da_loja(endereco: str, caixa: str) -> bool:
@@ -715,6 +811,130 @@ def e_da_loja(endereco: str, caixa: str) -> bool:
     if endereco == caixa:
         return True
     return endereco.partition("@")[2] == caixa.partition("@")[2]
+
+
+@dataclass(frozen=True)
+class Correspondencia:
+    """O resultado de procurar a encomenda de quem escreveu.
+
+    A confiança é decidida aqui, no código, e não pelo modelo: o modelo recebe
+    só o resultado. "Adivinhar" uma encomenda é o erro mais caro possível deste
+    sistema, porque expõe dados de um cliente a outro.
+    """
+    encomenda: dict | None
+    confianca: str          # "exata" | "alta" | "media" | "nenhuma"
+    razoes: tuple[str, ...]
+    candidatos: int = 0
+
+    @property
+    def pode_revelar(self) -> bool:
+        """Só se revela ao cliente com identidade provada.
+
+        "media" não chega de propósito: é o nível em que há indícios mas não
+        prova, e é exatamente aí que um engano mostra a encomenda de outra
+        pessoa.
+        """
+        return self.encomenda is not None and self.confianca in ("exata", "alta")
+
+
+def emails_iguais(a: object, b: object) -> bool:
+    return str(a or "").strip().lower() == str(b or "").strip().lower() and bool(a)
+
+
+def _normalizar(texto: object) -> str:
+    return " ".join(str(texto or "").lower().split())
+
+
+def _sinais_de_identidade(encomenda: dict, msg: dict, historico: str) -> list[str]:
+    """Que indícios ligam esta encomenda a quem escreveu, além do email.
+
+    Compara-se contra o nome do remetente e contra o texto que ele escreveu:
+    um cliente que dá o código postal ou o telefone está a identificar-se, mesmo
+    escrevendo de outro endereço.
+    """
+    texto = _normalizar(f"{msg.get('corpo', '')} {msg.get('assunto', '')} {historico}")
+    nome_remetente = _normalizar(msg.get("nome"))
+    cliente = encomenda.get("customer") or {}
+    morada = encomenda.get("shipping_address") or {}
+    razoes = []
+
+    apelidos = [
+        _normalizar(cliente.get("first_name")),
+        _normalizar(cliente.get("last_name")),
+    ]
+    # Um primeiro nome sozinho é fraco de mais para contar: há muitos "João".
+    # Exige-se nome e apelido, ou o nome completo tal como está na encomenda.
+    if all(apelidos) and all(p and p in nome_remetente for p in apelidos):
+        razoes.append("nome_completo_do_remetente")
+
+    for campo, etiqueta in (
+        (cliente.get("phone"), "telefone"),
+        (morada.get("phone"), "telefone"),
+    ):
+        digitos = re.sub(r"\D", "", str(campo or ""))
+        if len(digitos) >= 9 and digitos[-9:] in re.sub(r"\D", "", texto):
+            razoes.append(f"{etiqueta}_no_texto")
+            break
+
+    codigo = str(morada.get("zip") or "").strip()
+    if codigo and len(codigo) >= 7 and codigo.lower() in texto:
+        razoes.append("codigo_postal_no_texto")
+
+    return razoes
+
+
+def resolver_encomenda(shopify: "Shopify", msg: dict, historico: str,
+                       numero: str | None) -> Correspondencia:
+    """Encontra a encomenda de quem escreveu, por níveis de certeza.
+
+    Nível 1  número + email da compra igual ao remetente        -> exata
+    Nível 2  número + outro indício de identidade                -> alta
+    Nível 3  sem número, mas o email do remetente tem exatamente
+             uma encomenda recente                               -> alta
+    Nível 4  vários candidatos, ou só o número                    -> nenhuma
+
+    O nível 4 escala de propósito. Um número de encomenda não é segredo, e
+    sozinho não prova nada.
+    """
+    if numero:
+        candidatos = shopify.por_numero(numero)
+        do_remetente = [
+            enc for enc in candidatos
+            if emails_iguais(enc.get("email"), msg["de"])
+            or emails_iguais(enc.get("contact_email"), msg["de"])
+        ]
+        if len(do_remetente) == 1:
+            return Correspondencia(do_remetente[0], "exata",
+                                   ("numero_e_email_da_compra",), len(candidatos))
+        if len(do_remetente) > 1:
+            # O email bate, mas há mais do que uma encomenda em jogo e não se
+            # sabe de qual o cliente fala. Escolher a primeira seria adivinhar.
+            return Correspondencia(None, "nenhuma", ("varios_candidatos",),
+                                   len(do_remetente))
+        if len(candidatos) == 1:
+            enc = candidatos[0]
+            sinais = _sinais_de_identidade(enc, msg, historico)
+            if sinais:
+                return Correspondencia(
+                    enc, "alta", ("numero_de_encomenda", *sinais), 1
+                )
+            # Só o número: pode ser o cliente a escrever de outro email, mas
+            # pode ser alguém a citar um número que viu. Não se revela.
+            return Correspondencia(enc, "media", ("apenas_numero_de_encomenda",), 1)
+        if len(candidatos) > 1:
+            return Correspondencia(None, "nenhuma", ("varios_candidatos",),
+                                   len(candidatos))
+        return Correspondencia(None, "nenhuma", ("numero_sem_correspondencia",), 0)
+
+    # Sem número: o email do remetente é a única pista. Só serve se for
+    # inequívoco. Antes desta camada, estes casos nunca eram sequer procurados.
+    porEmail = shopify.por_email(msg["de"])
+    if len(porEmail) == 1:
+        return Correspondencia(porEmail[0], "alta", ("email_da_compra_unico",), 1)
+    if len(porEmail) > 1:
+        return Correspondencia(None, "nenhuma", ("email_com_varias_encomendas",),
+                               len(porEmail))
+    return Correspondencia(None, "nenhuma", ("sem_numero_e_email_desconhecido",), 0)
 
 
 def resumir_historico(anteriores: list[dict], caixa: str) -> str:
@@ -922,9 +1142,13 @@ class Graph:
 
 def decidir(
     cliente: object, cfg: Config, prompt: str, msg: dict,
-    dados_encomenda: str = "", historico: str = "",
-) -> tuple[str, str, str]:
-    """Devolve (acao, motivo, corpo). Levanta em caso de falha técnica."""
+    dados_encomenda: str = "", historico: str = "", aviso_identidade: str = "",
+) -> dict:
+    """Devolve a decisão do modelo. Levanta em caso de falha técnica.
+
+    Passou de tuplo a dicionário quando a decisão ganhou categoria e lacuna:
+    um tuplo de seis posições é fácil de desempacotar pela ordem errada.
+    """
     # A saudação vai aqui e não no prompt de sistema: muda ao longo do dia e no
     # sistema invalidaria a cache da base de conhecimento a cada mudança.
     pedido = f"Saudação a usar: {saudacao()}\n"
@@ -939,6 +1163,8 @@ def decidir(
     )
     if dados_encomenda:
         pedido += f"\n\nDados da encomenda (consultados na Shopify agora mesmo):\n{dados_encomenda}"
+    if aviso_identidade:
+        pedido += f"\n\nAviso sobre a identidade:\n{aviso_identidade}"
     resposta = cliente.messages.create(  # type: ignore[attr-defined]
         model=cfg.modelo,
         max_tokens=1024,
@@ -955,7 +1181,17 @@ def decidir(
         (b.text for b in resposta.content if getattr(b, "type", "") == "text"), ""
     )
     dados = json.loads(texto)
-    return dados["acao"], dados.get("motivo", ""), dados.get("corpo", "")
+    categoria = dados.get("categoria", "")
+    return {
+        "acao": dados["acao"],
+        "motivo": dados.get("motivo", ""),
+        "corpo": dados.get("corpo", ""),
+        # Uma categoria fora da lista contaria como um valor novo e estragava as
+        # métricas em silêncio. Fora da lista é OUTRO.
+        "categoria": categoria if categoria in CATEGORIAS else "OUTRO",
+        "lacuna_tema": dados.get("lacuna_tema", ""),
+        "lacuna_em_falta": dados.get("lacuna_em_falta", ""),
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -992,30 +1228,68 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
                 erro=f"{type(exc).__name__}: {exc}")
 
     dados_encomenda = ""
+    aviso_identidade = ""
+    confianca = "nao-procurada"
     # O número pode estar só nas mensagens antigas do fio: numa resposta curta
     # como "e quando envia?" não aparece em lado nenhum do email novo.
     numero = extrair_numero_encomenda(msg["assunto"], msg["corpo"]) or (
         extrair_numero_encomenda("", historico) if historico else None
     )
-    if numero:
-        try:
-            encomenda = shopify.encomenda(numero, msg["de"])
-        except Exception as exc:
-            # Uma falha a consultar a Shopify não deve impedir a decisão: o
-            # modelo escala na mesma por falta de dados, como fazia antes desta
-            # integração existir.
-            log("erro-shopify", email=msg["message_id"][:40], erro=f"{type(exc).__name__}: {exc}")
-            encomenda = None
-        if encomenda:
-            dados_encomenda = resumir_encomenda(encomenda)
+    try:
+        if cfg.resolver_identidade:
+            achado = resolver_encomenda(shopify, msg, historico, numero)
+        elif numero:
+            enc = shopify.encomenda(numero, msg["de"])
+            achado = Correspondencia(
+                enc, "exata" if enc else "nenhuma", ("modo_compatibilidade",)
+            )
+        else:
+            achado = Correspondencia(None, "nenhuma", ())
+    except Exception as exc:
+        # Uma falha a consultar a Shopify não deve impedir a decisão: o modelo
+        # escala na mesma por falta de dados, como fazia antes desta integração
+        # existir.
+        log("erro-shopify", email=msg["message_id"][:40], erro=f"{type(exc).__name__}: {exc}")
+        achado = Correspondencia(None, "nenhuma", ("erro_na_consulta",))
+
+    confianca = achado.confianca
+    if achado.pode_revelar and achado.encomenda is not None:
+        dados_encomenda = resumir_encomenda(achado.encomenda)
+    elif achado.confianca == "media":
+        # Há uma encomenda plausível mas não se provou que é desta pessoa. Diz-se
+        # ao modelo que existe, para ele escalar com a categoria certa, mas não
+        # se lhe dá um único dado dela.
+        aviso_identidade = (
+            "Existe uma encomenda com o número indicado, mas não foi possível "
+            "confirmar que pertence a quem escreveu: o email do remetente não é "
+            "o da compra e não há outro indício que ligue os dois. Não reveles "
+            "nada sobre essa encomenda. Categoria: IDENTIDADE_NAO_VERIFICADA."
+        )
+    elif "varios_candidatos" in achado.razoes or "email_com_varias_encomendas" in achado.razoes:
+        aviso_identidade = (
+            f"A procura devolveu {achado.candidatos} encomendas possíveis e "
+            "nenhuma pode ser assumida como a certa. Não reveles dados de "
+            "nenhuma. Categoria: IDENTIDADE_NAO_VERIFICADA."
+        )
 
     try:
-        acao, motivo, corpo = decidir(cliente, cfg, prompt, msg, dados_encomenda, historico)
+        decisao = decidir(cliente, cfg, prompt, msg, dados_encomenda, historico,
+                          aviso_identidade)
     except Exception as exc:
         # Uma falha técnica não é uma decisão. Fica por marcar para a passagem
         # seguinte tentar outra vez — nunca se perde um email por causa disto.
         log("erro-modelo", email=msg["message_id"][:40], erro=f"{type(exc).__name__}: {exc}")
         return "falhado"
+
+    acao = decisao["acao"]
+    motivo = decisao["motivo"]
+    corpo = decisao["corpo"]
+    extra = {
+        "categoria": decisao["categoria"],
+        "lacuna_tema": decisao["lacuna_tema"],
+        "lacuna_em_falta": decisao["lacuna_em_falta"],
+        "confianca_encomenda": confianca,
+    }
 
     if acao == "rascunhar" and corpo.strip():
         html_corpo = para_html(corpo)
@@ -1024,26 +1298,30 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         if not cfg.dry_run:
             rascunho = graph.criar_rascunho(msg["id"], html_corpo)
             log("rascunho", email=msg["message_id"][:40], draft=rascunho[:20],
-                shopify=bool(dados_encomenda))
+                shopify=bool(dados_encomenda), identidade=confianca)
         else:
             log("rascunho-simulado", email=msg["message_id"][:40],
-                shopify=bool(dados_encomenda))
-        registar(con, msg, "rascunhar", motivo, corpo)
+                shopify=bool(dados_encomenda), identidade=confianca)
+        registar(con, msg, "rascunhar", motivo, corpo, **extra)
         if not cfg.dry_run:
             graph.marcar(msg, cfg.cat_rascunho)
         return "rascunhado"
 
     if acao == "rascunhar":
         acao, motivo = "escalar", "modelo escolheu rascunhar mas devolveu corpo vazio"
+        extra["categoria"] = "OUTRO"
 
     if acao == "escalar":
-        log("escalado", email=msg["message_id"][:40], motivo=motivo)
-        registar(con, msg, "escalar", motivo, "")
+        log("escalado", email=msg["message_id"][:40], categoria=extra["categoria"],
+            identidade=confianca, motivo=motivo)
+        if extra["lacuna_tema"]:
+            log("lacuna", tema=extra["lacuna_tema"], falta=extra["lacuna_em_falta"])
+        registar(con, msg, "escalar", motivo, "", **extra)
         if not cfg.dry_run:
             graph.marcar(msg, cfg.cat_humano)
         return "escalado"
 
-    registar(con, msg, "saltar", motivo, "")
+    registar(con, msg, "saltar", motivo, "", **extra)
     return "saltado"
 
 

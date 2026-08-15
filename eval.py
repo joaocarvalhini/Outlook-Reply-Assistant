@@ -84,16 +84,27 @@ def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
         return "passou", "triagem", "chegou ao modelo"
 
     try:
-        acao, motivo, corpo = a.decidir(
+        d = a.decidir(
             cliente, cfg, prompt, msg,
             caso.get("dados_encomenda", ""), caso.get("historico", ""),
+            caso.get("aviso_identidade", ""),
         )
     except Exception as exc:
         return ERRO, "modelo", f"{type(exc).__name__}: {exc}"[:110]
 
-    if acao == "rascunhar" and not corpo.strip():
+    if d["acao"] == "rascunhar" and not d["corpo"].strip():
         return "escalar", "modelo", "escolheu rascunhar sem corpo"
-    return acao, "modelo", motivo[:80]
+
+    # Um caso pode exigir uma categoria concreta: é assim que se testa a
+    # taxonomia, e não só a ação.
+    esperada = caso.get("expect_categoria")
+    if esperada and d["categoria"] != esperada:
+        # Devolve um valor que nunca casa com o esperado, para reprovar mesmo
+        # quando a ação está certa: a categoria alimenta as métricas e uma
+        # categoria errada estraga-as em silêncio.
+        return "categoria-errada", "modelo", f"deu {d['categoria']}, esperava {esperada}"
+    detalhe = f"[{d['categoria']}] {d['motivo']}"
+    return d["acao"], "modelo", detalhe[:80]
 
 
 def relatar(resultados: list[tuple[dict, tuple[str, str, str]]], so_triagem: bool) -> int:

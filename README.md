@@ -23,8 +23,8 @@ timer (2 min)
   ├─ SQLite: já processei este internetMessageId? → sim, salta
   ├─ Triagem determinística: robôs, newsletters, domínio próprio → salta
   ├─ Graph: mensagens anteriores do mesmo fio, marcadas LOJA ou CLIENTE
-  ├─ Shopify: email menciona nº de encomenda? → consulta, só se o email bater
-  │  certo com o da encomenda (client credentials grant, scope read_orders)
+  ├─ Shopify: resolve a encomenda por níveis de certeza, e só a revela quando
+  │  a identidade está provada (client credentials grant, scope read_orders)
   ├─ Claude: 1 chamada → {"acao": "rascunhar"|"escalar"|"saltar", ...}
   └─ "rascunhar" → Graph createReply · "escalar" → categoria para humano
 ```
@@ -32,6 +32,29 @@ timer (2 min)
 A Shopify só responde a perguntas de leitura (estado do pagamento, se foi
 expedida, código de rastreio). Pedidos para cancelar, alterar ou reembolsar
 continuam sempre a escalar — a app só tem `read_orders`, nunca escrita.
+
+### Como se decide que a encomenda é mesmo daquela pessoa
+
+Um número de encomenda não é segredo: aparece em emails reencaminhados, em
+capturas de ecrã, na etiqueta da caixa. Revelar o estado de uma encomenda a
+quem cita um número é expor dados de um cliente a outro. Por isso a procura tem
+níveis, decididos em código e não pelo modelo:
+
+| Nível | Situação | Confiança | Revela? |
+|---|---|---|---|
+| 1 | Número, e o email da compra é o do remetente | `exata` | Sim |
+| 2 | Número, outro email, mas o nome completo, o telefone ou o código postal batem certo | `alta` | Sim |
+| 3 | Sem número, e o email do remetente tem exatamente uma encomenda | `alta` | Sim |
+| 4 | Só o número, sem mais nada que ligue as duas pontas | `media` | **Não** |
+| 5 | Vários candidatos possíveis | `nenhuma` | **Não** |
+
+O nível 4 é o que separa isto de um sistema descuidado: há uma encomenda
+plausível, e mesmo assim não se diz nada. O modelo é informado de que ela
+existe, para escalar com a categoria certa, mas não recebe um único dado dela.
+
+O nível 3 é capacidade nova: antes, um cliente que escrevesse do email da
+compra sem citar o número nunca era encontrado, apesar de ser o caso mais fácil
+de todos.
 
 O contexto do fio existe porque muitas respostas de cliente são curtas — "e
 quando envia?", "por mim tudo bem", "enviei já" — e sozinhas não querem dizer
@@ -53,7 +76,8 @@ verificar.py         verificação prévia, para o dia da instalação
 exportar.py          exporta emails reais anonimizados + conta a distribuição
 reprocessar.py       repassa decisões antigas pelo código de hoje, sem escrever
 medir_deriva.py       compara rascunhos regenerados com o que o lojista respondeu
-test_assistente.py   74 testes, biblioteca padrão, sem rede
+lacunas.py           a fila de lacunas de conhecimento e o peso de cada causa
+test_assistente.py   102 testes, biblioteca padrão, sem rede
 eval.py              banco de ensaio: mede o que o assistente decide
 eval/casos.json      casos com resultado esperado
 knowledge/           a totalidade do mundo do assistente
@@ -188,6 +212,7 @@ clientes de uma loja online usa Gmail.
 | `MAX_BODY_CHARS` | `4000` | Corte do corpo enviado ao modelo |
 | `THREAD_MESSAGES` | `8` | Mensagens anteriores do fio dadas ao modelo |
 | `THREAD_CHARS` | `400` | Corte de cada mensagem do fio |
+| `ENABLE_ORDER_IDENTITY_RESOLUTION` | `true` | Resolução da encomenda por níveis de certeza |
 | `DRY_RUN` | `true` | `true` não escreve nada na caixa |
 | `COMPANY_NAME` | `a loja` | Aparece no prompt |
 | `SIGNATURE` | `tripat3s` | Assinatura do rascunho |
@@ -284,7 +309,7 @@ estabelecida.
 ## Testes e avaliação
 
 ```bash
-python -m unittest test_assistente     # 74 testes, sem rede nem credenciais
+python -m unittest test_assistente     # 102 testes, sem rede nem credenciais
 python eval.py --triagem               # regras determinísticas, grátis
 python eval.py                         # tudo, contra o modelo real
 ```
@@ -327,6 +352,36 @@ melhor: é preciso ler os rascunhos novos, porque um rascunho errado é pior do
 que uma escalação. E o mesmo conjunto corrido duas vezes não dá o mesmo número —
 já se viram 9, 11 e 6 mudanças com o mesmo código. Serve para encontrar padrões,
 não para afinar contra o número.
+
+### Porque é que cada email escalou
+
+```bash
+python lacunas.py --categorias   # peso de cada causa de escalação
+python lacunas.py                # lacunas de conhecimento por fechar
+```
+
+Cada escalação traz uma categoria de uma lista fixa, além do motivo em palavras.
+O motivo é para o colega que pega no caso; a categoria é o que se conta. Sem
+identificadores estáveis, medir o efeito de uma alteração obriga a classificar
+texto livre com expressões regulares, que não é reproduzível.
+
+| Categoria | Fecha-se com |
+|---|---|
+| `DADOS_ENCOMENDA_EM_FALTA` | Melhor resolução de identidade, ou o cliente dar o número |
+| `IDENTIDADE_NAO_VERIFICADA` | Nada. É a salvaguarda a funcionar |
+| `ENCOMENDA_ANTIGA` | Scope `read_all_orders`, que exige aprovação da Shopify |
+| `INVENTARIO_INDISPONIVEL` | Scope `read_products`, que exige aprovação da Shopify |
+| `CONTEXTO_EM_FALTA` | Mais mensagens do fio, ou fios que o Graph não agrupa |
+| `LACUNA_DE_CONHECIMENTO` | Escrever o facto em `knowledge/`, depois de o confirmar |
+| `ACAO_SOBRE_ENCOMENDA` | Nada, por desenho. A app não tem escrita |
+| `JULGAMENTO_HUMANO` | Nada, por desenho. É a fronteira do que se delega |
+| `COMPROMISSO_ANTERIOR` | Registo de compromissos com estado, que ainda não existe |
+| `OUTRO` | Rever periodicamente: se crescer, falta uma categoria |
+
+Quando a causa é falta de conhecimento, o modelo não escreve "não sei": produz
+o tema e a informação concreta que falta, e é isso que alimenta a fila. O que
+ele produz é a pergunta, nunca a resposta — escalou precisamente por não saber,
+e transformar a suposição dele em facto seria o pior erro possível na base.
 
 ### Medir a deriva contra respostas reais
 
