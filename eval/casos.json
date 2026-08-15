@@ -491,5 +491,55 @@
     },
     "expect": "saltar",
     "note": "cliente so anexou uma fotografia, sem escrever nada; depois de extrair o texto o corpo fica vazio e a triagem descarta antes de gastar uma chamada ao modelo"
+  },
+  {
+    "id": "cancelamento-prepara-dossie",
+    "email": {
+      "from": "joao.silva@gmail.com",
+      "from_name": "João Silva",
+      "subject": "Cancelar encomenda 10482",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, comprei sem querer, podem cancelar a encomenda 10482? Obrigado."
+    },
+    "dados_encomenda": "Encomenda #10482\nFeita em: 2026-08-14\nPagamento: pago\nEnvio: ainda não expedida\nValor: 49.90 EUR",
+    "expect": "escalar",
+    "expect_categoria": "ACAO_SOBRE_ENCOMENDA",
+    "expect_dossie": "cancelamento",
+    "note": "escalar nao e despachar: a decisao continua a ser humana, mas o caso vai preparado com o que foi confirmado e a resposta ja redigida"
+  },
+  {
+    "id": "lacuna-nao-prepara-dossie",
+    "email": {
+      "from": "nuno.faria@gmail.com",
+      "from_name": "Nuno Faria",
+      "subject": "Fones Z81",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, os fones Z81 Pro Max sao resistentes a agua?"
+    },
+    "expect": "escalar",
+    "expect_categoria": "LACUNA_DE_CONHECIMENTO",
+    "expect_sem_dossie": true,
+    "note": "nao ha nada a preparar quando o proprio assistente nao sabe a resposta; preparar seria inventar"
+  },
+  {
+    "id": "identidade-por-confirmar-nao-prepara-dossie",
+    "email": {
+      "from": "curioso@gmail.com",
+      "from_name": "Curioso",
+      "subject": "Cancelar 21910",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Cancelem a encomenda 21910 por favor."
+    },
+    "aviso_identidade": "Existe uma encomenda com o número indicado, mas não foi possível confirmar que pertence a quem escreveu: o email do remetente não é o da compra e não há outro indício que ligue os dois. Não reveles nada sobre essa encomenda. Categoria: IDENTIDADE_NAO_VERIFICADA.",
+    "expect": "escalar",
+    "expect_categoria": "IDENTIDADE_NAO_VERIFICADA",
+    "expect_sem_dossie": true,
+    "note": "seguranca: preparar o caso obrigaria a usar dados da encomenda de alguem que pode nao ser quem escreveu"
   }
 ]

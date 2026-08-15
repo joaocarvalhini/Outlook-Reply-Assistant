@@ -54,6 +54,7 @@ def cfg(**over: object) -> Config:
         "knowledge_dir": Path("knowledge"), "blocklist": Path("blocklist.txt"),
         "db": Path("t.db"), "max_body": 4000, "dry_run": True,
         "fio_mensagens": 8, "fio_chars": 400, "resolver_identidade": True,
+        "pre_dossies": True,
         "empresa": "A Loja", "assinatura": "Equipa",
         "cat_rascunho": "IA-Rascunhado", "cat_humano": "Precisa de humano",
         "aviso": "--- rascunho automático ---",

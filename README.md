@@ -77,6 +77,7 @@ exportar.py          exporta emails reais anonimizados + conta a distribuição
 reprocessar.py       repassa decisões antigas pelo código de hoje, sem escrever
 medir_deriva.py       compara rascunhos regenerados com o que o lojista respondeu
 lacunas.py           a fila de lacunas de conhecimento e o peso de cada causa
+dossie.py            casos escalados que já vêm preparados para quem decide
 test_assistente.py   102 testes, biblioteca padrão, sem rede
 eval.py              banco de ensaio: mede o que o assistente decide
 eval/casos.json      casos com resultado esperado
@@ -213,6 +214,7 @@ clientes de uma loja online usa Gmail.
 | `THREAD_MESSAGES` | `8` | Mensagens anteriores do fio dadas ao modelo |
 | `THREAD_CHARS` | `400` | Corte de cada mensagem do fio |
 | `ENABLE_ORDER_IDENTITY_RESOLUTION` | `true` | Resolução da encomenda por níveis de certeza |
+| `ENABLE_PRE_DRAFTS` | `true` | Preparar o caso quando escala um pedido acionável |
 | `DRY_RUN` | `true` | `true` não escreve nada na caixa |
 | `COMPANY_NAME` | `a loja` | Aparece no prompt |
 | `SIGNATURE` | `tripat3s` | Assinatura do rascunho |
@@ -352,6 +354,48 @@ melhor: é preciso ler os rascunhos novos, porque um rascunho errado é pior do
 que uma escalação. E o mesmo conjunto corrido duas vezes não dá o mesmo número —
 já se viram 9, 11 e 6 mudanças com o mesmo código. Serve para encontrar padrões,
 não para afinar contra o número.
+
+### Escalar não é despachar
+
+```bash
+python dossie.py                    # casos à espera de decisão
+python dossie.py --risco alto       # só os que precisam de atenção primeiro
+python dossie.py --tipo cancelamento
+```
+
+Um terço dos escalados nunca vai desaparecer: cancelar uma encomenda, decidir
+uma garantia ou responder a uma disputa são decisões que a loja deve mesmo
+tomar. Baixar a percentagem tem um chão. Tornar cada escalação barata para
+quem decide não tem.
+
+Quando o pedido é acionável, a escalação passa a trazer um dossiê: o que foi
+confirmado, o que impede, a ação recomendada, o link direto para a encomenda no
+admin, e a resposta ao cliente já redigida à espera de aprovação.
+
+```
+CANCELAMENTO   ·   risco baixo
+
+  Cliente pede o cancelamento da encomenda #10482, feita hoje por engano.
+  A encomenda ainda não foi expedida.
+
+  Validação
+    ✓ encomenda encontrada e identidade confirmada pelo email da compra
+    ✓ ainda não foi expedida, dá para cancelar
+    ✗ o pagamento já foi capturado e terá de ser devolvido
+
+  Ação recomendada (exige aprovação de uma pessoa)
+    Cancelar a encomenda e devolver os 49,90 EUR pelo mesmo método.
+```
+
+Não se prepara dossiê em dois casos, ambos deliberados: quando a escalação é
+por falta de conhecimento, porque não há nada a preparar quando o assistente
+não sabe a resposta; e quando a identidade não está confirmada, porque preparar
+o caso obrigaria a usar dados de uma encomenda que pode não ser de quem
+escreveu.
+
+O dossiê fica no registo local e lê-se pelo `dossie.py`. Não vai para o
+Outlook: contém análise interna, e um rascunho que alguém pode enviar por
+engano é exatamente o risco contra o qual este projeto foi desenhado.
 
 ### Porque é que cada email escalou
 
