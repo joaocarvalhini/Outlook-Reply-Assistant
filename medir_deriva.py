@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 """Compara o que o assistente escreveria hoje com o que o lojista respondeu.
 
-    python medir_deriva.py                repassa todos os "rascunhar" gravados
-    python medir_deriva.py -n 15           só os 15 mais recentes
-    python medir_deriva.py --so-numero     não mostra o texto, só a tabela
+    python medir_deriva.py                     repassa os "rascunhar" gravados
+    python medir_deriva.py --incluir-escalados também tenta os que ficaram "escalar"
+    python medir_deriva.py -n 15                só os 15 mais recentes
+    python medir_deriva.py --so-numero          não mostra o texto, só a tabela
 
-Não escreve nada. Para cada email que o assistente decidiu "rascunhar", **gera
-o rascunho outra vez com o código de hoje** (como o reprocessar.py), vai buscar
-à caixa a resposta que o lojista realmente enviou nessa conversa depois do
-email do cliente, e põe as duas lado a lado.
+Não escreve nada. Para cada email, **gera o rascunho outra vez com o código de
+hoje** (como o reprocessar.py), vai buscar à caixa a resposta que o lojista
+realmente enviou nessa conversa depois do email do cliente, e põe as duas lado
+a lado.
+
+Com --incluir-escalados inclui também os emails que na altura escalaram: se o
+código de hoje já os resolveria (contexto do fio, Shopify, correções ao
+prompt), mostra o que o assistente escreveria a par do que o lojista respondeu
+de verdade — mesmo esses nunca tendo passado por um rascunho real.
 
 Regenerar em vez de usar o corpo gravado é deliberado: o registo local guarda o
 texto de quando o email foi processado, que pode ser de antes da última
@@ -97,14 +103,20 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Compara rascunhos com respostas reais")
     p.add_argument("-n", type=int, default=0, help="limita aos N mais recentes")
     p.add_argument("--so-numero", action="store_true", help="não mostra o texto")
+    p.add_argument(
+        "--incluir-escalados", action="store_true",
+        help="tenta também gerar rascunho para emails que ficaram 'escalar', "
+             "não só os que já foram 'rascunhar'",
+    )
     args = p.parse_args(argv)
 
     a.saida_utf8()
     cfg = a.carregar_config(True)
     con = sqlite3.connect(cfg.db)
+    acoes = "('rascunhar','escalar')" if args.incluir_escalados else "('rascunhar')"
     linhas = con.execute(
-        "SELECT message_id, assunto FROM processados "
-        "WHERE acao = 'rascunhar' AND conversation_id != '' ORDER BY em DESC"
+        f"SELECT message_id, assunto FROM processados "
+        f"WHERE acao IN {acoes} AND conversation_id != '' ORDER BY em DESC"
     ).fetchall()
     if args.n:
         linhas = linhas[: args.n]

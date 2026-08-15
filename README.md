@@ -331,8 +331,9 @@ não para afinar contra o número.
 ### Medir a deriva contra respostas reais
 
 ```bash
-python medir_deriva.py              # todos os rascunhos com resposta real
-python medir_deriva.py --so-numero  # só a tabela, sem os textos
+python medir_deriva.py                      # rascunhos já gravados como "rascunhar"
+python medir_deriva.py --incluir-escalados  # tenta também os que ficaram "escalar"
+python medir_deriva.py --so-numero          # só a tabela, sem os textos
 ```
 
 Regenera o rascunho de cada email já marcado `rascunhar` com o código de hoje
@@ -340,6 +341,11 @@ Regenera o rascunho de cada email já marcado `rascunhar` com o código de hoje
 resposta que o lojista realmente enviou a seguir na mesma conversa, e mostra as
 duas lado a lado. Um número de semelhança (0-100%, `difflib`) serve só para
 ordenar por onde começar a ler — não é nota de qualidade.
+
+Com `--incluir-escalados`, faz o mesmo para os emails que na altura escalaram:
+se o contexto do fio, a Shopify ou uma correção ao prompt já resolveriam o
+caso, mostra o que o assistente escreveria hoje a par do que o lojista
+respondeu de facto — casos que nunca passaram por um rascunho real.
 
 Duas armadilhas reais, já encontradas:
 - Um rascunho criado manualmente fora do fluxo normal (por exemplo para o
