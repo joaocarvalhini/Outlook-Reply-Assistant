@@ -230,6 +230,34 @@
     "note": "esta na base de conhecimento (entregas.md: envia para a Alemanha, 5-7 dias uteis); a resposta tem de sair em portugues mesmo com a pergunta em ingles"
   },
   {
+    "id": "musica-pausa-sozinha-tem-solucao-na-base",
+    "email": {
+      "from": "diogo.matos@gmail.com",
+      "from_name": "Diogo Matos",
+      "subject": "Fones param sozinhos",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, comprei uns InPods e a musica esta sempre a parar sozinha quando os uso. E normal? Ha alguma coisa que possa fazer?"
+    },
+    "expect": "rascunhar",
+    "note": "extraido do historico do lojista: e a detecao automatica do ouvido, desativa-se nas definicoes bluetooth; e o primeiro passo a sugerir, nao e caso para escalar"
+  },
+  {
+    "id": "powerbank-magsafe-precisa-saber-modelo",
+    "email": {
+      "from": "ines.carvalho@gmail.com",
+      "from_name": "Inês Carvalho",
+      "subject": "Powerbank carrega sem fios?",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, comprei uma powerbank vossa mas nao consigo carregar o telemovel encostando-a. So funciona com cabo. Esta avariada?"
+    },
+    "expect": "rascunhar",
+    "note": "extraido do historico: nem todos os modelos suportam MagSafe e onde nao esta indicado o carregamento e por cabo; a base cobre isto, deve explicar e pedir o modelo, nao escalar como avaria"
+  },
+  {
     "id": "devolucao-por-preferencia-pede-comprovativo",
     "email": {
       "from": "helena.brito@gmail.com",
