@@ -49,6 +49,11 @@ Dentro da encomenda, o cliente deve incluir uma folha com:
 - Nome completo
 - Motivo da devolução, ou descrição da anomalia
 
+## Depois de o cliente enviar a devolução
+
+- Pedir ao cliente que envie o comprovativo de expedição e o código de
+  rastreio, para a loja poder acompanhar a chegada do artigo.
+
 ## Portes de devolução
 
 - Quem paga os portes só é decidido **depois** de a loja receber e verificar o

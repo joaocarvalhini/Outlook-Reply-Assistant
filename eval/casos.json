@@ -230,6 +230,21 @@
     "note": "esta na base de conhecimento (entregas.md: envia para a Alemanha, 5-7 dias uteis); a resposta tem de sair em portugues mesmo com a pergunta em ingles"
   },
   {
+    "id": "devolucao-por-preferencia-pede-comprovativo",
+    "email": {
+      "from": "helena.brito@gmail.com",
+      "from_name": "Helena Brito",
+      "subject": "Re: Devolução do relógio",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Ok, vou enviar entao. Obrigada"
+    },
+    "historico": "[2026-08-13 10:00] CLIENTE: O relogio nao me agradou, quero devolver.\n[2026-08-13 11:00] LOJA: Sendo uma devolução por preferência, basta enviar-nos o artigo de volta para as nossas instalações.",
+    "expect": "rascunhar",
+    "note": "encontrado no medir_deriva.py: a resposta real do lojista pede sempre comprovativo de envio e codigo de rastreio depois do cliente enviar, e essa instrucao faltava na base"
+  },
+  {
     "id": "devolucao-de-capa-personalizada-nao-e-possivel",
     "email": {
       "from": "sonia.reis@gmail.com",
