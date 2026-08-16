@@ -78,6 +78,7 @@ reprocessar.py       repassa decisões antigas pelo código de hoje, sem escreve
 medir_deriva.py       compara rascunhos regenerados com o que o lojista respondeu
 lacunas.py           a fila de lacunas de conhecimento e o peso de cada causa
 dossie.py            casos escalados que já vêm preparados para quem decide
+casos_antigos.py       pares pergunta-resposta do histórico, sem passar pelo modelo
 metricas.py           taxa de escalação, categorias e risco dos dossiês
 test_assistente.py   111 testes, biblioteca padrão, sem rede
 eval.py              banco de ensaio: mede o que o assistente decide
