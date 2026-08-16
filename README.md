@@ -78,7 +78,8 @@ reprocessar.py       repassa decisões antigas pelo código de hoje, sem escreve
 medir_deriva.py       compara rascunhos regenerados com o que o lojista respondeu
 lacunas.py           a fila de lacunas de conhecimento e o peso de cada causa
 dossie.py            casos escalados que já vêm preparados para quem decide
-test_assistente.py   102 testes, biblioteca padrão, sem rede
+metricas.py           taxa de escalação, categorias e risco dos dossiês
+test_assistente.py   111 testes, biblioteca padrão, sem rede
 eval.py              banco de ensaio: mede o que o assistente decide
 eval/casos.json      casos com resultado esperado
 knowledge/           a totalidade do mundo do assistente
@@ -439,13 +440,31 @@ texto livre com expressões regulares, que não é reproduzível.
 | `LACUNA_DE_CONHECIMENTO` | Escrever o facto em `knowledge/`, depois de o confirmar |
 | `ACAO_SOBRE_ENCOMENDA` | Nada, por desenho. A app não tem escrita |
 | `JULGAMENTO_HUMANO` | Nada, por desenho. É a fronteira do que se delega |
-| `COMPROMISSO_ANTERIOR` | Registo de compromissos com estado, que ainda não existe |
+| `COMPROMISSO_ANTERIOR` | Nada, por desenho. É o registo de compromissos a funcionar |
 | `OUTRO` | Rever periodicamente: se crescer, falta uma categoria |
 
 Quando a causa é falta de conhecimento, o modelo não escreve "não sei": produz
 o tema e a informação concreta que falta, e é isso que alimenta a fila. O que
 ele produz é a pergunta, nunca a resposta — escalou precisamente por não saber,
 e transformar a suposição dele em facto seria o pior erro possível na base.
+
+### Números, não só casos
+
+```bash
+python metricas.py              # últimos 30 dias
+python metricas.py --dias 7     # só a última semana
+python metricas.py --tudo       # desde sempre
+```
+
+`dossie.py` e `lacunas.py` mostram casos individuais; `metricas.py` mostra a
+proporção entre rascunhar, escalar e saltar, a categoria de cada escalação e o
+risco dos dossiês preparados. Não faz chamadas à API nem à caixa — lê só o que
+já está no registo local, por isso corre em qualquer altura sem custo.
+
+É o número que decide se a arquitetura está a cumprir o objetivo: a taxa de
+escalação a descer sem o recall de escalação descer com ela — recall baixo
+significa que o assistente passou a responder ao que não sabia, não que ficou
+melhor.
 
 ### Medir a deriva contra respostas reais
 
