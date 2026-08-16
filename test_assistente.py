@@ -24,10 +24,8 @@ from assistente import (
     DOMINIOS_BASE,
     Config,
     Correspondencia,
-    acoes_do_caso,
     compromissos_do_fio,
     emails_iguais,
-    gravar_acao,
     gravar_compromisso,
     resolver_encomenda,
     resumir_compromissos,
@@ -725,45 +723,6 @@ class RegistoDeCompromissos(unittest.TestCase):
                            "pendente", "2026-08-20")
         resumo = resumir_compromissos(compromissos_do_fio(self.con, "conv-1"))
         self.assertIn("2026-08-20", resumo)
-
-
-class AuditoriaDeAcoes(unittest.TestCase):
-    """O registo que aprovar.py lê e escreve antes/depois de tocar na Shopify."""
-
-    def setUp(self) -> None:
-        pasta = TemporaryDirectory()
-        self.addCleanup(pasta.cleanup)
-        self.con = abrir_db(Path(pasta.name) / "t.db")
-        self.addCleanup(self.con.close)
-
-    def test_sem_acoes_devolve_vazio(self) -> None:
-        self.assertEqual(acoes_do_caso(self.con, 1), [])
-
-    def test_grava_e_relê(self) -> None:
-        gravar_acao(self.con, 1, "cancelamento", "999", "sucesso", "encomenda #10482 cancelada")
-        historico = acoes_do_caso(self.con, 1)
-        self.assertEqual(len(historico), 1)
-        self.assertEqual(historico[0]["resultado"], "sucesso")
-
-    def test_casos_diferentes_nao_se_misturam(self) -> None:
-        gravar_acao(self.con, 1, "cancelamento", "999", "sucesso", "")
-        gravar_acao(self.con, 2, "cancelamento", "888", "erro", "")
-        self.assertEqual(len(acoes_do_caso(self.con, 1)), 1)
-        self.assertEqual(len(acoes_do_caso(self.con, 2)), 1)
-
-    def test_mais_recente_primeiro(self) -> None:
-        gravar_acao(self.con, 1, "cancelamento", "999", "erro", "primeira tentativa")
-        gravar_acao(self.con, 1, "cancelamento", "999", "sucesso", "segunda tentativa")
-        historico = acoes_do_caso(self.con, 1)
-        self.assertEqual(historico[0]["detalhe"], "segunda tentativa")
-
-    def test_dry_run_regista_como_simulado_nao_sucesso(self) -> None:
-        # A distinção importa: aprovar.py só recusa reexecutar quando já há
-        # um "sucesso" registado. Um "simulado" não deve bloquear a execução
-        # real mais tarde.
-        gravar_acao(self.con, 1, "cancelamento", "999", "simulado", "DRY_RUN")
-        sucesso = next((h for h in acoes_do_caso(self.con, 1) if h["resultado"] == "sucesso"), None)
-        self.assertIsNone(sucesso)
 
 
 class Anonimizacao(unittest.TestCase):

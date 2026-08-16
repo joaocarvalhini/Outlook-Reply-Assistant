@@ -12,9 +12,9 @@ Escalar não é despachar. Cada caso aqui traz o que foi confirmado, o que
 impede, a ação recomendada e a resposta ao cliente já redigida. O objetivo é
 quem decide perceber o caso em segundos, em vez de ir investigar.
 
-Não executa nada: a recomendação é uma recomendação. Só cancelamento tem
-execução automatizável, e mesmo esse só corre através do aprovar.py, nunca
-daqui — este comando é sempre de leitura.
+Não executa nada e nunca executará: a recomendação é uma recomendação. Quem
+cancela uma encomenda ou emite um reembolso é uma pessoa, no admin da Shopify,
+e a aplicação não tem sequer permissão de escrita para o fazer.
 """
 
 from __future__ import annotations
@@ -137,16 +137,11 @@ def main(argv: list[str] | None = None) -> int:
             print("\n  Resposta ao cliente, a aguardar aprovação")
             print(_quebrar(resposta, "    "))
 
-        if tipo == "cancelamento":
-            print(f"\n  Para executar: python aprovar.py {caso_id}")
-
         print()
 
     print("━" * LARGURA)
-    print("A ação é sempre executada por uma pessoa. Para cancelamentos,")
-    print("'python aprovar.py <caso>' revalida e pede confirmação explícita")
-    print("antes de tocar na Shopify; os outros tipos ainda só se fazem no")
-    print("admin, à mão.\n")
+    print("A ação é sempre executada por uma pessoa, no admin da Shopify.")
+    print("Esta aplicação não tem permissão de escrita e não a vai ter.\n")
     return 0
 
 
