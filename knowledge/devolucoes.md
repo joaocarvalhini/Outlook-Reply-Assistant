@@ -26,10 +26,15 @@ Fonte: /pages/politica-de-reembolsos-e-devolucoes, /pages/perguntas-faq,
 
 ## Como iniciar uma devolução
 
-- O cliente contacta a loja por email, para info@tripat3s.com, indicando o número
-  da encomenda.
+- O passo padrão é preencher o formulário de devolução/troca em
+  https://www.tripat3s.com/pages/pedido-de-devolucao-ou-troca — é o que a
+  loja pede na generalidade dos casos reais observados, não só em
+  reclamações complexas.
+- Em alternativa, ou como primeiro contacto antes do formulário, o cliente
+  pode escrever para info@tripat3s.com indicando o número da encomenda.
 - O contacto tem de ser feito nos primeiros 14 dias após a receção.
-- A loja envia as instruções e a autorização de devolução.
+- Depois de recebido o pedido (por formulário ou email), a loja envia as
+  instruções e a autorização de devolução.
 
 ## Para onde enviar a devolução
 
@@ -110,12 +115,10 @@ Dentro da encomenda, o cliente deve incluir uma folha com:
 
 - O cliente deve contactar a loja imediatamente.
 - O cliente escolhe entre reembolso total ou substituição do produto.
-- Nalguns casos observados (reclamação detalhada, vários problemas descritos
-  de uma vez), a loja também pediu ao cliente para preencher um formulário
-  próprio de devolução/troca, além das fotos/vídeo — e recusa formulários
-  preenchidos com recurso a ferramentas de inteligência artificial. Não está
-  confirmado em que condição exata o formulário é pedido — não presumir que
-  se aplica sempre; escalar em vez de afirmar isto ao cliente sem certeza.
+- O formulário de devolução/troca (ver "Como iniciar uma devolução") é o
+  passo padrão pedido também aqui, além das fotos/vídeo do problema.
+- A loja recusa formulários preenchidos com recurso a ferramentas de
+  inteligência artificial.
 
 ## Cancelamento de encomenda
 

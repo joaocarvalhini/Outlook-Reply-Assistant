@@ -17,3 +17,11 @@ Fonte: /pages/termos-e-condicoes, /products/capa-personalizada
   está indicada na página desse produto específico, na loja online.
 - Não existe uma regra geral de compatibilidade válida para todos os produtos:
   varia de artigo para artigo.
+
+## Mystery Box (oferta)
+
+- É sempre **uma** Mystery Box por encomenda, mesmo que o checkout mostre
+  "2x" ou mais por engano do cliente ao adicionar ao carrinho.
+- O conteúdo varia de encomenda para encomenda — não há garantia de receber
+  um artigo específico. Não confirmar ao cliente o que vem lá dentro antes
+  do envio; a loja é que sabe o que enviou nessa semana.
