@@ -49,6 +49,18 @@ Dentro da encomenda, o cliente deve incluir uma folha com:
 - Nome completo
 - Motivo da devolução, ou descrição da anomalia
 
+## Etiqueta de devolução
+
+- A loja **não emite nem disponibiliza etiqueta de devolução pré-paga**. O
+  cliente despacha por conta própria, na transportadora que preferir (CTT ou
+  outra) — não é a loja a gerar a etiqueta.
+- Não é possível entregar a devolução diretamente ao estafeta da DPD no
+  momento de uma entrega — tem de ser um envio separado, para ficar
+  devidamente registado.
+- Isto não contradiz o reembolso dos portes (ver "Portes de devolução"
+  abaixo): o cliente paga o envio primeiro, a loja reembolsa depois, se
+  aplicável. (Confirmado diretamente pela loja, 11 de agosto de 2026.)
+
 ## Depois de o cliente enviar a devolução
 
 - Pedir ao cliente que envie o comprovativo de expedição e o código de
@@ -59,7 +71,9 @@ Dentro da encomenda, o cliente deve incluir uma folha com:
 - Quem paga os portes só é decidido **depois** de a loja receber e verificar o
   artigo. Nunca se promete ao cliente, à partida, que a loja assume os portes.
 - Se a verificação confirmar defeito de fabrico, ou erro de envio da loja, a
-  loja assume os portes.
+  loja assume os portes, **até ao limite de 3,99 €** (valor padrão para um
+  envio deste peso/tamanho, ex.: uma capa de telemóvel). Confirmado em várias
+  conversas reais com o mesmo valor.
 - Se a devolução for por arrependimento, ou por o produto não ter correspondido
   às expectativas, os portes ficam a cargo do cliente.
 - Recomenda-se envio por correio registado normal, sem serviços adicionais como
@@ -71,9 +85,15 @@ Dentro da encomenda, o cliente deve incluir uma folha com:
   em contrário.
 - O processo tem duas fases, e ambas devem ser explicadas ao cliente:
   1. A loja analisa a devolução e emite o reembolso no prazo de até 5 dias úteis
-     após receber o produto.
+     após receber o produto. Na prática, a conferência das devoluções
+     recebidas ao longo da semana é feita à sexta-feira.
   2. O valor pode demorar até 10 dias úteis a ficar disponível na conta do
      cliente, consoante o banco e o método de pagamento.
+- O comprovativo do processamento do reembolso **não é emitido pela loja**,
+  é a provedora de pagamentos que o envia. Se o cliente disser que não
+  recebeu, pedir para verificar spam/lixo eletrónico antes de mais — só
+  depois disso a loja reencaminha o pedido à provedora para confirmar o
+  estado.
 
 ## Reembolso quando há disputa aberta no PayPal
 
@@ -90,6 +110,12 @@ Dentro da encomenda, o cliente deve incluir uma folha com:
 
 - O cliente deve contactar a loja imediatamente.
 - O cliente escolhe entre reembolso total ou substituição do produto.
+- Nalguns casos observados (reclamação detalhada, vários problemas descritos
+  de uma vez), a loja também pediu ao cliente para preencher um formulário
+  próprio de devolução/troca, além das fotos/vídeo — e recusa formulários
+  preenchidos com recurso a ferramentas de inteligência artificial. Não está
+  confirmado em que condição exata o formulário é pedido — não presumir que
+  se aplica sempre; escalar em vez de afirmar isto ao cliente sem certeza.
 
 ## Cancelamento de encomenda
 

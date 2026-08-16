@@ -96,16 +96,24 @@ def resposta_da_loja(graph: a.Graph, cliente_msg: dict, cfg: a.Config) -> dict |
 
 def encontrar_pares(graph: a.Graph, mensagens: list[dict], cfg: a.Config,
                      bloqueados: frozenset[str], limite: int) -> list[tuple[dict, dict]]:
-    """Para cada mensagem de cliente na pasta, procura a resposta na caixa
-    inteira. Para na primeira mensagem de cliente sem resposta encontrada
-    depois de já ter `limite` pares — evita percorrer centenas de conversas
-    quando só se pediram poucos pares.
+    """Um par por conversa, ancorado na primeira mensagem do cliente.
+
+    Numa conversa longa o cliente escreve várias vezes; sem agrupar por
+    conversa, cada mensagem dele virava um "par" a apontar quase sempre
+    para a mesma resposta — a mesma conversa a repetir-se na leitura. A
+    primeira mensagem do cliente é a pergunta original; ancorar noutra
+    mensagem (a mais recente, por exemplo) arriscava não encontrar resposta
+    nenhuma, se a loja já tivesse respondido antes dela.
     """
-    candidatos = sorted(
-        (m for m in mensagens if a.triar(m, cfg, bloqueados) is None),
-        key=lambda m: m["recebido"],
-        reverse=True,
-    )
+    por_conversa: dict[str, dict] = {}
+    for m in mensagens:
+        if a.triar(m, cfg, bloqueados) is not None:
+            continue
+        atual = por_conversa.get(m["conversation_id"])
+        if atual is None or m["recebido"] < atual["recebido"]:
+            por_conversa[m["conversation_id"]] = m
+
+    candidatos = sorted(por_conversa.values(), key=lambda m: m["recebido"], reverse=True)
     pares = []
     for cliente_msg in candidatos:
         resposta = resposta_da_loja(graph, cliente_msg, cfg)
