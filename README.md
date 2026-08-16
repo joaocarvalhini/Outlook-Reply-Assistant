@@ -364,6 +364,8 @@ não para afinar contra o número.
 
 ```bash
 python dossie.py                    # casos à espera de decisão
+python dossie.py --lista            # uma linha por caso, para escolher rápido
+python dossie.py --caso 42          # só o caso #42, sem percorrer os outros
 python dossie.py --risco alto       # só os que precisam de atenção primeiro
 python dossie.py --tipo cancelamento
 ```

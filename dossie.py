@@ -2,6 +2,8 @@
 """A fila de casos escalados que já vêm preparados.
 
     python dossie.py                 casos por decidir, mais recentes primeiro
+    python dossie.py --lista         uma linha por caso, para escolher rápido
+    python dossie.py --caso 42       só o caso #42, sem percorrer os outros
     python dossie.py -n 5            só os 5 mais recentes
     python dossie.py --tipo cancelamento
     python dossie.py --risco alto
@@ -10,9 +12,9 @@ Escalar não é despachar. Cada caso aqui traz o que foi confirmado, o que
 impede, a ação recomendada e a resposta ao cliente já redigida. O objetivo é
 quem decide perceber o caso em segundos, em vez de ir investigar.
 
-Não executa nada e nunca executará: a recomendação é uma recomendação. Quem
-cancela uma encomenda ou emite um reembolso é uma pessoa, no admin da Shopify,
-e a aplicação não tem sequer permissão de escrita para o fazer.
+Não executa nada: a recomendação é uma recomendação. Só cancelamento tem
+execução automatizável, e mesmo esse só corre através do aprovar.py, nunca
+daqui — este comando é sempre de leitura.
 """
 
 from __future__ import annotations
@@ -50,6 +52,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("-n", type=int, default=0, help="limita aos N mais recentes")
     p.add_argument("--tipo", help="cancelamento, reembolso, troca, garantia, ...")
     p.add_argument("--risco", choices=("baixo", "medio", "alto"))
+    p.add_argument("--caso", type=int, help="só este caso, pelo número visto aqui")
+    p.add_argument("--lista", action="store_true",
+                    help="uma linha por caso, para escolher qual abrir")
     args = p.parse_args(argv)
 
     a.saida_utf8()
@@ -57,7 +62,10 @@ def main(argv: list[str] | None = None) -> int:
     con = sqlite3.connect(cfg.db)
 
     condicoes = ["acao = 'escalar'", "COALESCE(dossie_tipo,'') NOT IN ('', 'nenhum')"]
-    valores: list[str] = []
+    valores: list[object] = []
+    if args.caso:
+        condicoes.append("rowid = ?")
+        valores.append(args.caso)
     if args.tipo:
         condicoes.append("dossie_tipo = ?")
         valores.append(args.tipo)
@@ -75,10 +83,23 @@ def main(argv: list[str] | None = None) -> int:
         linhas = linhas[: args.n]
 
     if not linhas:
+        if args.caso:
+            print(f"\nCaso #{args.caso} não existe, ou não é um caso com dossiê "
+                  "preparado (acao='escalar' e dossie_tipo definido).\n")
+            return 1
         print("\nNenhum caso preparado.\n\nOu ainda não passou nenhum pedido "
               "acionável desde que os dossiês foram ligados, ou os escalados "
               "recentes eram lacunas de conhecimento e identidades por "
               "confirmar, que não se preparam.\n")
+        return 0
+
+    if args.lista:
+        print(f"\n{len(linhas)} caso(s) à espera de decisão\n")
+        for caso_id, assunto, tipo, *_resto, risco, _resposta, _link, em in linhas:
+            marca = CORES_RISCO.get(risco, (risco or "?") + " ").strip()
+            print(f"  #{caso_id:<5} {tipo.upper().replace('_', ' '):<18} "
+                  f"risco {marca:<6} {em[:10]}  {assunto[:36]}")
+        print()
         return 0
 
     print(f"\n{len(linhas)} caso(s) à espera de decisão\n")
@@ -115,6 +136,9 @@ def main(argv: list[str] | None = None) -> int:
         if resposta:
             print("\n  Resposta ao cliente, a aguardar aprovação")
             print(_quebrar(resposta, "    "))
+
+        if tipo == "cancelamento":
+            print(f"\n  Para executar: python aprovar.py {caso_id}")
 
         print()
 
