@@ -125,7 +125,7 @@ def main(argv: list[str] | None = None) -> int:
 
     graph = a.Graph(cfg)
     shopify = a.Shopify(cfg)
-    cliente = anthropic.Anthropic(api_key=cfg.api_key)
+    cliente = anthropic.Anthropic(api_key=cfg.api_key, timeout=60.0)
     prompt = a.construir_prompt(cfg)
     bloqueados = a.carregar_blocklist(cfg.blocklist)
 
@@ -175,9 +175,10 @@ def main(argv: list[str] | None = None) -> int:
                 pass
 
         try:
-            acao, _motivo, rascunho = a.decidir(cliente, cfg, prompt, msg, dados, historico)
+            decisao = a.decidir(cliente, cfg, prompt, msg, dados, historico)
         except Exception:
             continue
+        acao, rascunho = decisao["acao"], decisao["corpo"]
         if acao != "rascunhar" or not rascunho.strip():
             ja_nao_rascunha += 1
             continue

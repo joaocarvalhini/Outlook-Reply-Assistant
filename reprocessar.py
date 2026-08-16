@@ -61,7 +61,7 @@ def main(argv: list[str] | None = None) -> int:
 
     graph = a.Graph(cfg)
     shopify = a.Shopify(cfg)
-    cliente = anthropic.Anthropic(api_key=cfg.api_key)
+    cliente = anthropic.Anthropic(api_key=cfg.api_key, timeout=60.0)
     prompt = a.construir_prompt(cfg)
     bloqueados = a.carregar_blocklist(cfg.blocklist)
 
@@ -106,12 +106,13 @@ def main(argv: list[str] | None = None) -> int:
                 dados = a.resumir_encomenda(encomenda)
 
         try:
-            acao, motivo, corpo = a.decidir(cliente, cfg, prompt, msg, dados, historico)
+            decisao = a.decidir(cliente, cfg, prompt, msg, dados, historico)
         except Exception as exc:
             contagem["erro-modelo"] += 1
             print(f"  ERRO  {assunto[:44]:44}  {type(exc).__name__}")
             continue
 
+        acao, motivo, corpo = decisao["acao"], decisao["motivo"], decisao["corpo"]
         contagem[acao] += 1
         # marcadores: fio recuperado, nº encontrado, dados vieram da Shopify
         marca = (

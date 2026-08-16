@@ -24,8 +24,11 @@ from assistente import (
     DOMINIOS_BASE,
     Config,
     Correspondencia,
+    compromissos_do_fio,
     emails_iguais,
+    gravar_compromisso,
     resolver_encomenda,
+    resumir_compromissos,
     abrir_db,
     carregar_blocklist,
     cortar_citacao,
@@ -54,7 +57,7 @@ def cfg(**over: object) -> Config:
         "knowledge_dir": Path("knowledge"), "blocklist": Path("blocklist.txt"),
         "db": Path("t.db"), "max_body": 4000, "dry_run": True,
         "fio_mensagens": 8, "fio_chars": 400, "resolver_identidade": True,
-        "pre_dossies": True,
+        "pre_dossies": True, "registo_compromissos": True,
         "empresa": "A Loja", "assinatura": "Equipa",
         "cat_rascunho": "IA-Rascunhado", "cat_humano": "Precisa de humano",
         "aviso": "--- rascunho automático ---",
@@ -654,6 +657,72 @@ class Registo(unittest.TestCase):
         linha = self.con.execute("SELECT acao, corpo FROM processados").fetchone()
         self.assertEqual(linha[0], "rascunhar")
         self.assertIn("entregas", linha[1])
+
+
+class RegistoDeCompromissos(unittest.TestCase):
+    """Sobrevive fora da janela do fio: é o problema real que resolve."""
+
+    def setUp(self) -> None:
+        pasta = TemporaryDirectory()
+        self.addCleanup(pasta.cleanup)
+        self.con = abrir_db(Path(pasta.name) / "t.db")
+        self.addCleanup(self.con.close)
+
+    def test_sem_compromissos_devolve_vazio(self) -> None:
+        self.assertEqual(compromissos_do_fio(self.con, "conv-1"), [])
+        self.assertEqual(resumir_compromissos([]), "")
+
+    def test_grava_e_relê(self) -> None:
+        gravar_compromisso(self.con, "conv-1", "substituicao",
+                           "enviar novo par de fones", "pendente", "")
+        compromissos = compromissos_do_fio(self.con, "conv-1")
+        self.assertEqual(len(compromissos), 1)
+        self.assertEqual(compromissos[0]["tipo"], "substituicao")
+        self.assertIn("enviar novo par", compromissos[0]["descricao"])
+
+    def test_sem_data_nunca_inventa_uma(self) -> None:
+        gravar_compromisso(self.con, "conv-1", "envio", "vai seguir", "pendente", "")
+        c = compromissos_do_fio(self.con, "conv-1")[0]
+        self.assertEqual(c["data"], "")
+        self.assertIn("sem data confirmada", resumir_compromissos([c]))
+
+    def test_atualizar_o_mesmo_tipo_substitui_nao_duplica(self) -> None:
+        gravar_compromisso(self.con, "conv-1", "reembolso", "a processar",
+                           "pendente", "")
+        gravar_compromisso(self.con, "conv-1", "reembolso", "já emitido",
+                           "concluido", "")
+        compromissos = self.con.execute(
+            "SELECT COUNT(*) FROM compromissos WHERE conversation_id='conv-1'"
+        ).fetchone()[0]
+        self.assertEqual(compromissos, 1)
+
+    def test_concluido_nao_aparece_como_pendente(self) -> None:
+        # compromissos_do_fio só devolve pendentes: um caso fechado não deve
+        # continuar a aparecer como algo por cumprir.
+        gravar_compromisso(self.con, "conv-1", "reembolso", "feito",
+                           "concluido", "")
+        self.assertEqual(compromissos_do_fio(self.con, "conv-1"), [])
+
+    def test_conversas_diferentes_nao_se_misturam(self) -> None:
+        gravar_compromisso(self.con, "conv-1", "envio", "A", "pendente", "")
+        gravar_compromisso(self.con, "conv-2", "envio", "B", "pendente", "")
+        self.assertEqual(len(compromissos_do_fio(self.con, "conv-1")), 1)
+        self.assertEqual(compromissos_do_fio(self.con, "conv-1")[0]["descricao"], "A")
+
+    def test_tipo_nenhum_nunca_se_grava(self) -> None:
+        gravar_compromisso(self.con, "conv-1", "nenhum", "x", "pendente", "")
+        self.assertEqual(compromissos_do_fio(self.con, "conv-1"), [])
+
+    def test_conversation_id_vazio_nao_grava(self) -> None:
+        gravar_compromisso(self.con, "", "envio", "x", "pendente", "")
+        n = self.con.execute("SELECT COUNT(*) FROM compromissos").fetchone()[0]
+        self.assertEqual(n, 0)
+
+    def test_data_confirmada_aparece_no_resumo(self) -> None:
+        gravar_compromisso(self.con, "conv-1", "envio", "duas unidades novas",
+                           "pendente", "2026-08-20")
+        resumo = resumir_compromissos(compromissos_do_fio(self.con, "conv-1"))
+        self.assertIn("2026-08-20", resumo)
 
 
 class Anonimizacao(unittest.TestCase):

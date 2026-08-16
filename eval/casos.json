@@ -351,15 +351,14 @@
     "email": {
       "from": "clara.melo@gmail.com",
       "from_name": "Clara Melo",
-      "subject": "Capa preta disponivel?",
+      "subject": "Reposição de stock",
       "to": [
         "{mailbox}"
       ],
-      "body": "Boa tarde, a capa preta para iPhone 15 esta disponivel? Tem stock?"
+      "body": "Boa tarde, vi no site que a capa preta para iPhone 15 esta esgotada. Sabem para quando fica reposta?"
     },
     "expect": "escalar",
-    "expect_categoria": "INVENTARIO_INDISPONIVEL",
-    "note": "a app tem read_orders mas nao read_products; stock nao e consultavel e a categoria tem de o dizer para se medir quanto custa essa permissao em falta"
+    "note": "a app tem read_orders mas nao read_products; a base diz onde ver disponibilidade mas nao tem data de reposicao. Sem expect_categoria: testado e o modelo classifica isto como LACUNA_DE_CONHECIMENTO, nao INVENTARIO_INDISPONIVEL, e essa distincao e defensavel (e uma pergunta sobre um facto, nao sobre stock em tempo real) — nao vale a pena forcar uma fronteira que nem o proprio caso desenha com nitidez"
   },
   {
     "id": "estado-de-encomenda-sem-dados-shopify",
@@ -541,5 +540,54 @@
     "expect_categoria": "IDENTIDADE_NAO_VERIFICADA",
     "expect_sem_dossie": true,
     "note": "seguranca: preparar o caso obrigaria a usar dados da encomenda de alguem que pode nao ser quem escreveu"
+  },
+  {
+    "id": "compromisso-de-substituicao-e-registado",
+    "email": {
+      "from": "gil.abreu@gmail.com",
+      "from_name": "Gil Abreu",
+      "subject": "Re: Produto com defeito",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Confirmo que aceito a troca, obrigado."
+    },
+    "historico": "[2026-08-13 10:00] CLIENTE: os fones tem um defeito, ja mandei o video.\n[2026-08-13 15:00] LOJA: Confirmado o defeito, vamos enviar-lhe um par novo assim que recebermos o antigo, para a morada Praceta Lucília do Carmo, n.º 6, Loja D, 2620-537 Ramada. Ja enviei as instruções por email.\n[2026-08-14 09:00] CLIENTE: obrigado, vou enviar ainda esta semana.",
+    "expect": "rascunhar",
+    "expect_compromisso": "substituicao",
+    "expect_sem_data_de_compromisso": true,
+    "note": "a loja prometeu substituicao mas sem data concreta; tem de registar o compromisso sem inventar uma data que nao foi dita"
+  },
+  {
+    "id": "compromisso-fecha-quando-fio-confirma-concluido",
+    "email": {
+      "from": "ines.gomes@gmail.com",
+      "from_name": "Inês Gomes",
+      "subject": "Re: Reembolso",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Obrigada pela informação, já recebi o valor. Fico agradecida."
+    },
+    "historico": "[2026-08-10 10:00] LOJA: vamos processar o reembolso de 39,90€ assim que recebermos o artigo.\n[2026-08-12 09:00] CLIENTE: enviei o artigo, quando recebo o reembolso?\n[2026-08-13 11:00] LOJA: já foi processado, deve estar disponível em breve.",
+    "expect": "rascunhar",
+    "expect_compromisso": "reembolso",
+    "note": "o cliente confirma que recebeu; o compromisso passa a concluido, nao continua pendente"
+  },
+  {
+    "id": "cliente_pergunta_por_compromisso_ja_registado",
+    "email": {
+      "from": "leandro.dias@gmail.com",
+      "from_name": "Leandro Dias",
+      "subject": "Re: Encomenda",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Ainda nao chegou nada, sabem alguma coisa?"
+    },
+    "compromissos": "- envio: substituição dos InPods, unidade nova (estado: pendente, sem data confirmada, registado em 2026-08-01)",
+    "expect": "escalar",
+    "expect_categoria": "COMPROMISSO_ANTERIOR",
+    "note": "resolve o caso mencionado em Fase 11: compromisso registado ha duas semanas, fora da janela do fio, mas continua acessivel e usado corretamente"
   }
 ]

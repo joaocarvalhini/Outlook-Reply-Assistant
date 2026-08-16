@@ -87,7 +87,7 @@ def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
         d = a.decidir(
             cliente, cfg, prompt, msg,
             caso.get("dados_encomenda", ""), caso.get("historico", ""),
-            caso.get("aviso_identidade", ""),
+            caso.get("aviso_identidade", ""), caso.get("compromissos", ""),
         )
     except Exception as exc:
         return ERRO, "modelo", f"{type(exc).__name__}: {exc}"[:110]
@@ -112,6 +112,15 @@ def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
         return "dossie-indevido", "modelo", f"preparou dossiê {tipo} quando não devia"
     if caso.get("expect_dossie") and tipo != caso["expect_dossie"]:
         return "dossie-errado", "modelo", f"deu {tipo or '(vazio)'}, esperava {caso['expect_dossie']}"
+
+    compromisso = d.get("compromisso_tipo", "")
+    if "expect_compromisso" in caso and compromisso != caso["expect_compromisso"]:
+        return ("compromisso-errado", "modelo",
+                f"deu {compromisso or '(vazio)'}, esperava {caso['expect_compromisso']}")
+    if caso.get("expect_sem_data_de_compromisso") and d.get("compromisso_data", "").strip():
+        return ("data-inventada", "modelo",
+                f"inventou data '{d['compromisso_data']}' sem ela estar confirmada")
+
     detalhe = f"[{d['categoria']}] {d['motivo']}"
     return d["acao"], "modelo", detalhe[:80]
 
@@ -210,7 +219,7 @@ def main(argv: list[str] | None = None) -> int:
     if not args.triagem:
         import anthropic
 
-        cliente = anthropic.Anthropic(api_key=cfg.api_key)
+        cliente = anthropic.Anthropic(api_key=cfg.api_key, timeout=60.0)
         prompt = a.construir_prompt(cfg)
 
     etapa = "só triagem" if args.triagem else cfg.modelo
