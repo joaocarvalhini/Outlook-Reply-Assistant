@@ -764,6 +764,18 @@ def abrir_db(caminho: Path) -> sqlite3.Connection:
             atualizado_em   TEXT,
             PRIMARY KEY (conversation_id, tipo)
         );
+        -- Uma linha por tentativa de execução aprovada por uma pessoa via
+        -- aprovar.py. Nunca é o LLM a escrever aqui: só o comando, depois de
+        -- confirmação explícita. "simulado" cobre DRY_RUN=true.
+        CREATE TABLE IF NOT EXISTS acoes (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            caso_id         INTEGER NOT NULL,
+            tipo            TEXT NOT NULL,
+            encomenda_id    TEXT,
+            resultado       TEXT NOT NULL,
+            detalhe         TEXT,
+            em              TEXT NOT NULL
+        );
         """
     )
     existentes = {
@@ -846,6 +858,30 @@ def gravar_compromisso(con: sqlite3.Connection, conversation_id: str, tipo: str,
         (conversation_id, tipo, descricao,
          estado if estado in ESTADOS_COMPROMISSO else "desconhecido",
          data_prometida, agora()),
+    )
+    con.commit()
+
+
+def acoes_do_caso(con: sqlite3.Connection, caso_id: int) -> list[dict]:
+    """Tentativas de execução já registadas para este caso, sucedidas ou não.
+
+    Consultado antes de executar: um caso com uma execução "sucesso" já
+    registada não deve ser aprovado outra vez.
+    """
+    linhas = con.execute(
+        "SELECT tipo, resultado, detalhe, em FROM acoes "
+        "WHERE caso_id = ? ORDER BY em DESC, id DESC",
+        (caso_id,),
+    ).fetchall()
+    return [{"tipo": t, "resultado": r, "detalhe": d, "em": e} for t, r, d, e in linhas]
+
+
+def gravar_acao(con: sqlite3.Connection, caso_id: int, tipo: str,
+                encomenda_id: str, resultado: str, detalhe: str) -> None:
+    con.execute(
+        "INSERT INTO acoes (caso_id, tipo, encomenda_id, resultado, detalhe, em) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (caso_id, tipo, encomenda_id, resultado, detalhe, agora()),
     )
     con.commit()
 
@@ -985,6 +1021,39 @@ class Shopify:
             ):
                 return enc
         return None
+
+    def por_id(self, order_id: str) -> dict | None:
+        """Vai buscar a encomenda pelo id numérico da Shopify (não o #número).
+
+        Usado para revalidar mesmo antes de cancelar: o dossiê pode ter sido
+        preparado há horas, e nesse tempo a encomenda pode já ter sido
+        expedida ou cancelada por outra via.
+        """
+        r = self.http.get(
+            f"{self.base}/orders/{order_id}.json",
+            headers={"X-Shopify-Access-Token": self._obter_token()},
+            params={"fields": self.CAMPOS_ENCOMENDA},
+        )
+        if r.status_code == 404:
+            return None
+        if r.status_code >= 400:
+            raise RuntimeError(f"Shopify orders {r.status_code}: {r.text[:200]}")
+        return r.json().get("order")
+
+    def cancelar(self, order_id: str) -> dict:
+        """Cancela a encomenda. Não emite reembolso nem envia email ao
+        cliente — isso fica para a loja decidir separadamente, com o valor à
+        vista no dossiê. Só quem chama isto decide se é a sério ou simulado;
+        esta função nunca olha para DRY_RUN.
+        """
+        r = self.http.post(
+            f"{self.base}/orders/{order_id}/cancel.json",
+            headers={"X-Shopify-Access-Token": self._obter_token()},
+            json={"reason": "customer", "email": False},
+        )
+        if r.status_code >= 400:
+            raise RuntimeError(f"Shopify cancel {r.status_code}: {r.text[:200]}")
+        return r.json().get("order", {})
 
 
 def e_da_loja(endereco: str, caixa: str) -> bool:

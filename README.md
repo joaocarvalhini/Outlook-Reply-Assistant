@@ -29,9 +29,11 @@ timer (2 min)
   └─ "rascunhar" → Graph createReply · "escalar" → categoria para humano
 ```
 
-A Shopify só responde a perguntas de leitura (estado do pagamento, se foi
-expedida, código de rastreio). Pedidos para cancelar, alterar ou reembolsar
-continuam sempre a escalar — a app só tem `read_orders`, nunca escrita.
+Nesta passagem automática a Shopify só responde a perguntas de leitura
+(estado do pagamento, se foi expedida, código de rastreio). Pedidos para
+cancelar, alterar ou reembolsar continuam sempre a escalar — o scope de
+escrita (`write_orders`) só é usado pelo `aprovar.py`, à parte, invocado à
+mão por uma pessoa. Ver [Aprovar um cancelamento](#aprovar-um-cancelamento--a-única-ação-automatizada).
 
 ### Como se decide que a encomenda é mesmo daquela pessoa
 
@@ -78,8 +80,9 @@ reprocessar.py       repassa decisões antigas pelo código de hoje, sem escreve
 medir_deriva.py       compara rascunhos regenerados com o que o lojista respondeu
 lacunas.py           a fila de lacunas de conhecimento e o peso de cada causa
 dossie.py            casos escalados que já vêm preparados para quem decide
+aprovar.py            revalida e executa um cancelamento aprovado por uma pessoa
 metricas.py           taxa de escalação, categorias e risco dos dossiês
-test_assistente.py   111 testes, biblioteca padrão, sem rede
+test_assistente.py   116 testes, biblioteca padrão, sem rede
 eval.py              banco de ensaio: mede o que o assistente decide
 eval/casos.json      casos com resultado esperado
 knowledge/           a totalidade do mundo do assistente
@@ -399,6 +402,42 @@ O dossiê fica no registo local e lê-se pelo `dossie.py`. Não vai para o
 Outlook: contém análise interna, e um rascunho que alguém pode enviar por
 engano é exatamente o risco contra o qual este projeto foi desenhado.
 
+### Aprovar um cancelamento — a única ação automatizada
+
+```bash
+python aprovar.py 42            # revalida o caso #42 e pede confirmação
+python aprovar.py 42 --forcar   # ignora o aviso de já ter sido executado
+```
+
+De todos os tipos de dossiê, só cancelamento passou a ter execução
+automatizável: é o de menor risco (reversível enquanto a encomenda não foi
+expedida, sem reembolso envolvido). Reembolso, troca e disputa continuam a
+resolver-se à mão no admin — envolvem dinheiro ou logística que o dossiê não
+tem informação suficiente para confirmar sozinho.
+
+O LLM nunca chega a tocar na Shopify. Ele prepara o dossiê; `aprovar.py` é
+quem lê o dossiê, e só executa depois de:
+
+1. **Revalidar em tempo real.** O dossiê pode ter sido preparado há horas —
+   entretanto a encomenda pode ter sido expedida ou já cancelada por outra
+   via. Se o estado mudou, recusa sem perguntar nada.
+2. **Confirmação explícita.** Pede para escrever de volta o número da
+   encomenda, não um Enter — para não aprovar por engano o caso errado.
+3. **`DRY_RUN`, a mesma variável de sempre.** Com `DRY_RUN=true` (omissão),
+   simula e regista; só com `DRY_RUN=false` chama mesmo a API de escrita da
+   Shopify.
+
+Quem corre o comando é quem já tem acesso ao admin da Shopify — as mesmas
+credenciais já configuradas para leitura. Não há um conceito de "aprovador"
+separado: é a mesma pessoa que, sem isto, ia ao admin cancelar à mão. O que
+muda é que passa a fazê-lo com o contexto do dossiê à frente e uma
+revalidação automática, em vez de às cegas.
+
+Cada tentativa fica gravada na tabela `acoes` (sucesso, erro ou simulado),
+independentemente do resultado. Correr `aprovar.py` contra um caso já
+executado com sucesso recusa por omissão — `--forcar` é obrigatório para
+insistir.
+
 ### Compromissos que sobrevivem ao fio
 
 `THREAD_MESSAGES` só dá ao modelo as últimas mensagens do fio. Uma promessa
@@ -438,7 +477,7 @@ texto livre com expressões regulares, que não é reproduzível.
 | `INVENTARIO_INDISPONIVEL` | Scope `read_products`, que exige aprovação da Shopify |
 | `CONTEXTO_EM_FALTA` | Mais mensagens do fio, ou fios que o Graph não agrupa |
 | `LACUNA_DE_CONHECIMENTO` | Escrever o facto em `knowledge/`, depois de o confirmar |
-| `ACAO_SOBRE_ENCOMENDA` | Nada, por desenho. A app não tem escrita |
+| `ACAO_SOBRE_ENCOMENDA` | Aprovação humana via `aprovar.py`, se o dossiê for cancelamento |
 | `JULGAMENTO_HUMANO` | Nada, por desenho. É a fronteira do que se delega |
 | `COMPROMISSO_ANTERIOR` | Nada, por desenho. É o registo de compromissos a funcionar |
 | `OUTRO` | Rever periodicamente: se crescer, falta uma categoria |

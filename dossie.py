@@ -66,7 +66,7 @@ def main(argv: list[str] | None = None) -> int:
         valores.append(args.risco)
 
     linhas = con.execute(
-        "SELECT assunto, dossie_tipo, dossie_resumo, dossie_validacao, "
+        "SELECT rowid, assunto, dossie_tipo, dossie_resumo, dossie_validacao, "
         "       dossie_accao, dossie_risco, dossie_resposta, dossie_link, em "
         "FROM processados WHERE " + " AND ".join(condicoes) + " ORDER BY em DESC",
         valores,
@@ -83,11 +83,12 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"\n{len(linhas)} caso(s) à espera de decisão\n")
 
-    for (assunto, tipo, resumo, validacao, accao, risco, resposta, link,
-         em) in linhas:
+    for (caso_id, assunto, tipo, resumo, validacao, accao, risco, resposta,
+         link, em) in linhas:
         print("━" * LARGURA)
         marca = CORES_RISCO.get(risco, (risco or "?") + " ")
-        print(f"{tipo.upper().replace('_', ' ')}   ·   risco {marca.strip()}   ·   {em[:16].replace('T', ' ')}")
+        print(f"caso #{caso_id}   ·   {tipo.upper().replace('_', ' ')}   ·   "
+              f"risco {marca.strip()}   ·   {em[:16].replace('T', ' ')}")
         print("━" * LARGURA)
         print(f"\n{assunto}\n")
         print(_quebrar(resumo))
@@ -118,8 +119,10 @@ def main(argv: list[str] | None = None) -> int:
         print()
 
     print("━" * LARGURA)
-    print("A ação é sempre executada por uma pessoa, no admin da Shopify.")
-    print("Esta aplicação não tem permissão de escrita e não a vai ter.\n")
+    print("A ação é sempre executada por uma pessoa. Para cancelamentos,")
+    print("'python aprovar.py <caso>' revalida e pede confirmação explícita")
+    print("antes de tocar na Shopify; os outros tipos ainda só se fazem no")
+    print("admin, à mão.\n")
     return 0
 
 
