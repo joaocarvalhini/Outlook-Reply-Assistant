@@ -14,12 +14,15 @@ lista de categorias de escalação — não para gerar dados de treino
 automaticamente. Um "apagado" não é sinónimo de "bom exemplo": a maioria vai
 ser ruído, e cabe a quem lê decidir o que vale a pena.
 
-Percorre a pasta indicada (Itens Eliminados por omissão, porque é onde fica
-a maior parte do histórico antigo) à procura de conversas com pelo menos uma
-mensagem do cliente seguida de uma resposta da loja. As duas mensagens de
-cada par só se buscam por inteiro (corpo completo) depois de escolhidas — a
-listagem inicial é só metadados, para não gastar uma chamada por mensagem
-num universo de milhares.
+A pergunta do cliente vem da pasta indicada (Itens Eliminados por omissão,
+onde fica a maior parte do histórico antigo). A resposta da loja procura-se
+na caixa inteira, não só nessa pasta — a pergunta pode ter sido apagada e a
+resposta continuar nos Itens Enviados, que raramente se apagam. Procurar só
+dentro da mesma pasta perdia a maioria dos pares reais nesta caixa.
+
+As duas mensagens de cada par só se buscam por inteiro (corpo completo)
+depois de escolhidas — a listagem inicial é só metadados, para não gastar
+uma chamada por mensagem num universo de milhares.
 """
 
 from __future__ import annotations
@@ -60,34 +63,56 @@ def listar_pasta(graph: a.Graph, pasta: str) -> list[dict]:
     return [graph._converter(m) for m in todas]
 
 
-def encontrar_pares(mensagens: list[dict], cfg: a.Config,
-                     bloqueados: frozenset[str]) -> list[tuple[dict, dict]]:
-    """Agrupa por conversa e devolve (mensagem do cliente, resposta da loja).
+def resposta_da_loja(graph: a.Graph, cliente_msg: dict, cfg: a.Config) -> dict | None:
+    """A primeira resposta da loja na mesma conversa, em qualquer pasta.
 
-    Só o primeiro par de cada conversa — o resto do fio é contexto, não um
-    segundo caso independente.
+    A pergunta do cliente pode estar em Itens Eliminados e a resposta da loja
+    em Itens Enviados — pastas diferentes da mesma conversa. Procurar só
+    dentro da pasta de origem perdia a maioria dos pares: confirmado nesta
+    sessão que das conversas com mensagem de cliente, menos de metade tinham
+    a resposta na mesma pasta. A consulta geral (sem mailFolders no caminho)
+    alcança a caixa toda, como o historico() já faz para o fio ativo.
     """
-    por_conversa: dict[str, list[dict]] = {}
-    for m in mensagens:
-        por_conversa.setdefault(m["conversation_id"], []).append(m)
+    dados = graph._pedir(
+        "GET",
+        f"{graph.base}/messages",
+        params={
+            "$filter": f"conversationId eq '{cliente_msg['conversation_id']}'",
+            "$select": a.CAMPOS_LISTA,
+            "$top": "25",
+        },
+    )
+    candidatas = [
+        graph._converter(m)
+        for m in dados.get("value", [])
+        if m.get("receivedDateTime", "") > cliente_msg["recebido"]
+    ]
+    candidatas = [m for m in candidatas if a.e_da_loja(m["de"], cfg.mailbox)]
+    if not candidatas:
+        return None
+    candidatas.sort(key=lambda m: m["recebido"])
+    return candidatas[0]
 
+
+def encontrar_pares(graph: a.Graph, mensagens: list[dict], cfg: a.Config,
+                     bloqueados: frozenset[str], limite: int) -> list[tuple[dict, dict]]:
+    """Para cada mensagem de cliente na pasta, procura a resposta na caixa
+    inteira. Para na primeira mensagem de cliente sem resposta encontrada
+    depois de já ter `limite` pares — evita percorrer centenas de conversas
+    quando só se pediram poucos pares.
+    """
+    candidatos = sorted(
+        (m for m in mensagens if a.triar(m, cfg, bloqueados) is None),
+        key=lambda m: m["recebido"],
+        reverse=True,
+    )
     pares = []
-    for msgs in por_conversa.values():
-        msgs.sort(key=lambda m: m["recebido"])
-        i_cliente = next(
-            (i for i, m in enumerate(msgs) if a.triar(m, cfg, bloqueados) is None),
-            None,
-        )
-        if i_cliente is None:
-            continue
-        resposta = next(
-            (m for m in msgs[i_cliente + 1:] if a.e_da_loja(m["de"], cfg.mailbox)),
-            None,
-        )
+    for cliente_msg in candidatos:
+        resposta = resposta_da_loja(graph, cliente_msg, cfg)
         if resposta is not None:
-            pares.append((msgs[i_cliente], resposta))
-
-    pares.sort(key=lambda par: par[0]["recebido"], reverse=True)
+            pares.append((cliente_msg, resposta))
+        if len(pares) >= limite:
+            break
     return pares
 
 
@@ -108,11 +133,12 @@ def main(argv: list[str] | None = None) -> int:
     mensagens = listar_pasta(graph, args.pasta)
     print(f"{len(mensagens)} mensagem(ns) na pasta.\n")
 
-    pares = encontrar_pares(mensagens, cfg, bloqueados)
     if args.contem:
         alvo = args.contem.lower()
-        pares = [par for par in pares if alvo in par[0]["assunto"].lower()]
-    pares = pares[: args.n]
+        mensagens = [m for m in mensagens if alvo in m["assunto"].lower()]
+
+    print("A procurar respostas na caixa inteira (uma conversa de cada vez)...")
+    pares = encontrar_pares(graph, mensagens, cfg, bloqueados, args.n)
 
     if not pares:
         print("Nenhum par pergunta-resposta encontrado com estes filtros.\n")
