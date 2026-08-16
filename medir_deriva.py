@@ -5,6 +5,10 @@
     python medir_deriva.py --incluir-escalados também tenta os que ficaram "escalar"
     python medir_deriva.py -n 15                só os 15 mais recentes
     python medir_deriva.py --so-numero          não mostra o texto, só a tabela
+    python medir_deriva.py --pasta deleteditems -n 30
+                                                 fonte alternativa: conversas
+                                                 reais da pasta indicada, que
+                                                 nunca passaram pelo assistente
 
 Não escreve nada. Para cada email, **gera o rascunho outra vez com o código de
 hoje** (como o reprocessar.py), vai buscar à caixa a resposta que o lojista
@@ -15,6 +19,14 @@ Com --incluir-escalados inclui também os emails que na altura escalaram: se o
 código de hoje já os resolveria (contexto do fio, Shopify, correções ao
 prompt), mostra o que o assistente escreveria a par do que o lojista respondeu
 de verdade — mesmo esses nunca tendo passado por um rascunho real.
+
+Com --pasta, a fonte dos casos deixa de ser o registo local (que só tem os
+emails que o assistente já viu, uma amostra pequena da fase de testes) e
+passa a ser qualquer pasta do Graph, usando a mesma procura de pares
+pergunta-resposta do casos_antigos.py — um universo muito maior de conversas
+reais, incluindo as que nunca chegaram a passar pelo assistente. Ao contrário
+do casos_antigos.py, isto chama o Claude para cada caso, por isso gasta
+créditos: usa -n para controlar quantos.
 
 Regenerar em vez de usar o corpo gravado é deliberado: o registo local guarda o
 texto de quando o email foi processado, que pode ser de antes da última
@@ -47,6 +59,7 @@ from difflib import SequenceMatcher
 import anthropic
 
 import assistente as a
+import casos_antigos as ca
 
 
 def resposta_real(graph: a.Graph, msg: dict, aviso: str) -> str | None:
@@ -99,6 +112,52 @@ def semelhanca(a_: str, b_: str) -> float:
     return SequenceMatcher(None, a_.strip().lower(), b_.strip().lower()).ratio() * 100
 
 
+def casos_do_registo(graph: a.Graph, cfg: a.Config, con: sqlite3.Connection,
+                      incluir_escalados: bool, limite: int) -> tuple[list[tuple[dict, str]], int]:
+    """(msg, resposta_real) a partir do que o assistente já processou."""
+    acoes = "('rascunhar','escalar')" if incluir_escalados else "('rascunhar')"
+    linhas = con.execute(
+        f"SELECT message_id, assunto FROM processados "
+        f"WHERE acao IN {acoes} AND conversation_id != '' ORDER BY em DESC"
+    ).fetchall()
+    if limite:
+        linhas = linhas[:limite]
+
+    casos = []
+    sem_resposta = 0
+    for message_id, _assunto in linhas:
+        msg = buscar_email(graph, message_id)
+        if msg is None:
+            continue
+        msg["_caixa"] = cfg.mailbox
+        try:
+            real = resposta_real(graph, msg, cfg.aviso)
+        except Exception:
+            real = None
+        if not real:
+            sem_resposta += 1
+            continue
+        casos.append((msg, real))
+    return casos, sem_resposta
+
+
+def casos_da_pasta(graph: a.Graph, cfg: a.Config, bloqueados: frozenset[str],
+                    pasta: str, limite: int) -> tuple[list[tuple[dict, str]], int]:
+    """(msg, resposta_real) a partir de conversas reais de qualquer pasta,
+    mesmo as que nunca passaram pelo assistente. Mesma procura de pares do
+    casos_antigos.py, mas devolvendo os pares em vez de os imprimir.
+    """
+    mensagens = ca.listar_pasta(graph, pasta)
+    pares = ca.encontrar_pares(graph, mensagens, cfg, bloqueados, limite or 20)
+
+    casos = []
+    for cliente_msg, loja_msg in pares:
+        graph.detalhe(cliente_msg, cfg.max_body)
+        graph.detalhe(loja_msg, cfg.max_body)
+        casos.append((cliente_msg, loja_msg["corpo"]))
+    return casos, 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description="Compara rascunhos com respostas reais")
     p.add_argument("-n", type=int, default=0, help="limita aos N mais recentes")
@@ -108,52 +167,41 @@ def main(argv: list[str] | None = None) -> int:
         help="tenta também gerar rascunho para emails que ficaram 'escalar', "
              "não só os que já foram 'rascunhar'",
     )
+    p.add_argument(
+        "--pasta",
+        help="fonte alternativa ao registo local: uma pasta do Graph (ex.: "
+             "deleteditems). Chama o Claude para cada caso, gasta créditos.",
+    )
     args = p.parse_args(argv)
 
     a.saida_utf8()
     cfg = a.carregar_config(True)
-    con = sqlite3.connect(cfg.db)
-    acoes = "('rascunhar','escalar')" if args.incluir_escalados else "('rascunhar')"
-    linhas = con.execute(
-        f"SELECT message_id, assunto FROM processados "
-        f"WHERE acao IN {acoes} AND conversation_id != '' ORDER BY em DESC"
-    ).fetchall()
-    if args.n:
-        linhas = linhas[: args.n]
-    if not linhas:
-        sys.exit("Nenhum rascunho no registo.")
-
     graph = a.Graph(cfg)
     shopify = a.Shopify(cfg)
     cliente = anthropic.Anthropic(api_key=cfg.api_key, timeout=60.0)
     prompt = a.construir_prompt(cfg)
     bloqueados = a.carregar_blocklist(cfg.blocklist)
 
+    if args.pasta:
+        casos, sem_resposta = casos_da_pasta(graph, cfg, bloqueados, args.pasta, args.n)
+    else:
+        con = sqlite3.connect(cfg.db)
+        casos, sem_resposta = casos_do_registo(
+            graph, cfg, con, args.incluir_escalados, args.n
+        )
+    if not casos:
+        sys.exit("Nenhum caso encontrado com estes critérios.")
+
     resultados = []
-    sem_resposta = 0
     ja_nao_rascunha = 0
 
-    for message_id, assunto in linhas:
-        msg = buscar_email(graph, message_id)
-        if msg is None:
-            continue
-        msg["_caixa"] = cfg.mailbox
-
-        # A resposta real é procurada antes de gastar uma chamada ao modelo:
-        # sem ela não há com que comparar.
-        try:
-            real = resposta_real(graph, msg, cfg.aviso)
-        except Exception:
-            real = None
-        if not real:
-            sem_resposta += 1
-            continue
-
+    for msg, real in casos:
         if a.triar(msg, cfg, bloqueados) or (
             graph.detalhe(msg, cfg.max_body) and a.triar_cabecalhos(msg)
         ):
             continue
 
+        assunto = msg["assunto"]
         historico = ""
         try:
             historico = a.resumir_historico(
