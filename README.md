@@ -215,6 +215,7 @@ clientes de uma loja online usa Gmail.
 | `THREAD_CHARS` | `400` | Corte de cada mensagem do fio |
 | `ENABLE_ORDER_IDENTITY_RESOLUTION` | `true` | Resolução da encomenda por níveis de certeza |
 | `ENABLE_PRE_DRAFTS` | `true` | Preparar o caso quando escala um pedido acionável |
+| `ENABLE_COMMITMENT_REGISTRY` | `true` | Registar e lembrar promessas feitas ao cliente |
 | `DRY_RUN` | `true` | `true` não escreve nada na caixa |
 | `COMPANY_NAME` | `a loja` | Aparece no prompt |
 | `SIGNATURE` | `tripat3s` | Assinatura do rascunho |
@@ -396,6 +397,25 @@ escreveu.
 O dossiê fica no registo local e lê-se pelo `dossie.py`. Não vai para o
 Outlook: contém análise interna, e um rascunho que alguém pode enviar por
 engano é exatamente o risco contra o qual este projeto foi desenhado.
+
+### Compromissos que sobrevivem ao fio
+
+`THREAD_MESSAGES` só dá ao modelo as últimas mensagens do fio. Uma promessa
+feita há semanas — "enviamos um par novo assim que recebermos o antigo" — pode
+já ter saído dessa janela quando o cliente volta a escrever. Sem registo
+próprio, o assistente esqueceria a promessa e trataria o pedido como novo.
+
+Cada decisão pode gravar um compromisso (tipo, descrição, estado, data) numa
+tabela `compromissos` à parte do fio, indexada por conversa. Um compromisso
+novo do mesmo tipo substitui o anterior em vez de duplicar; "concluído" ou
+"cancelado" deixam de contar como pendente. A regra mais importante: **nunca
+se inventa nem se estima uma data** — sem confirmação explícita da loja, o
+campo fica vazio, mesmo que o modelo pudesse "adivinhar" um prazo plausível.
+
+Quando existe um compromisso pendente para a conversa, entra no prompt como
+contexto e influencia a categoria (`COMPROMISSO_ANTERIOR`): um cliente a
+perguntar pelo estado de algo já prometido não é uma pergunta nova, é um
+follow-up a uma decisão que a loja já tomou.
 
 ### Porque é que cada email escalou
 
