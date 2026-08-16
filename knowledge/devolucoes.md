@@ -75,6 +75,17 @@ Dentro da encomenda, o cliente deve incluir uma folha com:
   2. O valor pode demorar até 10 dias úteis a ficar disponível na conta do
      cliente, consoante o banco e o método de pagamento.
 
+## Reembolso quando há disputa aberta no PayPal
+
+- Se o cliente pagou por PayPal e tem uma disputa/reclamação aberta na
+  plataforma sobre essa encomenda, a loja **não consegue processar o
+  reembolso** enquanto essa disputa estiver aberta — o PayPal retém o valor
+  durante o processo e a loja não tem acesso a ele.
+- É uma limitação técnica do PayPal, não uma escolha da loja.
+- Pedir ao cliente para fechar a disputa no PayPal antes de a loja poder
+  concluir o reembolso. (Confirmado diretamente pela loja, 13 de agosto de
+  2026.)
+
 ## Produto com defeito
 
 - O cliente deve contactar a loja imediatamente.
