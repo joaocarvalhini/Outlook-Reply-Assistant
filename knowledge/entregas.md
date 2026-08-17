@@ -20,6 +20,11 @@ Fonte: /pages/politica-de-envio, /pages/perguntas-faq
   diretamente pela loja, 14 de agosto de 2026.)
 - Para os restantes países, o prazo médio de entrega é de 5 a 7 dias úteis.
 - Os prazos podem variar consoante o país de destino.
+- O prazo de 24 a 48 horas úteis é para Portugal continental. Para Açores e
+  Madeira, o prazo é de 3 a 4 dias úteis no máximo — **não** é o mesmo prazo
+  do continente. Encomendas para as ilhas já tiveram atrasos reais fora do
+  prazo continental (caso real de produção, 29/07/2026), por isso a
+  distinção importa na resposta.
 - As capas personalizadas seguem o mesmo prazo de entrega dos restantes
   produtos; não têm produção extra. (Confirmado diretamente pela loja, 12 de
   agosto de 2026.)
@@ -55,3 +60,8 @@ Fonte: /pages/politica-de-envio, /pages/perguntas-faq
 
 - Se o cliente não estiver em casa, a transportadora tenta nova entrega ou deixa
   instruções.
+- Se o cliente diz que **esteve em casa** e mesmo assim a entrega consta como
+  falhada, informa-se que a loja vai contactar a transportadora para apurar o
+  que aconteceu, e aconselha-se o cliente a contactar também diretamente a
+  transportadora. Não se promete um prazo nem um resultado que não esteja
+  confirmado — só que se vai averiguar.

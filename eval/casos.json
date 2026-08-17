@@ -677,9 +677,8 @@
       ],
       "body": "Boa tarde, vivo na Madeira. O prazo de entrega e o mesmo que para o continente, 24 a 48 horas? Obrigado."
     },
-    "expect": "escalar",
-    "expect_categoria": "LACUNA_DE_CONHECIMENTO",
-    "note": "entregas.md agora diz explicitamente que 24-48h e so para o continente e que o prazo das ilhas nao esta confirmado. Sem este caso, o risco era o modelo assumir que 'Portugal' cobre as ilhas e prometer um prazo que a propria loja ja nao cumpriu numa situacao real (29/07/2026)."
+    "expect": "rascunhar",
+    "note": "Atualizado 17/08/2026: entregas.md passou a ter o prazo confirmado das ilhas (3-4 dias uteis), pedido diretamente pelo utilizador. Antes escalava por LACUNA_DE_CONHECIMENTO (prazo nao confirmado); agora a base tem a resposta e o caso passa a testar que o modelo NAO promete 24-48h as ilhas, responde com o prazo correto das ilhas."
   },
   {
     "id": "propor-reembolso-como-pergunta-nao-escala",
@@ -711,5 +710,76 @@
     "expect_categoria": "INVENTARIO_INDISPONIVEL",
     "expect_parcial": true,
     "note": "envio para Franca esta na base (entregas.md) e responde-se; a pergunta de stock e dado dinamico, nunca vai estar na base. Testa a interacao entre duas correcoes feitas separadamente nesta sessao: por_responder (categoria reflete a causa real, nao OUTRO) e a prioridade de INVENTARIO_INDISPONIVEL sobre LACUNA_DE_CONHECIMENTO. Caso pedido pelo utilizador via matriz de QA (T5), nunca testado em conjunto antes."
+  },
+  {
+    "id": "troca-por-produto-de-valor-igual",
+    "email": {
+      "from": "marta.gouveia@gmail.com",
+      "from_name": "Marta Gouveia",
+      "subject": "Trocar de modelo",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, encomendei uns fones P9 pretos mas afinal prefiro o modelo Pro 4, que tem o mesmo preco. Da para trocar?"
+    },
+    "expect": "rascunhar",
+    "note": "troca por outro modelo de valor igual, sem cobranca nem reembolso envolvido. Regra pedida pelo utilizador em 17/08/2026 (devolucoes.md, secao Trocas)."
+  },
+  {
+    "id": "troca-por-produto-mais-caro-escala",
+    "email": {
+      "from": "hugo.fonseca@gmail.com",
+      "from_name": "Hugo Fonseca",
+      "subject": "Trocar por outro modelo",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, comprei o smartwatch 11 Mini mas gostava de trocar pelo Z81 Pro Max, que e mais caro. Como se processa a diferenca?"
+    },
+    "expect": "escalar",
+    "note": "troca por produto mais caro envolve cobranca da diferenca pela equipa, escala -- confirmado 100% estavel em 6 corridas. A categoria oscila entre ACAO_SOBRE_ENCOMENDA e JULGAMENTO_HUMANO (ambas defensaveis: e uma troca, mas envolve um valor a decidir) e nao vale a pena forcar uma sobre a outra depois de duas tentativas de redacao, uma delas com efeito colateral real na troca de valor igual (corrigido). Testa-se so a acao, nao a categoria."
+  },
+  {
+    "id": "erro-de-envio-aceita-vale",
+    "email": {
+      "from": "ines.rocha@gmail.com",
+      "from_name": "Ines Rocha",
+      "subject": "Capa errada mas aceito ficar",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, recebi a capa na cor errada mas nao me importo de ficar com ela. Disseram-me que podem dar um vale, aceito essa opcao."
+    },
+    "expect": "escalar",
+    "expect_categoria": "ACAO_SOBRE_ENCOMENDA",
+    "note": "cliente aceitou a opcao de vale por erro de envio da loja; confirmar a aceitacao e normal mas a emissao do vale e da equipa, escala."
+  },
+  {
+    "id": "entrega-falhada-cliente-esteve-em-casa",
+    "email": {
+      "from": "paulo.matos@gmail.com",
+      "from_name": "Paulo Matos",
+      "subject": "Entrega falhada mas estive em casa",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, o rastreio diz que a entrega falhou porque nao estava ninguem em casa, mas estive o dia todo. O que se passa?"
+    },
+    "expect": "rascunhar",
+    "note": "entregas.md agora cobre este cenario (cliente esteve em casa): informar que a loja vai contactar a transportadora e aconselhar o cliente a fazer o mesmo, sem prometer prazo nem resultado."
+  },
+  {
+    "id": "nao-responde-vazio-quando-nao-ha-nada-a-resolver-nem-a-pedir",
+    "email": {
+      "from": "sonia.pires@gmail.com",
+      "from_name": "Sonia Pires",
+      "subject": "Muito insatisfeita com o vosso servico",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, estou globalmente insatisfeita com a forma como esta loja trata os clientes, o atendimento e lento e desorganizado. Gostaria de saber o que a loja tem a dizer sobre isto."
+    },
+    "expect": "escalar",
+    "note": "queixa generica sem pedido concreto nem dado a pedir; base nao cobre 'o que a loja tem a dizer sobre o atendimento'. Testa a regra nova: nao escrever uma resposta de preenchimento tipo 'vamos verificar', escalar com corpo vazio."
   }
 ]

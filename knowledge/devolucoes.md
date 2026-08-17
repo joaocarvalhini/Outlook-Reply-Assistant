@@ -20,9 +20,27 @@ Fonte: /pages/politica-de-reembolsos-e-devolucoes, /pages/perguntas-faq,
 
 ## Estado exigido
 
-- O produto tem de estar em perfeitas condições e sem uso.
+- O produto tem de estar em perfeitas condições e sem uso, com a embalagem
+  selada.
 - O produto tem de vir na embalagem original.
 - Todos os acessórios e manuais têm de ser devolvidos.
+- Produtos abertos ou testados não são aceites para devolução por
+  arrependimento — são artigos de contacto direto com a pele (fones,
+  smartwatches), e a exigência é de higiene e segurança, não uma formalidade.
+  Não criar exceções a isto: um produto aberto ou testado, sem defeito,
+  recusa-se.
+
+## Unidades a mais por engano
+
+Quando o cliente encomendou, por engano, mais unidades do que queria:
+
+- Deve aguardar a chegada da encomenda completa antes de devolver seja o que
+  for.
+- Depois de a receber, envia fotografias e vídeo a provar que as unidades a
+  mais não foram abertas, não foram usadas, e estão completamente intactas.
+- A devolução aplica-se só a essas unidades extra, e só nessas condições. Se
+  houver sinais de abertura, uso ou dano, não se assume que a devolução é
+  possível.
 
 ## Como iniciar uma devolução
 
@@ -110,6 +128,30 @@ Dentro da encomenda, o cliente deve incluir uma folha com:
 - Pedir ao cliente para fechar a disputa no PayPal antes de a loja poder
   concluir o reembolso. (Confirmado diretamente pela loja, 13 de agosto de
   2026.)
+
+## Trocas
+
+O que decide se uma troca é rascunhável ou não é só uma coisa: **há valores
+diferentes a acertar, ou não há?**
+
+- **Valor igual, sem acerto nenhum a fazer**: o cliente pode trocar o produto
+  por outro modelo do mesmo preço. É uma resposta normal — confirma-se a
+  troca, sem envolver cobrança nem reembolso de ninguém.
+- **Valor diferente, com acerto a fazer**: se o novo produto for mais caro, o
+  cliente paga a diferença; se for mais barato, a loja acerta ou reembolsa a
+  diferença. Isto sim escala sempre, mesmo que o valor pareça óbvio — é a
+  equipa que cobra ou reembolsa, nunca o assistente. Ao preparar o caso para
+  quem vai decidir, o resumo deve deixar claro qual é o acerto de valor.
+
+## Erro de envio pela loja
+
+Quando a loja envia um artigo diferente do pedido (cor ou modelo errados):
+
+- O cliente pode optar por ficar com o produto recebido e ser compensado com
+  um vale para uma compra futura. Se aceitar esta opção, confirmar que aceitou
+  é normal, mas a emissão do vale em si é uma ação da equipa — escala.
+- Se preferir trocar ou devolver o produto recebido por engano, não se promete
+  a execução automática: escala para a equipa tratar do processo.
 
 ## Produto com defeito
 

@@ -77,6 +77,12 @@ ninguém deu.
 Isto não se aplica a devoluções por arrependimento ou por o produto não
 corresponder às expectativas — aí não há defeito nenhum para trocar.
 
+Se o cliente recusa a troca e prefere reembolso total, isso não muda nada no
+que podes escrever: continua a ser uma pergunta, não um compromisso. "Aceita
+que avancemos com o reembolso assim que recebermos o artigo de volta?" é a
+mesma lógica da troca — o cliente ter escolhido reembolso em vez de troca não
+é, por si só, motivo para escalar.
+
 ## Reembolso parcial
 
 O reembolso parcial (o cliente fica com o artigo e recebe parte do valor de
