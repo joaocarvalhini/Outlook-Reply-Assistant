@@ -781,5 +781,76 @@
     },
     "expect": "escalar",
     "note": "queixa generica sem pedido concreto nem dado a pedir; base nao cobre 'o que a loja tem a dizer sobre o atendimento'. Testa a regra nova: nao escrever uma resposta de preenchimento tipo 'vamos verificar', escalar com corpo vazio."
+  },
+  {
+    "id": "cancelamento-de-ruido-sempre-ativo-e-normal",
+    "email": {
+      "from": "carolina.reis@gmail.com",
+      "from_name": "Carolina Reis",
+      "subject": "Fones",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, comprei uns fones e oico demasiado o barulho a minha volta mesmo com eles postos. Como desligo o cancelamento de ruido?"
+    },
+    "expect": "rascunhar",
+    "note": "cancelamento de ruido vem sempre ativo de fabrica e nao se desliga em nenhum modelo (confirmado 17/08/2026). Nao e definicao por corrigir, e como o produto funciona."
+  },
+  {
+    "id": "cabo-da-powerbank-condiz-com-a-cor-e-normal",
+    "email": {
+      "from": "bruno.antunes@gmail.com",
+      "from_name": "Bruno Antunes",
+      "subject": "Powerbank",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, recebi a powerbank preta e o cabo tambem veio preto, esperava que fosse branco. Isto esta certo ou faltou alguma coisa?"
+    },
+    "expect": "rascunhar",
+    "note": "corrige um erro anterior na base: o cabo e sempre da mesma cor que a powerbank, nao fica sempre branco (confirmado 17/08/2026, corrigindo nota errada de sessao anterior)."
+  },
+  {
+    "id": "reembolso-mb-way-nao-e-mais-rapido",
+    "email": {
+      "from": "vera.antunes@gmail.com",
+      "from_name": "Vera Antunes",
+      "subject": "Reembolso por MB Way",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, paguei por MB Way, o reembolso costuma ser mais rapido nesse caso?"
+    },
+    "expect": "rascunhar",
+    "note": "nao ha tratamento mais rapido para MB Way, demora o mesmo que os outros metodos (confirmado 17/08/2026)."
+  },
+  {
+    "id": "fatura-com-nif-de-empresa",
+    "email": {
+      "from": "geral@padariacentral.pt",
+      "from_name": "Padaria Central",
+      "subject": "Pedido de fatura com NIF",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Bom dia, fiz uma compra e gostaria que a fatura fosse emitida com o NIF da empresa: Padaria Central Lda, NIF 509876543. Obrigado."
+    },
+    "expect": "rascunhar",
+    "note": "fatura com outro NIF e enviada de imediato apos o pedido, sem prazo de espera (confirmado 17/08/2026)."
+  },
+  {
+    "id": "portes-devolucao-internacional-sempre-do-cliente",
+    "email": {
+      "from": "manuel.garcia@gmail.com",
+      "from_name": "Manuel Garcia",
+      "subject": "Re: Fones com defeito confirmado",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Buenas tardes, escrevo desde Espana. Confirmaron el defecto, quiero devolver el articulo. Los portes de la devolucion los cubren ustedes tambien desde aqui?"
+    },
+    "historico": "[2026-08-16 10:00] CLIENTE: los auriculares no funcionan, envio foto y video.\n[2026-08-16 16:00] LOJA: Confirmamos o defeito.",
+    "expect": "rascunhar",
+    "note": "defeito ja confirmado; portes de devolucao internacional ficam sempre a cargo do cliente, mesmo com defeito, ao contrario do limite de 3,99 euros que so se aplica a Portugal (confirmado 17/08/2026)."
   }
 ]

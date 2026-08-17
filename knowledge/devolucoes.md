@@ -2,7 +2,7 @@
 
 Fonte: /pages/politica-de-reembolsos-e-devolucoes, /pages/perguntas-faq,
 /pages/termos-e-condicoes
-Última verificação: 14 de agosto de 2026
+Última verificação: 17 de agosto de 2026
 
 ## Prazo para devolver
 
@@ -99,6 +99,10 @@ Dentro da encomenda, o cliente deve incluir uma folha com:
   agosto de 2026.)
 - Se a devolução for por arrependimento, ou por o produto não ter correspondido
   às expectativas, os portes ficam a cargo do cliente.
+- O reembolso de portes (o limite de 3,99 €) só se aplica a devoluções dentro
+  de Portugal. Para devoluções vindas de fora de Portugal, os portes ficam
+  **sempre** a cargo do cliente, mesmo com defeito confirmado. (Confirmado
+  diretamente pela loja, 17 de agosto de 2026.)
 - Recomenda-se envio por correio registado normal, sem serviços adicionais como
   notificação por SMS, que apenas encarecem o envio sem serem necessários.
 

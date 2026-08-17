@@ -2,7 +2,7 @@
 
 Fonte: respostas confirmadas pela loja (14 de agosto de 2026) e conhecimento
 técnico escrito pelo próprio lojista no histórico de apoio ao cliente.
-Última verificação: 15 de agosto de 2026
+Última verificação: 17 de agosto de 2026
 
 ## Smartwatch
 
@@ -18,6 +18,10 @@ técnico escrito pelo próprio lojista no histórico de apoio ao cliente.
 
 ## InPods e fones
 
+- O cancelamento de ruído vem sempre ativo de fábrica, em todos os modelos, e
+  não se desliga. Se o cliente disser que ouve demasiado o ambiente à volta,
+  não é uma definição por corrigir — é assim que o produto funciona.
+  (Confirmado diretamente pela loja, 17 de agosto de 2026.)
 - Nos InPods 4, o som que a caixa emite ao ser aberta não pode ser desativado.
 - A deteção automática do ouvido pode fazer a música parar sozinha. Desativa-se
   nas definições de Bluetooth dos fones, e é a primeira coisa a sugerir quando
@@ -40,19 +44,13 @@ técnico escrito pelo próprio lojista no histórico de apoio ao cliente.
 - As capas com MagSafe da tripat3s seguram todas as baterias MagSafe da própria
   marca tripat3s. Não há garantia de compatibilidade com baterias de outras
   marcas.
+- A powerbank é enviada numa cor aleatória, e o cabo que a acompanha é sempre
+  da mesma cor que a powerbank — não é uma cor fixa (branco) independente da
+  bateria. O cliente não escolhe a cor no site. (Confirmado diretamente pela
+  loja, 17 de agosto de 2026 — corrige uma nota anterior desta secção que
+  dizia o contrário.)
 
 ## Capas
 
 - A capa personalizada pode ser feita apenas com texto. Não é obrigatório
   enviar uma fotografia.
-
-## Por confirmar com a loja
-
-Estes pontos apareceram em respostas antigas mas não foram confirmados. Não
-devem ser afirmados ao cliente enquanto não forem verificados:
-
-- Se o cancelamento de ruído dos fones vem sempre ativo de fábrica e não pode
-  mesmo ser desativado em nenhum modelo.
-- Se a cor dos acessórios (cabos, carregadores) é sempre branca, variando só a
-  cor da bateria.
-- Se a powerbank é enviada em cor aleatória entre três cores.

@@ -1,7 +1,7 @@
 # Pagamentos e faturação
 
 Fonte: /pages/perguntas-faq, /pages/termos-e-condicoes
-Última verificação: 6 de agosto de 2026
+Última verificação: 17 de agosto de 2026
 
 ## Métodos de pagamento
 
@@ -31,9 +31,23 @@ Fonte: /pages/perguntas-faq, /pages/termos-e-condicoes
   pendentes são canceladas automaticamente quando o reembolso é processado.
   (Confirmado num caso real, 3 de agosto de 2026.)
 
+## Reembolso quando o pagamento foi por MB Way
+
+- Não há tratamento mais rápido para MB Way: demora sempre o mesmo tempo que
+  os restantes métodos (até 5 dias úteis a analisar, depois até 10 dias úteis
+  a ficar disponível). Não dizer ao cliente que MB Way é mais rápido.
+  (Confirmado diretamente pela loja, 17 de agosto de 2026.)
+
 ## Depois do pagamento
 
 - Depois de o pagamento ser concluído, a loja faz uma verificação padrão antes de
   processar e expedir a encomenda.
 - O cliente recebe um email de confirmação da encomenda.
 - O cliente recebe a fatura.
+
+## Pedido de fatura com outro NIF (ex.: fatura de empresa)
+
+- Quando um cliente pede para lhe enviarem a fatura com o NIF de uma empresa
+  (em vez do NIF pessoal usado na compra), a fatura é enviada de imediato após
+  o pedido — não há prazo de espera nem processamento especial. (Confirmado
+  diretamente pela loja, 17 de agosto de 2026.)
