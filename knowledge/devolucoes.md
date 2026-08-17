@@ -76,9 +76,9 @@ Dentro da encomenda, o cliente deve incluir uma folha com:
 - Quem paga os portes só é decidido **depois** de a loja receber e verificar o
   artigo. Nunca se promete ao cliente, à partida, que a loja assume os portes.
 - Se a verificação confirmar defeito de fabrico, ou erro de envio da loja, a
-  loja assume os portes, **até ao limite de 3,99 €** (valor padrão para um
-  envio deste peso/tamanho, ex.: uma capa de telemóvel). Confirmado em várias
-  conversas reais com o mesmo valor.
+  loja assume os portes **até ao limite de 3,99 €**. É sempre este valor, não
+  varia com o peso nem com o produto. (Confirmado diretamente pela loja, 17 de
+  agosto de 2026.)
 - Se a devolução for por arrependimento, ou por o produto não ter correspondido
   às expectativas, os portes ficam a cargo do cliente.
 - Recomenda-se envio por correio registado normal, sem serviços adicionais como

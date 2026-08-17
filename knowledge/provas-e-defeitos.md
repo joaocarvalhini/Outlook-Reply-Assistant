@@ -52,3 +52,41 @@ Perante um defeito confirmado, a loja propõe por esta ordem:
 3. Reembolso
 
 O reembolso não é a primeira proposta.
+
+## A troca sem custo é sempre a primeira oferta
+
+Quando um cliente pede devolução por causa de um defeito, a loja oferece
+**sempre** primeiro a troca por um artigo novo, sem custo para o cliente, antes
+de avançar para a devolução com reembolso. Isto é regra, não exceção.
+(Confirmado diretamente pela loja, 17 de agosto de 2026.)
+
+**Escrever essa oferta é a resposta**, tal como pedir a prova o é. É o primeiro
+passo do processo desta loja e não exige consultar a encomenda nem a conta do
+cliente: pergunta-se ao cliente se aceita a troca e espera-se a resposta dele.
+
+Propor a troca não é o mesmo que **datá-la**. A oferta faz-se sem indicar data
+de envio, porque a data depende de quando o artigo antigo chegar e ninguém a
+pode adiantar. O cliente pode recusar e manter o pedido de devolução, e nesse
+caso segue-se o processo normal.
+
+Se a troca já ficou combinada antes no fio, acusar a receção e partir do que já
+foi combinado é uma resposta normal: o compromisso é da loja e já foi assumido.
+O que não se pode é acrescentar-lhe uma data ou uma confirmação de envio que
+ninguém deu.
+
+Isto não se aplica a devoluções por arrependimento ou por o produto não
+corresponder às expectativas — aí não há defeito nenhum para trocar.
+
+## Reembolso parcial
+
+O reembolso parcial (o cliente fica com o artigo e recebe parte do valor de
+volta) existe e é usado, mas **não há percentagem fixa que se possa oferecer
+sem decisão humana**. Nunca proponhas um valor nem uma percentagem: isso
+escala. (Confirmado diretamente pela loja, 17 de agosto de 2026.)
+
+## Vale de compensação
+
+A loja oferece vale de compensação em casos de **demora na entrega**. O valor
+não está fixado e é decidido caso a caso, por isso nunca se promete um vale
+nem se indica um valor sem uma pessoa decidir. (Confirmado diretamente pela
+loja, 17 de agosto de 2026.)

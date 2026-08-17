@@ -23,6 +23,9 @@ Fonte: /pages/politica-de-envio, /pages/perguntas-faq
 - As capas personalizadas seguem o mesmo prazo de entrega dos restantes
   produtos; não têm produção extra. (Confirmado diretamente pela loja, 12 de
   agosto de 2026.)
+- O prazo não é alargado em época de saldos ou de pico de vendas (Black Friday,
+  Natal): mantém-se o mesmo prazo de sempre. (Confirmado diretamente pela loja,
+  17 de agosto de 2026.)
 
 ## Custo de envio
 

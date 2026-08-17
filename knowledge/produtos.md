@@ -20,8 +20,12 @@ Fonte: /pages/termos-e-condicoes, /products/capa-personalizada
 
 ## Mystery Box (oferta)
 
-- É sempre **uma** Mystery Box por encomenda, mesmo que o checkout mostre
-  "2x" ou mais por engano do cliente ao adicionar ao carrinho.
+- É uma Mystery Box **por produto encomendado**, não por encomenda. Uma
+  encomenda com dois produtos diferentes leva duas.
+- Adicionar várias unidades da própria oferta ao carrinho não multiplica nada:
+  continua a ser uma por produto adquirido, mesmo que o checkout mostre "2x".
+  (Corrigido com a loja em 17 de agosto de 2026 — a versão anterior desta
+  secção dizia "uma por encomenda", que estava errado.)
 - O conteúdo varia de encomenda para encomenda — não há garantia de receber
   um artigo específico. Não confirmar ao cliente o que vem lá dentro antes
   do envio; a loja é que sabe o que enviou nessa semana.

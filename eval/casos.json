@@ -212,8 +212,8 @@
       ],
       "body": "Boa tarde, queria comprar 5 capas do mesmo modelo para oferecer a colegas de trabalho. Fazem algum desconto para compras assim maiores? Obrigado."
     },
-    "expect": "escalar",
-    "note": "descontos e compras em quantidade nao estao na base de conhecimento; ausencia nao e prova, tem de escalar em vez de inventar uma politica ou recusar de cabeca"
+    "expect": "rascunhar",
+    "note": "mudou de escalar para rascunhar em 17/08/2026. Antes escalava por a base nao cobrir descontos por quantidade, e ausencia de regra nunca e prova de que a resposta e nao. A loja confirmou que nao ha desconto por quantidade e que valem os precos do site, isso ficou em knowledge/pagamentos.md, e passou a haver regra escrita para responder."
   },
   {
     "id": "pergunta-em-ingles-sobre-envio",
@@ -589,5 +589,65 @@
     "expect": "escalar",
     "expect_categoria": "COMPROMISSO_ANTERIOR",
     "note": "resolve o caso mencionado em Fase 11: compromisso registado ha duas semanas, fora da janela do fio, mas continua acessivel e usado corretamente"
+  },
+  {
+    "id": "email-com-dois-assuntos-responde-o-que-sabe",
+    "email": {
+      "from": "helena.matos@gmail.com",
+      "from_name": "Helena Matos",
+      "subject": "Duvida sobre envio e um desconto",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, queria saber se enviam para Espanha e qual o prazo. Aproveito para perguntar se conseguem fazer um desconto especial no meu caso, porque sou cliente ha muito tempo e ja comprei varias vezes. Obrigada."
+    },
+    "expect": "rascunhar",
+    "expect_parcial": true,
+    "note": "envio para Espanha e prazo estao na base (entregas.md) e respondem-se; o pedido de desconto especial por fidelidade nao esta em lado nenhum e nao e o mesmo que desconto por quantidade. Antes de 17/08/2026 isto escalava o email todo e deitava fora a resposta ao envio. Agora rascunha a parte coberta e assinala a outra em por_responder."
+  },
+  {
+    "id": "email-de-um-assunto-so-nao-marca-parcial",
+    "email": {
+      "from": "rui.tavares@gmail.com",
+      "from_name": "Rui Tavares",
+      "subject": "Envio para Franca",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, enviam para Franca? Qual e o prazo de entrega? Obrigado."
+    },
+    "expect": "rascunhar",
+    "expect_sem_parcial": true,
+    "note": "fronteira do lado oposto: a base responde ao email todo, por isso por_responder tem de ficar vazio. Se marcasse parcial, o email levava a categoria de humano sem motivo e a resposta parcial deixava de significar nada."
+  },
+  {
+    "id": "defeito-oferece-troca-antes-de-devolucao",
+    "email": {
+      "from": "sofia.ramos@gmail.com",
+      "from_name": "Sofia Ramos",
+      "subject": "Fones com defeito confirmado",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, confirmaram o defeito no auricular direito depois de eu ter enviado as fotografias e o video. Como e que resolvemos isto agora? Fico a aguardar as vossas indicacoes."
+    },
+    "historico": "[2026-08-14 10:00] CLIENTE: o auricular direito nao da som, envio foto e video.\n[2026-08-14 16:00] LOJA: Recebemos e confirmamos o defeito no auricular direito.",
+    "expect": "rascunhar",
+    "note": "defeito ja confirmado pela loja no fio e o cliente pergunta o passo seguinte, sem exigir reembolso. A base diz que a troca sem custo e SEMPRE a primeira oferta (provas-e-defeitos.md, confirmado 17/08/2026) e que escrever essa oferta e a resposta. A versao anterior deste caso pedia reembolso explicitamente e ficava 50/50: com um pedido de reembolso em cima da mesa, escalar tambem e defensavel, e nao vale a pena apertar o prompt contra a regra de que na duvida se escala. Aqui testa-se so a politica da troca-primeiro, sem esse confundidor."
+  },
+  {
+    "id": "reembolso-parcial-continua-a-escalar",
+    "email": {
+      "from": "tiago.brito@gmail.com",
+      "from_name": "Tiago Brito",
+      "subject": "Proposta",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, em vez de devolver os fones prefiro ficar com eles e receber parte do dinheiro de volta. Quanto me conseguem devolver?"
+    },
+    "expect": "escalar",
+    "expect_categoria": "JULGAMENTO_HUMANO",
+    "note": "a base diz que reembolso parcial existe mas que NAO ha percentagem que se possa oferecer sem decisao humana. Este caso protege contra o risco de a base nova fazer o modelo achar que ja pode negociar valores."
   }
 ]

@@ -218,6 +218,7 @@ clientes de uma loja online usa Gmail.
 | `ENABLE_ORDER_IDENTITY_RESOLUTION` | `true` | Resolução da encomenda por níveis de certeza |
 | `ENABLE_PRE_DRAFTS` | `true` | Preparar o caso quando escala um pedido acionável |
 | `ENABLE_COMMITMENT_REGISTRY` | `true` | Registar e lembrar promessas feitas ao cliente |
+| `ENABLE_PARTIAL_ANSWERS` | `true` | Responder à parte coberta de um email com vários assuntos |
 | `DRY_RUN` | `true` | `true` não escreve nada na caixa |
 | `COMPANY_NAME` | `a loja` | Aparece no prompt |
 | `SIGNATURE` | `tripat3s` | Assinatura do rascunho |
@@ -402,6 +403,42 @@ O dossiê fica no registo local e lê-se pelo `dossie.py`. Não vai para o
 Outlook: contém análise interna, e um rascunho que alguém pode enviar por
 engano é exatamente o risco contra o qual este projeto foi desenhado.
 
+### Um assunto descoberto não deita fora o resto
+
+Um email real raramente traz um assunto só: "onde está a encomenda, veio com
+defeito e já agora fazem desconto?". Até agosto de 2026, bastava um desses
+temas não estar na base de conhecimento para o email inteiro escalar — e a
+resposta ao rastreio, que o assistente sabia dar, ia ao lixo com ele.
+
+Agora o assistente escreve a parte que sabe e regista o que ficou de fora no
+campo `por_responder`, numa frase para o colega. **O corpo do rascunho nunca
+menciona a parte que ficou por responder**: nem a prometer, nem a recusar, nem
+a dizer que alguém responde depois. Essa parte não existe para o cliente.
+
+O que torna isto seguro é a marca dupla: um rascunho parcial leva a categoria
+de rascunhado **e** a de "precisa de humano". Sem isso ficava na fila dos
+rascunhos completos e alguém enviava-o a responder a meio email. Assim é o que
+deve ser — meio trabalho feito para quem revê, em vez de uma folha em branco.
+
+Se não souber responder a nada, escala como sempre. Isto não é uma licença para
+responder por alto: é uma licença para não deitar fora o que já sabe.
+
+### Propor não é comprometer
+
+Regra relacionada, no prompt. Um caso à espera de uma ação da loja continua a
+escalar — mas *perguntar* ao cliente se aceita o passo seguinte que a base de
+conhecimento prescreve não é assumir essa ação:
+
+| Pode escrever | Escala |
+|---|---|
+| "Aceita que lhe enviemos um novo?" | "Vamos enviar-lhe um novo na segunda." |
+| "Pode enviar-nos uma fotografia?" | "Confirmamos o reembolso de 49,90 €." |
+
+A diferença é entre uma pergunta e um compromisso com data ou valor. Sem esta
+distinção, o caso mais comum da loja — defeito confirmado, e a troca sem custo
+é sempre a primeira oferta — escalava sempre, apesar de a resposta estar
+escrita na base de conhecimento.
+
 ### Compromissos que sobrevivem ao fio
 
 `THREAD_MESSAGES` só dá ao modelo as últimas mensagens do fio. Uma promessa
@@ -442,7 +479,7 @@ texto livre com expressões regulares, que não é reproduzível.
 | `CONTEXTO_EM_FALTA` | Mais mensagens do fio, ou fios que o Graph não agrupa |
 | `LACUNA_DE_CONHECIMENTO` | Escrever o facto em `knowledge/`, depois de o confirmar |
 | `ACAO_SOBRE_ENCOMENDA` | Nada, por desenho. A app não tem escrita |
-| `JULGAMENTO_HUMANO` | Nada, por desenho. É a fronteira do que se delega |
+| `JULGAMENTO_HUMANO` | Escrever a política que a loja já pratica de facto. O que sobra é a fronteira do que se delega |
 | `COMPROMISSO_ANTERIOR` | Nada, por desenho. É o registo de compromissos a funcionar |
 | `OUTRO` | Rever periodicamente: se crescer, falta uma categoria |
 

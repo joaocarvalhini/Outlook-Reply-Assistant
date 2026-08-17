@@ -11,6 +11,18 @@ Fonte: /pages/perguntas-faq, /pages/termos-e-condicoes
 - A tripat3s aceita cartão.
 - Estão disponíveis outros métodos de pagamento no momento da compra.
 
+## Preços e descontos
+
+- Não há desconto por quantidade nem preço especial para encomendas grandes.
+  Os preços praticados são os que estão no site, para qualquer quantidade.
+  (Confirmado diretamente pela loja, 17 de agosto de 2026.)
+- Códigos de desconto aplicam-se no campo "Código de desconto", disponível no
+  carrinho ou durante o checkout, antes de finalizar a encomenda. Os códigos em
+  si mudam de campanha para campanha e não estão listados aqui — se o cliente
+  perguntar por um código concreto que não conhece, isso escala.
+- O preço de uma promoção não é retroativo: quem comprou antes de a campanha
+  começar não tem direito ao preço promocional depois.
+
 ## Reembolso quando o pagamento foi por Klarna
 
 - O reembolso é processado através da própria Klarna, não diretamente pela

@@ -81,6 +81,7 @@ class Config:
     resolver_identidade: bool
     pre_dossies: bool
     registo_compromissos: bool
+    respostas_parciais: bool
 
     @property
     def dominio(self) -> str:
@@ -140,6 +141,11 @@ def carregar_config(dry_run_flag: bool | None) -> Config:
         # acrescentam campos ao registo local, lidos pelo dossie.py.
         pre_dossies=ligado("ENABLE_PRE_DRAFTS", "true"),
         registo_compromissos=ligado("ENABLE_COMMITMENT_REGISTRY", "true"),
+        # Respostas parciais: rascunhar a parte coberta de um email com vários
+        # assuntos, em vez de escalar o email todo. Desligar volta ao
+        # comportamento anterior, em que um assunto descoberto deitava fora a
+        # resposta à parte que se sabia.
+        respostas_parciais=ligado("ENABLE_PARTIAL_ANSWERS", "true"),
     )
 
 
@@ -413,6 +419,10 @@ ESQUEMA_NUCLEO = {
         "compromisso_descricao": {"type": "string"},
         "compromisso_estado": {"type": "string"},
         "compromisso_data": {"type": "string"},
+        # Resposta parcial: o que ficou por responder neste email. Quando vem
+        # preenchido, o rascunho é criado à mesma mas o email leva também a
+        # categoria de humano — não pode sair como se estivesse completo.
+        "por_responder": {"type": "string"},
     },
     "required": ["acao", "motivo", "corpo", "categoria"],
     "additionalProperties": False,
@@ -473,6 +483,14 @@ Se o fio mostra que o caso está à espera de uma acção da loja que só um hum
 pode fazer ou datar — enviar uma substituição, confirmar um reembolso, dar uma
 data de expedição que não está nos dados da encomenda — escalas.
 
+Propor não é comprometer. Se a base de conhecimento diz qual é o passo seguinte
+desta loja para um caso destes, escrever esse passo ao cliente **em forma de
+pergunta** é uma resposta normal, não é assumir a acção. "Aceita que lhe
+enviemos um novo?" é uma pergunta e podes escrevê-la; "vamos enviar-lhe um novo
+na segunda-feira" é um compromisso com data e escala. A diferença é essa e é
+toda: podes perguntar o que a base manda perguntar, não podes confirmar,
+prometer, nem datar seja o que for.
+
 # Quando existem "Dados da encomenda" no pedido
 Foram consultados agora mesmo na Shopify e confirmados como sendo desta pessoa:
 podes usá-los para responder a perguntas sobre estado do pagamento, se já foi
@@ -485,9 +503,29 @@ pedido, a consulta falhou ou o número não pertence a quem escreveu: escala,
 não adivinhes o estado da encomenda a partir da base de conhecimento geral.
 
 Estes dados autorizam-te a falar do estado daquela encomenda e de mais nada.
-Não te dão licença para responder ao resto do email. Se a pessoa, além do
-estado da encomenda, levanta um assunto que a base de conhecimento não cobre,
-escalas o email todo — mesmo tendo os dados à frente.
+Não te dão licença para responder ao resto do email.
+
+# Emails com vários assuntos — responde ao que sabes
+Um email real raramente traz um assunto só: "onde está a encomenda, veio com
+defeito e quero devolver". Se souberes responder a uma parte e não a outra, não
+deitas fora a parte que sabes.
+
+Escreves o "corpo" com a parte que a base de conhecimento (ou os dados da
+encomenda) cobre, e preenches "por_responder" com o que ficou de fora, numa
+frase, escrita para o colega e nunca para o cliente. A ação continua a ser
+"rascunhar".
+
+O "corpo" só trata do que sabes. Nunca escrevas no corpo uma frase sobre a
+parte que não sabes — nem a prometer, nem a recusar, nem a dizer que um colega
+responde depois. Essa parte não existe para o cliente: existe só em
+"por_responder", para quem revê decidir o que acrescentar.
+
+Quando "por_responder" vem preenchido, o email é marcado para uma pessoa olhar,
+mesmo tendo rascunho. Por isso um rascunho parcial não é um risco: é meio
+trabalho feito para quem revê, em vez de uma folha em branco.
+
+Se não souberes responder a nada do email, não é resposta parcial nenhuma:
+escalas, como sempre.
 
 # Nunca inventes uma política, sobretudo para dizer que não
 O erro mais caro que podes cometer é afirmar como regra da empresa uma coisa
@@ -725,6 +763,7 @@ COLUNAS_NOVAS = (
     ("categoria", "TEXT"),
     ("lacuna_tema", "TEXT"),
     ("lacuna_em_falta", "TEXT"),
+    ("por_responder", "TEXT"),
     ("confianca_encomenda", "TEXT"),
     ("dossie_tipo", "TEXT"),
     ("dossie_resumo", "TEXT"),
@@ -855,7 +894,8 @@ def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: 
              confianca_encomenda: str = "", dossie_tipo: str = "",
              dossie_resumo: str = "", dossie_validacao: str = "",
              dossie_accao: str = "", dossie_risco: str = "",
-             dossie_resposta: str = "", dossie_link: str = "") -> None:
+             dossie_resposta: str = "", dossie_link: str = "",
+             por_responder: str = "") -> None:
     """Guarda a decisão. O corpo fica gravado para a medição de deriva.
 
     Uma vez por semana compara-se o rascunho guardado com o que foi realmente
@@ -870,14 +910,14 @@ def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: 
         "(message_id, conversation_id, assunto, acao, motivo, corpo, em, "
         " categoria, lacuna_tema, lacuna_em_falta, confianca_encomenda, "
         " dossie_tipo, dossie_resumo, dossie_validacao, dossie_accao, "
-        " dossie_risco, dossie_resposta, dossie_link) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        " dossie_risco, dossie_resposta, dossie_link, por_responder) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             msg["message_id"], msg["conversation_id"], msg["assunto"],
             acao, motivo, corpo, agora(),
             categoria, lacuna_tema, lacuna_em_falta, confianca_encomenda,
             dossie_tipo, dossie_resumo, dossie_validacao, dossie_accao,
-            dossie_risco, dossie_resposta, dossie_link,
+            dossie_risco, dossie_resposta, dossie_link, por_responder,
         ),
     )
     if msg["recebido"] > cursor_atual(con):
@@ -1408,6 +1448,10 @@ def decidir(
         "categoria": _validar(dados.get("categoria", ""), CATEGORIAS, "OUTRO"),
         "lacuna_tema": dados.get("lacuna_tema", ""),
         "lacuna_em_falta": dados.get("lacuna_em_falta", ""),
+        # Só conta em "rascunhar": num caso escalado tudo ficou por responder,
+        # e marcar isso não acrescenta nada a quem já vai olhar para o caso.
+        "por_responder": (dados.get("por_responder", "")
+                          if dados["acao"] == "rascunhar" else ""),
         "dossie_tipo": "nenhum",
         "dossie_resumo": "",
         "dossie_validacao": "",
@@ -1582,23 +1626,34 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         "dossie_risco": decisao["dossie_risco"] if tem_dossie else "",
         "dossie_resposta": decisao["dossie_resposta"] if tem_dossie else "",
         "dossie_link": link_admin(cfg, achado.encomenda) if tem_dossie else "",
+        "por_responder": decisao["por_responder"] if cfg.respostas_parciais else "",
     }
 
     if acao == "rascunhar" and corpo.strip():
+        parcial = bool(extra["por_responder"].strip())
         html_corpo = para_html(corpo)
         if cfg.aviso:
             html_corpo = f"<p>{html.escape(cfg.aviso)}</p>" + html_corpo
         if not cfg.dry_run:
             rascunho = graph.criar_rascunho(msg["id"], html_corpo)
             log("rascunho", email=msg["message_id"][:40], draft=rascunho[:20],
-                shopify=bool(dados_encomenda), identidade=confianca)
+                shopify=bool(dados_encomenda), identidade=confianca,
+                parcial=extra["por_responder"] or "-")
         else:
             log("rascunho-simulado", email=msg["message_id"][:40],
-                shopify=bool(dados_encomenda), identidade=confianca)
+                shopify=bool(dados_encomenda), identidade=confianca,
+                parcial=extra["por_responder"] or "-")
         registar(con, msg, "rascunhar", motivo, corpo, **extra)
         if not cfg.dry_run:
             graph.marcar(msg, cfg.cat_rascunho)
-        return "rascunhado"
+            # Um rascunho parcial responde a uma parte do email e deixa outra
+            # por tratar. Sem esta segunda marca ficaria na fila dos
+            # rascunhados normais e alguém enviava-o como se estivesse
+            # completo — o rascunho é uma ajuda a quem revê, não uma resposta
+            # fechada.
+            if parcial:
+                graph.marcar(msg, cfg.cat_humano)
+        return "rascunhado-parcial" if parcial else "rascunhado"
 
     if acao == "rascunhar":
         acao, motivo = "escalar", "modelo escolheu rascunhar mas devolveu corpo vazio"

@@ -113,6 +113,17 @@ def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
     if caso.get("expect_dossie") and tipo != caso["expect_dossie"]:
         return "dossie-errado", "modelo", f"deu {tipo or '(vazio)'}, esperava {caso['expect_dossie']}"
 
+    # Resposta parcial: um caso pode exigir que o rascunho deixe registado o
+    # que ficou por responder. Sem isto, um rascunho parcial passava por
+    # completo e alguém enviava-o como se respondesse ao email todo.
+    parcial = d.get("por_responder", "").strip()
+    if caso.get("expect_parcial") and not parcial:
+        return ("parcial-em-falta", "modelo",
+                "respondeu sem assinalar o que ficou por responder")
+    if caso.get("expect_sem_parcial") and parcial:
+        return ("parcial-indevido", "modelo",
+                f"assinalou '{parcial[:50]}' quando respondeu ao email todo")
+
     compromisso = d.get("compromisso_tipo", "")
     if "expect_compromisso" in caso and compromisso != caso["expect_compromisso"]:
         return ("compromisso-errado", "modelo",
