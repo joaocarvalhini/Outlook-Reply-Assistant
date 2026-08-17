@@ -400,15 +400,15 @@ o caso obrigaria a usar dados de uma encomenda que pode não ser de quem
 escreveu.
 
 O dossiê fica gravado no registo local (lê-se com `dossie.py`, útil para
-consulta e para as métricas) e **também** é escrito diretamente no rascunho
-que fica no Outlook, como nota interna no topo — decisão explícita do cliente:
-não quer que o lojista precise de correr nenhum comando para ver um caso
-escalado. Basta abrir o rascunho.
+consulta e para as métricas) e, quando existe uma resposta sugerida, essa
+resposta **também** é escrita diretamente como rascunho no Outlook — decisão
+explícita do cliente: não quer que o lojista precise de correr nenhum comando
+para ver um caso escalado, e quer que o rascunho seja só o email, sem nada
+à volta. Sem resumo, sem validação, sem categoria — só o texto que se enviaria,
+pronto a rever e ajustar.
 
-A nota interna começa sempre com "NOTA INTERNA — apagar esta parte antes de
-responder ao cliente", seguida da categoria, do motivo, da validação, da ação
-recomendada, e — quando existe dossiê — da resposta já redigida ao cliente,
-para o lojista rever, apagar a parte de cima e enviar.
+Quando não há dossiê (falta de conhecimento, identidade por confirmar), não há
+rascunho nenhum — só a categoria marcada no email, como sempre foi.
 
 ### Um assunto descoberto não deita fora o resto
 

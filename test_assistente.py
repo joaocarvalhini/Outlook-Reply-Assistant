@@ -35,7 +35,6 @@ from assistente import (
     cursor_atual,
     extrair_numero_encomenda,
     ja_processado,
-    nota_interna,
     para_html,
     para_texto,
     registar,
@@ -305,66 +304,6 @@ class HtmlDeSaida(unittest.TestCase):
 
     def test_texto_vazio(self) -> None:
         self.assertEqual(para_html("   "), "")
-
-
-def _extra_vazio(**over: object) -> dict:
-    base = {
-        "categoria": "OUTRO", "lacuna_tema": "", "lacuna_em_falta": "",
-        "dossie_tipo": "", "dossie_resumo": "", "dossie_validacao": "",
-        "dossie_accao": "", "dossie_risco": "", "dossie_resposta": "",
-        "dossie_link": "",
-    }
-    base.update(over)
-    return base
-
-
-class NotaInterna(unittest.TestCase):
-    """O que seria o dossiê, escrito diretamente no rascunho de um caso escalado."""
-
-    def test_caso_sem_dossie_mostra_so_motivo_e_categoria(self) -> None:
-        texto = nota_interna("identidade não confirmada", _extra_vazio(categoria="IDENTIDADE_NAO_VERIFICADA"))
-        self.assertIn("IDENTIDADE_NAO_VERIFICADA", texto)
-        self.assertIn("identidade não confirmada", texto)
-        self.assertNotIn("Resumo:", texto)
-        self.assertNotIn("Resposta sugerida", texto)
-
-    def test_lacuna_mostra_tema_e_em_falta(self) -> None:
-        texto = nota_interna("base não cobre", _extra_vazio(
-            categoria="LACUNA_DE_CONHECIMENTO",
-            lacuna_tema="pagamento em cripto",
-            lacuna_em_falta="se a loja aceita criptomoeda",
-        ))
-        self.assertIn("pagamento em cripto", texto)
-        self.assertIn("se a loja aceita criptomoeda", texto)
-
-    def test_caso_com_dossie_mostra_tudo(self) -> None:
-        texto = nota_interna("pede cancelamento", _extra_vazio(
-            categoria="ACAO_SOBRE_ENCOMENDA",
-            dossie_tipo="cancelamento",
-            dossie_resumo="Cliente pede cancelamento da #10482.",
-            dossie_validacao="sim, encomenda encontrada\nnão, ainda não expedida",
-            dossie_accao="Cancelar e reembolsar.",
-            dossie_risco="baixo",
-            dossie_link="https://admin.shopify.com/store/x/orders/1",
-            dossie_resposta="Boa tarde, recebemos o seu pedido de cancelamento.",
-        ))
-        self.assertIn("Cliente pede cancelamento da #10482.", texto)
-        self.assertIn("não, ainda não expedida", texto)
-        self.assertIn("Cancelar e reembolsar.", texto)
-        self.assertIn("baixo", texto)
-        self.assertIn("admin.shopify.com", texto)
-        self.assertIn("Boa tarde, recebemos o seu pedido de cancelamento.", texto)
-
-    def test_dossie_sem_resposta_nao_mostra_secao_de_resposta(self) -> None:
-        texto = nota_interna("motivo", _extra_vazio(
-            dossie_tipo="reembolso", dossie_resumo="resumo", dossie_accao="ação",
-            dossie_risco="medio",
-        ))
-        self.assertNotIn("Resposta sugerida", texto)
-
-    def test_avisa_para_apagar_antes_de_responder(self) -> None:
-        texto = nota_interna("motivo", _extra_vazio())
-        self.assertIn("apagar", texto.lower())
 
 
 class Saudacao(unittest.TestCase):

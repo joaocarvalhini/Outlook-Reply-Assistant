@@ -1273,48 +1273,15 @@ def resumir_encomenda(encomenda: dict) -> str:
 def link_admin(cfg: Config, encomenda: dict | None) -> str:
     """Link para a encomenda no admin da Shopify, para quem vai decidir.
 
-    Fica dentro da nota interna do rascunho, nunca no texto endereçado ao
-    cliente: é o atalho que evita ter de procurar a encomenda à mão.
+    Fica só no registo local, lido pelo dossie.py — nunca no rascunho: o
+    rascunho de um caso escalado é só a resposta sugerida ao cliente, nada
+    mais à volta.
     """
     ident = (encomenda or {}).get("id")
     if not ident:
         return ""
     loja = cfg.shopify_store.partition(".")[0]
     return f"https://admin.shopify.com/store/{loja}/orders/{ident}"
-
-
-def nota_interna(motivo: str, extra: dict) -> str:
-    """O que seria o dossiê, escrito diretamente no rascunho de um caso
-    escalado, em vez de ficar só num registo à parte.
-
-    Quem revê abre o Outlook, vê o rascunho já com o contexto todo — motivo,
-    validação, ação recomendada, e uma resposta sugerida quando existe — e
-    decide a partir daí, sem correr nenhum comando.
-    """
-    linhas = [
-        "NOTA INTERNA — apagar esta parte antes de responder ao cliente",
-        "",
-        f"Categoria: {extra['categoria']}",
-        f"Porque escalou: {motivo}",
-    ]
-
-    if extra["dossie_tipo"] not in ("", "nenhum"):
-        linhas += ["", f"Resumo: {extra['dossie_resumo']}"]
-        if extra["dossie_validacao"]:
-            linhas += ["", "Validação:", extra["dossie_validacao"]]
-        linhas += ["", f"Ação recomendada: {extra['dossie_accao']}",
-                   f"Risco: {extra['dossie_risco']}"]
-        if extra["dossie_link"]:
-            linhas.append(f"Ver no admin: {extra['dossie_link']}")
-        if extra["dossie_resposta"]:
-            linhas += ["", "---", "",
-                       "Resposta sugerida ao cliente (revê e ajusta antes de enviar):",
-                       "", extra["dossie_resposta"]]
-    elif extra["lacuna_tema"]:
-        linhas += ["", f"Falta saber: {extra['lacuna_tema']}",
-                   f"Em concreto: {extra['lacuna_em_falta']}"]
-
-    return "\n".join(linhas)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1773,13 +1740,19 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         if extra["lacuna_tema"]:
             log("lacuna", tema=extra["lacuna_tema"], falta=extra["lacuna_em_falta"])
         registar(con, msg, "escalar", motivo, "", **extra)
-        html_nota = para_html(nota_interna(motivo, extra))
+        # Só cria rascunho quando há uma resposta sugerida pronta (dossiê
+        # acionável). O rascunho é só o email, sem nota nenhuma à volta — o
+        # cliente pediu para tirar a nota interna, quer só o texto que
+        # mandaria. Sem dossiê não há texto nenhum para sugerir, por isso não
+        # há rascunho: fica só a categoria a marcar que precisa de humano.
+        resposta_sugerida = extra["dossie_resposta"].strip()
         if not cfg.dry_run:
             graph.marcar(msg, cfg.cat_humano)
-            rascunho = graph.criar_rascunho(msg["id"], html_nota)
-            log("nota-interna", email=msg["message_id"][:40], draft=rascunho[:20])
-        else:
-            log("nota-interna-simulada", email=msg["message_id"][:40])
+            if resposta_sugerida:
+                rascunho = graph.criar_rascunho(msg["id"], para_html(resposta_sugerida))
+                log("rascunho-sugerido", email=msg["message_id"][:40], draft=rascunho[:20])
+        elif resposta_sugerida:
+            log("rascunho-sugerido-simulado", email=msg["message_id"][:40])
         return "escalado"
 
     registar(con, msg, "saltar", motivo, "", **extra)

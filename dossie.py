@@ -16,9 +16,11 @@ Não executa nada e nunca executará: a recomendação é uma recomendação. Qu
 cancela uma encomenda ou emite um reembolso é uma pessoa, no admin da Shopify,
 e a aplicação não tem sequer permissão de escrita para o fazer.
 
-O mesmo conteúdo já vai também para o rascunho do caso, direto no Outlook —
-o lojista não precisa de correr isto. Este comando é para consulta e
-depuração, não é o canal principal.
+A resposta sugerida (quando existe) já vai também sozinha para o rascunho do
+caso, direto no Outlook, sem o resto do dossiê à volta — o lojista não
+precisa de correr isto para ver o que responder. Este comando mostra a
+análise toda (resumo, validação, risco), para consulta e depuração; não é o
+canal principal.
 """
 
 from __future__ import annotations
