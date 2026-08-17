@@ -712,20 +712,6 @@
     "note": "envio para Franca esta na base (entregas.md) e responde-se; a pergunta de stock e dado dinamico, nunca vai estar na base. Testa a interacao entre duas correcoes feitas separadamente nesta sessao: por_responder (categoria reflete a causa real, nao OUTRO) e a prioridade de INVENTARIO_INDISPONIVEL sobre LACUNA_DE_CONHECIMENTO. Caso pedido pelo utilizador via matriz de QA (T5), nunca testado em conjunto antes."
   },
   {
-    "id": "troca-por-produto-de-valor-igual",
-    "email": {
-      "from": "marta.gouveia@gmail.com",
-      "from_name": "Marta Gouveia",
-      "subject": "Trocar de modelo",
-      "to": [
-        "{mailbox}"
-      ],
-      "body": "Boa tarde, encomendei uns fones P9 pretos mas afinal prefiro o modelo Pro 4, que tem o mesmo preco. Da para trocar?"
-    },
-    "expect": "rascunhar",
-    "note": "troca por outro modelo de valor igual, sem cobranca nem reembolso envolvido. Regra pedida pelo utilizador em 17/08/2026 (devolucoes.md, secao Trocas)."
-  },
-  {
     "id": "troca-por-produto-mais-caro-escala",
     "email": {
       "from": "hugo.fonseca@gmail.com",
@@ -852,5 +838,33 @@
     "historico": "[2026-08-16 10:00] CLIENTE: los auriculares no funcionan, envio foto y video.\n[2026-08-16 16:00] LOJA: Confirmamos o defeito.",
     "expect": "rascunhar",
     "note": "defeito ja confirmado; portes de devolucao internacional ficam sempre a cargo do cliente, mesmo com defeito, ao contrario do limite de 3,99 euros que so se aplica a Portugal (confirmado 17/08/2026)."
+  },
+  {
+    "id": "queixa-de-qualidade-pede-prova-antes-de-devolucao",
+    "email": {
+      "from": "rafael.costa@gmail.com",
+      "from_name": "Rafael Costa",
+      "subject": "Processo de devolução",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, recebi a minha encomenda #21950, referente aos InPods Pro 2.0. Apos verificar os fones, percebi que a qualidade nao corresponde as minhas expectativas. Como procedo para devolver?"
+    },
+    "expect": "rascunhar",
+    "note": "replica um caso real de producao (17/08/2026): o cliente nao usou a palavra 'defeito', mas queixa de qualidade de som e tratada como possivel defeito -- pede-se prova (video/foto) antes de falar em formulario, morada ou prazos. O lojista respondeu assim de verdade nesse caso real; o rascunho automatico anterior avancava logo para formulario+morada+portes, que e o que esta correcao resolve."
+  },
+  {
+    "id": "bateria-inchada-avisa-antes-de-pedir-prova",
+    "email": {
+      "from": "sonia.almeida@gmail.com",
+      "from_name": "Sonia Almeida",
+      "subject": "Powerbank estranha",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, a minha powerbank ficou toda inchada, parece que vai rebentar. O que faco?"
+    },
+    "expect": "rascunhar",
+    "note": "bateria inchada e risco de seguranca, nao so defeito comum. Regra nova (provas-e-defeitos.md, 17/08/2026): primeiro avisar para parar de usar/carregar, so depois pedir prova. Testa se o modelo poe o aviso de seguranca antes do pedido de fotografia."
   }
 ]

@@ -11,6 +11,27 @@ resposta certa é escrever-lhe a pedir essa prova. Isto é uma resposta completa
 normal desta loja, não é falta de informação: é o primeiro passo do processo e
 não exige consultar a encomenda nem a conta do cliente.
 
+## "Não corresponde às expectativas" também pede prova primeiro
+
+Um cliente raramente escreve a palavra "defeito". O mais comum é uma queixa
+vaga sobre qualidade — "a qualidade não corresponde às minhas expectativas",
+"o som não é o que esperava", "não gostei do produto" — sobretudo em fones e
+outros produtos de som. Isto **não é automaticamente arrependimento** só
+porque não usa a palavra "defeito": pode ser um problema técnico real,
+descrito por palavras educadas.
+
+A loja trata estas queixas de qualidade em produtos de som/eletrónicos da
+mesma forma que uma queixa de defeito explícita: pede vídeo ou fotografia
+antes de avançar para o que quer que seja, mesmo antes de saber se vai ser
+troca ou devolução. (Confirmado por um caso real de produção, 17 de agosto de
+2026 — encomenda #21950, InPods Pro 2.0.)
+
+Só depois de ver a prova é que a loja decide entre oferecer troca (ver "A
+troca sem custo é sempre a primeira oferta") ou avançar para devolução por
+arrependimento — e só nesse segundo caso é que passam a fazer sentido as
+instruções de "Como iniciar uma devolução" (formulário, morada, portes,
+prazos). Não adiantar essas instruções antes de a prova ser vista.
+
 ## Antes de decidir seja o que for
 
 - Nenhuma decisão sobre um defeito é tomada sem a loja ver prova. Pede-se
@@ -20,6 +41,17 @@ não exige consultar a encomenda nem a conta do cliente.
   mostrar o processo de emparelhamento e os dois dispositivos separados a
   surgirem na lista de Bluetooth.
 - Nunca se promete reembolso, troca ou assunção de portes antes da análise.
+
+## Bateria inchada — segurança primeiro
+
+Uma bateria ou powerbank inchada é diferente de qualquer outro defeito: é um
+risco de segurança (a bateria pode incendiar), não só um problema a analisar.
+Antes de pedir prova nenhuma, a primeira frase da resposta é para o cliente
+parar de usar e não voltar a carregar o artigo. Só depois disso é que se pede
+a prova do costume: fotografia do estado atual da bateria, e perguntar se
+houve alguma queda, impacto, ou exposição a água. Se o cliente mencionar
+aquecimento durante o carregamento, pede-se também um vídeo que mostre isso.
+(Confirmado por um caso real de produção, 17 de agosto de 2026.)
 
 ## Quando o cliente diz que não consegue filmar
 

@@ -44,15 +44,24 @@ Quando o cliente encomendou, por engano, mais unidades do que queria:
 
 ## Como iniciar uma devolução
 
+Isto é o que se diz **depois** de a prova (foto/vídeo) já ter sido vista, ou
+quando o pedido não precisa de prova nenhuma (ex.: arrependimento simples,
+sem queixa de qualidade). Se a queixa é sobre qualidade/som e ainda não há
+prova, o primeiro passo é pedir a prova (ver `provas-e-defeitos.md`) — não
+isto.
+
 - O passo padrão é preencher o formulário de devolução/troca em
   https://www.tripat3s.com/pages/pedido-de-devolucao-ou-troca — é o que a
   loja pede na generalidade dos casos reais observados, não só em
   reclamações complexas.
-- Em alternativa, ou como primeiro contacto antes do formulário, o cliente
-  pode escrever para info@tripat3s.com indicando o número da encomenda.
+- Não dizer ao cliente para escrever para info@tripat3s.com — é normalmente
+  o próprio endereço para onde ele já está a escrever. Pedir isso é
+  redundante e confunde. (Corrigido a partir de um caso real de produção,
+  17 de agosto de 2026.)
 - O contacto tem de ser feito nos primeiros 14 dias após a receção.
-- Depois de recebido o pedido (por formulário ou email), a loja envia as
-  instruções e a autorização de devolução.
+- Depois de recebido o pedido pelo formulário, a loja envia as instruções e
+  a autorização de devolução — a morada, o estado exigido e os prazos (ver
+  secções abaixo) só se enviam nessa altura, não na primeira resposta.
 
 ## Para onde enviar a devolução
 
