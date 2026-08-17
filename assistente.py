@@ -371,9 +371,8 @@ def triar_cabecalhos(msg: dict) -> str | None:
 # o efeito de uma alteração obriga a classificar texto livre com expressões
 # regulares, que foi como se mediu até aqui e não é reproduzível.
 CATEGORIAS = (
-    "DADOS_ENCOMENDA_EM_FALTA",   # precisa de dados da encomenda que não temos
+    "DADOS_ENCOMENDA_EM_FALTA",   # cliente deu um número, a consulta não a encontrou
     "IDENTIDADE_NAO_VERIFICADA",  # há encomenda mas não se prova que é desta pessoa
-    "ENCOMENDA_ANTIGA",           # fora da janela que a Shopify deixa consultar
     "INVENTARIO_INDISPONIVEL",    # pergunta de stock, sem permissão para o ler
     "CONTEXTO_EM_FALTA",          # resposta curta num fio cujo histórico não chegou
     "LACUNA_DE_CONHECIMENTO",     # a base não cobre o assunto
@@ -484,12 +483,19 @@ pode fazer ou datar — enviar uma substituição, confirmar um reembolso, dar u
 data de expedição que não está nos dados da encomenda — escalas.
 
 Propor não é comprometer. Se a base de conhecimento diz qual é o passo seguinte
-desta loja para um caso destes, escrever esse passo ao cliente **em forma de
-pergunta** é uma resposta normal, não é assumir a acção. "Aceita que lhe
-enviemos um novo?" é uma pergunta e podes escrevê-la; "vamos enviar-lhe um novo
-na segunda-feira" é um compromisso com data e escala. A diferença é essa e é
-toda: podes perguntar o que a base manda perguntar, não podes confirmar,
-prometer, nem datar seja o que for.
+desta loja para um caso destes — substituição, reembolso ou callback incluídos
+— escrever esse passo ao cliente **em forma de pergunta** é uma resposta
+normal, não é assumir a acção. "Aceita que lhe enviemos um novo?", "Podemos
+processar o reembolso assim que recebermos o artigo, está de acordo?" e
+"Prefere que lhe liguemos para tratar disto?" são perguntas e podes
+escrevê-las. Tu, a afirmar como novidade "vamos enviar-lhe um novo na
+segunda-feira", "o reembolso já foi processado" ou "vamos ligar-lhe amanhã",
+és um compromisso com data ou facto consumado que ninguém confirmou, e escala.
+
+Isto é diferente de o cliente já ter dito que recebeu, ou de o fio já mostrar
+o compromisso cumprido. Se o cliente escreve "recebi o reembolso, obrigado",
+tu não estás a inventar nada ao confirmar que ficaste a par — estás a acusar
+receção do que ele próprio disse. Isso é sempre rascunhável.
 
 # Quando existem "Dados da encomenda" no pedido
 Foram consultados agora mesmo na Shopify e confirmados como sendo desta pessoa:
@@ -574,15 +580,17 @@ Além do motivo em palavras, escolhes sempre uma categoria da lista fixa. O moti
 é para o colega ler; a categoria é para se contar. Escolhe a causa principal, a
 que teria de mudar para este email deixar de precisar de uma pessoa:
 
-- DADOS_ENCOMENDA_EM_FALTA — precisas do estado de uma encomenda e não te foram
-  dados. Se o email menciona uma encomenda e não vieram "Dados da encomenda", é
-  esta.
+- DADOS_ENCOMENDA_EM_FALTA — o cliente **deu um número de encomenda** e não
+  vieram "Dados da encomenda" no pedido: a consulta não encontrou nada com esse
+  número associado a esta pessoa. Só esta situação usa esta categoria.
+  Se o cliente **não deu nenhum número**, não é esta categoria — vai já para a
+  regra seguinte.
 - IDENTIDADE_NAO_VERIFICADA — vieram dados, mas o aviso diz que não se confirmou
   que a encomenda é de quem escreveu. Nunca reveles nada nesse caso.
-- ENCOMENDA_ANTIGA — o aviso diz explicitamente que a encomenda é demasiado
-  antiga para ser consultada.
 - INVENTARIO_INDISPONIVEL — pergunta se um produto está disponível, se há stock,
-  ou quando repõem.
+  ou quando repõem. Usa sempre esta, nunca LACUNA_DE_CONHECIMENTO: stock é um
+  dado que muda todos os dias, nunca vai estar escrito na base, e escrevê-lo lá
+  não é a correção possível.
 - CONTEXTO_EM_FALTA — é resposta a um fio e não percebes o caso porque o
   histórico não veio ou é insuficiente.
 - LACUNA_DE_CONHECIMENTO — a pergunta é legítima e respondível, mas a base não
@@ -597,9 +605,22 @@ que teria de mudar para este email deixar de precisar de uma pessoa:
   pergunta pelo estado ou pela data, que só uma pessoa sabe.
 - OUTRO — nenhuma das anteriores serve de verdade. Usa com parcimónia.
 
-Quando a ação é "rascunhar" ou "saltar", a categoria não descreve um bloqueio.
-Nesses casos usa OUTRO, exceto se o rascunho for possível mas ainda assim
-existir uma lacuna a registar.
+# O cliente não deu o número da encomenda
+Um email pode falar de uma encomenda sem dar o número — "onde está a minha
+encomenda?", sem mais nada. Sem número não há o que consultar, mas isto **não é
+razão para escalar**: pedir o número é uma resposta normal e completa.
+Rascunhas a pedir o número, com a categoria a refletir o resto do email (OUTRO,
+se não houver mais nada por tratar).
+
+Isto é diferente de o cliente ter dado um número e a consulta não ter
+encontrado nada — isso sim é DADOS_ENCOMENDA_EM_FALTA e escala, porque pedir o
+mesmo número outra vez não resolve nada; precisa de alguém a investigar.
+
+Quando a ação é "rascunhar", a categoria não descreve um bloqueio — usa OUTRO,
+exceto se ainda existir uma lacuna a registar (LACUNA_DE_CONHECIMENTO) **ou**
+se "por_responder" vier preenchido: nesse caso a categoria descreve a causa do
+que ficou por responder (por exemplo JULGAMENTO_HUMANO, se for um pedido de
+desconto), nunca OUTRO. Quando a ação é "saltar", usa sempre OUTRO.
 
 # O corpo, quando escreves um
 - Português de Portugal, sempre, seja qual for a língua do email.
@@ -735,6 +756,9 @@ Email: "Podem cancelar a encomenda 10293?"
 
 Email sem "Dados da encomenda" no pedido: "Onde está a minha encomenda 30402?"
 {{"acao": "escalar", "categoria": "DADOS_ENCOMENDA_EM_FALTA", "motivo": "número de encomenda mencionado mas a consulta não devolveu dados desta pessoa", "corpo": ""}}
+
+Email de Beatriz Sousa, com "Saudação a usar: Boa tarde", sem "Dados da encomenda" no pedido: "Ainda não recebi a minha encomenda, já foi enviada?"
+{{"acao": "rascunhar", "categoria": "OUTRO", "motivo": "cliente não deu o número da encomenda; pedir o número é resposta normal", "corpo": "Boa tarde, Beatriz,\\n\\nObrigado pelo seu contacto.\\n\\nPara conseguirmos verificar o estado da sua encomenda, pode indicar-nos, por favor, o número da encomenda?\\n\\nFicamos a aguardar a sua resposta.\\n\\nCom os melhores cumprimentos,\\n{assinatura}"}}
 
 Email: "Aceitam pagamento em cripto?"
 {{"acao": "escalar", "categoria": "LACUNA_DE_CONHECIMENTO", "lacuna_tema": "pagamento em cripto", "lacuna_em_falta": "se a loja aceita ou não criptomoeda como método de pagamento", "motivo": "base de conhecimento não refere pagamento em cripto", "corpo": ""}}
@@ -1602,6 +1626,16 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
             "nenhuma pode ser assumida como a certa. Não reveles dados de "
             "nenhuma. Categoria: IDENTIDADE_NAO_VERIFICADA."
         )
+    elif numero:
+        # O cliente deu um número e a consulta não encontrou nada com ele —
+        # diferente de não ter dado número nenhum. Sem este aviso, as duas
+        # situações chegavam ao modelo exatamente iguais (nada), e só uma
+        # delas deve escalar.
+        aviso_identidade = (
+            f"O cliente indicou o número de encomenda {numero}, mas a consulta "
+            "não encontrou nenhuma encomenda com esse número associada a esta "
+            "pessoa. Categoria: DADOS_ENCOMENDA_EM_FALTA."
+        )
 
     try:
         decisao = decidir(cliente, cfg, prompt, msg, dados_encomenda, historico,
@@ -1678,6 +1712,7 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
     if acao == "rascunhar":
         acao, motivo = "escalar", "modelo escolheu rascunhar mas devolveu corpo vazio"
         extra["categoria"] = "OUTRO"
+        extra["por_responder"] = ""
 
     if acao == "escalar":
         log("escalado", email=msg["message_id"][:40], categoria=extra["categoria"],

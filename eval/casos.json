@@ -358,7 +358,8 @@
       "body": "Boa tarde, vi no site que a capa preta para iPhone 15 esta esgotada. Sabem para quando fica reposta?"
     },
     "expect": "escalar",
-    "note": "a app tem read_orders mas nao read_products; a base diz onde ver disponibilidade mas nao tem data de reposicao. Sem expect_categoria: testado e o modelo classifica isto como LACUNA_DE_CONHECIMENTO, nao INVENTARIO_INDISPONIVEL, e essa distincao e defensavel (e uma pergunta sobre um facto, nao sobre stock em tempo real) — nao vale a pena forcar uma fronteira que nem o proprio caso desenha com nitidez"
+    "note": "a app tem read_orders mas nao read_products; a base diz onde ver disponibilidade mas nao tem data de reposicao. Sem expect_categoria: testado e o modelo classifica isto como LACUNA_DE_CONHECIMENTO, nao INVENTARIO_INDISPONIVEL, e essa distincao e defensavel (e uma pergunta sobre um facto, nao sobre stock em tempo real) — nao vale a pena forcar uma fronteira que nem o proprio caso desenha com nitidez Reforcado 17/08/2026: INVENTARIO_INDISPONIVEL tem prioridade sobre LACUNA_DE_CONHECIMENTO por regra explicita do prompt.",
+    "expect_categoria": "INVENTARIO_INDISPONIVEL"
   },
   {
     "id": "estado-de-encomenda-sem-dados-shopify",
@@ -649,5 +650,66 @@
     "expect": "escalar",
     "expect_categoria": "JULGAMENTO_HUMANO",
     "note": "a base diz que reembolso parcial existe mas que NAO ha percentagem que se possa oferecer sem decisao humana. Este caso protege contra o risco de a base nova fazer o modelo achar que ja pode negociar valores."
+  },
+  {
+    "id": "sem-numero-pede-se-o-numero",
+    "email": {
+      "from": "beatriz.sousa@gmail.com",
+      "from_name": "Beatriz Sousa",
+      "subject": "A minha encomenda",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, ainda nao recebi a minha encomenda, ja foi enviada? Obrigada."
+    },
+    "expect": "rascunhar",
+    "expect_categoria": "OUTRO",
+    "note": "cliente nao deu numero nenhum. Antes de 17/08/2026 isto escalava como DADOS_ENCOMENDA_EM_FALTA (regra antiga: 'menciona uma encomenda e nao vieram dados = escala'). Agora pedir o numero e resposta normal, so escala quando um numero FOI dado e a consulta falhou."
+  },
+  {
+    "id": "entrega-para-as-ilhas-e-lacuna",
+    "email": {
+      "from": "nuno.pereira@gmail.com",
+      "from_name": "Nuno Pereira",
+      "subject": "Prazo de entrega para a Madeira",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, vivo na Madeira. O prazo de entrega e o mesmo que para o continente, 24 a 48 horas? Obrigado."
+    },
+    "expect": "escalar",
+    "expect_categoria": "LACUNA_DE_CONHECIMENTO",
+    "note": "entregas.md agora diz explicitamente que 24-48h e so para o continente e que o prazo das ilhas nao esta confirmado. Sem este caso, o risco era o modelo assumir que 'Portugal' cobre as ilhas e prometer um prazo que a propria loja ja nao cumpriu numa situacao real (29/07/2026)."
+  },
+  {
+    "id": "propor-reembolso-como-pergunta-nao-escala",
+    "email": {
+      "from": "carla.nunes@gmail.com",
+      "from_name": "Carla Nunes",
+      "subject": "Re: Fones com defeito confirmado",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, prefiro reembolso a troca. Como procedo?"
+    },
+    "historico": "[2026-08-16 10:00] CLIENTE: os fones pararam de funcionar, envio foto e video.\n[2026-08-16 16:00] LOJA: Recebemos e confirmamos o defeito.",
+    "expect": "rascunhar",
+    "note": "defeito ja confirmado no fio; cliente recusou a troca e pede reembolso. Propor reembolso em forma de pergunta ('aceita que...') e resposta normal desde a generalizacao de 17/08/2026 do 'propor nao e comprometer' para reembolso, nao so troca. Nao pode confirmar nem datar o reembolso."
+  },
+  {
+    "id": "pergunta-kb-mais-pergunta-de-stock-no-mesmo-email",
+    "email": {
+      "from": "diogo.pinto@gmail.com",
+      "from_name": "Diogo Pinto",
+      "subject": "Duas duvidas",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, enviam para Franca? E aproveito para perguntar se a capa preta para iPhone 15 esta em stock, porque no site aparece esgotada. Obrigado."
+    },
+    "expect": "rascunhar",
+    "expect_categoria": "INVENTARIO_INDISPONIVEL",
+    "expect_parcial": true,
+    "note": "envio para Franca esta na base (entregas.md) e responde-se; a pergunta de stock e dado dinamico, nunca vai estar na base. Testa a interacao entre duas correcoes feitas separadamente nesta sessao: por_responder (categoria reflete a causa real, nao OUTRO) e a prioridade de INVENTARIO_INDISPONIVEL sobre LACUNA_DE_CONHECIMENTO. Caso pedido pelo utilizador via matriz de QA (T5), nunca testado em conjunto antes."
   }
 ]
