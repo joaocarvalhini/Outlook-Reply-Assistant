@@ -399,9 +399,16 @@ não sabe a resposta; e quando a identidade não está confirmada, porque prepar
 o caso obrigaria a usar dados de uma encomenda que pode não ser de quem
 escreveu.
 
-O dossiê fica no registo local e lê-se pelo `dossie.py`. Não vai para o
-Outlook: contém análise interna, e um rascunho que alguém pode enviar por
-engano é exatamente o risco contra o qual este projeto foi desenhado.
+O dossiê fica gravado no registo local (lê-se com `dossie.py`, útil para
+consulta e para as métricas) e **também** é escrito diretamente no rascunho
+que fica no Outlook, como nota interna no topo — decisão explícita do cliente:
+não quer que o lojista precise de correr nenhum comando para ver um caso
+escalado. Basta abrir o rascunho.
+
+A nota interna começa sempre com "NOTA INTERNA — apagar esta parte antes de
+responder ao cliente", seguida da categoria, do motivo, da validação, da ação
+recomendada, e — quando existe dossiê — da resposta já redigida ao cliente,
+para o lojista rever, apagar a parte de cima e enviar.
 
 ### Um assunto descoberto não deita fora o resto
 
