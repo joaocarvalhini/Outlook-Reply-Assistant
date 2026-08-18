@@ -867,5 +867,19 @@
     "expect": "escalar",
     "expect_dossie": "reembolso",
     "note": "cliente recusou a troca, pede reembolso. Testa se a resposta sugerida no dossie propoe saldo/credito da loja primeiro (regra confirmada pelo cliente 17/08/2026), em vez de confirmar reembolso a dinheiro diretamente. Verificacao manual do texto, nao ha assercao automatica para conteudo de dossie_resposta."
+  },
+  {
+    "id": "entrega-pessoal-precisa-de-hora-marcada",
+    "email": {
+      "from": "teresa.moreira@gmail.com",
+      "from_name": "Teresa Moreira",
+      "subject": "Re: Troca de fones",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, em vez de enviar por correio posso entregar os fones ai pessoalmente na loja?"
+    },
+    "expect": "rascunhar",
+    "note": "entrega pessoal aceite mas precisa de hora marcada, nao e loja aberta ao publico. Caso real de producao, 18/08/2026 (devolucoes.md, secao Entrega pessoal)."
   }
 ]

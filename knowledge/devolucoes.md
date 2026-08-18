@@ -81,6 +81,14 @@ Dentro da encomenda, o cliente deve incluir uma folha com:
 - Nome completo
 - Motivo da devolução, ou descrição da anomalia
 
+## Entrega pessoal, sem ser por correio
+
+O cliente pode entregar o artigo pessoalmente nas instalações da loja, em vez
+de o enviar por correio. Como não é uma loja aberta ao público, é preciso
+combinar previamente o dia e a hora, para garantir que está alguém disponível
+para o receber — nunca dizer para aparecer sem mais. (Confirmado por um caso
+real de produção, 18 de agosto de 2026.)
+
 ## Etiqueta de devolução
 
 - A loja **não emite nem disponibiliza etiqueta de devolução pré-paga**. O
