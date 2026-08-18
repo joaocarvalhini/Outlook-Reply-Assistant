@@ -41,6 +41,7 @@ from assistente import (
     resumir_encomenda,
     resumir_historico,
     saudacao,
+    sem_lixo_apos_assinatura,
     triar,
     triar_cabecalhos,
 )
@@ -304,6 +305,34 @@ class HtmlDeSaida(unittest.TestCase):
 
     def test_texto_vazio(self) -> None:
         self.assertEqual(para_html("   "), "")
+
+
+class LixoAposAssinatura(unittest.TestCase):
+    """Rede de segurança contra um glitch de geração visto em produção:
+    "tripat3sascamentoaao_confirmar" em vez de só "tripat3s"."""
+
+    def test_texto_limpo_fica_igual(self) -> None:
+        texto = "Com os melhores cumprimentos,\ntripat3s"
+        self.assertEqual(sem_lixo_apos_assinatura(texto, "tripat3s"), texto)
+
+    def test_corta_lixo_colado_sem_espaco(self) -> None:
+        texto = "Com os melhores cumprimentos,\ntripat3sascamentoaao_confirmar"
+        self.assertEqual(
+            sem_lixo_apos_assinatura(texto, "tripat3s"),
+            "Com os melhores cumprimentos,\ntripat3s",
+        )
+
+    def test_assinatura_ausente_fica_igual(self) -> None:
+        texto = "Com os melhores cumprimentos,\nEquipa"
+        self.assertEqual(sem_lixo_apos_assinatura(texto, "tripat3s"), texto)
+
+    def test_usa_a_ultima_ocorrencia(self) -> None:
+        texto = "tripat3s vende fones.\n\nCom os melhores cumprimentos,\ntripat3slixo"
+        self.assertTrue(sem_lixo_apos_assinatura(texto, "tripat3s").endswith("tripat3s"))
+
+    def test_texto_ou_assinatura_vazios(self) -> None:
+        self.assertEqual(sem_lixo_apos_assinatura("", "tripat3s"), "")
+        self.assertEqual(sem_lixo_apos_assinatura("texto", ""), "texto")
 
 
 class Saudacao(unittest.TestCase):

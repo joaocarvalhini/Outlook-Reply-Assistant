@@ -270,6 +270,25 @@ def cortar_citacao(texto: str) -> str:
     return "\n".join(linhas).strip() or texto.strip()
 
 
+def sem_lixo_apos_assinatura(texto: str, assinatura: str) -> str:
+    """Corta texto colado sem espaço a seguir à assinatura de fecho.
+
+    Visto em produção (18/08/2026): o modelo gerou uma vez
+    "tripat3sascamentoaao_confirmar" em vez de só "tripat3s" — um glitch raro
+    de geração, não um bug de substituição de código (a assinatura já vai
+    literal no prompt, nunca é substituída depois de o modelo responder). É
+    só uma rede de segurança: procura a última ocorrência da assinatura e
+    corta tudo o que vier a seguir, quando não é só espaço em branco.
+    """
+    if not texto or not assinatura:
+        return texto
+    pos = texto.rfind(assinatura)
+    if pos == -1:
+        return texto
+    fim = pos + len(assinatura)
+    return texto[:fim] if texto[fim:].strip() else texto
+
+
 def para_html(texto: str) -> str:
     """Converte o texto do modelo em HTML seguro.
 
@@ -729,6 +748,17 @@ Preenches então:
   futura?"), não fica à espera que quem revê a escreva do zero. A regra é a
   mesma de "propor não é comprometer": perguntar o que a base manda perguntar
   não é prometer nada, é dar a quem revê o máximo de trabalho já feito.
+  Uma ação ainda por decidir (cancelar, reembolsar, trocar, seja o que for)
+  tem sempre incerteza sobre o resultado, não só sobre o momento — a fórmula
+  é sempre "vamos verificar internamente **se conseguimos** [a ação]", nunca
+  "vamos verificar e confirmamos [a ação]". A segunda forma promete o
+  resultado como certo, só falta a confirmação — é dizer a mais, mesmo que
+  pareça óbvio que vai correr bem. Escreve só o que se sabe agora: que o
+  pedido chegou e vai ser analisado, nada sobre o desfecho. Não escrevas
+  "confirmamos o cancelamento", "confirmamos que vamos [X]", nem nada com
+  "confirmamos" a seguir a uma ação que ainda não aconteceu — só depois de
+  ela acontecer é que há algo para confirmar. (Corrigido a partir de um caso
+  real de produção, 18 de agosto de 2026.)
 
 Não preenchas o dossiê quando escalas por não saberes alguma coisa
 (LACUNA_DE_CONHECIMENTO) nem quando a identidade não está confirmada
@@ -1522,7 +1552,7 @@ def decidir(
     resultado = {
         "acao": dados["acao"],
         "motivo": dados.get("motivo", ""),
-        "corpo": dados.get("corpo", ""),
+        "corpo": sem_lixo_apos_assinatura(dados.get("corpo", ""), cfg.assinatura),
         "categoria": _validar(dados.get("categoria", ""), CATEGORIAS, "OUTRO"),
         "lacuna_tema": dados.get("lacuna_tema", ""),
         "lacuna_em_falta": dados.get("lacuna_em_falta", ""),
@@ -1572,7 +1602,9 @@ def decidir(
         resultado["dossie_risco"] = _validar(
             dossie.get("dossie_risco", ""), ("baixo", "medio", "alto", ""), ""
         )
-        resultado["dossie_resposta"] = dossie.get("dossie_resposta", "")
+        resultado["dossie_resposta"] = sem_lixo_apos_assinatura(
+            dossie.get("dossie_resposta", ""), cfg.assinatura
+        )
 
     return resultado
 
