@@ -47,13 +47,57 @@ Quando o cliente encomendou, por engano, mais unidades do que queria:
   houver sinais de abertura, uso ou dano, não se assume que a devolução é
   possível.
 
+## Devolução por arrependimento — a loja propõe a troca primeiro
+
+Quando o cliente não tem queixa nenhuma de qualidade ou defeito — só não
+gostou do produto, mudou de ideias, ou não correspondeu ao que procurava em
+termos de gosto pessoal (cor, estilo, se é bem o que queria) — a devolução é
+o último recurso da loja, não o primeiro passo. Antes de explicar como
+devolver, propõe-se trocar por outro artigo da loja. (Confirmado
+diretamente pelo cliente, 18 de agosto de 2026, a partir de um caso real
+pedido pelo formulário do site.)
+
+- A proposta é sempre uma pergunta, nunca uma devolução já dada como certa
+  nem uma troca já combinada: por exemplo, "Já pensou em trocar por outro
+  artigo da nossa loja, que se ajuste melhor ao que procura?"
+- **A primeira resposta é só a proposta de troca.** Mesmo que o cliente já
+  tenha perguntado como devolver, não expliques nessa mesma mensagem os
+  passos de devolução (formulário, morada, prazos, estado exigido) — isso
+  esvazia a proposta, porque dá logo o caminho todo desenhado para a
+  devolução ao lado da troca. Só depois de o cliente recusar a troca é que
+  se avança para "Como iniciar uma devolução".
+- Segue a mesma lógica de "Trocas" acima: se o cliente escolher algo do
+  mesmo valor, é resposta normal, sem envolver cobrança nem reembolso. Se
+  houver diferença de valor a acertar, escala para a equipa decidir.
+- **Não se aplica** a uma queixa que soe a problema de qualidade ou de
+  funcionamento, mesmo dita em termos vagos ("não gostei do som", "não
+  funciona como esperava") — esses casos seguem sempre primeiro
+  `provas-e-defeitos.md`: pede-se prova antes de decidir seja o que for.
+  Esta secção é só para quando não há sequer sugestão de um problema
+  técnico, e o cliente já diz claramente que é gosto pessoal ou mudança de
+  ideias.
+- Se o cliente recusar a troca e preferir mesmo devolver, segue-se "Como
+  iniciar uma devolução" abaixo, normalmente — recusar a troca não atrasa
+  nem complica o direito à devolução.
+- Isto é sobre como começar um caso novo, não sobre julgar um caso que já
+  vem de trás. Se o fio já mostra a loja a tratar o pedido de outra forma
+  (por exemplo, já a explicar como devolver, sem ter proposto troca), a
+  regra de sempre aplica-se na mesma: o que a loja já disse é um
+  compromisso assumido, e não é motivo para escalar nem para assinalar
+  como inconsistência — seguir o fio a partir de onde ele está.
+- Não se aplica a capas personalizadas: essas não podem ser devolvidas nem
+  trocadas por não gostar, por serem feitas por medida (ver "Capas
+  personalizadas — exceção").
+
 ## Como iniciar uma devolução
 
-Isto é o que se diz **depois** de a prova (foto/vídeo) já ter sido vista, ou
-quando o pedido não precisa de prova nenhuma (ex.: arrependimento simples,
-sem queixa de qualidade). Se a queixa é sobre qualidade/som e ainda não há
-prova, o primeiro passo é pedir a prova (ver `provas-e-defeitos.md`) — não
-isto.
+Isto é o que se diz **depois** de a prova (foto/vídeo) já ter sido vista,
+depois de a troca por arrependimento ter sido proposta e recusada (secção
+acima, quando se aplica), ou quando nenhuma das duas coisas se aplica ao
+caso. Se a queixa é sobre qualidade/som e ainda não há prova, o primeiro
+passo é pedir a prova (ver `provas-e-defeitos.md`) — não isto. Se é
+arrependimento puro e a troca ainda não foi proposta, propõe-se a troca
+primeiro (secção acima) — não isto.
 
 - O passo padrão é preencher o formulário de devolução/troca em
   https://www.tripat3s.com/pages/pedido-de-devolucao-ou-troca — é o que a

@@ -993,5 +993,19 @@
     "nota_anexos": "\n\nO cliente anexou 1 ficheiro(s) que não foi possível processar automaticamente (video.mov). Trata isto como se não tivesse chegado prova nenhuma.",
     "expect": "rascunhar",
     "note": "o ficheiro anexado (video) nao e um formato suportado pela visao do modelo -- a nota de anexo nao processado tem de ser tratada como se nao tivesse chegado prova nenhuma, pedindo fotografia/video num formato que consiga ser visto, nunca escalando ou inventando que o video foi analisado."
+  },
+  {
+    "id": "arrependimento-puro-propoe-troca-primeiro",
+    "email": {
+      "from": "marisa.leite@gmail.com",
+      "from_name": "Marisa Leite",
+      "subject": "Devolução",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, recebi a minha encomenda mas afinal não gostei do produto. Gostava de devolver, o que é preciso fazer?"
+    },
+    "expect": "rascunhar",
+    "note": "arrependimento puro, sem queixa de qualidade nem defeito -- a primeira resposta deve propor trocar por outro artigo da loja, nao ir logo para as instrucoes de devolucao (formulario/morada/portes). Caso real de producao, 18/08/2026, pedido pelo formulario do site -- o lojista confirmou diretamente que tenta sempre a troca primeiro nestes casos, a devolucao e o ultimo recurso. Verificacao manual do texto: o corpo deve propor uma troca por outro artigo da loja, nunca instrucoes de devolucao diretamente nem confirmar a devolucao como certa."
   }
 ]
