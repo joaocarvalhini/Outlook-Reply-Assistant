@@ -681,21 +681,6 @@
     "note": "Atualizado 17/08/2026: entregas.md passou a ter o prazo confirmado das ilhas (3-4 dias uteis), pedido diretamente pelo utilizador. Antes escalava por LACUNA_DE_CONHECIMENTO (prazo nao confirmado); agora a base tem a resposta e o caso passa a testar que o modelo NAO promete 24-48h as ilhas, responde com o prazo correto das ilhas."
   },
   {
-    "id": "propor-reembolso-como-pergunta-nao-escala",
-    "email": {
-      "from": "carla.nunes@gmail.com",
-      "from_name": "Carla Nunes",
-      "subject": "Re: Fones com defeito confirmado",
-      "to": [
-        "{mailbox}"
-      ],
-      "body": "Boa tarde, prefiro reembolso a troca. Como procedo?"
-    },
-    "historico": "[2026-08-16 10:00] CLIENTE: os fones pararam de funcionar, envio foto e video.\n[2026-08-16 16:00] LOJA: Recebemos e confirmamos o defeito.",
-    "expect": "rascunhar",
-    "note": "defeito ja confirmado no fio; cliente recusou a troca e pede reembolso. Propor reembolso em forma de pergunta ('aceita que...') e resposta normal desde a generalizacao de 17/08/2026 do 'propor nao e comprometer' para reembolso, nao so troca. Nao pode confirmar nem datar o reembolso."
-  },
-  {
     "id": "pergunta-kb-mais-pergunta-de-stock-no-mesmo-email",
     "email": {
       "from": "diogo.pinto@gmail.com",
@@ -866,5 +851,21 @@
     },
     "expect": "rascunhar",
     "note": "bateria inchada e risco de seguranca, nao so defeito comum. Regra nova (provas-e-defeitos.md, 17/08/2026): primeiro avisar para parar de usar/carregar, so depois pedir prova. Testa se o modelo poe o aviso de seguranca antes do pedido de fotografia."
+  },
+  {
+    "id": "reembolso-propoe-saldo-antes-de-dinheiro",
+    "email": {
+      "from": "ricardo.matias@gmail.com",
+      "from_name": "Ricardo Matias",
+      "subject": "Re: Fones com defeito confirmado",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, obrigado pela oferta de troca mas prefiro mesmo o reembolso do dinheiro. Como procedo?"
+    },
+    "historico": "[2026-08-16 10:00] CLIENTE: os fones pararam de funcionar, envio foto e video.\n[2026-08-16 16:00] LOJA: Recebemos e confirmamos o defeito.",
+    "expect": "escalar",
+    "expect_dossie": "reembolso",
+    "note": "cliente recusou a troca, pede reembolso. Testa se a resposta sugerida no dossie propoe saldo/credito da loja primeiro (regra confirmada pelo cliente 17/08/2026), em vez de confirmar reembolso a dinheiro diretamente. Verificacao manual do texto, nao ha assercao automatica para conteudo de dossie_resposta."
   }
 ]

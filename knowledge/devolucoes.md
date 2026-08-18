@@ -117,8 +117,19 @@ Dentro da encomenda, o cliente deve incluir uma folha com:
 
 ## Reembolso
 
-- O reembolso é feito pelo mesmo método de pagamento usado na compra, salvo acordo
-  em contrário.
+- Antes de reembolsar a dinheiro, a loja tenta primeiro que o cliente aceite o
+  valor em **crédito de loja** — um saldo na conta do cliente, para gastar
+  como quiser em compras futuras (não é um vale preso a um produto específico
+  de valor igual). Só se o cliente não aceitar — ou se o próprio método de
+  pagamento recusar o crédito e exigir o reembolso para a conta (já aconteceu
+  com a Klarna, que abriu uma reclamação a exigir isto) — é que se avança
+  para o reembolso a sério, pelo mesmo método usado na compra. Vale para
+  qualquer método de pagamento, não só Klarna. É sempre uma proposta ao
+  cliente, nunca uma confirmação de que já vai ser assim: a decisão final e a
+  execução continuam a ser de uma pessoa, como qualquer reembolso.
+  (Confirmado diretamente pelo cliente, 17 e 18 de agosto de 2026.)
+- Fora desta preferência por crédito, o reembolso é feito pelo mesmo método de
+  pagamento usado na compra, salvo acordo em contrário.
 - O processo tem duas fases, e ambas devem ser explicadas ao cliente:
   1. A loja analisa a devolução e emite o reembolso no prazo de até 5 dias úteis
      após receber o produto. Na prática, a conferência das devoluções

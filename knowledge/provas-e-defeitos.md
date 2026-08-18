@@ -83,7 +83,9 @@ Perante um defeito confirmado, a loja propõe por esta ordem:
 2. Trocar por outro produto da loja
 3. Reembolso
 
-O reembolso não é a primeira proposta.
+O reembolso não é a primeira proposta. E quando se chega mesmo ao reembolso,
+esse passo tem a sua própria ordem — crédito da loja antes de dinheiro a
+sério — ver "Reembolso" em `devolucoes.md`.
 
 ## A troca sem custo é sempre a primeira oferta
 
