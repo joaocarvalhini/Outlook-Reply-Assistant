@@ -84,8 +84,9 @@ Perante um defeito confirmado, a loja propõe por esta ordem:
 3. Reembolso
 
 O reembolso não é a primeira proposta. E quando se chega mesmo ao reembolso,
-esse passo tem a sua própria ordem — crédito da loja antes de dinheiro a
-sério — ver "Reembolso" em `devolucoes.md`.
+esse passo tem a sua própria ordem — reembolso parcial primeiro (ver
+"Reembolso parcial" abaixo), depois crédito da loja antes de dinheiro a
+sério (ver "Reembolso" em `devolucoes.md`).
 
 ## A troca sem custo é sempre a primeira oferta
 
@@ -117,12 +118,38 @@ que avancemos com o reembolso assim que recebermos o artigo de volta?" é a
 mesma lógica da troca — o cliente ter escolhido reembolso em vez de troca não
 é, por si só, motivo para escalar.
 
-## Reembolso parcial
+## Reembolso parcial — tentar sempre antes do reembolso total
 
-O reembolso parcial (o cliente fica com o artigo e recebe parte do valor de
-volta) existe e é usado, mas **não há percentagem fixa que se possa oferecer
-sem decisão humana**. Nunca proponhas um valor nem uma percentagem: isso
-escala. (Confirmado diretamente pela loja, 17 de agosto de 2026.)
+Antes de avançar com qualquer reembolso total — por arrependimento, ou
+depois de o cliente recusar a troca sem custo num caso de defeito
+confirmado — a loja tenta primeiro o reembolso parcial: o cliente fica com
+o produto e recebe parte do valor de volta, sem ter de o devolver. É
+regra, não exceção: tenta-se sempre este passo antes de aceitar o
+reembolso total, defeito confirmado ou não. (Confirmado diretamente pelo
+cliente, 18 de agosto de 2026.)
+
+- **Não há percentagem nem valor fixo que se possa propor sem decisão
+  humana.** A proposta que se pode escrever é sempre a pergunta — "estaria
+  disponível para aceitar um reembolso parcial, ficando com o produto?" —
+  nunca um valor ou percentagem concretos: isso continua a escalar para
+  uma pessoa decidir.
+- A razão a dar ao cliente é o custo do envio de volta: para fones P9
+  (caixa grande), o valor a citar é que os portes normalmente não ficam
+  abaixo de 12 a 15€; para qualquer outro produto, não se cita um valor
+  preciso — diz-se apenas que os portes de devolução não são baratos.
+- Se o cliente não responder à primeira proposta, ou recusar sem mais,
+  tenta-se uma segunda vez antes de aceitar o reembolso total: reforça-se
+  que a decisão do cliente vai ser respeitada, mas confirma-se mais uma
+  vez se não há mesmo interesse nenhum num valor parcial, e explicam-se os
+  prazos do reembolso total (até 5 dias úteis após a receção para análise,
+  mais até 10 dias úteis para o valor ficar disponível — ver "Reembolso"
+  em `devolucoes.md`), para o cliente poder comparar as duas opções.
+- Se o cliente recusar as duas vezes, ou disser claramente que não quer
+  ser questionado outra vez sobre isto, segue-se o reembolso total normal,
+  sem mais insistência.
+- Isto não muda a ordem já estabelecida acima (a troca sem custo continua
+  a ser sempre a primeira oferta num defeito confirmado): só acrescenta
+  este passo entre a troca recusada e o reembolso total.
 
 ## Vale de compensação
 

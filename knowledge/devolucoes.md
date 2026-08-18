@@ -22,6 +22,16 @@ Fonte: /pages/politica-de-reembolsos-e-devolucoes, /pages/perguntas-faq,
   aproveitar a troca para pedir um design diferente. É reposição do que já
   foi pago, não uma encomenda nova sem custo. (Confirmado por um caso real
   de produção, 18 de agosto de 2026.)
+- Diferença de cor na impressão é diferente de defeito ou de pedir design
+  diferente: a cor impressa pode sair ligeiramente mais escura do que a
+  imagem original por causa do processo de impressão — isso é esperado, não
+  é defeito. Quando a diferença for maior do que o normal e o cliente
+  reclamar, a loja compensa com um **crédito de loja fixo de 20€**, para
+  gastar numa compra futura. Ao contrário dos outros vales/créditos de
+  compensação (ver "Reembolso" e "Vale de compensação" abaixo), este valor
+  é fixo e pode ser proposto diretamente, sem escalar para uma pessoa
+  decidir o montante. (Confirmado diretamente pelo cliente, 18 de agosto de
+  2026.)
 
 ## Estado exigido
 
@@ -46,6 +56,31 @@ Quando o cliente encomendou, por engano, mais unidades do que queria:
 - A devolução aplica-se só a essas unidades extra, e só nessas condições. Se
   houver sinais de abertura, uso ou dano, não se assume que a devolução é
   possível.
+
+## Unidade extra da oferta no checkout, encomenda já expedida
+
+Uma queixa comum de "encomendei sem querer duas unidades" costuma vir de
+uma oferta de compra adicional apresentada no checkout (por exemplo,
+"adicione mais uma unidade com desconto"), que o cliente aceitou ao
+escolher essa opção — não é um erro da loja nem do sistema, mesmo que o
+cliente sinta que foi. (Confirmado diretamente pelo cliente, 18 de agosto
+de 2026.)
+
+- Explica-se isto ao cliente com clareza, sem pedir desculpa por um erro
+  que não houve da parte da loja: a segunda unidade foi incluída porque a
+  oferta foi aceite no momento da compra.
+- Se a encomenda ainda não tiver sido expedida quando chega o pedido de
+  cancelamento, aplica-se a regra normal de preparar o dossiê e verificar
+  se ainda é possível remover a unidade antes do envio.
+- Se a encomenda **já tiver sido expedida**, a loja tenta — mas não
+  garante — que a transportadora intercete a encomenda no ponto onde já se
+  encontra, para evitar que o cliente receba as duas unidades e tenha de
+  devolver uma depois. Isto não se promete como certo: só se explica que
+  se está a tentar, e que se aguardam novidades da transportadora para
+  informar o cliente assim que houver.
+- Continua a exigir uma pessoa: tanto para confirmar junto da
+  transportadora se a interceção é possível, como para dar seguimento
+  depois. Não se afirma ao cliente que a interceção já está garantida.
 
 ## Devolução por arrependimento — a loja propõe a troca primeiro
 
@@ -198,6 +233,14 @@ real de produção, 18 de agosto de 2026.)
   recebeu, pedir para verificar spam/lixo eletrónico antes de mais — só
   depois disso a loja reencaminha o pedido à provedora para confirmar o
   estado.
+- Se o cliente disser que o reembolso não chegou dentro dos prazos
+  indicados acima (depois de já se ter verificado spam/lixo eletrónico), a
+  loja pode oferecer processá-lo manualmente por transferência bancária,
+  pedindo o IBAN ao cliente. É uma alternativa para resolver mais depressa,
+  não uma obrigação — continua a ser uma proposta a confirmar com o
+  cliente, nunca uma promessa de que vai ser feito assim antes de ele
+  concordar e dar o IBAN. (Confirmado diretamente pelo cliente, 18 de
+  agosto de 2026.)
 
 ## Reembolso quando há disputa aberta no PayPal
 

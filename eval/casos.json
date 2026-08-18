@@ -866,7 +866,7 @@
     "historico": "[2026-08-16 10:00] CLIENTE: os fones pararam de funcionar, envio foto e video.\n[2026-08-16 16:00] LOJA: Recebemos e confirmamos o defeito.",
     "expect": "escalar",
     "expect_dossie": "reembolso",
-    "note": "cliente recusou a troca, pede reembolso. Testa se a resposta sugerida no dossie propoe saldo/credito da loja primeiro (regra confirmada pelo cliente 17/08/2026), em vez de confirmar reembolso a dinheiro diretamente. Verificacao manual do texto, nao ha assercao automatica para conteudo de dossie_resposta."
+    "note": "cliente recusou a troca, pede reembolso. ATUALIZADO 18/08/2026: desde a regra 'reembolso parcial sempre antes do total' (provas-e-defeitos.md), a resposta sugerida no dossie deve agora propor reembolso parcial primeiro -- so depois disso, se recusado, e que entra a proposta de saldo/credito antes de dinheiro (regra de 17/08/2026). Verificacao manual do texto, nao ha assercao automatica para conteudo de dossie_resposta."
   },
   {
     "id": "entrega-pessoal-precisa-de-hora-marcada",
@@ -1007,5 +1007,68 @@
     },
     "expect": "rascunhar",
     "note": "arrependimento puro, sem queixa de qualidade nem defeito -- a primeira resposta deve propor trocar por outro artigo da loja, nao ir logo para as instrucoes de devolucao (formulario/morada/portes). Caso real de producao, 18/08/2026, pedido pelo formulario do site -- o lojista confirmou diretamente que tenta sempre a troca primeiro nestes casos, a devolucao e o ultimo recurso. Verificacao manual do texto: o corpo deve propor uma troca por outro artigo da loja, nunca instrucoes de devolucao diretamente nem confirmar a devolucao como certa."
+  },
+  {
+    "id": "capa-cor-diferente-compensa-20-euros",
+    "email": {
+      "from": "beatriz.nunes@gmail.com",
+      "from_name": "Beatriz Nunes",
+      "subject": "Cor da capa personalizada diferente",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, recebi a capa personalizada mas a cor ficou muito mais escura do que a imagem que enviei, é uma diferença grande. Podem ajudar?"
+    },
+    "expect": "rascunhar",
+    "note": "diferenca de cor na impressao de capa personalizada, nao e defeito fisico -- deve propor diretamente credito de loja de 20 euros, sem escalar o valor (regra fixa, confirmada pelo cliente 18/08/2026, ao contrario dos outros vales/creditos que sao caso a caso). Verificacao manual do texto: o corpo deve mencionar os 20 euros de credito de loja."
+  },
+  {
+    "id": "unidade-extra-oferta-checkout-ja-expedida",
+    "email": {
+      "from": "tiago.almeida@gmail.com",
+      "from_name": "Tiago Almeida",
+      "subject": "Encomendei sem querer 2 unidades",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, reparei que a minha encomenda tem 2 unidades dos InPods Pro 4 mas eu só queria 1, encomendei sem querer a segunda. Podem cancelar essa unidade?"
+    },
+    "dados_encomenda": "Encomenda #22050\nFeita em: 2026-08-16\nPagamento: pago\nEnvio: expedida\nCódigo de rastreio: RR556677889PT",
+    "expect": "escalar",
+    "expect_categoria": "ACAO_SOBRE_ENCOMENDA",
+    "expect_dossie_com_conteudo": true,
+    "note": "provavel unidade extra vinda da oferta de compra adicional no checkout, encomenda ja expedida -- a resposta sugerida deve explicar que a segunda unidade veio de uma oferta aceite (sem culpar erro da loja) e que se tenta, sem garantir, intercetar a encomenda junto da transportadora. Regra confirmada pelo cliente, 18/08/2026. Testa conteudo (resumo/resposta), nao etiqueta exata de dossie_tipo."
+  },
+  {
+    "id": "reembolso-atrasado-oferece-iban",
+    "email": {
+      "from": "cristina.santos@gmail.com",
+      "from_name": "Cristina Santos",
+      "subject": "Re: Devolução processada",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, já verifiquei o spam e não está lá. Já passaram mais de 15 dias úteis desde que enviei o produto e continuo sem receber o reembolso. Já não sei o que fazer."
+    },
+    "historico": "[2026-08-01 10:00] CLIENTE: enviei a devolução, aqui está o comprovativo.\n[2026-08-02 09:00] LOJA: Obrigado, vamos analisar e processar o reembolso.",
+    "expect": "escalar",
+    "expect_dossie_com_conteudo": true,
+    "note": "reembolso atrasado, cliente ja verificou spam -- a resposta sugerida deve oferecer alternativa de transferencia bancaria manual, pedindo o IBAN, como proposta a confirmar, nunca como promessa fechada. Regra confirmada pelo cliente, 18/08/2026. Testa conteudo, nao etiqueta exata de dossie_tipo."
+  },
+  {
+    "id": "reembolso-parcial-recusado-uma-vez-tenta-outra",
+    "email": {
+      "from": "andre.pinto@gmail.com",
+      "from_name": "André Pinto",
+      "subject": "Re: Fones P9 com problema",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Não, prefiro mesmo devolver os fones, não me interessa ficar com eles."
+    },
+    "historico": "[2026-08-15 10:00] CLIENTE: os fones P9 pararam de funcionar de um lado, envio foto e video.\n[2026-08-15 16:00] LOJA: Recebemos e confirmamos o defeito. Antes de avançarmos com a devolução, estaria disponível para aceitar um reembolso parcial, ficando com os fones? Assim evita o processo de devolução.",
+    "expect": "escalar",
+    "expect_dossie_com_conteudo": true,
+    "note": "cliente ja recusou reembolso parcial uma vez no fio, insiste em devolver. Regra (provas-e-defeitos.md, 18/08/2026): tenta-se uma segunda vez antes de aceitar a devolucao total, agora tambem explicando os prazos do reembolso total para comparacao, e respeitando a decisao se recusar de novo. Verificacao manual do texto: a resposta sugerida deve tentar mais uma vez, sem insistir uma terceira."
   }
 ]
