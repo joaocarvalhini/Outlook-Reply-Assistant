@@ -26,6 +26,7 @@ casos por responder escalam, e escalar parece correto.
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
 import sys
@@ -36,6 +37,26 @@ import assistente as a
 ACOES = ("saltar", "escalar", "rascunhar")
 CORRESPONDENCIA_DE_CLIENTE = ("escalar", "rascunhar")
 ERRO = "erro"
+
+_TIPO_POR_EXTENSAO = {
+    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+    ".gif": "image/gif", ".webp": "image/webp",
+}
+
+
+def carregar_imagens(nomes: list[str], pasta: Path) -> tuple[dict, ...]:
+    """Lê fixtures de eval/fixtures/ e devolve-as no formato que decidir()
+    espera. Casos sem "imagens" continuam a testar exatamente como antes —
+    isto só entra em jogo quando o caso pede uma fotografia."""
+    imagens = []
+    for nome in nomes:
+        caminho = pasta / nome
+        tipo = _TIPO_POR_EXTENSAO.get(caminho.suffix.lower())
+        if tipo is None:
+            sys.exit(f"Fixture de imagem com extensão não suportada: {nome}")
+        dados = base64.standard_b64encode(caminho.read_bytes()).decode("ascii")
+        imagens.append({"media_type": tipo, "data": dados})
+    return tuple(imagens)
 
 
 def construir_msg(caso: dict, caixa: str) -> dict:
@@ -68,7 +89,8 @@ def construir_msg(caso: dict, caixa: str) -> dict:
 
 
 def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
-            cliente: object | None, prompt: str) -> tuple[str, str, str]:
+            cliente: object | None, prompt: str,
+            pasta_fixtures: Path = Path("eval/fixtures")) -> tuple[str, str, str]:
     """Devolve (obtido, etapa, detalhe)."""
     msg = construir_msg(caso, cfg.mailbox)
 
@@ -83,11 +105,13 @@ def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
     if cliente is None:
         return "passou", "triagem", "chegou ao modelo"
 
+    imagens = carregar_imagens(caso.get("imagens", []), pasta_fixtures)
     try:
         d = a.decidir(
             cliente, cfg, prompt, msg,
             caso.get("dados_encomenda", ""), caso.get("historico", ""),
             caso.get("aviso_identidade", ""), caso.get("compromissos", ""),
+            imagens, caso.get("nota_anexos", ""),
         )
     except Exception as exc:
         return ERRO, "modelo", f"{type(exc).__name__}: {exc}"[:110]
@@ -249,7 +273,11 @@ def main(argv: list[str] | None = None) -> int:
     etapa = "só triagem" if args.triagem else cfg.modelo
     print(f"{len(casos)} caso(s) · {etapa} · {args.casos} · caixa {cfg.mailbox}")
 
-    resultados = [(c, avaliar(c, cfg, bloqueados, cliente, prompt or "")) for c in casos]
+    pasta_fixtures = args.casos.parent / "fixtures"
+    resultados = [
+        (c, avaliar(c, cfg, bloqueados, cliente, prompt or "", pasta_fixtures))
+        for c in casos
+    ]
     return relatar(resultados, args.triagem)
 
 

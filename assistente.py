@@ -17,7 +17,9 @@ semanas, e o estado vive no SQLite.
       ├─ Graph: mensagens recebidas depois do cursor
       ├─ SQLite: já processei este internetMessageId? → sim, salta
       ├─ Triagem determinística: robôs, newsletters, domínio próprio → salta
+      ├─ Graph: anexos de imagem, se houver (prova de defeito)
       ├─ Claude: 1 chamada → {"acao": "rascunhar"|"escalar"|"saltar", ...}
+      │    "escalar" acionável pede uma 2ª chamada, para o dossiê
       └─ "rascunhar" → Graph createReply; "escalar" → categoria para humano
 
 Três ações, não duas. "Saltar" (não é correspondência de cliente) e "escalar"
@@ -30,6 +32,7 @@ conhecimento está a chegar.
 from __future__ import annotations
 
 import argparse
+import base64
 import html
 import json
 import os
@@ -82,6 +85,7 @@ class Config:
     pre_dossies: bool
     registo_compromissos: bool
     respostas_parciais: bool
+    processar_imagens: bool
 
     @property
     def dominio(self) -> str:
@@ -146,6 +150,10 @@ def carregar_config(dry_run_flag: bool | None) -> Config:
         # comportamento anterior, em que um assunto descoberto deitava fora a
         # resposta à parte que se sabia.
         respostas_parciais=ligado("ENABLE_PARTIAL_ANSWERS", "true"),
+        # Fotografias anexadas (ex.: prova de defeito) passadas ao modelo como
+        # imagem. Desligar volta ao comportamento anterior: anexos existem mas
+        # nunca são vistos, como se o email não os tivesse.
+        processar_imagens=ligado("ENABLE_IMAGE_ATTACHMENTS", "true"),
     )
 
 
@@ -571,16 +579,48 @@ receção do que ele próprio disse. Isso é sempre rascunhável.
 # Quando existem "Dados da encomenda" no pedido
 Foram consultados agora mesmo na Shopify e confirmados como sendo desta pessoa:
 podes usá-los para responder a perguntas sobre estado do pagamento, se já foi
-expedida e o código de rastreio, sem escalar por falta de acesso. Isto só
-resolve perguntas de leitura. Continua a escalar quando o cliente pede para
-cancelar, alterar, reembolsar ou trocar algo da encomenda — não tens permissão
-para alterar nada, só para ler.
+expedida, o código de rastreio e — quando vier incluído — o estado do envio
+("em trânsito", "entregue", "tentativa de entrega falhada", etc.), sem escalar
+por falta de acesso. Isto só resolve perguntas de leitura. Continua a escalar
+quando o cliente pede para cancelar, alterar, reembolsar ou trocar algo da
+encomenda — não tens permissão para alterar nada, só para ler.
+
+O estado do envio nem sempre vem preenchido — depende de a transportadora
+estar reconhecida pela Shopify. Quando não vier, responde só com o código e o
+link de rastreio, como sempre: não adivinhes um estado que não te foi dado, e
+não digas ao cliente para "consultar o rastreio" quando já tens o estado à
+frente — isso é empurrar de volta um trabalho que já podes fazer.
+
 Se o email menciona uma encomenda mas não vieram "Dados da encomenda" no
 pedido, a consulta falhou ou o número não pertence a quem escreveu: escala,
 não adivinhes o estado da encomenda a partir da base de conhecimento geral.
 
 Estes dados autorizam-te a falar do estado daquela encomenda e de mais nada.
 Não te dão licença para responder ao resto do email.
+
+# Quando o cliente anexa uma fotografia
+Uma imagem anexada pode ser a prova de que precisas para resolver uma queixa
+de defeito sem escalar. Olha para ela com o mesmo cuidado com que lês o texto,
+e decide entre estas situações:
+
+- A imagem confirma claramente o problema descrito no texto (uma rachadura
+  visível, uma peça partida, um dano evidente). Trata isto como prova já
+  vista e confirmada, e segue a partir daí o que a base de conhecimento manda
+  fazer perante um defeito confirmado — ver "Ordem de solução preferida" e "A
+  troca sem custo é sempre a primeira oferta" na secção de provas e defeitos.
+- A imagem não mostra o problema descrito, mostra outra coisa, ou está escura
+  ou desfocada demais para se perceber. Trata isto exatamente como se não
+  tivesse chegado prova nenhuma: pede uma fotografia ou vídeo mais claro.
+- Há dúvida genuína sobre se a imagem mostra ou não o problema. Não decidas a
+  favor do cliente nem contra: trata como prova insuficiente, igual ao ponto
+  anterior.
+- Chegou uma nota a dizer que um ficheiro anexado não foi possível processar.
+  Trata isso da mesma forma — como se não tivesse chegado prova nenhuma.
+
+Nunca inventes o que uma imagem mostra. Se não estás mesmo a ver o defeito
+descrito, não escreves que o confirmaste — nem no "corpo", nem em
+"dossie_validacao". A mesma prudência que já tens com qualquer facto que não
+tens à frente aplica-se aqui.
 
 # Emails com vários assuntos — responde ao que sabes
 Um email real raramente traz um assunto só: "onde está a encomenda, veio com
@@ -1122,6 +1162,22 @@ _TRADUCAO_EXPEDICAO = {
     "unfulfilled": "ainda não expedida",
     None: "ainda não expedida",
 }
+# O estado do envio ("shipment_status") já vem no fulfillment da Shopify —
+# não é preciso outra integração para responder "onde está a minha
+# encomenda" com mais do que o número de rastreio. Só nem toda transportadora
+# o preenche (depende de a Shopify reconhecer a transportadora); quando
+# falta, resumir_encomenda() cai só no número e no link, como sempre foi.
+_TRADUCAO_ENVIO = {
+    "label_printed": "etiqueta impressa, a aguardar recolha",
+    "label_purchased": "etiqueta emitida, a aguardar recolha",
+    "attempted_delivery": "tentativa de entrega falhada",
+    "ready_for_pickup": "pronta para levantamento",
+    "confirmed": "confirmada pela transportadora",
+    "in_transit": "em trânsito",
+    "out_for_delivery": "em rota de entrega",
+    "delivered": "entregue",
+    "failure": "falha na entrega",
+}
 
 
 def extrair_numero_encomenda(assunto: str, corpo: str) -> str | None:
@@ -1374,6 +1430,14 @@ def resumir_encomenda(encomenda: dict) -> str:
         rastreio = f.get("tracking_number")
         if rastreio:
             linhas.append(f"Código de rastreio: {rastreio}")
+        transportadora = f.get("tracking_company")
+        if transportadora:
+            linhas.append(f"Transportadora: {transportadora}")
+        estado_envio = f.get("shipment_status")
+        if estado_envio:
+            linhas.append(
+                f"Estado do envio: {_TRADUCAO_ENVIO.get(estado_envio, estado_envio)}"
+            )
         url = f.get("tracking_url")
         if url:
             linhas.append(f"Link de rastreio: {url}")
@@ -1403,7 +1467,7 @@ def link_admin(cfg: Config, encomenda: dict | None) -> str:
 
 CAMPOS_LISTA = (
     "id,conversationId,internetMessageId,subject,from,toRecipients,"
-    "ccRecipients,receivedDateTime,categories"
+    "ccRecipients,receivedDateTime,categories,hasAttachments"
 )
 
 
@@ -1529,6 +1593,27 @@ class Graph:
             json={"categories": [*msg["categorias"], categoria]},
         )
 
+    def anexos(self, msg: dict) -> list[dict]:
+        """Metadados dos anexos, sem o conteúdo — para filtrar antes de gastar
+        largura de banda a trazer um ficheiro que nem vai ser usado."""
+        dados = self._pedir(
+            "GET",
+            f"{self.base}/messages/{msg['id']}/attachments",
+            params={"$select": "id,name,contentType,size,isInline"},
+        )
+        return list(dados.get("value", []))
+
+    def conteudo_anexo(self, msg: dict, anexo_id: str) -> bytes:
+        """Bytes crus de um anexo. Separado de anexos() de propósito: só se
+        pede depois de já se saber, pelos metadados, que vale a pena."""
+        r = self.http.get(
+            f"{self.base}/messages/{msg['id']}/attachments/{anexo_id}/$value",
+            headers={"Authorization": f"Bearer {self._token()}"},
+        )
+        if r.status_code >= 400:
+            raise RuntimeError(f"Graph anexo {r.status_code}: {r.text[:200]}")
+        return r.content
+
     @staticmethod
     def _converter(m: dict) -> dict:
         def enderecos(lista: object) -> list[str]:
@@ -1556,7 +1641,63 @@ class Graph:
             "categorias": list(m.get("categories") or []),
             "cabecalhos": [],
             "corpo": "",
+            "tem_anexos": bool(m.get("hasAttachments")),
         }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Anexos — evidência visual (ex.: fotografia de um defeito)
+# ─────────────────────────────────────────────────────────────────────────────
+
+_TIPOS_IMAGEM_SUPORTADOS = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+# 5 MB por imagem: bem acima do que uma fotografia de telemóvel normal pesa,
+# e uma margem de segurança sob o limite da própria API da Claude.
+_TAMANHO_MAX_ANEXO = 5 * 1024 * 1024
+# Um email de reclamação real tem no máximo uma ou duas fotos e por vezes um
+# vídeo (não suportado); um limite alto serve só para nunca mandar dezenas de
+# imagens para o modelo por engano.
+_MAX_IMAGENS_POR_EMAIL = 4
+
+
+def selecionar_anexos_de_imagem(anexos: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Separa os anexos do Graph em (candidatos a imagem, ignorados).
+
+    Nunca falha: um anexo que não sirva fica só de fora, não impede os outros
+    nem a decisão. "isInline" fica sempre de fora sem entrar em "ignorados" —
+    é o logótipo da assinatura, não prova nenhuma que o cliente tenha
+    enviado, e mencioná-lo ao modelo seria ruído.
+    """
+    imagens, ignorados = [], []
+    for a in anexos:
+        if not str(a.get("@odata.type", "")).endswith("fileAttachment"):
+            continue  # itemAttachment: um email encaminhado, não uma foto
+        if a.get("isInline"):
+            continue
+        tipo = a.get("contentType", "")
+        tamanho = a.get("size") or 0
+        if tipo in _TIPOS_IMAGEM_SUPORTADOS and 0 < tamanho <= _TAMANHO_MAX_ANEXO:
+            imagens.append(a)
+        else:
+            ignorados.append(a)
+    return imagens[:_MAX_IMAGENS_POR_EMAIL], ignorados
+
+
+def nota_anexos_ignorados(ignorados: list[dict]) -> str:
+    """Texto a acrescentar ao pedido quando há anexos que não foram vistos.
+
+    Sem isto, um ficheiro que o cliente mandou como prova (um PDF, um vídeo,
+    uma imagem grande demais) desaparecia em silêncio, e o modelo respondia
+    como se não tivesse chegado nada — pior do que escalar a dizer que não
+    conseguiu processar o ficheiro.
+    """
+    if not ignorados:
+        return ""
+    nomes = ", ".join(a.get("name") or "(sem nome)" for a in ignorados[:3])
+    return (
+        f"\n\nO cliente anexou {len(ignorados)} ficheiro(s) que não foi "
+        f"possível processar automaticamente ({nomes}). Trata isto como se "
+        "não tivesse chegado prova nenhuma."
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1567,7 +1708,7 @@ class Graph:
 def decidir(
     cliente: object, cfg: Config, prompt: str, msg: dict,
     dados_encomenda: str = "", historico: str = "", aviso_identidade: str = "",
-    compromissos: str = "",
+    compromissos: str = "", imagens: tuple[dict, ...] = (), nota_anexos: str = "",
 ) -> dict:
     """Devolve a decisão do modelo. Levanta em caso de falha técnica.
 
@@ -1594,7 +1735,28 @@ def decidir(
         pedido += f"\n\nDados da encomenda (consultados na Shopify agora mesmo):\n{dados_encomenda}"
     if aviso_identidade:
         pedido += f"\n\nAviso sobre a identidade:\n{aviso_identidade}"
+    if imagens:
+        pedido += f"\n\n({len(imagens)} fotografia(s) anexada(s) a seguir.)"
+    if nota_anexos:
+        pedido += nota_anexos
+
     def _chamar(schema: dict, conteudo: str) -> dict:
+        # Imagens vão sempre nas duas chamadas (núcleo e dossiê): são prova do
+        # mesmo email, não fazem sentido só numa delas. Ficam na mensagem do
+        # utilizador, nunca no prefixo de sistema — mudam a cada email, ao
+        # contrário da base de conhecimento.
+        if imagens:
+            conteudo_msg: object = [
+                {"type": "text", "text": conteudo},
+                *(
+                    {"type": "image", "source": {
+                        "type": "base64", "media_type": img["media_type"], "data": img["data"],
+                    }}
+                    for img in imagens
+                ),
+            ]
+        else:
+            conteudo_msg = conteudo
         resposta = cliente.messages.create(  # type: ignore[attr-defined]
             model=cfg.modelo,
             max_tokens=1024,
@@ -1604,7 +1766,7 @@ def decidir(
             system=[{"type": "text", "text": prompt, "cache_control": {"type": "ephemeral"}}],
             thinking={"type": "disabled"},
             output_config={"format": {"type": "json_schema", "schema": schema}},
-            messages=[{"role": "user", "content": conteudo}],
+            messages=[{"role": "user", "content": conteudo_msg}],
         )
         texto = next(
             (b.text for b in resposta.content if getattr(b, "type", "") == "text"), ""
@@ -1707,6 +1869,25 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         registar(con, msg, "saltar", motivo, "")
         return "saltado"
 
+    imagens: list[dict] = []
+    nota_anexos = ""
+    if cfg.processar_imagens and msg.get("tem_anexos"):
+        try:
+            candidatos, ignorados = selecionar_anexos_de_imagem(graph.anexos(msg))
+            nota_anexos = nota_anexos_ignorados(ignorados)
+            for a in candidatos:
+                conteudo = graph.conteudo_anexo(msg, a["id"])
+                if len(conteudo) <= _TAMANHO_MAX_ANEXO:
+                    imagens.append({
+                        "media_type": a["contentType"],
+                        "data": base64.standard_b64encode(conteudo).decode("ascii"),
+                    })
+        except Exception as exc:
+            # Uma falha a ir buscar anexos não deve impedir a decisão: segue
+            # sem imagem nenhuma, como se o email não tivesse anexos.
+            log("erro-anexos", email=msg["message_id"][:40],
+                erro=f"{type(exc).__name__}: {exc}")
+
     historico = ""
     if msg["conversation_id"]:
         try:
@@ -1781,7 +1962,7 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
 
     try:
         decisao = decidir(cliente, cfg, prompt, msg, dados_encomenda, historico,
-                          aviso_identidade, compromissos)
+                          aviso_identidade, compromissos, tuple(imagens), nota_anexos)
     except Exception as exc:
         # Uma falha técnica não é uma decisão. Fica por marcar para a passagem
         # seguinte tentar outra vez — nunca se perde um email por causa disto.

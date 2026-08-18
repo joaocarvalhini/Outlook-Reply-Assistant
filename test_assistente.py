@@ -11,6 +11,7 @@ não confiáveis, e o registo local — incluindo a chave em que assenta.
 
 from __future__ import annotations
 
+import json
 import re
 import sqlite3
 import unittest
@@ -25,8 +26,10 @@ from assistente import (
     Config,
     Correspondencia,
     compromissos_do_fio,
+    decidir,
     emails_iguais,
     gravar_compromisso,
+    nota_anexos_ignorados,
     resolver_encomenda,
     resumir_compromissos,
     abrir_db,
@@ -42,6 +45,7 @@ from assistente import (
     resumir_encomenda,
     resumir_historico,
     saudacao,
+    selecionar_anexos_de_imagem,
     sem_lixo_apos_assinatura,
     triar,
     triar_cabecalhos,
@@ -60,7 +64,7 @@ def cfg(**over: object) -> Config:
         "db": Path("t.db"), "max_body": 4000, "dry_run": True,
         "fio_mensagens": 8, "fio_chars": 400, "resolver_identidade": True,
         "pre_dossies": True, "registo_compromissos": True,
-        "respostas_parciais": True,
+        "respostas_parciais": True, "processar_imagens": True,
         "empresa": "A Loja", "assinatura": "Equipa",
         "cat_rascunho": "IA-Rascunhado", "cat_humano": "Precisa de humano",
         "aviso": "--- rascunho automático ---",
@@ -502,6 +506,136 @@ class ResumoDeEncomenda(unittest.TestCase):
         }
         resumo = resumir_encomenda(encomenda)
         self.assertIn("Cancelada em", resumo)
+
+    def test_inclui_estado_do_envio_quando_a_shopify_o_devolve(self) -> None:
+        """A Shopify já devolve isto no fulfillment; só faltava ler.
+
+        Achado ao auditar o pipeline, 18/08/2026: o código só lia
+        tracking_number e tracking_url, e descartava shipment_status e
+        tracking_company que já vinham na mesma resposta.
+        """
+        encomenda = {
+            "name": "#21920", "created_at": "2026-08-13T10:00:00Z",
+            "financial_status": "paid", "fulfillment_status": "fulfilled",
+            "fulfillments": [{
+                "tracking_number": "RR456", "tracking_url": "https://t.pt/RR456",
+                "tracking_company": "CTT", "shipment_status": "in_transit",
+            }],
+        }
+        resumo = resumir_encomenda(encomenda)
+        self.assertIn("CTT", resumo)
+        self.assertIn("em trânsito", resumo)
+
+    def test_sem_estado_do_envio_nao_inventa_nada(self) -> None:
+        """Nem toda transportadora está reconhecida pela Shopify -- sem o
+        campo, o resumo continua só com o que já existia."""
+        encomenda = {
+            "name": "#21921", "created_at": "2026-08-13T10:00:00Z",
+            "financial_status": "paid", "fulfillment_status": "fulfilled",
+            "fulfillments": [{"tracking_number": "RR789", "tracking_url": "https://t.pt/RR789"}],
+        }
+        resumo = resumir_encomenda(encomenda)
+        self.assertNotIn("Transportadora", resumo)
+        self.assertNotIn("Estado do envio", resumo)
+
+
+class AnexosDeImagem(unittest.TestCase):
+    def _anexo(self, **over: object) -> dict:
+        base = {
+            "@odata.type": "#microsoft.graph.fileAttachment",
+            "id": "AAMk-anexo-1", "name": "foto.jpg", "contentType": "image/jpeg",
+            "size": 500_000, "isInline": False,
+        }
+        base.update(over)
+        return base
+
+    def test_imagem_valida_e_selecionada(self) -> None:
+        imagens, ignorados = selecionar_anexos_de_imagem([self._anexo()])
+        self.assertEqual(len(imagens), 1)
+        self.assertEqual(ignorados, [])
+
+    def test_imagem_inline_e_ignorada_em_silencio(self) -> None:
+        """O logótipo da assinatura não é prova nenhuma do cliente."""
+        imagens, ignorados = selecionar_anexos_de_imagem([self._anexo(isInline=True)])
+        self.assertEqual(imagens, [])
+        self.assertEqual(ignorados, [], "inline não deve aparecer nem como ignorado")
+
+    def test_tipo_nao_suportado_fica_ignorado(self) -> None:
+        anexo = self._anexo(name="fatura.pdf", contentType="application/pdf")
+        imagens, ignorados = selecionar_anexos_de_imagem([anexo])
+        self.assertEqual(imagens, [])
+        self.assertEqual(len(ignorados), 1)
+
+    def test_imagem_grande_demais_fica_ignorada(self) -> None:
+        anexo = self._anexo(size=20_000_000)
+        imagens, ignorados = selecionar_anexos_de_imagem([anexo])
+        self.assertEqual(imagens, [])
+        self.assertEqual(len(ignorados), 1)
+
+    def test_item_attachment_nao_e_foto_do_cliente(self) -> None:
+        """Um email encaminhado como anexo, não uma fotografia."""
+        anexo = self._anexo(**{"@odata.type": "#microsoft.graph.itemAttachment"})
+        imagens, ignorados = selecionar_anexos_de_imagem([anexo])
+        self.assertEqual(imagens, [])
+        self.assertEqual(ignorados, [])
+
+    def test_limite_de_imagens_por_email(self) -> None:
+        anexos = [self._anexo(id=f"a{i}", name=f"foto{i}.jpg") for i in range(10)]
+        imagens, _ = selecionar_anexos_de_imagem(anexos)
+        self.assertEqual(len(imagens), 4)
+
+    def test_nota_vazia_sem_ignorados(self) -> None:
+        self.assertEqual(nota_anexos_ignorados([]), "")
+
+    def test_nota_menciona_nome_e_quantidade(self) -> None:
+        nota = nota_anexos_ignorados([self._anexo(name="relatorio.pdf")])
+        self.assertIn("relatorio.pdf", nota)
+        self.assertIn("1", nota)
+
+
+class ClienteFalso:
+    """Só regista o que decidir() lhe pede, para testar a forma da mensagem
+    sem gastar créditos nem depender da rede. O que o modelo decide perante
+    uma imagem a sério é testado pelo eval, com fixtures em eval/fixtures/.
+    """
+
+    def __init__(self, resposta: dict) -> None:
+        self.pedidos: list[dict] = []
+        self._resposta = resposta
+        self.messages = self
+
+    def create(self, **kwargs: object) -> object:
+        self.pedidos.append(kwargs)
+        bloco = type("Bloco", (), {"type": "text", "text": json.dumps(self._resposta)})()
+        return type("Resposta", (), {"content": [bloco]})()
+
+
+class DecidirComImagens(unittest.TestCase):
+    _DECISAO_SIMPLES = {"acao": "saltar", "motivo": "x", "corpo": "", "categoria": "OUTRO"}
+
+    def test_sem_imagens_envia_string_simples(self) -> None:
+        cliente = ClienteFalso(self._DECISAO_SIMPLES)
+        decidir(cliente, cfg(), "prompt", msg())
+        conteudo = cliente.pedidos[0]["messages"][0]["content"]
+        self.assertIsInstance(conteudo, str)
+
+    def test_com_imagens_envia_bloco_de_texto_mais_imagem(self) -> None:
+        cliente = ClienteFalso(self._DECISAO_SIMPLES)
+        imagens = ({"media_type": "image/png", "data": "dadosbase64"},)
+        decidir(cliente, cfg(), "prompt", msg(), imagens=imagens)
+        conteudo = cliente.pedidos[0]["messages"][0]["content"]
+        self.assertIsInstance(conteudo, list)
+        self.assertEqual(conteudo[0]["type"], "text")
+        self.assertEqual(conteudo[1], {
+            "type": "image",
+            "source": {"type": "base64", "media_type": "image/png", "data": "dadosbase64"},
+        })
+
+    def test_nota_de_anexos_ignorados_entra_no_pedido(self) -> None:
+        cliente = ClienteFalso(self._DECISAO_SIMPLES)
+        decidir(cliente, cfg(), "prompt", msg(), nota_anexos="\n\nFicheiro não processado.")
+        conteudo = cliente.pedidos[0]["messages"][0]["content"]
+        self.assertIn("Ficheiro não processado", conteudo)
 
 
 class HistoricoDoFio(unittest.TestCase):

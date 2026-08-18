@@ -96,7 +96,8 @@ def main(argv: list[str] | None = None) -> int:
         sem_dossie = len(escalados) - len(acionaveis)
         if sem_dossie:
             print(f"\n{sem_dossie} escalado(s) sem dossiê "
-                  "(falta de conhecimento ou identidade por confirmar)")
+                  "(falta de conhecimento, identidade por confirmar, ou "
+                  "encomenda sem correspondência)")
 
     print(f"\n{'─' * LARGURA}")
     print("Para ver quais casos e não só quantos: dossie.py, lacunas.py")

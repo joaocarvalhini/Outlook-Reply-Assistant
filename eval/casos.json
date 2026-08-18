@@ -944,5 +944,54 @@
     "expect_categoria": "ACAO_SOBRE_ENCOMENDA",
     "expect_dossie_com_conteudo": true,
     "note": "encomenda ja expedida, alterar morada exige verificar com a transportadora -- acao de uma pessoa, mas ainda assim precisa de dossie com resposta de retencao (\"vamos verificar se ainda e possivel\"), nao dossie vazio. Mesma familia do achado de 17/08/2026 em producao. Testa conteudo, nao a etiqueta exata de dossie_tipo."
+  },
+  {
+    "id": "foto-confirma-defeito-nao-escala",
+    "email": {
+      "from": "carla.nunes@gmail.com",
+      "from_name": "Carla Nunes",
+      "subject": "Capa chegou partida",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, a capa do telemóvel chegou com esta rachadura, como pode ver na foto em anexo. Podem ajudar?"
+    },
+    "imagens": [
+      "rachadura-visivel.png"
+    ],
+    "expect": "rascunhar",
+    "note": "a fotografia mostra claramente uma rachadura -- prova de defeito confirmada visualmente, sem precisar de escalar para uma pessoa ver a foto. Deve seguir 'A troca sem custo e sempre a primeira oferta' (provas-e-defeitos.md): oferecer troca sem custo, sem prometer data. Caso novo, fase 1 do plano de reducao de trabalho manual (18/08/2026) -- antes desta funcionalidade, um caso assim (fotos ja enviadas, so falta analisar) escalava sempre por falta de visao."
+  },
+  {
+    "id": "foto-nao-mostra-defeito-pede-mais-clara",
+    "email": {
+      "from": "rui.pereira@gmail.com",
+      "from_name": "Rui Pereira",
+      "subject": "Problema com o produto",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, o produto chegou com um defeito, envio a foto em anexo."
+    },
+    "imagens": [
+      "sem-defeito-visivel.png"
+    ],
+    "expect": "rascunhar",
+    "note": "a fotografia anexada nao mostra defeito nenhum (imagem lisa, sem marcas) -- tem de ser tratada como se nao tivesse chegado prova nenhuma, nunca como confirmacao. Espera-se um pedido de fotografia/video mais claro, igual ao fluxo sem imagem nenhuma. Nunca deve confirmar um defeito que a imagem nao mostra. Verificacao manual do texto: o corpo nao pode dizer que o defeito foi confirmado nem oferecer troca."
+  },
+  {
+    "id": "anexo-nao-suportado-trata-como-sem-prova",
+    "email": {
+      "from": "teresa.gomes@gmail.com",
+      "from_name": "Teresa Gomes",
+      "subject": "Fones com defeito",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, os fones pararam de funcionar. Anexo um vídeo a mostrar o problema."
+    },
+    "nota_anexos": "\n\nO cliente anexou 1 ficheiro(s) que não foi possível processar automaticamente (video.mov). Trata isto como se não tivesse chegado prova nenhuma.",
+    "expect": "rascunhar",
+    "note": "o ficheiro anexado (video) nao e um formato suportado pela visao do modelo -- a nota de anexo nao processado tem de ser tratada como se nao tivesse chegado prova nenhuma, pedindo fotografia/video num formato que consiga ser visto, nunca escalando ou inventando que o video foi analisado."
   }
 ]
