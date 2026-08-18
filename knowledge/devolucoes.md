@@ -17,6 +17,11 @@ Fonte: /pages/politica-de-reembolsos-e-devolucoes, /pages/perguntas-faq,
   medida. (Confirmado diretamente pela loja, 14 de agosto de 2026.)
 - Esta exceção é sobre devolução sem motivo. Um defeito de fabrico numa capa
   personalizada segue a secção "Produto com defeito" abaixo, não esta.
+- Quando se troca uma capa personalizada por defeito, a substituição tem de
+  ser com **a mesma foto/design** do pedido original — o cliente não pode
+  aproveitar a troca para pedir um design diferente. É reposição do que já
+  foi pago, não uma encomenda nova sem custo. (Confirmado por um caso real
+  de produção, 18 de agosto de 2026.)
 
 ## Estado exigido
 

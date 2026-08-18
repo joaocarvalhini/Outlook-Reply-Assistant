@@ -881,5 +881,34 @@
     },
     "expect": "rascunhar",
     "note": "entrega pessoal aceite mas precisa de hora marcada, nao e loja aberta ao publico. Caso real de producao, 18/08/2026 (devolucoes.md, secao Entrega pessoal)."
+  },
+  {
+    "id": "capa-personalizada-troca-por-defeito-mesma-foto",
+    "email": {
+      "from": "sara.nogueira@gmail.com",
+      "from_name": "Sara Nogueira",
+      "subject": "Re: Capa a descolar",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, obrigada por aceitarem a troca. Aproveito e pergunto se posso enviar uma foto diferente da que tinha encomendado, para a capa nova."
+    },
+    "historico": "[2026-08-17 10:00] CLIENTE: a imagem da capa personalizada esta a descolar, envio foto.\n[2026-08-17 16:00] LOJA: Confirmamos o defeito, podemos avancar com a troca.",
+    "expect": "rascunhar",
+    "note": "troca por defeito confirmado numa capa personalizada; a substituicao tem de manter a mesma foto do pedido original, nao pode mudar de design. Caso real de producao, 18/08/2026 (devolucoes.md)."
+  },
+  {
+    "id": "smartwatch-sem-notificacoes-aguardar-2-3-dias",
+    "email": {
+      "from": "ines.duarte@gmail.com",
+      "from_name": "Ines Duarte",
+      "subject": "Smartwatch nao recebe notificacoes",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, configurei o meu smartwatch ontem e liguei ao telemovel por bluetooth, mas nao recebo notificacoes nem consigo atender chamadas, mesmo os dois aparelhos aparecendo ligados. O que faco?"
+    },
+    "expect": "rascunhar",
+    "note": "configuracao recente (ontem); primeiro passo e pedir para aguardar 2-3 dias para a ligacao estabilizar, antes de pedir prova ou outros testes. Caso real de producao, 18/08/2026 (produtos-detalhe.md)."
   }
 ]

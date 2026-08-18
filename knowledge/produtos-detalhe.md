@@ -15,6 +15,14 @@ técnico escrito pelo próprio lojista no histórico de apoio ao cliente.
   instruções, através do código QR.
 - No modelo 11 Mini é possível responder a mensagens com texto livre, escrito
   no próprio relógio. Não está limitado a respostas automáticas nem a emojis.
+- Quando o cliente relata que não recebe notificações nem consegue atender
+  chamadas pelo smartwatch (mesmo com Bluetooth ativo e os dois aparelhos a
+  aparecerem ligados), o primeiro passo é pedir para aguardar 2 a 3 dias após
+  a configuração inicial, com o Bluetooth sempre ativo e o smartwatch ligado
+  à aplicação — a ligação demora esse tempo a estabilizar por completo. Só se
+  o problema persistir depois disso é que se avança para pedir prova (foto ou
+  vídeo) e testar com outro telemóvel. (Confirmado por um caso real de
+  produção, 18 de agosto de 2026.)
 
 ## InPods e fones
 
