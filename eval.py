@@ -113,6 +113,19 @@ def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
     if caso.get("expect_dossie") and tipo != caso["expect_dossie"]:
         return "dossie-errado", "modelo", f"deu {tipo or '(vazio)'}, esperava {caso['expect_dossie']}"
 
+    # A etiqueta de "dossie_tipo" pode falhar mesmo quando o conteúdo é bom:
+    # processar() trata isso como dossiê válido na mesma (ver "tem_dossie" em
+    # assistente.py). Este caso testa o que importa de verdade -- resumo e
+    # resposta com conteúdo -- sem prender o resultado a uma etiqueta exata
+    # que o próprio código já sabe não ser garantia de nada.
+    if caso.get("expect_dossie_com_conteudo") and not (
+        d.get("dossie_resumo", "").strip() and d.get("dossie_resposta", "").strip()
+    ):
+        return (
+            "dossie-sem-conteudo", "modelo",
+            f"dossie_tipo={tipo or '(vazio)'}, mas resumo/resposta vieram vazios",
+        )
+
     # Resposta parcial: um caso pode exigir que o rascunho deixe registado o
     # que ficou por responder. Sem isto, um rascunho parcial passava por
     # completo e alguém enviava-o como se respondesse ao email todo.

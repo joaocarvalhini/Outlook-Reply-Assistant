@@ -325,6 +325,14 @@ DOMINIOS_BASE = (
     "dhl.com", "ups.com", "dpd.com",
 )
 
+# O formulário de contacto do site reencaminha por mailer@shopify.com — um
+# cliente real disfarçado de notificação da plataforma. Sem esta exceção, o
+# bloqueio de shopify.com acima apaga essas mensagens por completo (visto ao
+# vivo na caixa: 3 casos reais num só dia, incluindo um cliente a queixar-se
+# de já não ter tido resposta). O replyTo do Shopify já aponta para o email
+# real do cliente, por isso um rascunho normal chega à pessoa certa.
+_PADRAO_FORMULARIO_CONTACTO = re.compile(r"^nova mensagem de cliente\b", re.I)
+
 
 def carregar_blocklist(caminho: Path) -> frozenset[str]:
     dominios = set(DOMINIOS_BASE)
@@ -358,7 +366,16 @@ def triar(msg: dict, cfg: Config, bloqueados: frozenset[str]) -> str | None:
             return f"remetente-automatico:{padrao}"
 
     if dominio in bloqueados or any(dominio.endswith("." + b) for b in bloqueados):
-        return f"dominio-bloqueado:{dominio}"
+        # Exceção: o formulário de contacto da loja parece ruído do Shopify
+        # (mailer@shopify.com) mas não é. desembrulhar_formulario_contacto()
+        # confirma a sério depois de ir buscar o corpo; aqui só se evita
+        # bloquear às cegas quem tem cara de ser isto.
+        eh_formulario = (
+            local == "mailer" and dominio == "shopify.com"
+            and bool(_PADRAO_FORMULARIO_CONTACTO.match(msg["assunto"]))
+        )
+        if not eh_formulario:
+            return f"dominio-bloqueado:{dominio}"
 
     destinatarios = msg["para"] + msg["cc"]
     if destinatarios and cfg.mailbox not in destinatarios:
@@ -379,6 +396,34 @@ def triar_cabecalhos(msg: dict) -> str | None:
     if not msg["corpo"].strip():
         return "corpo-vazio"
     return None
+
+
+def desembrulhar_formulario_contacto(msg: dict) -> bool:
+    """Troca remetente/nome/corpo pelos dados reais de um envio do formulário
+    de contacto da loja, que o Shopify reencaminha como mailer@shopify.com.
+
+    Só é chamada depois de triar() já ter deixado passar por
+    _PADRAO_FORMULARIO_CONTACTO (ver ali) — aqui confirma-se a sério, com o
+    corpo em mãos, e devolve-se False se o formato não bater certo. Nunca se
+    finge que se percebeu algo que pode não ser isto: passar um
+    "mailer@shopify.com" sem corrigir seria pior do que tê-lo bloqueado.
+    """
+    corpo = msg["corpo"]
+    if "formulário de contacto" not in corpo.lower():
+        return False
+    m_email = re.search(r"E-mail:\s*([^\s@]+@[^\s@]+\.[^\s@]+)", corpo, re.I)
+    # O formulário tem um campo "Website" opcional a seguir ao corpo (visto
+    # sempre vazio nos casos reais) — corta-se aqui para não ficar pendurado
+    # no fim do texto que vai para o modelo.
+    m_corpo = re.search(r"Corpo:\s*(.+?)(?:\n\s*Website:|\Z)", corpo, re.I | re.S)
+    if not m_email or not m_corpo or not m_corpo.group(1).strip():
+        return False
+    m_nome = re.search(r"Name:\s*(.+)", corpo, re.I)
+    msg["de"] = m_email.group(1).strip().lower()
+    if m_nome:
+        msg["nome"] = m_nome.group(1).strip()
+    msg["corpo"] = m_corpo.group(1).strip()
+    return True
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -722,9 +767,14 @@ Escalar não é despachar. Quando escalas um pedido concreto sobre uma encomenda
 preparas também o caso para quem vai decidir. O objetivo não é decidir por essa
 pessoa: é ela abrir o caso e perceber tudo em segundos, em vez de ir investigar.
 
+Prepará-lo é o normal, não a exceção: um pedido concreto sobre uma encomenda
+tem sempre pelo menos a resposta de retenção descrita em "dossie_resposta"
+abaixo, mesmo quando ainda não há nada a decidir e a execução cabe à equipa.
+"dossie_tipo" só fica "nenhum" nas três situações listadas ao fundo desta
+secção — fora delas, "nenhum" é sempre um erro.
+
 Preenches então:
-- "dossie_tipo": qual destes é. Se nenhum se aplica, "nenhum" e deixas o resto
-  vazio.
+- "dossie_tipo": qual destes é.
 - "dossie_resumo": a situação em uma ou duas frases, escrita para um colega.
 - "dossie_validacao": o que confirmaste e o que impede, uma verificação por
   linha, começada por "sim" ou "não". Só factos que tens à frente, vindos dos
@@ -760,10 +810,29 @@ Preenches então:
   ela acontecer é que há algo para confirmar. (Corrigido a partir de um caso
   real de produção, 18 de agosto de 2026.)
 
-Não preenchas o dossiê quando escalas por não saberes alguma coisa
-(LACUNA_DE_CONHECIMENTO) nem quando a identidade não está confirmada
-(IDENTIDADE_NAO_VERIFICADA). No primeiro caso não há nada a preparar; no
-segundo não podes usar dados que não devias ter visto.
+As únicas três situações em que "dossie_tipo" fica "nenhum":
+- Escalaste por não saberes alguma coisa (LACUNA_DE_CONHECIMENTO): não há
+  nada a preparar.
+- A identidade não está confirmada (IDENTIDADE_NAO_VERIFICADA): não podes
+  usar dados que não devias ter visto.
+- Faltam mesmo os dados da encomenda (DADOS_ENCOMENDA_EM_FALTA, sem
+  nenhuma correspondência encontrada): não há nada de concreto para validar.
+
+Fora destas três, "nenhum" nunca é a resposta certa — nem quando a única
+ação possível cabe à equipa (cancelar, alterar morada, emitir vale, seja o
+que for): "quem executa é uma pessoa" já está dito em "dossie_accao" acima,
+não é motivo para deixar "dossie_resposta" vazia. Dois pedidos parecidos
+(por exemplo, dois clientes a pedir o cancelamento de uma unidade a mais)
+têm de receber o mesmo tratamento — um dossiê preparado, nunca um "nenhum"
+à sorte só porque um parecia mais simples de escrever do que o outro.
+
+Isto vale mesmo quando o pedido envolve dinheiro, uma unidade específica
+dentro de uma encomenda maior (não a encomenda toda), ou incerteza genuína
+sobre se a ação vai ser possível — nenhuma dessas coisas é motivo para
+"nenhum". É exatamente para essa incerteza que serve a fórmula "vamos
+verificar se conseguimos" descrita acima: escrevê-la num dossiê preparado
+não é comprometer-se com nada, e é sempre mais útil a quem revê do que
+deixar "dossie_tipo": "nenhum".
 
 Nunca escrevas no dossiê nada que não esteja nos dados que recebeste. Se não
 sabes o valor da encomenda, não o inventas: omites a linha.
@@ -1580,9 +1649,13 @@ def decidir(
         pedido_dossie = (
             f"{pedido}\n\nJá decidiste escalar este caso, categoria "
             f"{resultado['categoria']}, pelo motivo: {resultado['motivo']}\n"
-            "Segue a secção \"O dossiê\" das tuas instruções e prepara-o agora, "
-            "se o caso for acionável. Se não for (falta de conhecimento ou "
-            "identidade por confirmar), \"dossie_tipo\" fica \"nenhum\"."
+            "Segue a secção \"O dossiê\" das tuas instruções e prepara-o agora. "
+            "Preparar é o normal — só fica \"dossie_tipo\": \"nenhum\" nas três "
+            "exceções listadas ao fundo dessa secção (falta de conhecimento, "
+            "identidade por confirmar, ou encomenda mesmo sem correspondência). "
+            "Fora delas, mesmo que a única coisa segura a dizer seja que o "
+            "pedido chegou e vai ser analisado, prepara o dossiê com essa "
+            "resposta de retenção."
         )
         try:
             dossie = _chamar(ESQUEMA_DOSSIE, pedido_dossie)
@@ -1626,6 +1699,9 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         return "saltado"
 
     graph.detalhe(msg, cfg.max_body)
+    if msg["de"] == "mailer@shopify.com" and not desembrulhar_formulario_contacto(msg):
+        registar(con, msg, "saltar", "formulario-contacto-nao-reconhecido", "")
+        return "saltado"
     motivo = triar_cabecalhos(msg)
     if motivo:
         registar(con, msg, "saltar", motivo, "")
@@ -1725,21 +1801,32 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
             decisao["compromisso_data"],
         )
 
-    # O dossiê só se guarda quando há mesmo um caso preparado. "nenhum" e vazio
-    # significam que o modelo não tinha nada de útil a preparar, e gravar campos
-    # meio preenchidos faria a fila de dossiês parecer maior do que é.
+    # O dossiê só se guarda quando há mesmo um caso preparado. Resumo e
+    # resposta vazios significam que o modelo não tinha nada de útil a
+    # preparar, e gravar campos meio preenchidos faria a fila de dossiês
+    # parecer maior do que é.
+    #
+    # Não se exige aqui "dossie_tipo" válido: visto em produção (18/08/2026)
+    # que o modelo às vezes escreve um dossiê completo e uma resposta sugerida
+    # já pronta a "vamos verificar se conseguimos", mas erra ou hesita só na
+    # etiqueta de "dossie_tipo" e devolve "nenhum" — sem isto, esse trabalho
+    # todo era deitado fora por causa de um campo, não por o dossiê não
+    # prestar. O conteúdo é que decide se há dossiê; a etiqueta é só arrumação.
     tem_dossie = (
         cfg.pre_dossies
         and decisao["acao"] == "escalar"
-        and decisao["dossie_tipo"] not in ("", "nenhum")
         and bool(decisao["dossie_resumo"].strip())
+        and bool(decisao["dossie_resposta"].strip())
     )
+    dossie_tipo_final = decisao["dossie_tipo"]
+    if tem_dossie and dossie_tipo_final in ("", "nenhum"):
+        dossie_tipo_final = "excecao"
     extra = {
         "categoria": decisao["categoria"],
         "lacuna_tema": decisao["lacuna_tema"],
         "lacuna_em_falta": decisao["lacuna_em_falta"],
         "confianca_encomenda": confianca,
-        "dossie_tipo": decisao["dossie_tipo"] if tem_dossie else "",
+        "dossie_tipo": dossie_tipo_final if tem_dossie else "",
         "dossie_resumo": decisao["dossie_resumo"] if tem_dossie else "",
         "dossie_validacao": decisao["dossie_validacao"] if tem_dossie else "",
         "dossie_accao": decisao["dossie_accao"] if tem_dossie else "",

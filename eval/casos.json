@@ -910,5 +910,39 @@
     },
     "expect": "rascunhar",
     "note": "configuracao recente (ontem); primeiro passo e pedir para aguardar 2-3 dias para a ligacao estabilizar, antes de pedir prova ou outros testes. Caso real de producao, 18/08/2026 (produtos-detalhe.md)."
+  },
+  {
+    "id": "cancelar-unidade-duplicada-antes-de-expedir-tem-dossie",
+    "email": {
+      "from": "rodrigo.matos@gmail.com",
+      "from_name": "Rodrigo Matos",
+      "subject": "Erro na encomenda",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, encomendei sem querer duas unidades dos InPods Pro 4 em vez de uma. É possível cancelar uma delas antes de enviarem?"
+    },
+    "dados_encomenda": "Encomenda #22014\nFeita em: 2026-08-17\nPagamento: pago\nEnvio: ainda não expedida\nValor: 89.80 EUR",
+    "expect": "escalar",
+    "expect_categoria": "ACAO_SOBRE_ENCOMENDA",
+    "expect_dossie_com_conteudo": true,
+    "note": "cancelar uma unidade a mais antes de expedir precisa sempre de uma pessoa executar, mas isso nao e motivo para dossie sem conteudo. Caso real de producao, 17/08/2026: duas queixas quase identicas (mesmo tipo de pedido) tiveram tratamento diferente -- uma com dossie completo, outra sem nada. Testa conteudo (resumo/resposta), nao a etiqueta exata de dossie_tipo -- o modelo escreve um dossie bom mesmo quando hesita na etiqueta, e processar() ja trata isso como valido (ver tem_dossie)."
+  },
+  {
+    "id": "alterar-morada-encomenda-ja-expedida-tem-dossie",
+    "email": {
+      "from": "sofia.pereira@gmail.com",
+      "from_name": "Sofia Pereira",
+      "subject": "Problema com a morada",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, enganei-me na morada de entrega. A encomenda já foi enviada? Ainda dá para corrigir?"
+    },
+    "dados_encomenda": "Encomenda #22030\nFeita em: 2026-08-15\nPagamento: pago\nEnvio: expedida\nCódigo de rastreio: RR334455667PT",
+    "expect": "escalar",
+    "expect_categoria": "ACAO_SOBRE_ENCOMENDA",
+    "expect_dossie_com_conteudo": true,
+    "note": "encomenda ja expedida, alterar morada exige verificar com a transportadora -- acao de uma pessoa, mas ainda assim precisa de dossie com resposta de retencao (\"vamos verificar se ainda e possivel\"), nao dossie vazio. Mesma familia do achado de 17/08/2026 em producao. Testa conteudo, nao a etiqueta exata de dossie_tipo."
   }
 ]

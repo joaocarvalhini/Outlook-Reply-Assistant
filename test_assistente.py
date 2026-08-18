@@ -33,6 +33,7 @@ from assistente import (
     carregar_blocklist,
     cortar_citacao,
     cursor_atual,
+    desembrulhar_formulario_contacto,
     extrair_numero_encomenda,
     ja_processado,
     para_html,
@@ -138,6 +139,37 @@ class Triagem(unittest.TestCase):
         """notshopify.com não pode casar com shopify.com."""
         self.assertIsNone(triar(msg(de="ana@notshopify.com"), cfg(), BLOQUEADOS))
 
+    def test_formulario_contacto_shopify_passa(self) -> None:
+        """mailer@shopify.com com o assunto do formulário não é bloqueado —
+
+        é um cliente real disfarçado de notificação (visto em produção,
+        18/08/2026): o replyTo já aponta para o cliente, só falta não
+        descartar a mensagem antes de a poder desembrulhar.
+        """
+        motivo = triar(
+            msg(de="mailer@shopify.com",
+                assunto="Nova mensagem de cliente em 17/08/2026 às 14:45"),
+            cfg(), BLOQUEADOS,
+        )
+        self.assertIsNone(motivo)
+
+    def test_mailer_shopify_com_outro_assunto_continua_bloqueado(self) -> None:
+        """A exceção é só para o formulário de contacto, não para mailer@ em geral."""
+        motivo = triar(
+            msg(de="mailer@shopify.com", assunto="A tua fatura mensal"),
+            cfg(), BLOQUEADOS,
+        )
+        self.assertTrue(motivo.startswith("dominio-bloqueado"))
+
+    def test_outro_local_shopify_com_assunto_de_formulario_continua_bloqueado(self) -> None:
+        """Só mailer@shopify.com tem a exceção, não qualquer remetente do domínio."""
+        motivo = triar(
+            msg(de="pedidos@shopify.com",
+                assunto="Nova mensagem de cliente em 17/08/2026 às 14:45"),
+            cfg(), BLOQUEADOS,
+        )
+        self.assertTrue(motivo.startswith("dominio-bloqueado"))
+
     def test_loja_nao_e_destinataria(self) -> None:
         self.assertEqual(
             triar(msg(para=["outra@empresa.pt"], cc=[]), cfg(), BLOQUEADOS),
@@ -193,6 +225,51 @@ class TriagemCabecalhos(unittest.TestCase):
 
     def test_corpo_vazio(self) -> None:
         self.assertEqual(triar_cabecalhos(msg(corpo="  \n ")), "corpo-vazio")
+
+
+class FormularioContactoShopify(unittest.TestCase):
+    """Mensagens de cliente reencaminhadas pelo Shopify como mailer@shopify.com.
+
+    O corpo real (visto ao vivo em produção, 18/08/2026, via Graph) é o texto
+    já achatado pelo para_texto()/cortar_citacao() do detalhe do email — daí
+    o formato "Rótulo:\\n\\nValor" usado nos casos abaixo, não HTML.
+    """
+
+    CORPO_REAL = (
+        "Recebeu uma nova mensagem do formulário de contacto da sua loja "
+        "online.\n\nCódigo do país:\n\nPT\n\nName:\n\nPatrícia Duarte\n\n"
+        "E-mail:\n\nduartepatricia2005@hotmail.com\n\nPhone:\n\n915541819"
+        "\n\nCorpo:\n\nBoa tarde, já tinha enviado email mas não recebi "
+        "mais resposta.\n\nWebsite:\n\n"
+    )
+
+    def test_extrai_remetente_real_e_corpo(self) -> None:
+        m = msg(de="mailer@shopify.com", nome="tripat3s (Shopify)",
+                corpo=self.CORPO_REAL)
+        self.assertTrue(desembrulhar_formulario_contacto(m))
+        self.assertEqual(m["de"], "duartepatricia2005@hotmail.com")
+        self.assertEqual(m["nome"], "Patrícia Duarte")
+        self.assertIn("já tinha enviado email", m["corpo"])
+        # O campo "Website" do formulário (sempre vazio nos casos reais) não
+        # deve ficar pendurado no fim do texto que vai para o modelo.
+        self.assertNotIn("Website", m["corpo"])
+
+    def test_corpo_sem_marcador_do_formulario_nao_mexe_na_mensagem(self) -> None:
+        """Uma notificação genuína do Shopify não deve ser confundida com isto."""
+        original = msg(de="mailer@shopify.com", corpo="Aviso qualquer da plataforma.")
+        m = dict(original)
+        self.assertFalse(desembrulhar_formulario_contacto(m))
+        self.assertEqual(m, original)
+
+    def test_corpo_sem_email_valido_nao_mexe_na_mensagem(self) -> None:
+        original = msg(
+            de="mailer@shopify.com",
+            corpo="Recebeu uma nova mensagem do formulário de contacto da "
+                  "sua loja online.\n\nName:\n\nAlguém\n\nCorpo:\n\nOlá.",
+        )
+        m = dict(original)
+        self.assertFalse(desembrulhar_formulario_contacto(m))
+        self.assertEqual(m, original)
 
 
 class Blocklist(unittest.TestCase):
