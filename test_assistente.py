@@ -201,6 +201,34 @@ class TriagemCabecalhos(unittest.TestCase):
         motivo = triar_cabecalhos(msg(cabecalhos=[("List-Unsubscribe", "<https://x>")]))
         self.assertTrue(motivo.startswith("cabecalho-massa"))
 
+    def test_feedback_id_bloqueia_fora_do_formulario_de_contacto(self) -> None:
+        """feedback-id continua a ser sinal de bulk mail para o resto do correio."""
+        motivo = triar_cabecalhos(msg(cabecalhos=[("Feedback-ID", "1:2:3:SendGrid")]))
+        self.assertEqual(motivo, "cabecalho-massa:feedback-id")
+
+    def test_feedback_id_nao_bloqueia_formulario_de_contacto(self) -> None:
+        """A Shopify carimba feedback-id em tudo o que reencaminha, incluindo o
+        formulário de contacto -- não é bulk mail aqui (visto em produção,
+        20/08/2026: um cliente real ficava descartado em silêncio).
+
+        veio_do_formulario=True simula o que processar() calcula antes de
+        desembrulhar_formulario_contacto() substituir msg["de"] -- a esta
+        altura, no fluxo real, msg["de"] já não é "mailer@shopify.com"."""
+        motivo = triar_cabecalhos(
+            msg(cabecalhos=[("Feedback-ID", "1:2:3:SendGrid")]),
+            veio_do_formulario=True,
+        )
+        self.assertIsNone(motivo)
+
+    def test_outro_cabecalho_massa_continua_a_bloquear_formulario_de_contacto(self) -> None:
+        """A exceção é só para feedback-id -- outros sinais de bulk mail continuam
+        a bloquear o formulário de contacto na mesma."""
+        motivo = triar_cabecalhos(
+            msg(cabecalhos=[("List-Unsubscribe", "<https://x>")]),
+            veio_do_formulario=True,
+        )
+        self.assertEqual(motivo, "cabecalho-massa:list-unsubscribe")
+
     def test_cabecalho_e_insensivel_a_maiusculas(self) -> None:
         self.assertIsNotNone(triar_cabecalhos(msg(cabecalhos=[("list-ID", "<news>")])))
 

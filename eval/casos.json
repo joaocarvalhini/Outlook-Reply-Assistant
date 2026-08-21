@@ -1070,5 +1070,37 @@
     "expect": "escalar",
     "expect_dossie_com_conteudo": true,
     "note": "cliente ja recusou reembolso parcial uma vez no fio, insiste em devolver. Regra (provas-e-defeitos.md, 18/08/2026): tenta-se uma segunda vez antes de aceitar a devolucao total, agora tambem explicando os prazos do reembolso total para comparacao, e respeitando a decisao se recusar de novo. Verificacao manual do texto: a resposta sugerida deve tentar mais uma vez, sem insistir uma terceira."
+  },
+  {
+    "id": "devolucao-adiar-envio-verifica-prazo-14-dias",
+    "email": {
+      "from": "sofia.ramalho@gmail.com",
+      "from_name": "Sofia Ramalho",
+      "subject": "Re: pedido de devolução",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, desculpem a demora. Ando com muito trabalho, posso enviar a devolução só para a semana que vem?"
+    },
+    "historico": "[2026-08-15 10:15] CLIENTE: Não gostei do produto, gostaria de devolver.\n[2026-08-15 14:40] LOJA: Sem problema, pode enviar-nos o artigo de volta para a nossa morada.",
+    "dados_encomenda": "Encomenda #22301\nFeita em: 2026-08-01\nPagamento: pago\nEnvio: entregue\nEntregue em: 2026-08-06\nPrazo de devolução (14 dias desde a entrega) termina em: 2026-08-20\nValor: 45.00 EUR",
+    "expect": "escalar",
+    "note": "cliente recebeu a encomenda a 6/08 (dado explicito em dados_encomenda, tal como o proprio codigo agora fornece) mas so pediu a devolucao a 15/08, e agora pede para atrasar ainda mais o envio, para 'a semana que vem' -- ja depois de 20/08. Regra confirmada diretamente pelo lojista, 21/08/2026 -- corrigindo uma leitura anterior errada: o prazo de 14 dias para enviar conta-se sempre a partir da RECECAO da encomenda, nunca do pedido de devolucao. Desde 21/08/2026 a data-limite vem PRE-CALCULADA em dados_encomenda ('Prazo de devolucao... termina em') por assistente.py:resumir_encomenda() -- o modelo so compara, nao soma os 14 dias sozinho (visto em producao: mesmo com a data de entrega certa, uma resposta ainda errou a conta quando tinha de somar). Espera-se 'escalar' porque 'a semana que vem' cai claramente depois de 20/08. Verificacao manual do texto, nao ha assercao automatica: a resposta (dossie ou corpo) deve referir que o prazo (20/08) ja passou ou esta prestes a passar, nao aprovar o adiamento sem mais nem inventar outra data."
+  },
+  {
+    "id": "reembolso-artigo-de-pack-divide-igualmente",
+    "email": {
+      "from": "teresa.marques@gmail.com",
+      "from_name": "Teresa Marques",
+      "subject": "Re: pedido de devolução",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, como já disse só quero devolver o relógio, os outros artigos do pack quero ficar com eles. Quanto é que me devolvem só pelo relógio?"
+    },
+    "historico": "[2026-08-05 11:00] CLIENTE: Comprei o pack Kit 3 em 1 (relógio + capa + carregador) por 90 euros e o relógio não funciona bem, quero devolver só esse.\n[2026-08-05 15:30] LOJA: Sem problema, pode enviar-nos o relógio de volta.",
+    "dados_encomenda": "Encomenda #22200\nFeita em: 2026-08-01\nPagamento: pago\nEnvio: entregue\nValor: 90.00 EUR",
+    "expect": "rascunhar",
+    "note": "cliente comprou um pack de 3 artigos por 90 euros e quer reembolso so de um deles (o relogio). Regra confirmada diretamente pelo lojista, 21/08/2026: o valor de cada artigo dentro de um pack e o preco total a dividir igualmente pelo numero de artigos -- aqui, 90 / 3 = 30 euros, nao o preco de venda avulso do relogio nem um valor fixo generico. Verificacao manual do texto, nao ha assercao automatica: o corpo deve indicar 30 euros como o valor do relogio (dividindo os 90 euros pelos 3 artigos do pack), nao outro valor nem escalar sem necessidade so por causa do calculo."
   }
 ]

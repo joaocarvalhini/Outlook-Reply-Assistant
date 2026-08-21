@@ -40,7 +40,7 @@ import re
 import sqlite3
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
 from io import StringIO
 from pathlib import Path
@@ -342,6 +342,14 @@ DOMINIOS_BASE = (
 _PADRAO_FORMULARIO_CONTACTO = re.compile(r"^nova mensagem de cliente\b", re.I)
 
 
+def eh_formulario_contacto(msg: dict) -> bool:
+    local, _, dominio = msg["de"].partition("@")
+    return (
+        local == "mailer" and dominio == "shopify.com"
+        and bool(_PADRAO_FORMULARIO_CONTACTO.match(msg["assunto"]))
+    )
+
+
 def carregar_blocklist(caminho: Path) -> frozenset[str]:
     dominios = set(DOMINIOS_BASE)
     if caminho.exists():
@@ -378,11 +386,7 @@ def triar(msg: dict, cfg: Config, bloqueados: frozenset[str]) -> str | None:
         # (mailer@shopify.com) mas não é. desembrulhar_formulario_contacto()
         # confirma a sério depois de ir buscar o corpo; aqui só se evita
         # bloquear às cegas quem tem cara de ser isto.
-        eh_formulario = (
-            local == "mailer" and dominio == "shopify.com"
-            and bool(_PADRAO_FORMULARIO_CONTACTO.match(msg["assunto"]))
-        )
-        if not eh_formulario:
+        if not eh_formulario_contacto(msg):
             return f"dominio-bloqueado:{dominio}"
 
     destinatarios = msg["para"] + msg["cc"]
@@ -391,10 +395,25 @@ def triar(msg: dict, cfg: Config, bloqueados: frozenset[str]) -> str | None:
     return None
 
 
-def triar_cabecalhos(msg: dict) -> str | None:
-    """Regras que só se podem aplicar depois de ir buscar o detalhe."""
+def triar_cabecalhos(msg: dict, veio_do_formulario: bool = False) -> str | None:
+    """Regras que só se podem aplicar depois de ir buscar o detalhe.
+
+    `veio_do_formulario` tem de vir do chamador, calculado *antes* de
+    desembrulhar_formulario_contacto() substituir msg["de"] pelo email real
+    do cliente -- a esta altura msg já não tem "mailer@shopify.com" nenhum
+    para se poder detetar aqui dentro.
+    """
     cabecalhos = {k.lower(): v for k, v in msg["cabecalhos"]}
     for nome in _CAB_MASSA:
+        # feedback-id: a Shopify carimba este cabeçalho em todo o correio que
+        # reencaminha, incluindo o formulário de contacto -- aqui não é sinal
+        # de bulk mail, é só a plataforma. Sem esta exceção, um cliente real
+        # do formulário era descartado em silêncio, sem sequer ficar marcado
+        # para revisão humana (visto em produção, 20/08/2026). As outras
+        # marcas de bulk mail continuam a aplicar-se ao formulário na mesma:
+        # só esta é conhecida por dar falso positivo.
+        if nome == "feedback-id" and veio_do_formulario:
+            continue
         if nome in cabecalhos:
             return f"cabecalho-massa:{nome}"
     if cabecalhos.get("precedence", "").strip().lower() in _PRECEDENCE:
@@ -1148,6 +1167,13 @@ _NUMERO_ENCOMENDA = re.compile(
     r"encomenda\s*(?:n[.ºo°]*\s*)?#?\s*(\d{4,7})|#\s*(\d{4,7})\b", re.I
 )
 
+# knowledge/devolucoes.md, secção "Prazo para devolver": 14 dias a contar da
+# entrega. Calculado aqui, não pelo modelo -- contas de datas numa única
+# passagem sem espaço de raciocínio dão erros (visto em produção,
+# 21/08/2026: mesmo com a data de entrega certa à mão, a resposta ainda
+# errou o cálculo). O modelo só compara duas datas já prontas, não soma.
+PRAZO_DEVOLUCAO_DIAS = 14
+
 _TRADUCAO_FINANCEIRO = {
     "paid": "pago",
     "pending": "pagamento pendente",
@@ -1257,6 +1283,24 @@ class Shopify:
                 return enc
         return None
 
+    def data_entrega(self, order_id: int, fulfillment_id: int) -> str | None:
+        """Data real de entrega, a partir do histórico de eventos da
+        transportadora -- o fulfillment em si só tem um estado
+        ("delivered"), sem data própria; "created_at" é quando a etiqueta
+        foi criada, não quando chegou ao cliente. Visto em produção,
+        21/08/2026: sem isto, uma resposta confundiu a data da encomenda com
+        a de entrega e citou um prazo errado com ar de certeza.
+        """
+        r = self.http.get(
+            f"{self.base}/orders/{order_id}/fulfillments/{fulfillment_id}/events.json",
+            headers={"X-Shopify-Access-Token": self._obter_token()},
+        )
+        if r.status_code >= 400:
+            return None
+        for evento in r.json().get("fulfillment_events", []):
+            if evento.get("status") == "delivered":
+                return str(evento.get("happened_at") or "")[:10] or None
+        return None
 
 
 def e_da_loja(endereco: str, caixa: str) -> bool:
@@ -1413,9 +1457,16 @@ def resumir_historico(anteriores: list[dict], caixa: str) -> str:
     return "\n".join(linhas)
 
 
-def resumir_encomenda(encomenda: dict) -> str:
+def resumir_encomenda(encomenda: dict, shopify: "Shopify | None" = None) -> str:
     """Texto curto para o prompt: só os factos que respondem a "onde está a
-    minha encomenda", nunca dados de pagamento nem morada completa.
+    minha encomenda" e "até quando posso devolver", nunca dados de
+    pagamento nem morada completa.
+
+    `shopify`, quando passado, é usado para ir buscar a data real de entrega
+    a cada fulfillment "delivered" -- uma chamada extra à Shopify por
+    encomenda entregue, só quando a encomenda já vai ser revelada ao
+    cliente. Sem `shopify`, a data de entrega e o prazo de devolução ficam
+    de fora (ex.: em testes).
     """
     linhas = [
         f"Encomenda {encomenda.get('name', '?')}",
@@ -1438,6 +1489,23 @@ def resumir_encomenda(encomenda: dict) -> str:
             linhas.append(
                 f"Estado do envio: {_TRADUCAO_ENVIO.get(estado_envio, estado_envio)}"
             )
+        if estado_envio == "delivered" and shopify is not None:
+            try:
+                data = shopify.data_entrega(encomenda["id"], f["id"])
+            except Exception as exc:
+                # Não ter a data de entrega não deve impedir o resto do
+                # resumo: a encomenda continua a ser mostrada, só sem essa
+                # linha -- o prompt já instrui a não adivinhar quando falta.
+                log("erro-data-entrega", encomenda=encomenda.get("name", "?"),
+                    erro=f"{type(exc).__name__}: {exc}")
+                data = None
+            if data:
+                linhas.append(f"Entregue em: {data}")
+                limite = datetime.fromisoformat(data) + timedelta(days=PRAZO_DEVOLUCAO_DIAS)
+                linhas.append(
+                    f"Prazo de devolução ({PRAZO_DEVOLUCAO_DIAS} dias desde a "
+                    f"entrega) termina em: {limite:%Y-%m-%d}"
+                )
         url = f.get("tracking_url")
         if url:
             linhas.append(f"Link de rastreio: {url}")
@@ -1718,6 +1786,11 @@ def decidir(
     # A saudação vai aqui e não no prompt de sistema: muda ao longo do dia e no
     # sistema invalidaria a cache da base de conhecimento a cada mudança.
     pedido = f"Saudação a usar: {saudacao()}\n"
+    # Sem isto o modelo não tem como calcular prazos (ex.: 14 dias desde que o
+    # cliente pediu a devolução) -- só vê datas soltas no fio, sem nada para
+    # comparar com "agora". Visto em produção, 20/08/2026: uma resposta
+    # aprovou um adiamento sem verificar se ainda cabia no prazo.
+    pedido += f"Data e hora atuais: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
     if compromissos:
         # Antes do fio: é a fonte da verdade sobre o que já foi prometido,
         # mesmo que o fio visível não o mostre.
@@ -1759,7 +1832,12 @@ def decidir(
             conteudo_msg = conteudo
         resposta = cliente.messages.create(  # type: ignore[attr-defined]
             model=cfg.modelo,
-            max_tokens=1024,
+            # 1024 chegava para a maioria dos casos, mas um dossiê completo
+            # (resumo + resposta sugerida, ambos textos livres) mais os
+            # restantes campos do esquema pode ultrapassar isso em casos com
+            # vários pontos -- visto em produção, 20/08/2026: a resposta
+            # cortava a meio da string, sempre, nesse caso específico.
+            max_tokens=2048,
             # A base de conhecimento é o prefixo de todas as chamadas e não
             # muda durante a passagem, nem entre o núcleo e o dossiê do mesmo
             # email: marcá-la para cache paga-se ao segundo uso.
@@ -1861,10 +1939,11 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         return "saltado"
 
     graph.detalhe(msg, cfg.max_body)
-    if msg["de"] == "mailer@shopify.com" and not desembrulhar_formulario_contacto(msg):
+    veio_do_formulario = msg["de"] == "mailer@shopify.com"
+    if veio_do_formulario and not desembrulhar_formulario_contacto(msg):
         registar(con, msg, "saltar", "formulario-contacto-nao-reconhecido", "")
         return "saltado"
-    motivo = triar_cabecalhos(msg)
+    motivo = triar_cabecalhos(msg, veio_do_formulario)
     if motivo:
         registar(con, msg, "saltar", motivo, "")
         return "saltado"
@@ -1932,7 +2011,7 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
 
     confianca = achado.confianca
     if achado.pode_revelar and achado.encomenda is not None:
-        dados_encomenda = resumir_encomenda(achado.encomenda)
+        dados_encomenda = resumir_encomenda(achado.encomenda, shopify)
     elif achado.confianca == "media":
         # Há uma encomenda plausível mas não se provou que é desta pessoa. Diz-se
         # ao modelo que existe, para ele escalar com a categoria certa, mas não

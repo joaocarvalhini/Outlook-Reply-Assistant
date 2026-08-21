@@ -9,6 +9,32 @@ Fonte: /pages/politica-de-reembolsos-e-devolucoes, /pages/perguntas-faq,
 - O cliente tem 14 dias a contar da data de receção da encomenda para solicitar
   uma devolução.
 - O cliente tem direito a rescindir o contrato no prazo de 14 dias.
+- É o **mesmo prazo** que rege tanto o pedido de devolução como o envio do
+  produto: os 14 dias contam sempre **a partir da data de receção da
+  encomenda**, nunca a partir do dia em que o cliente pediu ou confirmou que
+  queria devolver. Pedir tarde não estica o prazo. (Confirmado diretamente
+  pelo lojista, 21 de agosto de 2026 — correção a uma leitura anterior
+  errada, que tinha contado o prazo a partir do pedido de devolução em vez
+  da receção.)
+- **Não faças a conta tu.** Quando a encomenda já foi entregue, os dados que
+  te são dados incluem duas linhas prontas: **"Entregue em: [data]"** e
+  **"Prazo de devolução (14 dias desde a entrega) termina em: [data]"** — já
+  calculada, não precisas de somar nada. Usa sempre essa segunda linha como
+  a data-limite; não a recalcules a partir de "Feita em" (que é a data da
+  encomenda, não da entrega) nem de nenhuma outra data do fio. (Visto em
+  produção, 21 de agosto de 2026: mesmo com a data de entrega certa
+  disponível, uma resposta ainda errou o cálculo do prazo por tentar somar
+  os 14 dias sozinha — por isso a conta passou a vir pronta.)
+- Quando o cliente perguntar se pode enviar mais tarde, ou pedir para adiar o
+  envio, compara a data pedida com a linha "Prazo de devolução... termina
+  em" e diz o resultado com essa data-limite explícita — nunca aprovar sem
+  mais como "quando lhe for possível". Se a data pedida for depois do
+  prazo, avisa-se de que a devolução já não é válida a partir dessa data.
+- Se não houver a linha "Prazo de devolução... termina em" nos dados — por a
+  encomenda ainda não ter sido entregue, ou por a transportadora não ter
+  fornecido a informação — não se inventa nem se estima uma data-limite:
+  pergunta-se ao cliente quando recebeu a encomenda, ou escala-se se já não
+  for uma resposta simples.
 
 ## Capas personalizadas — exceção
 
@@ -252,6 +278,21 @@ real de produção, 18 de agosto de 2026.)
 - Pedir ao cliente para fechar a disputa no PayPal antes de a loja poder
   concluir o reembolso. (Confirmado diretamente pela loja, 13 de agosto de
   2026.)
+
+## Reembolso de um artigo dentro de um pack
+
+Quando o cliente comprou um pack de vários artigos por um preço único, e só
+quer reembolso ou devolução de **um** desses artigos, não do pack todo:
+
+- O valor desse artigo é o preço total do pack **a dividir igualmente pelo
+  número de artigos do pack** — nunca o preço de venda
+  avulso desse artigo fora do pack, nem um valor fixo à parte. (Confirmado
+  diretamente pelo lojista, 21 de agosto de 2026.)
+- Exemplo: pack de 3 artigos por 90€ → 30€ por artigo, seja qual for o
+  artigo em causa.
+- O resto do processo segue a regra normal de "Reembolso" acima (tentar
+  crédito de loja primeiro, depois reembolso a sério pelo método de
+  pagamento), só o **valor de base** do artigo é que se calcula assim.
 
 ## Trocas
 
