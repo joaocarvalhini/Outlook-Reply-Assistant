@@ -1119,5 +1119,34 @@
     "expect_categoria": "IDENTIDADE_NAO_VERIFICADA",
     "expect_dossie_com_conteudo": true,
     "note": "cliente deu um numero de encomenda que pertence a outra pessoa (email nao bate certo). Regra confirmada diretamente pelo cliente, 21/08/2026, a partir de um caso real (Beatriz Lavaredas, deu o numero #21834 que era do Fabio Lopes): a resposta sugerida deve dizer que o numero indicado esta associado a um email diferente do que escreveu, e pedir para confirmar enviando o email E o telefone usados na compra -- sem revelar nada sobre a encomenda encontrada (nome, email ou telefone de quem e mesmo o dono). Verificacao manual do texto: a resposta sugerida deve mencionar que o email nao bate certo e pedir email + telefone, nunca revelar dados da encomenda real."
+  },
+  {
+    "id": "vale-desconto-publicacao-redireciona-instagram",
+    "email": {
+      "from": "bruno.matias22@gmail.com",
+      "from_name": "Bruno Matias",
+      "subject": "Vale de desconto",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, recebi um vale de 35€ se publicar sobre a minha compra e vos mencionar. Como faço para validar isso?"
+    },
+    "expect": "rascunhar",
+    "note": "cliente pergunta sobre o vale de desconto por publicacao nas redes sociais. Regra confirmada diretamente pelo cliente, 21/08/2026: nao se responde por email com detalhes, diz-se para mandar mensagem ao Instagram da loja (@tripat3sss). Verificacao manual do texto: o corpo deve redirecionar para o Instagram, nao tentar explicar as regras da campanha nem escalar por falta de conhecimento (a lacuna deixou de existir, a regra e sempre a mesma: redirecionar)."
+  },
+  {
+    "id": "fone-defeito-so-troca-nunca-reembolso",
+    "email": {
+      "from": "monica.reis40@gmail.com",
+      "from_name": "Mónica Reis",
+      "subject": "Fones com defeito, quero reembolso total",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, encomendei sem querer uma unidade extra dos InPods Pro 2.0, e a unidade que eu queria mesmo avariou 5 minutos depois de os usar. Quero devolver as duas unidades e o reembolso total."
+    },
+    "dados_encomenda": "Encomenda #22550\nFeita em: 2026-08-15\nPagamento: pago\nEnvio: entregue\nValor: 79.80 EUR",
+    "expect": "escalar",
+    "note": "cliente pede reembolso total de 2 unidades: uma extra (por engano) e outra que usou e avariou. Regra confirmada diretamente pelo cliente, 21/08/2026: fones e smartwatches sao contacto direto com a pele -- a unidade USADA que avariou so tem direito a TROCA por uma nova, nunca reembolso, mesmo com defeito confirmado, porque ja nao cumpre a condicao de higiene para devolucao. A unidade EXTRA (nunca usada) pode ser devolvida normalmente. Verificacao manual do texto: a resposta (dossie ou corpo) deve propor troca (nao reembolso) para a unidade avariada e aceitar devolucao da unidade extra, nao aprovar reembolso total das duas."
   }
 ]

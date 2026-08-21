@@ -321,11 +321,26 @@ Quando a loja envia um artigo diferente do pedido (cor ou modelo errados):
 ## Produto com defeito
 
 - O cliente deve contactar a loja imediatamente.
-- O cliente escolhe entre reembolso total ou substituição do produto.
 - O formulário de devolução/troca (ver "Como iniciar uma devolução") é o
   passo padrão pedido também aqui, além das fotos/vídeo do problema.
 - A loja recusa formulários preenchidos com recurso a ferramentas de
   inteligência artificial.
+- **Fones e smartwatches (contacto direto com a pele): defeito confirmado só
+  dá direito a troca por uma unidade nova — nunca a reembolso, nem sequer
+  como alternativa se o cliente insistir.** Isto não é o "tenta primeiro"
+  de outras secções (crédito de loja, reembolso parcial): aqui o reembolso
+  não é uma opção disponível, ponto final — o artigo já usado deixou de
+  cumprir a condição de higiene exigida para devolução (a mesma exigência
+  de "Estado exigido" acima). Não interessa que o motivo seja um defeito e
+  não arrependimento, nem que o cliente prefira dinheiro a uma troca: a
+  restrição é sobre o estado físico do artigo já usado, não sobre o motivo
+  da devolução nem sobre a preferência do cliente. Se o cliente recusar a
+  troca, explica-se de novo o motivo — não se escala como "decidir se
+  aceita o reembolso". (Confirmado diretamente pelo cliente, 21 de agosto
+  de 2026.)
+- Para os restantes produtos, sem essa restrição de contacto com a pele
+  (ex.: carregadores, baterias, capas), o cliente escolhe entre reembolso
+  total ou substituição do produto.
 
 ## Cancelamento de encomenda
 
