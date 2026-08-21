@@ -872,8 +872,14 @@ Preenches então:
 As únicas três situações em que "dossie_tipo" fica "nenhum":
 - Escalaste por não saberes alguma coisa (LACUNA_DE_CONHECIMENTO): não há
   nada a preparar.
-- A identidade não está confirmada (IDENTIDADE_NAO_VERIFICADA): não podes
-  usar dados que não devias ter visto.
+- A identidade não está confirmada (IDENTIDADE_NAO_VERIFICADA) e o aviso que
+  recebeste não te deu um pedido de confirmação concreto para sugerir: não
+  tens dados que possas usar em segurança. Quando o aviso disser
+  explicitamente para sugerires um pedido de confirmação (por exemplo, pedir
+  o email e o telefone usados na compra, porque o número indicado é de outra
+  pessoa), prepara esse dossiê normalmente — a resposta pede a confirmação,
+  não revela nada da encomenda. (Regra confirmada diretamente pelo cliente,
+  21 de agosto de 2026.)
 - Faltam mesmo os dados da encomenda (DADOS_ENCOMENDA_EM_FALTA, sem
   nenhuma correspondência encontrada): não há nada de concreto para validar.
 
@@ -1892,7 +1898,8 @@ def decidir(
             "Segue a secção \"O dossiê\" das tuas instruções e prepara-o agora. "
             "Preparar é o normal — só fica \"dossie_tipo\": \"nenhum\" nas três "
             "exceções listadas ao fundo dessa secção (falta de conhecimento, "
-            "identidade por confirmar, ou encomenda mesmo sem correspondência). "
+            "identidade por confirmar sem pedido de confirmação concreto a "
+            "sugerir, ou encomenda mesmo sem correspondência). "
             "Fora delas, mesmo que a única coisa segura a dizer seja que o "
             "pedido chegou e vai ser analisado, prepara o dossiê com essa "
             "resposta de retenção."
@@ -2014,13 +2021,22 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         dados_encomenda = resumir_encomenda(achado.encomenda, shopify)
     elif achado.confianca == "media":
         # Há uma encomenda plausível mas não se provou que é desta pessoa. Diz-se
-        # ao modelo que existe, para ele escalar com a categoria certa, mas não
-        # se lhe dá um único dado dela.
+        # ao modelo que existe, para ele escalar com a categoria certa e sugerir
+        # um pedido de confirmação -- nunca revelar um único dado da encomenda.
+        # Texto do pedido de confirmação definido diretamente pelo cliente,
+        # 21 de agosto de 2026, a partir do caso real da Beatriz Lavaredas
+        # (deu um número de encomenda que era de outra pessoa).
         aviso_identidade = (
-            "Existe uma encomenda com o número indicado, mas não foi possível "
+            f"Existe uma encomenda com o número {numero}, mas não foi possível "
             "confirmar que pertence a quem escreveu: o email do remetente não é "
             "o da compra e não há outro indício que ligue os dois. Não reveles "
-            "nada sobre essa encomenda. Categoria: IDENTIDADE_NAO_VERIFICADA."
+            "nada sobre essa encomenda -- nem o nome, nem o email, nem o "
+            "telefone associados a ela. No dossiê, sugere uma resposta que diga "
+            "ao cliente que o número de encomenda indicado está associado a um "
+            "email diferente do que escreveu, e que para confirmar que a "
+            "encomenda é mesmo dele precisa de indicar o email e o número de "
+            "telefone que usou no momento da compra. Categoria: "
+            "IDENTIDADE_NAO_VERIFICADA."
         )
     elif "varios_candidatos" in achado.razoes or "email_com_varias_encomendas" in achado.razoes:
         aviso_identidade = (

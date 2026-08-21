@@ -1102,5 +1102,22 @@
     "dados_encomenda": "Encomenda #22200\nFeita em: 2026-08-01\nPagamento: pago\nEnvio: entregue\nValor: 90.00 EUR",
     "expect": "rascunhar",
     "note": "cliente comprou um pack de 3 artigos por 90 euros e quer reembolso so de um deles (o relogio). Regra confirmada diretamente pelo lojista, 21/08/2026: o valor de cada artigo dentro de um pack e o preco total a dividir igualmente pelo numero de artigos -- aqui, 90 / 3 = 30 euros, nao o preco de venda avulso do relogio nem um valor fixo generico. Verificacao manual do texto, nao ha assercao automatica: o corpo deve indicar 30 euros como o valor do relogio (dividindo os 90 euros pelos 3 artigos do pack), nao outro valor nem escalar sem necessidade so por causa do calculo."
+  },
+  {
+    "id": "identidade-nao-confirmada-pede-email-e-telefone",
+    "email": {
+      "from": "rita.pereira99@gmail.com",
+      "from_name": "Rita Pereira",
+      "subject": "Re: Garantia InPods",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Encomenda #22410"
+    },
+    "aviso_identidade": "Existe uma encomenda com o número 22410, mas não foi possível confirmar que pertence a quem escreveu: o email do remetente não é o da compra e não há outro indício que ligue os dois. Não reveles nada sobre essa encomenda -- nem o nome, nem o email, nem o telefone associados a ela. No dossiê, sugere uma resposta que diga ao cliente que o número de encomenda indicado está associado a um email diferente do que escreveu, e que para confirmar que a encomenda é mesmo dele precisa de indicar o email e o número de telefone que usou no momento da compra. Categoria: IDENTIDADE_NAO_VERIFICADA.",
+    "expect": "escalar",
+    "expect_categoria": "IDENTIDADE_NAO_VERIFICADA",
+    "expect_dossie_com_conteudo": true,
+    "note": "cliente deu um numero de encomenda que pertence a outra pessoa (email nao bate certo). Regra confirmada diretamente pelo cliente, 21/08/2026, a partir de um caso real (Beatriz Lavaredas, deu o numero #21834 que era do Fabio Lopes): a resposta sugerida deve dizer que o numero indicado esta associado a um email diferente do que escreveu, e pedir para confirmar enviando o email E o telefone usados na compra -- sem revelar nada sobre a encomenda encontrada (nome, email ou telefone de quem e mesmo o dono). Verificacao manual do texto: a resposta sugerida deve mencionar que o email nao bate certo e pedir email + telefone, nunca revelar dados da encomenda real."
   }
 ]
