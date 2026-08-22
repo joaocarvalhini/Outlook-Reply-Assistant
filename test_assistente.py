@@ -39,6 +39,7 @@ from assistente import (
     desembrulhar_formulario_contacto,
     desembrulhar_formulario_devolucao,
     extrair_numero_encomenda,
+    extrair_numeros_encomenda,
     ja_processado,
     para_html,
     para_texto,
@@ -605,6 +606,28 @@ class NumeroDeEncomenda(unittest.TestCase):
         # com menos de 4 dígitos é demasiado fácil confundir com outra coisa
         # (código postal, quantidade); mais vale não extrair do que extrair mal
         self.assertIsNone(extrair_numero_encomenda("Dúvida", "tenho 42 anos"))
+
+    def test_dois_numeros_no_assunto(self) -> None:
+        """Visto em produção, 22/08/2026: cliente com duas devoluções em curso
+        mencionou as duas encomendas no assunto, só a primeira era resolvida."""
+        self.assertEqual(
+            extrair_numeros_encomenda("Pedido de devolução – Encomendas #21039 e #20852", ""),
+            ["21039", "20852"],
+        )
+
+    def test_um_numero_so_devolve_lista_de_um(self) -> None:
+        self.assertEqual(
+            extrair_numeros_encomenda("Encomenda #21910", "sem número aqui"), ["21910"]
+        )
+
+    def test_numero_repetido_nao_duplica(self) -> None:
+        self.assertEqual(
+            extrair_numeros_encomenda("Encomenda #21910", "a encomenda 21910 já chegou?"),
+            ["21910"],
+        )
+
+    def test_sem_numero_devolve_lista_vazia(self) -> None:
+        self.assertEqual(extrair_numeros_encomenda("Dúvida", "sem número nenhum"), [])
 
 
 class ResumoDeEncomenda(unittest.TestCase):

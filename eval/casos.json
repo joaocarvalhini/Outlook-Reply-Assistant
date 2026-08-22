@@ -1135,6 +1135,21 @@
     "note": "submissao real do formulario de devolucao do site (o passo padrao da propria knowledge base, 'Como iniciar uma devolucao'), reencaminhada pelo Formspree como noreply@formspree.io. Bug corrigido em 22/08/2026, encontrado em producao: 'noreply' apanhava isto em _ROBOS e o Formspree ainda carimba list-unsubscribe por cima -- as duas juntas descartavam TODA submissao deste formulario desde sempre, sem excecao. Verificacao manual do texto: deve responder ao pedido de garantia do smartwatch (produto nao liga), nao aparecer como saltado nem pedir dados que ja vieram no formulario (email, telefone, numero da encomenda)."
   },
   {
+    "id": "duas-encomendas-mencionadas-pergunta-qual",
+    "email": {
+      "from": "samvieiragarcia@gmail.com",
+      "from_name": "Sam Garcia",
+      "subject": "Re: Assunto: Pedido de devolução – Encomendas #21039 e #20852",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Bom dia,\n\nJá enviei faz mais de uma semana e já recebi confirmação que foi entregue.\n\nPodem confirmar a proceder ao reembolso?\n\nObrigado,\n\nSamuel Garcia"
+    },
+    "dados_encomenda": "Encomenda #21039\nFeita em: 2026-07-02\nPagamento: pago\nEnvio: expedida\nValor: 48.90 EUR\n\nEncomenda #20852\nFeita em: 2026-06-23\nPagamento: pago\nEnvio: expedida\nEstado do envio: falha na entrega\nValor: 72.80 EUR",
+    "expect": "escalar",
+    "note": "cliente menciona duas encomendas no assunto (#21039 e #20852) mas a mensagem nao diz qual delas foi devolvida -- so 'ja enviei... ja recebi confirmacao que foi entregue', sem numero. Bug corrigido em 22/08/2026: extrair_numero_encomenda() usava .search(), so via a primeira; nova extrair_numeros_encomenda() (.finditer()) apanha as duas, e ambas sao verificadas por identidade (resolver_encomenda) antes de entrarem em dados_encomenda. So ter os dois blocos de dados nao bastou em teste real -- o modelo continuava generico ('a encomenda', 'o artigo') sem citar nenhum numero; foi preciso a instrucao explicita agora presente no inicio de dados_encomenda a pedir para citar os numeros concretos e perguntar qual quando nao for claro. Verificacao manual do texto: a resposta deve citar OS DOIS numeros (#21039 e #20852) e perguntar qual deles corresponde ao artigo devolvido -- nunca responder em genero 'a encomenda'/'o artigo' sem numero, nem assumir uma das duas sem se justificar pelo fio."
+  },
+  {
     "id": "vale-desconto-publicacao-redireciona-instagram",
     "email": {
       "from": "bruno.matias22@gmail.com",

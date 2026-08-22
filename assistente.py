@@ -1293,19 +1293,36 @@ _TRADUCAO_ENVIO = {
 }
 
 
+def extrair_numeros_encomenda(assunto: str, corpo: str) -> list[str]:
+    """Todos os números de encomenda distintos no assunto e no corpo, pela
+    ordem em que aparecem primeiro.
+
+    Existe para o caso raro de o cliente mencionar mais do que uma encomenda
+    no mesmo email (ex.: duas devoluções em curso) -- visto em produção,
+    22/08/2026: extrair_numero_encomenda() só devolvia a primeira, porque usa
+    .search() e não .finditer(), e a segunda ficava sem resposta nenhuma,
+    mesmo tendo sido mencionada.
+    """
+    encontrados: list[str] = []
+    for texto in (assunto, corpo):
+        for m in _NUMERO_ENCOMENDA.finditer(texto or ""):
+            numero = m.group(1) or m.group(2)
+            if numero not in encontrados:
+                encontrados.append(numero)
+    return encontrados
+
+
 def extrair_numero_encomenda(assunto: str, corpo: str) -> str | None:
     """Procura um número de encomenda no assunto e no corpo do email.
 
     O cliente escreve de várias formas: "encomenda 21910", "encomenda n.º
     21910", "#21910". Nenhuma tentativa de adivinhar é feita além disto: se não
     aparecer um número plausível, mais vale escalar do que arriscar buscar a
-    encomenda errada.
+    encomenda errada. Quando há mais do que um número, só o primeiro interessa
+    aqui -- ver extrair_numeros_encomenda() para os restantes.
     """
-    for texto in (assunto, corpo):
-        m = _NUMERO_ENCOMENDA.search(texto or "")
-        if m:
-            return m.group(1) or m.group(2)
-    return None
+    numeros = extrair_numeros_encomenda(assunto, corpo)
+    return numeros[0] if numeros else None
 
 
 class Shopify:
@@ -2104,6 +2121,40 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
     confianca = achado.confianca
     if achado.pode_revelar and achado.encomenda is not None:
         dados_encomenda = resumir_encomenda(achado.encomenda, shopify)
+        # Um email pode falar de mais do que uma encomenda (ex.: duas
+        # devoluções no mesmo pedido) -- sem isto, só a primeira chegava ao
+        # modelo e a segunda ficava sem resposta (visto em produção,
+        # 22/08/2026). Cada número extra passa pela mesma verificação de
+        # identidade do primeiro; nunca se junta uma encomenda que não se
+        # prove ser desta pessoa, mesmo que o número apareça no email.
+        outras_encomendas = []
+        if cfg.resolver_identidade:
+            for outro in extrair_numeros_encomenda(msg["assunto"], msg["corpo"]):
+                if outro == numero:
+                    continue
+                try:
+                    outro_achado = resolver_encomenda(shopify, msg, historico, outro)
+                except Exception as exc:
+                    log("erro-shopify", email=msg["message_id"][:40],
+                        erro=f"{type(exc).__name__}: {exc}")
+                    continue
+                if outro_achado.pode_revelar and outro_achado.encomenda is not None:
+                    outras_encomendas.append(resumir_encomenda(outro_achado.encomenda, shopify))
+        if outras_encomendas:
+            # Só ter os dados das duas não bastou em teste: o modelo continuava
+            # a responder só à primeira, sem se aperceber de que havia uma
+            # segunda encomenda a tratar. Sem espaço de raciocínio na chamada,
+            # tem de se dizer explicitamente para tratar de cada uma.
+            dados_encomenda = (
+                "O cliente mencionou mais do que uma encomenda -- seguem os "
+                "dados de cada uma, separados. Refere sempre os números de "
+                "encomenda concretos na resposta, nunca só \"a encomenda\" ou "
+                "\"o artigo\" em genérico: se for claro a qual das duas a "
+                "mensagem se refere, trata dessa pelo número; se não for "
+                "claro, pergunta ao cliente qual delas, citando os dois "
+                "números.\n\n" + dados_encomenda + "\n\n"
+                + "\n\n".join(outras_encomendas)
+            )
     elif achado.confianca == "media":
         # Há uma encomenda plausível mas não se provou que é desta pessoa. Diz-se
         # ao modelo que existe, para ele escalar com a categoria certa e sugerir
