@@ -350,6 +350,73 @@ def eh_formulario_contacto(msg: dict) -> bool:
     )
 
 
+# O formulário de devolução do site (o passo padrão descrito em
+# knowledge/devolucoes.md, "Como iniciar uma devolução") reencaminha por
+# noreply@formspree.io -- um pedido de devolução real disfarçado de
+# notificação automática. Sem esta exceção, "noreply" apanha-o em _ROBOS e
+# o Formspree ainda carimba list-unsubscribe por cima (ver
+# triar_cabecalhos()); as duas juntas descartavam toda e qualquer submissão
+# deste formulário desde sempre (visto em produção, 22/08/2026). O Reply-To
+# do Formspree já aponta para o email real do cliente, tal como o do
+# Shopify, por isso um rascunho normal chega à pessoa certa.
+_PADRAO_FORMULARIO_DEVOLUCAO = re.compile(r"^new (form )?submission (on|from)\b", re.I)
+
+
+def eh_formulario_devolucao(msg: dict) -> bool:
+    local, _, dominio = msg["de"].partition("@")
+    return (
+        local == "noreply" and dominio == "formspree.io"
+        and bool(_PADRAO_FORMULARIO_DEVOLUCAO.match(msg["assunto"]))
+    )
+
+
+_CAMPOS_FORMULARIO_DEVOLUCAO = (
+    ("telefone", "Telefone"),
+    ("produto", "Produto"),
+    ("motivo_principal", "Motivo principal"),
+    ("onde_erro", "Onde ocorreu o problema"),
+    ("descricao", "Descrição"),
+    ("detalhe_motivo", "Detalhe"),
+)
+
+
+def desembrulhar_formulario_devolucao(msg: dict) -> bool:
+    """Troca remetente/nome/corpo pelos dados reais de uma submissão do
+    formulário de devolução do site, que o Formspree reencaminha como
+    noreply@formspree.io.
+
+    O corpo chega como uma lista plana de "campo\\nvalor" por cada campo do
+    formulário (numero_pedido, email, nome, telefone, produto,
+    motivo_principal, onde_erro, descricao, detalhe_motivo, foto_N com o
+    nome do ficheiro) -- separados por linha em branco. Refaz-se num texto
+    corrido, na ordem em que interessa ao modelo, não na ordem em que o
+    Formspree os reencaminha. As fotos em si chegam como anexos normais do
+    email, já apanhadas por processar_imagens() -- os campos "foto_N" aqui
+    são só o nome do ficheiro, sem uso.
+    """
+    campos: dict[str, str] = {}
+    for bloco in msg["corpo"].split("\n\n"):
+        chave, _, valor = bloco.strip().partition("\n")
+        if chave.strip() and valor.strip():
+            campos[chave.strip().lower()] = valor.strip()
+    email = campos.get("email", "")
+    if not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", email):
+        return False
+    linhas = []
+    if campos.get("numero_pedido"):
+        linhas.append(f"Número do pedido: {campos['numero_pedido']}")
+    for chave, rotulo in _CAMPOS_FORMULARIO_DEVOLUCAO:
+        if campos.get(chave):
+            linhas.append(f"{rotulo}: {campos[chave]}")
+    if not linhas:
+        return False
+    msg["de"] = email
+    if campos.get("nome"):
+        msg["nome"] = campos["nome"]
+    msg["corpo"] = "\n".join(linhas)
+    return True
+
+
 def carregar_blocklist(caminho: Path) -> frozenset[str]:
     dominios = set(DOMINIOS_BASE)
     if caminho.exists():
@@ -378,7 +445,11 @@ def triar(msg: dict, cfg: Config, bloqueados: frozenset[str]) -> str | None:
 
     local = remetente.partition("@")[0]
     for padrao in _ROBOS:
-        if padrao in local:
+        # Exceção: o formulário de devolução do site é reencaminhado pelo
+        # Formspree como noreply@formspree.io -- teria "noreply" apanhado
+        # aqui sem nunca ter sido de facto ruído. desembrulhar_formulario_
+        # devolucao() confirma a sério depois de ir buscar o corpo.
+        if padrao in local and not eh_formulario_devolucao(msg):
             return f"remetente-automatico:{padrao}"
 
     if dominio in bloqueados or any(dominio.endswith("." + b) for b in bloqueados):
@@ -395,13 +466,15 @@ def triar(msg: dict, cfg: Config, bloqueados: frozenset[str]) -> str | None:
     return None
 
 
-def triar_cabecalhos(msg: dict, veio_do_formulario: bool = False) -> str | None:
+def triar_cabecalhos(msg: dict, veio_do_formulario_contacto: bool = False,
+                      veio_do_formulario_devolucao: bool = False) -> str | None:
     """Regras que só se podem aplicar depois de ir buscar o detalhe.
 
-    `veio_do_formulario` tem de vir do chamador, calculado *antes* de
-    desembrulhar_formulario_contacto() substituir msg["de"] pelo email real
-    do cliente -- a esta altura msg já não tem "mailer@shopify.com" nenhum
-    para se poder detetar aqui dentro.
+    Os dois `veio_do_formulario_*` têm de vir do chamador, calculados *antes*
+    de desembrulhar_formulario_contacto()/desembrulhar_formulario_devolucao()
+    substituírem msg["de"] pelo email real do cliente -- a esta altura msg já
+    não tem "mailer@shopify.com" nem "noreply@formspree.io" para se poder
+    detetar aqui dentro.
     """
     cabecalhos = {k.lower(): v for k, v in msg["cabecalhos"]}
     for nome in _CAB_MASSA:
@@ -412,7 +485,15 @@ def triar_cabecalhos(msg: dict, veio_do_formulario: bool = False) -> str | None:
         # para revisão humana (visto em produção, 20/08/2026). As outras
         # marcas de bulk mail continuam a aplicar-se ao formulário na mesma:
         # só esta é conhecida por dar falso positivo.
-        if nome == "feedback-id" and veio_do_formulario:
+        if nome == "feedback-id" and veio_do_formulario_contacto:
+            continue
+        # list-unsubscribe: o Formspree carimba isto em tudo o que envia,
+        # incluindo as submissões do formulário de devolução do site -- que
+        # são pedidos de devolução reais, não bulk mail (visto em produção,
+        # 22/08/2026: todas as submissões deste formulário, o passo padrão
+        # da própria knowledge base para iniciar uma devolução, estavam a
+        # ser descartadas desde sempre).
+        if nome == "list-unsubscribe" and veio_do_formulario_devolucao:
             continue
         if nome in cabecalhos:
             return f"cabecalho-massa:{nome}"
@@ -1946,11 +2027,15 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         return "saltado"
 
     graph.detalhe(msg, cfg.max_body)
-    veio_do_formulario = msg["de"] == "mailer@shopify.com"
-    if veio_do_formulario and not desembrulhar_formulario_contacto(msg):
+    veio_do_formulario_contacto = msg["de"] == "mailer@shopify.com"
+    if veio_do_formulario_contacto and not desembrulhar_formulario_contacto(msg):
         registar(con, msg, "saltar", "formulario-contacto-nao-reconhecido", "")
         return "saltado"
-    motivo = triar_cabecalhos(msg, veio_do_formulario)
+    veio_do_formulario_devolucao = eh_formulario_devolucao(msg)
+    if veio_do_formulario_devolucao and not desembrulhar_formulario_devolucao(msg):
+        registar(con, msg, "saltar", "formulario-devolucao-nao-reconhecido", "")
+        return "saltado"
+    motivo = triar_cabecalhos(msg, veio_do_formulario_contacto, veio_do_formulario_devolucao)
     if motivo:
         registar(con, msg, "saltar", motivo, "")
         return "saltado"

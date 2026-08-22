@@ -1121,6 +1121,20 @@
     "note": "cliente deu um numero de encomenda que pertence a outra pessoa (email nao bate certo). Regra confirmada diretamente pelo cliente, 21/08/2026, a partir de um caso real (Beatriz Lavaredas, deu o numero #21834 que era do Fabio Lopes): a resposta sugerida deve dizer que o numero indicado esta associado a um email diferente do que escreveu, e pedir para confirmar enviando o email E o telefone usados na compra -- sem revelar nada sobre a encomenda encontrada (nome, email ou telefone de quem e mesmo o dono). Verificacao manual do texto: a resposta sugerida deve mencionar que o email nao bate certo e pedir email + telefone, nunca revelar dados da encomenda real."
   },
   {
+    "id": "formulario-devolucao-formspree-nao-e-descartado",
+    "email": {
+      "from": "noreply@formspree.io",
+      "from_name": "Formspree",
+      "subject": "New submission from Devolução site",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "You've received a new form submission. --\n\nNew form submission on Devolução site\n\nSomeone just submitted a form on www.tripat3s.com/. Here's what they had to say:\n\nnumero_pedido\n#22301\n\nemail\nrita.confirma99@gmail.com\n\nnome\nRita Confirma\n\ntelefone\n925001122\n\nproduto\nSmartwatch Z81\n\nmotivo_principal\ndefeito\n\nonde_erro\nproduto\n\ndescricao\nO relógio não liga de todo, tentei carregar 24 horas e nada.\n\ndetalhe_motivo\nComprado há 5 dias, nunca funcionou bem."
+    },
+    "expect": "rascunhar",
+    "note": "submissao real do formulario de devolucao do site (o passo padrao da propria knowledge base, 'Como iniciar uma devolucao'), reencaminhada pelo Formspree como noreply@formspree.io. Bug corrigido em 22/08/2026, encontrado em producao: 'noreply' apanhava isto em _ROBOS e o Formspree ainda carimba list-unsubscribe por cima -- as duas juntas descartavam TODA submissao deste formulario desde sempre, sem excecao. Verificacao manual do texto: deve responder ao pedido de garantia do smartwatch (produto nao liga), nao aparecer como saltado nem pedir dados que ja vieram no formulario (email, telefone, numero da encomenda)."
+  },
+  {
     "id": "vale-desconto-publicacao-redireciona-instagram",
     "email": {
       "from": "bruno.matias22@gmail.com",

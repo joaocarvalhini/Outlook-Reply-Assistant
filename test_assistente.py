@@ -37,6 +37,7 @@ from assistente import (
     cortar_citacao,
     cursor_atual,
     desembrulhar_formulario_contacto,
+    desembrulhar_formulario_devolucao,
     extrair_numero_encomenda,
     ja_processado,
     para_html,
@@ -174,6 +175,34 @@ class Triagem(unittest.TestCase):
         )
         self.assertTrue(motivo.startswith("dominio-bloqueado"))
 
+    def test_formulario_devolucao_formspree_passa(self) -> None:
+        """noreply@formspree.io com o assunto do formulário de devolução não é
+        bloqueado como remetente automático -- é uma submissão real do
+        formulário de devolução do site, disfarçada de notificação (visto em
+        produção, 22/08/2026: todas as submissões estavam a ser descartadas
+        desde sempre, "noreply" apanhava-as em _ROBOS)."""
+        motivo = triar(
+            msg(de="noreply@formspree.io", assunto="New submission from Devolução site"),
+            cfg(), BLOQUEADOS,
+        )
+        self.assertIsNone(motivo)
+
+    def test_formspree_com_outro_assunto_continua_bloqueado(self) -> None:
+        """A exceção é só para o formulário de devolução, não para o Formspree em geral."""
+        motivo = triar(
+            msg(de="noreply@formspree.io", assunto="The Missing Step in Your AI-Generated Form"),
+            cfg(), BLOQUEADOS,
+        )
+        self.assertTrue(motivo.startswith("remetente-automatico"))
+
+    def test_outro_local_formspree_com_assunto_de_formulario_continua_bloqueado(self) -> None:
+        """Só noreply@formspree.io tem a exceção, não qualquer remetente do domínio."""
+        motivo = triar(
+            msg(de="newsletter@formspree.io", assunto="New submission from Devolução site"),
+            cfg(), BLOQUEADOS,
+        )
+        self.assertTrue(motivo.startswith("remetente-automatico"))
+
     def test_loja_nao_e_destinataria(self) -> None:
         self.assertEqual(
             triar(msg(para=["outra@empresa.pt"], cc=[]), cfg(), BLOQUEADOS),
@@ -211,12 +240,13 @@ class TriagemCabecalhos(unittest.TestCase):
         formulário de contacto -- não é bulk mail aqui (visto em produção,
         20/08/2026: um cliente real ficava descartado em silêncio).
 
-        veio_do_formulario=True simula o que processar() calcula antes de
-        desembrulhar_formulario_contacto() substituir msg["de"] -- a esta
-        altura, no fluxo real, msg["de"] já não é "mailer@shopify.com"."""
+        veio_do_formulario_contacto=True simula o que processar() calcula
+        antes de desembrulhar_formulario_contacto() substituir msg["de"] --
+        a esta altura, no fluxo real, msg["de"] já não é
+        "mailer@shopify.com"."""
         motivo = triar_cabecalhos(
             msg(cabecalhos=[("Feedback-ID", "1:2:3:SendGrid")]),
-            veio_do_formulario=True,
+            veio_do_formulario_contacto=True,
         )
         self.assertIsNone(motivo)
 
@@ -225,9 +255,34 @@ class TriagemCabecalhos(unittest.TestCase):
         a bloquear o formulário de contacto na mesma."""
         motivo = triar_cabecalhos(
             msg(cabecalhos=[("List-Unsubscribe", "<https://x>")]),
-            veio_do_formulario=True,
+            veio_do_formulario_contacto=True,
         )
         self.assertEqual(motivo, "cabecalho-massa:list-unsubscribe")
+
+    def test_list_unsubscribe_bloqueia_fora_do_formulario_de_devolucao(self) -> None:
+        """list-unsubscribe continua a ser sinal de bulk mail para o resto do correio."""
+        motivo = triar_cabecalhos(msg(cabecalhos=[("List-Unsubscribe", "<https://x>")]))
+        self.assertEqual(motivo, "cabecalho-massa:list-unsubscribe")
+
+    def test_list_unsubscribe_nao_bloqueia_formulario_de_devolucao(self) -> None:
+        """O Formspree carimba list-unsubscribe em tudo o que envia, incluindo
+        as submissões do formulário de devolução do site -- não é bulk mail
+        aqui (visto em produção, 22/08/2026: todas as submissões deste
+        formulário estavam a ser descartadas desde sempre)."""
+        motivo = triar_cabecalhos(
+            msg(cabecalhos=[("List-Unsubscribe", "<https://x>")]),
+            veio_do_formulario_devolucao=True,
+        )
+        self.assertIsNone(motivo)
+
+    def test_outro_cabecalho_massa_continua_a_bloquear_formulario_de_devolucao(self) -> None:
+        """A exceção é só para list-unsubscribe -- outros sinais de bulk mail
+        continuam a bloquear o formulário de devolução na mesma."""
+        motivo = triar_cabecalhos(
+            msg(cabecalhos=[("Feedback-ID", "1:2:3:SendGrid")]),
+            veio_do_formulario_devolucao=True,
+        )
+        self.assertEqual(motivo, "cabecalho-massa:feedback-id")
 
     def test_cabecalho_e_insensivel_a_maiusculas(self) -> None:
         self.assertIsNotNone(triar_cabecalhos(msg(cabecalhos=[("list-ID", "<news>")])))
@@ -301,6 +356,57 @@ class FormularioContactoShopify(unittest.TestCase):
         )
         m = dict(original)
         self.assertFalse(desembrulhar_formulario_contacto(m))
+        self.assertEqual(m, original)
+
+
+class FormularioDevolucaoFormspree(unittest.TestCase):
+    """Submissões do formulário de devolução do site, reencaminhadas pelo
+    Formspree como noreply@formspree.io.
+
+    O corpo real (visto ao vivo em produção, 22/08/2026, via Graph) é uma
+    lista plana de "campo\\n\\nvalor\\n\\n" por cada campo do formulário --
+    já achatada pelo para_texto() do detalhe do email.
+    """
+
+    CORPO_REAL = (
+        "You've received a new form submission. --\n\n"
+        "New form submission on Devolução site\n\n"
+        "Someone just submitted a form on www.tripat3s.com/. "
+        "Here's what they had to say:\n\n"
+        "numero_pedido\n#21990\n\n"
+        "email\nalexandramatiaszz@gmail.com\n\n"
+        "nome\nAlexandra Coelho Matias\n\n"
+        "telefone\n917003115\n\n"
+        "produto\nFone P9 + capa fone\n\n"
+        "motivo_principal\nnao_gostei\n\n"
+        "onde_erro\nproduto\n\n"
+        "descricao\nO som dos fones ouve-se muito no exterior, os fones não "
+        "abafam o som e de um lado ouve-se mais do que no outro.\n\n"
+        "detalhe_motivo\nA ligação por Bluetooth faz conflito com outros "
+        "dispositivos. Não corresponde à realidade descrita no anúncio.\n\n"
+        "foto_1\nimage (1).jpg\n\n"
+        "foto_2\nimage (2).jpg\n\n"
+    )
+
+    def test_extrai_remetente_real_e_campos(self) -> None:
+        m = msg(de="noreply@formspree.io", nome="Formspree", corpo=self.CORPO_REAL)
+        self.assertTrue(desembrulhar_formulario_devolucao(m))
+        self.assertEqual(m["de"], "alexandramatiaszz@gmail.com")
+        self.assertEqual(m["nome"], "Alexandra Coelho Matias")
+        self.assertIn("#21990", m["corpo"])
+        self.assertIn("917003115", m["corpo"])
+        self.assertIn("não abafam o som", m["corpo"])
+        # Os nomes de ficheiro das fotos não interessam ao modelo -- as fotos
+        # em si chegam como anexos, apanhados por processar_imagens().
+        self.assertNotIn("image (1).jpg", m["corpo"])
+
+    def test_corpo_sem_email_valido_nao_mexe_na_mensagem(self) -> None:
+        original = msg(
+            de="noreply@formspree.io",
+            corpo="New form submission on Devolução site\n\nnome\nAlguém\n\n",
+        )
+        m = dict(original)
+        self.assertFalse(desembrulhar_formulario_devolucao(m))
         self.assertEqual(m, original)
 
 
