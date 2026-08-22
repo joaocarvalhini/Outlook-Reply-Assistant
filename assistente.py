@@ -1861,15 +1861,38 @@ def nota_anexos_ignorados(ignorados: list[dict]) -> str:
     uma imagem grande demais) desaparecia em silêncio, e o modelo respondia
     como se não tivesse chegado nada — pior do que escalar a dizer que não
     conseguiu processar o ficheiro.
+
+    Vídeo tem nota à parte: o sistema não vê vídeo nenhum, seja qual for o
+    formato ou o tamanho -- pedir para reenviar "num formato mais comum"
+    engana o cliente, porque nenhum formato de vídeo chega a ser visto.
+    Visto em produção, 22/08/2026: mais do que um cliente ficou preso a
+    reenviar vídeos (às vezes porque uma resposta anterior tinha pedido
+    vídeo), sem nunca ser isso a resolver. A instrução certa é pedir fotos
+    ou capturas de ecrã do momento exato do problema.
     """
     if not ignorados:
         return ""
-    nomes = ", ".join(a.get("name") or "(sem nome)" for a in ignorados[:3])
-    return (
-        f"\n\nO cliente anexou {len(ignorados)} ficheiro(s) que não foi "
-        f"possível processar automaticamente ({nomes}). Trata isto como se "
-        "não tivesse chegado prova nenhuma."
-    )
+    videos = [a for a in ignorados if str(a.get("contentType", "")).startswith("video/")]
+    outros = [a for a in ignorados if not str(a.get("contentType", "")).startswith("video/")]
+    nota = ""
+    if videos:
+        nota += (
+            "\n\nO cliente anexou vídeo, que este sistema nunca consegue "
+            "ver, seja qual for o formato -- não peças para reenviar "
+            "\"noutro formato\" ou \"mais comum\" (ex.: MP4), isso não "
+            "resolve nada. Em vez de vídeo, pede fotografias ou capturas de "
+            "ecrã do momento exato do problema (ex.: o ecrã do telemóvel a "
+            "mostrar a tentativa de ligação, ou o LED do produto no estado "
+            "descrito)."
+        )
+    if outros:
+        nomes = ", ".join(a.get("name") or "(sem nome)" for a in outros[:3])
+        nota += (
+            f"\n\nO cliente também anexou {len(outros)} outro(s) ficheiro(s) "
+            f"que não foi possível processar automaticamente ({nomes}). "
+            "Trata isto como se não tivesse chegado prova nenhuma."
+        )
+    return nota
 
 
 # ─────────────────────────────────────────────────────────────────────────────

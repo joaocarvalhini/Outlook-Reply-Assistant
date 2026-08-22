@@ -749,6 +749,28 @@ class AnexosDeImagem(unittest.TestCase):
         self.assertIn("relatorio.pdf", nota)
         self.assertIn("1", nota)
 
+    def test_video_pede_fotos_em_vez_de_reenviar(self) -> None:
+        """Visto em produção, 22/08/2026: pedir para reenviar 'noutro formato'
+        engana o cliente -- nenhum formato de vídeo chega a ser visto."""
+        nota = nota_anexos_ignorados(
+            [self._anexo(name="problema.mov", contentType="video/quicktime")]
+        )
+        self.assertIn("fotografias ou capturas de ecrã", nota)
+
+    def test_video_instrui_a_nao_pedir_reenvio(self) -> None:
+        nota = nota_anexos_ignorados(
+            [self._anexo(name="video.mp4", contentType="video/mp4")]
+        )
+        self.assertIn("não peças para reenviar", nota)
+
+    def test_video_e_outro_ficheiro_tem_as_duas_notas(self) -> None:
+        nota = nota_anexos_ignorados([
+            self._anexo(name="problema.mov", contentType="video/quicktime"),
+            self._anexo(name="fatura.pdf", contentType="application/pdf"),
+        ])
+        self.assertIn("fotografias ou capturas de ecrã", nota)
+        self.assertIn("fatura.pdf", nota)
+
 
 class ClienteFalso:
     """Só regista o que decidir() lhe pede, para testar a forma da mensagem
