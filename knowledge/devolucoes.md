@@ -164,6 +164,16 @@ primeiro (secção acima) — não isto.
   https://www.tripat3s.com/pages/pedido-de-devolucao-ou-troca — é o que a
   loja pede na generalidade dos casos reais observados, não só em
   reclamações complexas.
+- **Não pedir para preencher o formulário se o fio já mostra que o processo
+  está em curso** — por exemplo, a loja já ofereceu uma solução concreta
+  (reembolso parcial, troca) com base em detalhes específicos do problema
+  do cliente. Isso só acontece depois de o pedido/prova já ter sido recebido
+  por algum canal (nem sempre visível neste fio — o formulário do site é
+  reencaminhado como uma conversa à parte). Nestes casos, avança direto para
+  os passos seguintes (morada, prazos, estado exigido), em vez de mandar o
+  cliente voltar ao início. (Confirmado diretamente pelo cliente, 22 de
+  agosto de 2026, a partir de um caso real em que se pediu o formulário a
+  uma cliente que já o tinha preenchido.)
 - Não dizer ao cliente para escrever para info@tripat3s.com — é normalmente
   o próprio endereço para onde ele já está a escrever. Pedir isso é
   redundante e confunde. (Corrigido a partir de um caso real de produção,

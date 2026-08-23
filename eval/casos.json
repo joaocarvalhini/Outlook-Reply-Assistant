@@ -1177,5 +1177,36 @@
     "dados_encomenda": "Encomenda #22550\nFeita em: 2026-08-15\nPagamento: pago\nEnvio: entregue\nValor: 79.80 EUR",
     "expect": "escalar",
     "note": "cliente pede reembolso total de 2 unidades: uma extra (por engano) e outra que usou e avariou. Regra confirmada diretamente pelo cliente, 21/08/2026: fones e smartwatches sao contacto direto com a pele -- a unidade USADA que avariou so tem direito a TROCA por uma nova, nunca reembolso, mesmo com defeito confirmado, porque ja nao cumpre a condicao de higiene para devolucao. A unidade EXTRA (nunca usada) pode ser devolvida normalmente. Verificacao manual do texto: a resposta (dossie ou corpo) deve propor troca (nao reembolso) para a unidade avariada e aceitar devolucao da unidade extra, nao aprovar reembolso total das duas."
+  },
+  {
+    "id": "mbway-diferenca-troca-modelo-sem-stock",
+    "email": {
+      "from": "sonia.ferreira99@gmail.com",
+      "from_name": "Sónia Ferreira",
+      "subject": "Comprovativo transferência",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, aqui está o comprovativo do pagamento da diferença.\n\nEncomenda #22400"
+    },
+    "dados_encomenda": "Encomenda #22400\nFeita em: 2026-08-10\nPagamento: pago\nEnvio: ainda não expedida\nValor: 45.00 EUR",
+    "historico": "[2026-08-10 09:00] LOJA: O modelo que encomendou está esgotado, mas temos um modelo superior por mais 8 euros, quer trocar?\n[2026-08-10 09:30] CLIENTE: Sim, aceito, envio já o pagamento da diferença.",
+    "expect": "escalar",
+    "note": "cliente envia comprovativo de transferencia MB Way de um valor que nao bate certo com o total da encomenda na Shopify (45 EUR) -- mas o historico mostra que e a diferenca de uma troca por modelo superior, ja combinada, por falta de stock. Regra confirmada diretamente pelo cliente, 22/08/2026, a partir de um caso real (Lara Martins, 10 EUR de diferenca numa encomenda de 53,91 EUR) em que a resposta tratou isto como um pagamento desencontrado em vez de reconhecer o padrao. Verificacao manual do texto: o resumo/motivo deve identificar isto como a diferenca de troca de modelo (nao um erro ou pagamento que nao bate certo), e a resposta deve confirmar que vai verificar a substituicao internamente, nao soar confusa ou desconfiada sobre a origem do valor."
+  },
+  {
+    "id": "formulario-ja-feito-nao-repetir-pedido",
+    "email": {
+      "from": "ines.confirma@gmail.com",
+      "from_name": "Inês Confirma",
+      "subject": "Re: Encomenda",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, não aceito o reembolso parcial, quero mesmo devolver e ser reembolsada na totalidade."
+    },
+    "historico": "[2026-08-10 10:00] LOJA: Lamentamos que os fones não tenham correspondido, dado o problema de som que descreveu na sua reclamação propomos um reembolso parcial de 15 euros, aceita?",
+    "expect": "escalar",
+    "note": "o historico mostra a loja a oferecer uma solucao concreta (reembolso parcial) com base em detalhes especificos de uma reclamacao ja recebida por algum canal -- sinal de que o processo de devolucao ja esta em curso, mesmo sem se ver aqui o pedido/formulario original (pode ter chegado por outra conversa, ex.: o formulario do site reencaminhado pelo Formspree tem sempre a sua propria conversationId). Regra confirmada diretamente pelo cliente, 22/08/2026, a partir de um caso real (Alexandra Matias) em que se pediu para preencher o formulario a uma cliente que ja o tinha feito. Verificacao manual do texto: a resposta nao deve pedir para preencher o formulario de devolucao outra vez -- deve avancar diretamente para os passos seguintes (morada, prazos)."
   }
 ]
