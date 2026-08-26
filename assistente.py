@@ -2066,7 +2066,17 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         registar(con, msg, "saltar", motivo, "")
         return "saltado"
 
-    graph.detalhe(msg, cfg.max_body)
+    try:
+        graph.detalhe(msg, cfg.max_body)
+    except RuntimeError as exc:
+        if "Graph 404" not in str(exc):
+            raise
+        # A mensagem foi movida ou apagada entre a listagem e este pedido --
+        # normal quando o lojista já respondeu ou arquivou manualmente antes
+        # de a passagem chegar cá. Sem corpo não há nada a decidir; e um erro
+        # aqui não deve derrubar as restantes mensagens da passagem.
+        registar(con, msg, "saltar", "mensagem-desapareceu-antes-do-detalhe", "")
+        return "saltado"
     veio_do_formulario_contacto = msg["de"] == "mailer@shopify.com"
     if veio_do_formulario_contacto and not desembrulhar_formulario_contacto(msg):
         registar(con, msg, "saltar", "formulario-contacto-nao-reconhecido", "")
