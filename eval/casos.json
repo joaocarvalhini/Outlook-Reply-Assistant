@@ -1195,6 +1195,23 @@
     "note": "cliente envia comprovativo de transferencia MB Way de um valor que nao bate certo com o total da encomenda na Shopify (45 EUR) -- mas o historico mostra que e a diferenca de uma troca por modelo superior, ja combinada, por falta de stock. Regra confirmada diretamente pelo cliente, 22/08/2026, a partir de um caso real (Lara Martins, 10 EUR de diferenca numa encomenda de 53,91 EUR) em que a resposta tratou isto como um pagamento desencontrado em vez de reconhecer o padrao. Verificacao manual do texto: o resumo/motivo deve identificar isto como a diferenca de troca de modelo (nao um erro ou pagamento que nao bate certo), e a resposta deve confirmar que vai verificar a substituicao internamente, nao soar confusa ou desconfiada sobre a origem do valor."
   },
   {
+    "id": "cancelar-unidade-extra-antes-de-expedir-nunca-promete",
+    "email": {
+      "from": "rafael.pinto@gmail.com",
+      "from_name": "Rafael Pinto",
+      "subject": "Cancelar encomenda 22283",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, efetuei uma compra há instantes, encomenda #22283, mas gostaria de cancelar uma vez que encomendei 2 pares de fones sem querer."
+    },
+    "dados_encomenda": "Encomenda #22283\nFeita em: 2026-08-26\nPagamento: pago\nEnvio: ainda não expedida\nValor: 79.80 EUR",
+    "expect": "escalar",
+    "expect_categoria": "ACAO_SOBRE_ENCOMENDA",
+    "expect_dossie_com_conteudo": true,
+    "note": "cliente pediu para cancelar uma unidade extra (2 pares por engano) antes de a encomenda ser expedida. Regra confirmada diretamente pelo cliente, 26/08/2026, a partir de um caso real: a resposta nunca promete que a remoção da unidade é possível nem que não é -- diz que a informação foi passada ao colega responsável e que se vai tentar o melhor possível, sem garantir o resultado. Verificação manual do texto, não há asserção automática: a resposta (dossiê ou corpo) deve mencionar que a informação foi passada internamente/à equipa e que se vai tentar impedir o envio, sem prometer que sim nem que não."
+  },
+  {
     "id": "formulario-ja-feito-nao-repetir-pedido",
     "email": {
       "from": "ines.confirma@gmail.com",

@@ -356,6 +356,11 @@ Quando a loja envia um artigo diferente do pedido (cor ou modelo errados):
 
 - O cliente pode cancelar a encomenda enquanto esta ainda não tiver sido expedida,
   contactando a loja o mais rapidamente possível.
+- A resposta nunca promete que o cancelamento (ou a remoção de uma unidade extra)
+  vai ser possível, nem que não vai: diz-se que a informação foi passada ao colega
+  responsável e que se vai tentar impedir o envio, sem garantir o resultado --
+  vamos sempre tentar o melhor possível. (Confirmado diretamente pela loja, 26 de
+  agosto de 2026.)
 - Depois de expedida, aplica-se a política de devolução.
 - Depois de expedida, o cliente pode também recusar a entrega.
 
