@@ -12,8 +12,9 @@ tags:
 > **Pergunta que este documento responde:** que ferramentas existem para operar e diagnosticar o
 > sistema, e quais custam dinheiro?
 
-Onze satélites que importam `assistente.py`. Dez **só leem**; o `manutencao.py` é o único que
-escreve, e escreve apenas no registo local. Nenhum corre no caminho de produção.
+Dez satélites que importam `assistente.py`. Nove **só leem**; o `manutencao.py` é o único que
+escreve, e escreve apenas no registo local. Nenhum corre no caminho de produção — `manutencao.py`
+corre à parte, via cron.
 
 ## Mapa por custo
 

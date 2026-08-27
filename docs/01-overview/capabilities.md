@@ -21,7 +21,7 @@ Inventário verificado contra o código. Legenda: ✅ implementado · 🟡 parci
 |---|---|---|---|
 | Ler emails novos de uma caixa | ✅ | `Graph.novas` | Lote de 25, filtro por cursor |
 | Não reprocessar o mesmo email | ✅ | `ja_processado` | Chave: `internetMessageId` |
-| Descartar robôs e newsletters sem custo | ✅ | `triar` | 10 regras determinísticas |
+| Descartar robôs e newsletters sem custo | ✅ | `triar` + `triar_cabecalhos` | 11 regras determinísticas (7 + 4) |
 | Cortar a conversa citada | ✅ | `cortar_citacao` | 6 padrões PT/EN |
 | Ler o fio da conversa | ✅ | `Graph.historico` | 8 mensagens × 400 chars |
 | Distinguir quem falou no fio | ✅ | `e_da_loja` | Apanha nomes distintos do Exchange |

@@ -20,7 +20,7 @@ são do commit auditado — o **nome da função é a âncora fiável**, os núm
 ```mermaid
 graph TB
     subgraph CFG["Configuração"]
-        C1["Config<br/><i>dataclass frozen, 26 campos</i>"]
+        C1["Config<br/><i>dataclass frozen, 27 campos</i>"]
         C2["carregar_config()"]
     end
     subgraph TXT["Normalização de texto"]
@@ -74,7 +74,7 @@ graph TB
 
 | Componente | Responsabilidade | Notas |
 |---|---|---|
-| `Config` | 26 campos, `dataclass(frozen=True)` | Imutável depois de carregada |
+| `Config` | 27 campos, `dataclass(frozen=True)` | Imutável depois de carregada |
 | `carregar_config()` | Lê `.env`, valida obrigatórios, aplica omissões | Sai com erro se faltar um segredo |
 
 Sete campos controlam funcionalidades e podem ser desligados sem *deploy*: 5 `ENABLE_*`
@@ -189,11 +189,13 @@ Ver [[email|Email]], [[shopify|Shopify]], [[identity-resolution|Resolução de i
 | `processar()` | O caminho completo de um email | ~280 linhas, **10 pontos de retorno** |
 | `main()` | Cursor, lote, ciclo, recuo do cursor | ~60 linhas |
 
-> [!WARNING] Concentração de risco
-> `processar()` é a função com mais ramos do sistema e **não tem testes unitários**. É o
-> Finding H-2 em [[technical-debt|Dívida técnica]].
+> [!NOTE] Concentração de risco — coberta desde 27/08/2026
+> `processar()` é a função com mais ramos do sistema. Não tinha testes unitários (Finding H-2);
+> tem agora 28, na classe `Processar` de `test_assistente.py`. Ver [[technical-debt|Dívida técnica]].
 
-### Os 10 resultados de `processar()`
+### Os 6 resultados de `processar()`, em 10 pontos de retorno
+
+Seis valores distintos — `saltado` e `escalado` cobrem vários pontos de retorno cada um.
 
 | Resultado | Quando |
 |---|---|

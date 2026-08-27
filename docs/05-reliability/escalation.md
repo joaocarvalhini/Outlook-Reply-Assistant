@@ -184,15 +184,8 @@ Esta aplicação não tem permissão de escrita e não a vai ter.
 
 Resolve um problema específico: o fio visível tem 8 mensagens, mas **um compromisso feito há três
 semanas pode já não aparecer** — e um cliente que volta a perguntar não pode fazer a loja
-"esquecer-se".
-
-```mermaid
-flowchart LR
-    A["Fio visível<br/>8 mensagens"] -.->|"promessa de<br/>há 3 semanas"| B["❌ fora da janela"]
-    C[("tabela<br/>compromissos")] -->|"estado atual<br/>por conversa"| D["✅ injetada<br/>no prompt seguinte"]
-    style B fill:#ffcdd2
-    style D fill:#c8e6c9
-```
+"esquecer-se". Diagrama e modelo de dados completos em
+[[data-flow|Fluxo de dados]] ("`compromissos` — estado, não histórico").
 
 - Chave `(conversation_id, tipo)` — **estado atual, não histórico**
 - Registado em **qualquer** ação: um rascunho que promete uma substituição é tanto um compromisso

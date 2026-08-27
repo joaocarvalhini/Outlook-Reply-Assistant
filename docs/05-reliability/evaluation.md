@@ -182,12 +182,14 @@ aplicá-la. Ver [[technical-debt|Dívida técnica]].
 
 ## Limitações do banco de ensaio
 
-> [!WARNING] O eval não exercita `processar()`
-> Chama `a.decidir()` **diretamente**, com `dados_encomenda` pré-cozinhado do JSON. Portanto
-> **não testa**: resolução de identidade integrada, agregação de múltiplas encomendas, gating do
-> dossiê, rebaixamento de corpo vazio, criação de rascunho, aplicação de categorias.
+> [!NOTE] O eval não exercita `processar()` — mas `test_assistente.py` exerce, à parte
+> `eval.py` chama `a.decidir()` **diretamente**, com `dados_encomenda` pré-cozinhado do JSON.
+> Portanto **não testa aqui**: resolução de identidade integrada, agregação de múltiplas
+> encomendas, gating do dossiê, rebaixamento de corpo vazio, criação de rascunho, aplicação de
+> categorias — mede a qualidade do **julgamento do modelo**, não a correção da **orquestração**.
 >
-> Mede a qualidade do **julgamento do modelo**, não a correção da **orquestração**.
+> Essa orquestração tem cobertura própria, sem gastar créditos: a classe `Processar` em
+> `test_assistente.py` (Finding H-2, fechado 27/08/2026). Ver [[qa|QA e testes]].
 
 Outras limitações:
 
@@ -204,4 +206,4 @@ Outras limitações:
 - [[decision-making|Tomada de decisão]] — o que está a ser avaliado
 - [[escalation|Escalação]] — recall e precisão referem-se a esta decisão
 - [[knowledge-base|Base de conhecimento]] — onde os factos novos ganham um caso
-- [[technical-debt|Dívida técnica]] — Findings H-2 e H-3
+- [[technical-debt|Dívida técnica]] — Finding H-3, o caso do pack

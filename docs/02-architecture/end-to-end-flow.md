@@ -192,24 +192,11 @@ flowchart TD
 pode ter passado à frente dela — e a passagem seguinte, que só pede o que veio **depois** do
 cursor, nunca mais a veria.
 
-```mermaid
-flowchart LR
-    subgraph ANTES["Sem cursor_seguro() — o bug"]
-        A1["10:00 ✅"] --> A2["10:01 ❌ falhou"] --> A3["10:02 ✅"]
-        A3 -.->|cursor = 10:02| A4["10:01 nunca<br/>mais aparece"]
-    end
-    subgraph DEPOIS["Com cursor_seguro() — corrigido"]
-        B1["10:00 ✅"] --> B2["10:01 ❌ falhou"] --> B3["10:02 ✅"]
-        B3 -.->|"cursor recua<br/>para 10:00"| B4["10:01 volta<br/>na próxima passagem"]
-    end
-    style A4 fill:#ffcdd2
-    style B4 fill:#c8e6c9
-```
-
 Reprocessar as que correram bem não custa nada: `ja_processado()` apanha-as pelo Message-ID
 antes de qualquer chamada ao modelo.
 
-Corrigido a 27/08/2026 — era o Finding C-1. Ver [[technical-debt|Dívida técnica]].
+Corrigido a 27/08/2026 — era o Finding C-1. O diagrama antes/depois e a implementação estão em
+[[error-handling|Tratamento de erros]], que é o documento que trata desta garantia em detalhe.
 
 ## O que o operador vê
 

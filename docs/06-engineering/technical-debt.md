@@ -397,7 +397,7 @@ não está lá e que é o `OnBootSec` que cobre o arranque após paragem.
 
 | Item | Natureza | Custo hoje |
 |---|---|---|
-| Monólito de 2386 linhas | Decisão D2 | Baixo com um mantenedor; alto com equipa |
+| Monólito de 2565 linhas | Decisão D2 | Baixo com um mantenedor; alto com equipa |
 | Sem multi-tenancy | Decisão de âmbito | Zero hoje; bloqueante a partir de ~10 lojas |
 | Base de conhecimento sem verificação de contradições | Lacuna de processo | Cresce com a base |
 | Sem fecho de ciclo (rascunho enviado vs. editado) | Lacuna de observabilidade | Deriva não detetável |

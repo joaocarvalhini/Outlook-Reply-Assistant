@@ -229,17 +229,10 @@ tem_dossie = (
 
 ## Qualidade medida
 
-[[evaluation|Banco de ensaio]], subconjunto de 23 casos delicados, 26/08/2026:
-
-| | Sonnet 5 | Haiku 4.5 |
-|---|---|---|
-| Casos corretos | 21/23 (91%) | 19/23 (83%) |
-| Clientes perdidos | **0** | **0** |
-| Recall de escalação | 91% | 91% |
-| Precisão de escalação | 91% | **77%** |
-
-A degradação do Haiku manifestou-se como **excesso de cautela** (escalar o que sabia resolver),
-não como respostas erradas ao cliente.
+Medido no [[evaluation|banco de ensaio]] (26/08/2026): Sonnet 5 e Haiku 4.5 perdem **zero**
+clientes e têm o mesmo recall de escalação (91%); a diferença está toda na precisão (91% vs.
+77%) — o Haiku degrada como **excesso de cautela**, não como respostas erradas ao cliente.
+Tabela completa e o detalhe por caso em [[evaluation|Banco de ensaio]].
 
 ## Limitações conhecidas do modelo
 

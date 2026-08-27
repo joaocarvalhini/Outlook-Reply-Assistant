@@ -98,13 +98,15 @@ nem reconexões a gerir. Um *crash* custa 2 minutos.
 
 ### 2. Monólito no caminho de produção, satélites à volta
 
-`assistente.py` (2386 linhas) contém **todo** o caminho crítico. As 10 ferramentas de operação
-importam-no como módulo e só leem — nenhuma corre em produção.
+`assistente.py` (2565 linhas) contém **todo** o caminho crítico. As 10 ferramentas de operação
+importam-no como módulo; nenhuma corre no caminho de produção (o timer só chama `assistente.py`).
+Nove só leem; o `manutencao.py` escreve, mas só no registo local, e só via cron, à parte da
+passagem de 2 minutos.
 
 ```mermaid
 graph LR
     A["assistente.py<br/><b>caminho de produção</b>"]
-    subgraph SAT["Satélites — só leitura, a pedido"]
+    subgraph SAT["Satélites — a pedido, fora do caminho crítico"]
         M["metricas.py"]
         L["lacunas.py"]
         D["dossie.py"]
@@ -114,9 +116,12 @@ graph LR
         V["verificar.py"]
         X["exportar.py"]
         CA["casos_antigos.py"]
+        MN["manutencao.py<br/><i>só este escreve</i><br/><i>via cron</i>"]
     end
-    M & L & D & R & MD & E & V & X & CA -.->|import| A
+    M & L & D & R & MD & E & V & X & CA -.->|import, só leitura| A
+    MN -.->|import, escreve| A
     style A fill:#e8d5f2
+    style MN fill:#ffe0b2
 ```
 
 Ver [[components|Componentes]] e [[operations|Ferramentas de operação]].
@@ -155,7 +160,7 @@ Resumo. O detalhe, com trade-offs e alternativas rejeitadas, está em
 | # | Decisão | Motivo curto |
 |---|---|---|
 | D1 | Passagem única, sem processo permanente | Robustez sem equipa de plantão |
-| D2 | Monólito de 2386 linhas | Um mantenedor; navegabilidade |
+| D2 | Monólito de 2565 linhas | Um mantenedor; navegabilidade |
 | D3 | Base de conhecimento inteira no prompt, sem RAG | Elimina falhas de *retrieval* |
 | D4 | Duas chamadas ao modelo, não uma | Esquema de 19 propriedades causava timeout |
 | D5 | Identidade decidida em código | O erro mais caro é expor dados entre clientes |

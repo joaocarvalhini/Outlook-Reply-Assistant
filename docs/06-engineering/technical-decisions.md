@@ -38,7 +38,7 @@ rejeitadas.
 
 ---
 
-## D2 — Monólito de 2386 linhas
+## D2 — Monólito de 2565 linhas
 
 **Escolha:** todo o caminho de produção num ficheiro; as 10 ferramentas importam-no.
 
@@ -47,12 +47,13 @@ rejeitadas.
 | | |
 |---|---|
 | **Benefício** | Importação trivial pelos satélites; sem grafo de dependências interno; leitura linear do caminho completo |
-| **Trade-off** | Ficheiro grande; `processar()` com 10 pontos de retorno é difícil de testar em isolamento — e, de facto, **não é testado** |
+| **Trade-off** | Ficheiro grande; `processar()`, com 10 pontos de retorno, é trabalhosa de testar em isolamento — feito a 27/08/2026 (Finding H-2, 28 testes) |
 | **Alternativas** | Pacote com módulos por domínio |
 
 > [!NOTE] Quando é que isto deixaria de servir
 > **Inference:** a partir do momento em que houvesse mais do que um cliente ou mais do que um
-> mantenedor. Hoje, o custo (Finding H-2) é a falta de testes, não a estrutura em si.
+> mantenedor. Hoje, o custo é o tamanho do ficheiro, não a falta de testes — essa lacuna já
+> fechou.
 
 ---
 
