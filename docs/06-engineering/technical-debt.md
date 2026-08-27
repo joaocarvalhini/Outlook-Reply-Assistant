@@ -1,0 +1,293 @@
+---
+title: Dívida técnica e findings
+type: reference
+status: implemented
+tags:
+  - debt
+  - audit
+  - reference
+---
+
+# Dívida técnica e findings
+
+> **Pergunta que este documento responde:** o que está mal, quanto custa, e por onde começar?
+
+Resultado da auditoria técnica de **27 de agosto de 2026**, feita por leitura integral do código
+no commit `bc5408b`. Cada finding traz evidência verificável.
+
+## Estado atual
+
+```mermaid
+pie showData
+    title Findings por gravidade
+    "Corrigido" : 1
+    "Alta" : 3
+    "Média" : 5
+    "Baixa" : 4
+```
+
+| ID | Gravidade | Título | Esforço | Estado |
+|---|---|---|---|---|
+| C-1 | 🔴 Crítica | Perda de email quando o modelo falha a meio de lote | Trivial | ✅ **Corrigido 27/08** |
+| H-1 | 🟠 Alta | Premissa de custo/cache desatualizada em 3 locais | Trivial | ⬜ Aberto |
+| H-2 | 🟠 Alta | `processar()` sem cobertura de testes | Média | ⬜ Aberto |
+| H-3 | 🟠 Alta | Regra do pack falha em ambos os modelos | Baixa | ⬜ Aberto |
+| M-1 | 🟡 Média | README contradiz a integração Shopify | Trivial | ⬜ Aberto |
+| M-2 | 🟡 Média | Sem retentativa em Graph/Shopify | Baixa | ⬜ Aberto |
+| M-3 | 🟡 Média | Referência de deriva nunca medida | Baixa | ⬜ Aberto |
+| M-4 | 🟡 Média | Sem retenção nem backup | Baixa | ⬜ Aberto |
+| M-5 | 🟡 Média | Deploy sem verificação automática | Baixa | ⬜ Aberto |
+| M-6 | 🟡 Média | Sem alertas de falha | Baixa | ⬜ Aberto |
+| L-1 | ⚪ Baixa | Estimativa de tokens imprecisa | Trivial | ⬜ Aberto |
+| L-2 | ⚪ Baixa | Ferramentas offline sem exceções de formulário | Trivial | ⬜ Aberto |
+| L-3 | ⚪ Baixa | `Persistent=true` inócuo | Trivial | ⬜ Aberto |
+
+> [!TIP] Nove dos treze são de esforço trivial ou baixo
+> A dívida deste projeto é rasa. O que falta não é refactoring estrutural — é sobretudo
+> automatizar verificações que já existem e corrigir documentação.
+
+---
+
+## ✅ C-1 — Perda de email quando o modelo falha a meio de lote
+
+**Gravidade:** Crítica · **Estado:** Corrigido a 27/08/2026
+
+**O problema:** `registar()` avançava o cursor mensagem a mensagem. Se a chamada ao modelo
+falhasse numa mensagem e uma posterior corresse bem, o cursor ficava à frente da falhada — e a
+passagem seguinte, que só pede o que veio depois do cursor, **nunca mais a via**.
+
+**Cenário:** três emails (10:00, 10:01, 10:02). O de 10:01 falha → não registado. O de 10:02
+corre bem → cursor avança para 10:02. O de 10:01 desaparece: sem rascunho, sem categoria, sem
+registo.
+
+> [!IMPORTANT] Não era hipotético
+> A falha do modelo ocorreu em produção a 26/08/2026 às 16:55 (`JSONDecodeError`). Nessa
+> passagem `vistos=1`, pelo que não houve perda — **com dois ou mais emails no lote, teria
+> havido**.
+>
+> Violava o requisito de primeira ordem do sistema: "clientes perdidos: zero".
+
+**A correção:** `cursor_seguro()` para na primeira falha; `main()` recua o cursor no fim do lote.
+Verificado contra uma base SQLite real (o bug reproduz-se sem a correção e desaparece com ela).
+7 testes novos.
+
+Ver [[error-handling|Tratamento de erros]].
+
+---
+
+## 🟠 H-1 — Premissa de custo/cache desatualizada
+
+**Onde:** `README.md`, `.env.example`, e um comentário em `assistente.py`.
+
+Os três afirmam que a base de conhecimento é *menor* que os 4096 tokens mínimos do Haiku 4.5 e
+que por isso *"nunca chegaria a ser cacheada"*.
+
+**Medição real** (`count_tokens`, gratuito, 26/08/2026):
+
+| Modelo | Tokens do prefixo | Mínimo | Cacheia? |
+|---|---|---|---|
+| `claude-sonnet-5` | 28 929 | 1 024 | ✅ |
+| `claude-haiku-4-5` | **22 092** | 4 096 | ✅ **5,4× acima** |
+
+Era verdade quando foi escrito; deixou de ser quando `devolucoes.md` cresceu para 20 KB.
+
+**Impacto:** a decisão "manter Sonnet porque o Haiku não cacheia" assentava numa premissa falsa.
+A comparação correta é: Haiku custa ~3× menos e perde 14 pontos de **precisão** de escalação
+(91% → 77%), sem perder clientes. É uma escolha real de negócio, que estava a ser tomada com
+informação errada.
+
+**Correção:** substituir a afirmação nos três locais. A base cacheia em ambos os modelos; a
+diferença real é de qualidade de escalação, não de mecânica de cache.
+
+---
+
+## 🟠 H-2 — `processar()` sem cobertura de testes
+
+**Evidência:** `processar()` tem ~280 linhas e 10 pontos de retorno. `test_assistente.py` importa
+30 símbolos de `assistente` — **`processar` e `main` não estão entre eles**.
+
+`eval.py` também não a exercita: chama `a.decidir()` diretamente com `dados_encomenda`
+pré-cozinhado do JSON.
+
+**Lógica não testada:**
+
+```mermaid
+flowchart LR
+    A["processar()"] --> B["resolução de identidade<br/>integrada"]
+    A --> C["agregação de<br/>múltiplas encomendas"]
+    A --> D["construção dos avisos<br/>de identidade"]
+    A --> E["gating do dossiê<br/>tem_dossie"]
+    A --> F["rebaixamento de<br/>corpo vazio"]
+    A --> G["decisão de criar<br/>rascunho"]
+    A --> H["aplicação de<br/>categorias"]
+    style A fill:#ffcdd2
+```
+
+**Correção:** testes com duplos para `Graph`, `Shopify` e cliente Anthropic. **Os padrões já
+existem** no ficheiro de testes (`ShopifyFalsa`, `ClienteFalso`) — falta aplicá-los à função que
+mais precisa.
+
+Ver [[qa|QA e testes]].
+
+---
+
+## 🟠 H-3 — Regra do pack falha em ambos os modelos
+
+**Evidência:** o caso `reembolso-artigo-de-pack-divide-igualmente` testa uma regra escrita e
+confirmada pelo lojista: o valor de um artigo dentro de um pack é o total dividido pelo número de
+artigos (90 € ÷ 3 = 30 €). A regra está em `devolucoes.md`.
+
+Na medição de 26/08/2026, **ambos os modelos falharam**: Sonnet escalou em vez de responder;
+Haiku idem. **Não é diferença entre modelos — é a regra a não ser aplicada.**
+
+**Impacto:** um cliente que pergunte o valor de reembolso de um artigo de pack recebe uma
+escalação em vez de resposta, apesar de a loja ter regra escrita. Trabalho manual evitável, de
+forma recorrente.
+
+**Correção — Inference:** a causa provável é aritmética sem espaço de raciocínio, o mesmo padrão
+que motivou mover o cálculo do prazo de devolução para Python. A solução consistente com a
+arquitetura seria **fornecer o valor por artigo já calculado** nos dados da encomenda, em vez de
+pedir ao modelo que divida.
+
+Ver [[decision-making|Tomada de decisão]] — é exatamente o padrão "mover para fora do modelo".
+
+---
+
+## 🟡 M-1 — README contradiz a integração Shopify
+
+**Evidência:** `README.md`, secção "Âmbito — o que este assistente não faz":
+
+> **Não sabe o estado das encomendas.** Sem ligação ao sistema de encomendas, "onde está a minha
+> encomenda?" cai sempre em `escalar`.
+
+Contradiz diretamente a integração implementada, a resolução de identidade, o resumo de
+encomenda, a instrução dedicada no prompt, e casos de eval que provam o contrário.
+
+**Impacto:** quem avalie o projeto pelo README **subestima significativamente** as suas
+capacidades.
+
+**Correção:** reescrever. A limitação real é a janela de 60 dias, não a ausência de integração.
+
+---
+
+## 🟡 M-2 — Sem retentativa em Graph e Shopify
+
+**Evidência:** `Graph._pedir()` e `Shopify._procurar()` levantam imediatamente em qualquer
+`status_code >= 400`. Sem *backoff*, sem distinguir 429/5xx (transitórios) de 4xx (permanentes).
+O SDK da Anthropic faz *retries*; estas duas não.
+
+**Impacto:** um 429 transitório da Shopify faz a decisão degradar para "escala por falta de
+dados" quando os dados existiam — trabalho manual evitável. Um 5xx do Graph na listagem aborta a
+passagem inteira.
+
+**Correção:** `httpx.HTTPTransport(retries=...)` ou um decorador com *backoff* exponencial
+limitado a 429/5xx.
+
+---
+
+## 🟡 M-3 — Referência de deriva nunca medida
+
+**Evidência:** o limiar *"acima de 60% editado, o rascunho é ruído"* aparece em `registar()` e no
+README como referência do projeto. Mas `medir_deriva.py` declara explicitamente:
+*"Referência do projeto (…), **nunca antes medido**"*.
+
+**Impacto:** o sistema tem uma ferramenta funcional para responder a "isto ainda serve?" e um
+limiar de decisão, mas nunca correu a medição. O risco de deriva silenciosa permanece por
+instrumentar.
+
+**Correção:** correr `medir_deriva.py` no fim da semana de observação e estabelecer a linha de
+base. Gasta créditos; usar `-n`.
+
+---
+
+## 🟡 M-4 — Sem retenção nem backup
+
+**Evidência:** `processados` guarda o corpo integral dos rascunhos e cresce indefinidamente. Não
+há purga, não há backup.
+
+**Impacto duplo:**
+
+| Risco | Detalhe |
+|---|---|
+| **RGPD** | Correspondência de clientes retida indefinidamente, sem política declarada |
+| **Operacional** | Perder o disco = perder o cursor. A reinstalação ou reprocessa tudo ou salta emails |
+
+**Correção:** política de retenção declarada (ex.: purgar corpos com mais de 90 dias, manter as
+decisões) e cópia diária para fora da máquina.
+
+---
+
+## 🟡 M-5 — Deploy sem verificação automática
+
+**Evidência:** o deploy é `git archive HEAD | ssh … tar -x`. Nada corre os testes antes. Não
+existe `.github/workflows/` nem qualquer hook.
+
+**Impacto:** código com testes a falhar pode chegar a produção sem qualquer sinal. As duas
+verificações relevantes (`unittest` e `eval.py --triagem`) são **grátis e demoram menos de 1
+segundo**.
+
+**Correção:** um script de deploy que corra ambas e aborte se falharem.
+
+---
+
+## 🟡 M-6 — Sem alertas de falha
+
+**Evidência:** uma passagem que falhe repetidamente só se descobre por inspeção manual do
+`journalctl`.
+
+**Correção:** `OnFailure=` no systemd com um envio simples.
+
+---
+
+## ⚪ Findings de prioridade baixa
+
+### L-1 — Estimativa de tokens imprecisa
+
+`verificar.py` usa `len(base) // 4`. O rácio real medido é ~2,34 chars/token, pelo que a
+estimativa **subestima em ~40%**. Não altera o resultado da verificação (ambos os valores estão
+acima do limiar), mas o número reportado ao operador está errado. Podia usar `count_tokens`
+(gratuito).
+
+### L-2 — Ferramentas offline sem exceções de formulário
+
+`medir_deriva.py`, `reprocessar.py` e `eval.py` chamam `triar_cabecalhos(msg)` sem os dois
+argumentos de formulário (omissão `False`). Descartariam submissões do Formspree/Shopify que a
+produção processa corretamente. Só afeta ferramentas de análise — mas torna as suas conclusões
+inconsistentes com o comportamento real.
+
+### L-3 — `Persistent=true` inócuo
+
+`deploy/tripat3s-assistente.timer` define `Persistent=true`, que no systemd só se aplica a
+temporizadores `OnCalendar`. Este usa `OnBootSec`/`OnUnitActiveSec`. A diretiva é inofensiva mas
+**enganadora** — sugere um comportamento de recuperação que não existe.
+
+---
+
+## Dívida estrutural (não é finding)
+
+| Item | Natureza | Custo hoje |
+|---|---|---|
+| Monólito de 2386 linhas | Decisão D2 | Baixo com um mantenedor; alto com equipa |
+| Sem multi-tenancy | Decisão de âmbito | Zero hoje; bloqueante a partir de ~10 lojas |
+| Base de conhecimento sem verificação de contradições | Lacuna de processo | Cresce com a base |
+| Sem fecho de ciclo (rascunho enviado vs. editado) | Lacuna de observabilidade | Deriva não detetável |
+
+Ver [[scalability|Escalabilidade]] e [[limitations|Limitações]].
+
+## Riscos operacionais
+
+| Risco | Probabilidade | Impacto | Mitigação atual |
+|---|---|---|---|
+| Política de acesso do Exchange removida | Baixa | **Crítico** | `verificar.py` (manual) |
+| Deriva silenciosa da qualidade | Média | Médio | `medir_deriva.py` (manual, sem cadência) |
+| **Dependência de um único mantenedor** | **Alta** | Médio | Comentários densos; esta KB |
+| Alteração de política sem atualizar o eval | Média | Médio | Processo humano |
+| RGPD sem acordo de subcontratação | — | **Crítico** | Identificado como pré-requisito |
+
+## Related
+
+- [[improvements|Melhorias]] — o que fazer, priorizado
+- [[limitations|Limitações]] — o contexto de cada finding
+- [[qa|QA e testes]] — as lacunas de cobertura
+- [[error-handling|Tratamento de erros]] — o C-1 em detalhe
+- [[security|Segurança]] — os riscos de RGPD e acesso
