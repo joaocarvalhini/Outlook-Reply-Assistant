@@ -50,6 +50,7 @@ from assistente import (
     ler_meta,
     para_html,
     para_texto,
+    processar,
     registar,
     resumir_encomenda,
     resumir_historico,
@@ -896,16 +897,29 @@ class ClienteFalso:
     """Só regista o que decidir() lhe pede, para testar a forma da mensagem
     sem gastar créditos nem depender da rede. O que o modelo decide perante
     uma imagem a sério é testado pelo eval, com fixtures em eval/fixtures/.
+
+    Aceita um dicionário só (a mesma resposta em toda a chamada -- serve
+    quando "acao" nunca é "escalar", e por isso decidir() só chama uma vez) ou
+    uma lista (uma resposta por chamada, pela ordem: núcleo primeiro, dossiê
+    a seguir se escalar).
     """
 
-    def __init__(self, resposta: dict) -> None:
+    def __init__(self, resposta: dict | list[dict], rebenta: bool = False) -> None:
         self.pedidos: list[dict] = []
-        self._resposta = resposta
+        self._respostas = resposta if isinstance(resposta, list) else None
+        self._resposta_unica = None if isinstance(resposta, list) else resposta
+        self._rebenta = rebenta
         self.messages = self
 
     def create(self, **kwargs: object) -> object:
         self.pedidos.append(kwargs)
-        bloco = type("Bloco", (), {"type": "text", "text": json.dumps(self._resposta)})()
+        if self._rebenta:
+            raise RuntimeError("Anthropic 529: sobrecarregado")
+        if self._respostas is not None:
+            resposta = self._respostas[len(self.pedidos) - 1]
+        else:
+            resposta = self._resposta_unica
+        bloco = type("Bloco", (), {"type": "text", "text": json.dumps(resposta)})()
         return type("Resposta", (), {"content": [bloco]})()
 
 
@@ -1011,10 +1025,11 @@ class HistoricoDoFio(unittest.TestCase):
 class ShopifyFalsa:
     """Dublê da Shopify. Não há rede nos testes."""
 
-    def __init__(self, por_numero=None, por_email=None, rebenta=False):
+    def __init__(self, por_numero=None, por_email=None, rebenta=False, data_entrega=None):
         self._numero = por_numero or []
         self._email = por_email or []
         self._rebenta = rebenta
+        self._data_entrega = data_entrega
         self.chamadas = []
 
     def por_numero(self, numero):
@@ -1028,6 +1043,26 @@ class ShopifyFalsa:
         if self._rebenta:
             raise RuntimeError("Shopify 500")
         return list(self._email)
+
+    def encomenda(self, numero, email_remetente):
+        """Modo de compatibilidade (ENABLE_ORDER_IDENTITY_RESOLUTION=false):
+        espelha Shopify.encomenda() -- número mais email exato da compra,
+        sobre os mesmos resultados de por_numero()."""
+        self.chamadas.append(("encomenda", numero, email_remetente))
+        if self._rebenta:
+            raise RuntimeError("Shopify 500")
+        for enc in self._numero:
+            if emails_iguais(enc.get("email"), email_remetente) or emails_iguais(
+                enc.get("contact_email"), email_remetente
+            ):
+                return enc
+        return None
+
+    def data_entrega(self, order_id, fulfillment_id):
+        self.chamadas.append(("data_entrega", order_id, fulfillment_id))
+        if self._rebenta:
+            raise RuntimeError("Shopify 500")
+        return self._data_entrega
 
 
 def encomenda_falsa(**over):
@@ -1265,19 +1300,70 @@ class CursorSeguro(unittest.TestCase):
 
 
 class GraphFalso:
-    """Dublê mínimo de Graph, só com o que verificar_restricao_diaria() usa."""
+    """Dublê de Graph. Cada método aceita uma exceção para levantar em vez do
+    resultado normal -- o que chega mais perto de como cada chamada real
+    falha (RuntimeError com o código HTTP no texto). self.chamadas regista
+    tudo o que foi invocado, na ordem, para os testes verificarem o que
+    processar() decidiu chamar.
+    """
 
-    def __init__(self, resultado: Exception | None) -> None:
-        # None simula sucesso (200) -- a caixa foi lida, o que é o cenário
-        # mau. Uma exceção simula o que _pedir() levanta para esse status.
+    def __init__(
+        self,
+        resultado: Exception | None = None,
+        detalhe: Exception | None = None,
+        anexos: list[dict] | Exception | None = None,
+        conteudo_anexo: bytes | Exception = b"",
+        historico: list[dict] | Exception | None = None,
+        rascunho_id: str = "AAMk-fake",
+    ) -> None:
+        # `resultado`: usado só por verificar_restricao_diaria() via _pedir()
+        # -- None simula sucesso (200, a caixa foi lida, o cenário mau).
         self._resultado = resultado
-        self.chamadas = 0
+        self._detalhe = detalhe
+        self._anexos = anexos if anexos is not None else []
+        self._conteudo_anexo = conteudo_anexo
+        self._historico = historico if historico is not None else []
+        self._rascunho_id = rascunho_id
+        self.chamadas: list[tuple[object, ...]] = []
 
     def _pedir(self, metodo: str, url: str, **kw: object) -> dict:
-        self.chamadas += 1
+        self.chamadas.append(("_pedir", metodo))
         if self._resultado is not None:
             raise self._resultado
         return {"value": [{"id": "x"}]}
+
+    def detalhe(self, msg: dict, max_body: int) -> dict:
+        self.chamadas.append(("detalhe", msg["message_id"]))
+        if isinstance(self._detalhe, Exception):
+            raise self._detalhe
+        msg.setdefault("corpo", "")
+        msg.setdefault("cabecalhos", [])
+        return msg
+
+    def anexos(self, msg: dict) -> list[dict]:
+        self.chamadas.append(("anexos", msg["message_id"]))
+        if isinstance(self._anexos, Exception):
+            raise self._anexos
+        return list(self._anexos)
+
+    def conteudo_anexo(self, msg: dict, anexo_id: str) -> bytes:
+        self.chamadas.append(("conteudo_anexo", anexo_id))
+        if isinstance(self._conteudo_anexo, Exception):
+            raise self._conteudo_anexo
+        return self._conteudo_anexo
+
+    def historico(self, msg: dict, quantas: int, max_chars: int) -> list[dict]:
+        self.chamadas.append(("historico", msg["message_id"]))
+        if isinstance(self._historico, Exception):
+            raise self._historico
+        return list(self._historico)
+
+    def criar_rascunho(self, message_id: str, corpo_html: str) -> str:
+        self.chamadas.append(("criar_rascunho", message_id, corpo_html))
+        return self._rascunho_id
+
+    def marcar(self, msg: dict, categoria: str) -> None:
+        self.chamadas.append(("marcar", msg["message_id"], categoria))
 
 
 class VerificarRestricaoDiaria(unittest.TestCase):
@@ -1295,13 +1381,13 @@ class VerificarRestricaoDiaria(unittest.TestCase):
         c = cfg(outra_caixa_verificacao="")
         g = GraphFalso(RuntimeError("Graph 403: negado"))
         verificar_restricao_diaria(self.con, c, g)
-        self.assertEqual(g.chamadas, 0)
+        self.assertEqual(len(g.chamadas), 0)
 
     def test_403_confirma_a_restricao_e_grava_a_data(self) -> None:
         c = cfg(outra_caixa_verificacao="colega@tripat3s.com")
         g = GraphFalso(RuntimeError("Graph 403: negado"))
         verificar_restricao_diaria(self.con, c, g)
-        self.assertEqual(g.chamadas, 1)
+        self.assertEqual(len(g.chamadas), 1)
         self.assertEqual(ler_meta(self.con, "ultima-verificacao-seguranca"), agora()[:10])
 
     def test_404_nao_prova_nada_mas_nao_repete_no_mesmo_dia(self) -> None:
@@ -1321,7 +1407,7 @@ class VerificarRestricaoDiaria(unittest.TestCase):
         gravar_meta(self.con, "ultima-verificacao-seguranca", agora()[:10])
         g = GraphFalso(RuntimeError("Graph 403: negado"))
         verificar_restricao_diaria(self.con, c, g)
-        self.assertEqual(g.chamadas, 0)
+        self.assertEqual(len(g.chamadas), 0)
 
     def test_sucesso_a_ler_a_outra_caixa_e_um_alarme_de_seguranca(self) -> None:
         """O cenário que a verificação existe para apanhar: a política de
@@ -1500,6 +1586,327 @@ class Palpite(unittest.TestCase):
 
     def test_outro(self) -> None:
         self.assertEqual(palpitar("", "obrigado pelo bom serviço"), "outro")
+
+
+class Processar(unittest.TestCase):
+    """O caminho completo de um email -- Finding H-2. Concentra o maior
+    número de ramos do sistema (10 pontos de retorno) e, até aqui, não tinha
+    um único teste: nem test_assistente.py a importava, nem o eval.py a
+    exercita (chama decidir() diretamente, com dados_encomenda já pronto).
+
+    Os dublês (GraphFalso, ShopifyFalsa, ClienteFalso) já existiam para
+    testar peças isoladas -- aqui ligam-se as três ao mesmo tempo, tal como
+    processar() as usa a sério.
+    """
+
+    _SALTAR = {"acao": "saltar", "motivo": "não é cliente", "corpo": "", "categoria": "OUTRO"}
+    _RASCUNHAR = {
+        "acao": "rascunhar", "motivo": "sabia responder",
+        "corpo": "Boa tarde,\n\nAs entregas demoram 24 a 48 horas.\n\nCom os melhores cumprimentos,\nA Loja",
+        "categoria": "OUTRO",
+    }
+    _RASCUNHAR_PARCIAL = {**_RASCUNHAR, "por_responder": "pediu também um desconto por fidelidade"}
+    _RASCUNHAR_CORPO_VAZIO = {"acao": "rascunhar", "motivo": "x", "corpo": "   ", "categoria": "JULGAMENTO_HUMANO"}
+    _ESCALAR = {
+        "acao": "escalar", "motivo": "pede cancelamento",
+        "corpo": "", "categoria": "ACAO_SOBRE_ENCOMENDA",
+    }
+    _ESCALAR_LACUNA = {
+        "acao": "escalar", "motivo": "não está na base", "corpo": "",
+        "categoria": "LACUNA_DE_CONHECIMENTO",
+        "lacuna_tema": "prazo Madeira", "lacuna_em_falta": "se é diferente do continente",
+    }
+    _DOSSIE_VAZIO: dict = {}
+    _DOSSIE_COMPLETO = {
+        "dossie_tipo": "cancelamento", "dossie_resumo": "Cliente pede cancelamento.",
+        "dossie_validacao": "sim, encomenda encontrada", "dossie_accao": "Cancelar.",
+        "dossie_risco": "baixo", "dossie_resposta": "Boa tarde,\n\nVamos verificar se conseguimos.",
+    }
+    _DOSSIE_SEM_TIPO = {k: v for k, v in _DOSSIE_COMPLETO.items() if k != "dossie_tipo"}
+
+    def setUp(self) -> None:
+        pasta = TemporaryDirectory()
+        self.addCleanup(pasta.cleanup)
+        self.con = abrir_db(Path(pasta.name) / "t.db")
+        self.addCleanup(self.con.close)
+        self.bloqueados = BLOQUEADOS
+
+    def _correr(self, m, c, cliente, graph=None, shopify=None):
+        graph = graph if graph is not None else GraphFalso()
+        shopify = shopify if shopify is not None else ShopifyFalsa()
+        return processar(m, c, graph, shopify, self.con, cliente, "prompt", self.bloqueados), graph, shopify
+
+    def _linha(self, message_id: str) -> dict:
+        cols = ("message_id", "acao", "motivo", "corpo", "categoria", "dossie_tipo",
+                "dossie_resumo", "dossie_resposta", "por_responder", "lacuna_tema")
+        linha = self.con.execute(
+            f"SELECT {', '.join(cols)} FROM processados WHERE message_id = ?", (message_id,)
+        ).fetchone()
+        return dict(zip(cols, linha)) if linha else {}
+
+    # --- Antes de chegar ao modelo -------------------------------------
+
+    def test_repetido_nao_toca_em_nada(self) -> None:
+        m = msg()
+        registar(self.con, m, "saltar", "já visto", "")
+        resultado, graph, shopify = self._correr(m, cfg(), ClienteFalso(self._SALTAR))
+        self.assertEqual(resultado, "repetido")
+        self.assertEqual(graph.chamadas, [])
+        self.assertEqual(shopify.chamadas, [])
+
+    def test_saltado_pela_triagem_nunca_chega_ao_detalhe(self) -> None:
+        m = msg(de="newsletter@algumaloja.com")
+        resultado, graph, _ = self._correr(m, cfg(), ClienteFalso(self._SALTAR))
+        self.assertEqual(resultado, "saltado")
+        self.assertEqual(graph.chamadas, [])  # nunca chegou a pedir detalhe()
+        self.assertEqual(self._linha(m["message_id"])["motivo"], "remetente-automatico:newsletter")
+
+    def test_mensagem_apagada_a_meio_e_saltada_sem_derrubar(self) -> None:
+        """O bug de produção de 26/08/2026 (ver Finding C-1 / cursor_seguro):
+        o Graph devolve 404 ao pedir o detalhe porque a mensagem já não está
+        lá. Salta-se só esta, sem propagar a exceção."""
+        m = msg()
+        graph = GraphFalso(detalhe=RuntimeError("Graph 404: ErrorItemNotFound"))
+        resultado, _, _ = self._correr(m, cfg(), ClienteFalso(self._SALTAR), graph=graph)
+        self.assertEqual(resultado, "saltado")
+        self.assertEqual(self._linha(m["message_id"])["motivo"],
+                          "mensagem-desapareceu-antes-do-detalhe")
+
+    def test_erro_no_detalhe_que_nao_e_404_propaga(self) -> None:
+        """Só o 404 tem tratamento especial. Um 500 (ou qualquer outro) tem
+        de continuar a propagar -- é um erro genuíno, não "a mensagem já não
+        está lá"."""
+        m = msg()
+        graph = GraphFalso(detalhe=RuntimeError("Graph 500: falha do servidor"))
+        with self.assertRaises(RuntimeError):
+            self._correr(m, cfg(), ClienteFalso(self._SALTAR), graph=graph)
+
+    def test_formulario_de_contacto_nao_reconhecido_e_saltado(self) -> None:
+        m = msg(
+            de="mailer@shopify.com", nome="tripat3s (Shopify)",
+            assunto="Nova mensagem de cliente da loja",
+            corpo="Aviso qualquer da plataforma, não é o formulário.",
+        )
+        resultado, _, _ = self._correr(m, cfg(), ClienteFalso(self._SALTAR))
+        self.assertEqual(resultado, "saltado")
+        self.assertEqual(self._linha(m["message_id"])["motivo"],
+                          "formulario-contacto-nao-reconhecido")
+
+    def test_saltado_pelos_cabecalhos_depois_do_detalhe(self) -> None:
+        """Diferente da triagem inicial: só se decide depois de ir buscar o
+        detalhe (cabeçalhos não vêm na listagem)."""
+        m = msg(cabecalhos=[("Precedence", "bulk")])
+        resultado, graph, _ = self._correr(m, cfg(), ClienteFalso(self._SALTAR))
+        self.assertEqual(resultado, "saltado")
+        self.assertEqual(len(graph.chamadas), 1)  # chegou a pedir detalhe()
+        self.assertEqual(self._linha(m["message_id"])["motivo"], "precedence-massa")
+
+    # --- Anexos e histórico: falhas isoladas não impedem a decisão ------
+
+    def test_erro_a_ir_buscar_anexos_nao_impede_a_decisao(self) -> None:
+        m = msg(tem_anexos=True)
+        graph = GraphFalso(anexos=RuntimeError("Graph 500"))
+        resultado, _, _ = self._correr(m, cfg(), ClienteFalso(self._SALTAR), graph=graph)
+        self.assertEqual(resultado, "saltado")  # decidiu na mesma, sem imagem nenhuma
+
+    def test_anexo_de_imagem_valido_chega_ao_pedido_do_modelo(self) -> None:
+        m = msg(tem_anexos=True)
+        graph = GraphFalso(
+            anexos=[{
+                "id": "a1", "contentType": "image/png", "size": 100,
+                "@odata.type": "#microsoft.graph.fileAttachment", "isInline": False,
+            }],
+            conteudo_anexo=b"bytes-da-imagem",
+        )
+        cliente = ClienteFalso(self._SALTAR)
+        self._correr(m, cfg(), cliente, graph=graph)
+        conteudo = cliente.pedidos[0]["messages"][0]["content"]
+        self.assertIsInstance(conteudo, list)
+        self.assertEqual(conteudo[1]["type"], "image")
+
+    def test_erro_a_ir_buscar_historico_nao_impede_a_decisao(self) -> None:
+        m = msg(conversation_id="conv-1")
+        graph = GraphFalso(historico=RuntimeError("Graph 500"))
+        resultado, _, _ = self._correr(m, cfg(), ClienteFalso(self._SALTAR), graph=graph)
+        self.assertEqual(resultado, "saltado")
+
+    def test_historico_do_fio_chega_ao_pedido_do_modelo(self) -> None:
+        m = msg(conversation_id="conv-1")
+        graph = GraphFalso(historico=[
+            {"de": "cliente@gmail.com", "em": "2026-08-01 10:00", "texto": "sabe quando envia?"},
+        ])
+        cliente = ClienteFalso(self._SALTAR)
+        self._correr(m, cfg(), cliente, graph=graph)
+        self.assertIn("sabe quando envia?", cliente.pedidos[0]["messages"][0]["content"])
+
+    def test_compromisso_registado_chega_ao_pedido_do_modelo(self) -> None:
+        gravar_compromisso(self.con, "conv-1", "reembolso", "39,90€ prometidos", "pendente", "")
+        m = msg(conversation_id="conv-1")
+        cliente = ClienteFalso(self._SALTAR)
+        self._correr(m, cfg(registo_compromissos=True), cliente)
+        self.assertIn("39,90€ prometidos", cliente.pedidos[0]["messages"][0]["content"])
+
+    # --- Identidade e dados da encomenda ---------------------------------
+
+    def test_modo_compatibilidade_encontra_por_numero_mais_email(self) -> None:
+        m = msg(corpo="Boa tarde, a encomenda 21910 ainda não chegou.")
+        shopify = ShopifyFalsa(por_numero=[encomenda_falsa(name="#21910", email="cliente@gmail.com")])
+        cliente = ClienteFalso(self._SALTAR)
+        self._correr(m, cfg(resolver_identidade=False), cliente, shopify=shopify)
+        self.assertIn("#21910", cliente.pedidos[0]["messages"][0]["content"])
+
+    def test_resolucao_por_niveis_dados_chegam_ao_pedido(self) -> None:
+        m = msg(corpo="Boa tarde, a encomenda 21910 ainda não chegou.")
+        shopify = ShopifyFalsa(por_numero=[encomenda_falsa(name="#21910", email="cliente@gmail.com")])
+        cliente = ClienteFalso(self._SALTAR)
+        self._correr(m, cfg(resolver_identidade=True), cliente, shopify=shopify)
+        conteudo = cliente.pedidos[0]["messages"][0]["content"]
+        self.assertIn("#21910", conteudo)
+        self.assertIn("Dados da encomenda", conteudo)
+
+    def test_erro_na_shopify_nao_impede_a_decisao(self) -> None:
+        m = msg(corpo="Encomenda 21910, ainda não chegou.")
+        shopify = ShopifyFalsa(rebenta=True)
+        resultado, _, _ = self._correr(m, cfg(), ClienteFalso(self._SALTAR), shopify=shopify)
+        self.assertEqual(resultado, "saltado")  # decidiu na mesma, sem dados
+
+    def test_confianca_media_avisa_sem_revelar_dados(self) -> None:
+        """Existe encomenda com o número, mas o email não bate certo e não há
+        outro indício -- não se revela nada, só se avisa."""
+        m = msg(de="curioso@gmail.com", corpo="Encomenda 21910, qual o estado?")
+        shopify = ShopifyFalsa(por_numero=[encomenda_falsa(name="#21910", email="dona@gmail.com")])
+        cliente = ClienteFalso(self._SALTAR)
+        self._correr(m, cfg(), cliente, shopify=shopify)
+        conteudo = cliente.pedidos[0]["messages"][0]["content"]
+        self.assertIn("não foi possível confirmar", conteudo)
+        self.assertIn("IDENTIDADE_NAO_VERIFICADA", conteudo)
+        self.assertNotIn("2026-08-10", conteudo)  # created_at da encomenda_falsa -- não vaza
+
+    def test_numero_sem_correspondencia_avisa_dados_em_falta(self) -> None:
+        m = msg(corpo="Encomenda 30402, ainda não chegou.")
+        cliente = ClienteFalso(self._SALTAR)
+        self._correr(m, cfg(), cliente, shopify=ShopifyFalsa(por_numero=[]))
+        conteudo = cliente.pedidos[0]["messages"][0]["content"]
+        self.assertIn("DADOS_ENCOMENDA_EM_FALTA", conteudo)
+
+    def test_varios_candidatos_avisa_sem_revelar(self) -> None:
+        m = msg(corpo="Encomenda 21910, qual o estado?")
+        shopify = ShopifyFalsa(por_numero=[
+            encomenda_falsa(name="#21910", email="cliente@gmail.com"),
+            encomenda_falsa(name="#21910", email="cliente@gmail.com"),
+        ])
+        cliente = ClienteFalso(self._SALTAR)
+        self._correr(m, cfg(), cliente, shopify=shopify)
+        conteudo = cliente.pedidos[0]["messages"][0]["content"]
+        self.assertIn("IDENTIDADE_NAO_VERIFICADA", conteudo)
+        self.assertIn("2 encomendas possíveis", conteudo)
+
+    # --- Aplicação da decisão: rascunhar ---------------------------------
+
+    def test_rascunhar_em_dry_run_nao_chama_o_graph_para_escrever(self) -> None:
+        m = msg()
+        resultado, graph, _ = self._correr(m, cfg(dry_run=True), ClienteFalso(self._RASCUNHAR))
+        self.assertEqual(resultado, "rascunhado")
+        self.assertNotIn("criar_rascunho", [c[0] for c in graph.chamadas])
+        self.assertNotIn("marcar", [c[0] for c in graph.chamadas])
+        self.assertEqual(self._linha(m["message_id"])["acao"], "rascunhar")
+
+    def test_rascunhar_fora_de_dry_run_cria_rascunho_e_marca(self) -> None:
+        m = msg()
+        resultado, graph, _ = self._correr(m, cfg(dry_run=False), ClienteFalso(self._RASCUNHAR))
+        self.assertEqual(resultado, "rascunhado")
+        nomes = [c[0] for c in graph.chamadas]
+        self.assertEqual(nomes.count("criar_rascunho"), 1)
+        self.assertEqual([c for c in graph.chamadas if c[0] == "marcar"],
+                          [("marcar", m["message_id"], "IA-Rascunhado")])
+
+    def test_rascunho_parcial_marca_as_duas_categorias(self) -> None:
+        m = msg()
+        resultado, graph, _ = self._correr(
+            m, cfg(dry_run=False, respostas_parciais=True), ClienteFalso(self._RASCUNHAR_PARCIAL)
+        )
+        self.assertEqual(resultado, "rascunhado-parcial")
+        marcas = [c[2] for c in graph.chamadas if c[0] == "marcar"]
+        self.assertEqual(marcas, ["IA-Rascunhado", "Precisa de humano"])
+        self.assertTrue(self._linha(m["message_id"])["por_responder"])
+
+    def test_rascunhar_com_corpo_vazio_e_rebaixado_a_escalar(self) -> None:
+        """O modelo escolheu "rascunhar" mas não escreveu nada -- não pode
+        sair como se fosse uma resposta. Vira escalação, categoria OUTRO."""
+        m = msg()
+        resultado, _, _ = self._correr(m, cfg(), ClienteFalso(self._RASCUNHAR_CORPO_VAZIO))
+        self.assertEqual(resultado, "escalado")
+        linha = self._linha(m["message_id"])
+        self.assertEqual(linha["acao"], "escalar")
+        self.assertEqual(linha["categoria"], "OUTRO")
+        self.assertEqual(linha["motivo"], "modelo escolheu rascunhar mas devolveu corpo vazio")
+
+    # --- Aplicação da decisão: escalar e o dossiê ------------------------
+
+    def test_escalar_sem_dossie_nao_cria_rascunho(self) -> None:
+        cliente = ClienteFalso([self._ESCALAR_LACUNA, self._DOSSIE_VAZIO])
+        m = msg()
+        resultado, graph, _ = self._correr(m, cfg(dry_run=False), cliente)
+        self.assertEqual(resultado, "escalado")
+        self.assertNotIn("criar_rascunho", [c[0] for c in graph.chamadas])
+        self.assertEqual([c for c in graph.chamadas if c[0] == "marcar"],
+                          [("marcar", m["message_id"], "Precisa de humano")])
+        linha = self._linha(m["message_id"])
+        self.assertEqual(linha["dossie_tipo"], "")
+        self.assertEqual(linha["lacuna_tema"], "prazo Madeira")
+
+    def test_escalar_com_dossie_completo_cria_rascunho_sugerido(self) -> None:
+        cliente = ClienteFalso([self._ESCALAR, self._DOSSIE_COMPLETO])
+        m = msg()
+        resultado, graph, _ = self._correr(m, cfg(dry_run=False), cliente)
+        self.assertEqual(resultado, "escalado")
+        criados = [c for c in graph.chamadas if c[0] == "criar_rascunho"]
+        self.assertEqual(len(criados), 1)
+        self.assertIn("Vamos verificar se conseguimos", criados[0][2])
+        self.assertEqual(self._linha(m["message_id"])["dossie_tipo"], "cancelamento")
+
+    def test_dossie_sem_tipo_mas_com_conteudo_vira_excecao(self) -> None:
+        """Visto em produção, 18/08/2026: o modelo escreve um dossiê bom mas
+        hesita na etiqueta. O conteúdo é que decide se há dossiê, não a
+        etiqueta -- ver tem_dossie() em processar()."""
+        cliente = ClienteFalso([self._ESCALAR, self._DOSSIE_SEM_TIPO])
+        m = msg()
+        self._correr(m, cfg(dry_run=False), cliente)
+        self.assertEqual(self._linha(m["message_id"])["dossie_tipo"], "excecao")
+
+    def test_escalar_em_dry_run_nao_escreve_na_caixa(self) -> None:
+        cliente = ClienteFalso([self._ESCALAR, self._DOSSIE_COMPLETO])
+        m = msg()
+        resultado, graph, _ = self._correr(m, cfg(dry_run=True), cliente)
+        self.assertEqual(resultado, "escalado")
+        nomes = [c[0] for c in graph.chamadas]
+        self.assertNotIn("criar_rascunho", nomes)
+        self.assertNotIn("marcar", nomes)
+        # Mas o dossiê fica gravado -- dry_run só afeta a caixa, não o registo.
+        self.assertEqual(self._linha(m["message_id"])["dossie_tipo"], "cancelamento")
+
+    def test_pre_dossies_desligado_nunca_prepara_dossie(self) -> None:
+        cliente = ClienteFalso([self._ESCALAR, self._DOSSIE_COMPLETO])
+        m = msg()
+        self._correr(m, cfg(dry_run=False, pre_dossies=False), cliente)
+        # Só uma chamada: sem pre_dossies, tem_dossie nunca é True, mas
+        # decidir() já decidiu pedir o dossiê antes de processar() saber
+        # disso -- o que muda é processar() ignorar o resultado.
+        self.assertEqual(len(cliente.pedidos), 2)
+        self.assertEqual(self._linha(m["message_id"])["dossie_tipo"], "")
+
+    def test_saltar_do_modelo_e_registado(self) -> None:
+        m = msg(corpo="Reserve já o seu stand na feira 2027")
+        resultado, _, _ = self._correr(m, cfg(), ClienteFalso(self._SALTAR))
+        self.assertEqual(resultado, "saltado")
+        self.assertEqual(self._linha(m["message_id"])["acao"], "saltar")
+
+    def test_erro_no_modelo_devolve_falhado_sem_registar(self) -> None:
+        m = msg()
+        cliente = ClienteFalso(self._SALTAR, rebenta=True)
+        resultado, _, _ = self._correr(m, cfg(), cliente)
+        self.assertEqual(resultado, "falhado")
+        self.assertFalse(ja_processado(self.con, m["message_id"]))
 
 
 if __name__ == "__main__":

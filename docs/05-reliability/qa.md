@@ -19,7 +19,7 @@ Cada uma responde a uma pergunta diferente e tem um custo diferente.
 ```mermaid
 flowchart TB
     subgraph G["GRÁTIS — sem chamadas ao modelo"]
-        T1["<b>test_assistente.py</b><br/>160 testes unitários<br/><i>o código faz o que diz?</i><br/>~0,8 s"]
+        T1["<b>test_assistente.py</b><br/>203 testes unitários<br/><i>o código faz o que diz?</i><br/>~1,7 s"]
         T2["<b>eval.py --triagem</b><br/>só regras determinísticas<br/><i>a triagem está certa?</i><br/>instantâneo"]
         T3["<b>verificar.py</b><br/>pré-instalação<br/><i>está seguro para ligar?</i>"]
         T4["<b>casos_antigos.py</b><br/>pares reais para ler<br/><i>como se resolvia antes?</i>"]
@@ -41,32 +41,33 @@ flowchart TB
 
 ## Camada 1 — Testes unitários
 
-**Implemented** — 160 testes, 23 classes, `unittest` da biblioteca padrão, **zero dependências
-de teste**.
+**Implemented** — 203 testes, `unittest` da biblioteca padrão, **zero dependências de teste**.
 
 | Área | Classes | Cobre |
 |---|---|---|
 | Triagem | `Triagem`, `TriagemCabecalhos` | As 11 regras determinísticas |
-| Formulários | `FormularioContactoShopify`, `FormularioDevolucaoFormspree` | Desembrulhar e rejeitar |
+| Formulários | `FormularioContactoShopify`, `FormularioDevolucaoFormspree`, `DesembrulharFormularios` | Desembrulhar e rejeitar |
 | Texto | `Texto`, `HtmlDeSaida`, `LixoAposAssinatura` | HTML→texto, corte de citação, escape |
 | Encomendas | `NumeroDeEncomenda`, `ResumoDeEncomenda` | Extração e formatação |
 | Identidade | `ResolucaoDeIdentidade`, `EmailsIguais` | Os 4 níveis, com `ShopifyFalsa` |
 | Anexos | `AnexosDeImagem`, `DecidirComImagens` | Filtro e notas, com `ClienteFalso` |
 | Persistência | `Registo`, `RegistoDeCompromissos`, `CursorSeguro` | Cursor, dedup, compromissos |
+| Rede | `RetentativaHttp` | Backoff em GET, 429/5xx vs. erros permanentes |
+| Segurança | `VerificarRestricaoDiaria` | Verificação diária da restrição do Exchange |
+| Orquestração | `Processar` | A função inteira: triagem, identidade, dossiê, aplicação da decisão |
 | Anonimização | `Anonimizacao`, `EnderecoAnonimizado`, `Palpite` | `exportar.py` |
 
 ```bash
 python -m unittest test_assistente -q
 ```
 
-> [!WARNING] A maior lacuna de cobertura
-> `processar()` e `main()` **não são importados nem testados**. `processar()` é a função de
-> orquestração, com ~280 linhas e 10 pontos de retorno — a concentração de risco do sistema.
->
-> `decidir()` é importado mas só exercitado com um cliente falso, apenas para o caminho de
-> imagens.
->
-> Finding H-2 em [[technical-debt|Dívida técnica]].
+> [!TIP] A maior lacuna de cobertura fechou a 27/08/2026
+> `processar()` tinha ~280 linhas, 10 pontos de retorno e zero testes — a concentração de risco
+> do sistema. A classe `Processar` (28 testes) cobre agora os 10 pontos de retorno e os ramos que
+> os alimentam: triagem antes e depois do detalhe, formulários, anexos e histórico (com falha
+> absorvida), as quatro combinações de resolução de identidade, o gating do dossiê (incluindo o
+> caso "sem tipo mas com conteúdo"), rascunho completo/parcial/vazio, e escalação com e sem
+> dossiê. Finding H-2 em [[technical-debt|Dívida técnica]], fechado.
 
 ## Camada 2 — Banco de ensaio
 
@@ -172,8 +173,6 @@ flowchart TD
 
 | Lacuna | Consequência |
 |---|---|
-| `processar()` sem testes | 10 caminhos de saída sem rede de segurança |
-| Sem CI/CD | Nada impede deploy com testes a falhar |
 | Sem testes de integração reais | Graph e Shopify só testados com duplos ou em produção |
 | Sem teste de carga | Comportamento com >25 mensagens por passagem nunca exercitado |
 | Deriva não medida continuamente | O sistema pode degradar sem sinal |
@@ -187,4 +186,4 @@ Ver [[technical-debt|Dívida técnica]] e [[improvements|Melhorias]].
 - [[guardrails|Guardrails]] — o que os testes protegem
 - [[operations|Ferramentas de operação]] — as ferramentas de produção
 - [[technical-debt|Dívida técnica]] — as lacunas de cobertura
-- [[deployment|Deployment]] — porque é que o gate de qualidade falta
+- [[deployment|Deployment]] — o gate de qualidade que corre antes de cada deploy

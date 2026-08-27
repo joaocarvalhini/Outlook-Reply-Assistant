@@ -63,11 +63,13 @@ Ver [[security|Segurança]].
 
 ## O processo de deploy
 
-**Implemented** — manual, sem CI/CD.
+**Implemented** — `deploy/enviar.sh`, sem CI/CD hospedado mas com gate de qualidade local.
 
 ```mermaid
 flowchart LR
-    A["git commit<br/><i>local</i>"] --> B["git archive HEAD"]
+    A["git commit<br/><i>local</i>"] --> Q["unittest + eval --triagem<br/><i>grátis, &lt;1s</i>"]
+    Q -->|"falhou"| X["aborta<br/>antes de tocar em SSH"]
+    Q -->|"passou"| B["git archive HEAD"]
     B -->|"pipe via SSH"| C["tar -x -C /opt/assistente"]
     C --> D["chown assistente:assistente"]
     D --> E["próxima passagem<br/>usa o código novo"]
@@ -77,20 +79,21 @@ flowchart LR
 
     style F fill:#ffe0b2
     style G fill:#ffe0b2
+    style X fill:#ffcdd2
 ```
 
 ```bash
-git archive HEAD | ssh root@SERVIDOR "tar -x -C /opt/assistente && chown -R assistente:assistente /opt/assistente"
+deploy/enviar.sh
 ```
 
-Porque funciona: `git archive` exporta **apenas o que está no git**. O `.env` e o
-`assistente.db` estão no `.gitignore`, logo nunca são sobrescritos.
+Corre `python -m unittest test_assistente -q` e `python eval.py --triagem` — ambos grátis,
+juntos com menos de 2 segundos — e só chega ao `git archive HEAD | ssh ...` se os dois passarem.
+Corrigido 27/08/2026 (Finding M-5); antes disso o deploy era o `git archive` direto, sem nenhuma
+verificação.
 
-> [!WARNING] Sem gate de qualidade
-> Nada corre os testes antes do deploy. As duas verificações relevantes
-> (`python -m unittest test_assistente` e `eval.py --triagem`) são **grátis e demoram menos de
-> 1 segundo** — não há razão de custo para as omitir. Finding M-5 em
-> [[technical-debt|Dívida técnica]].
+**Importante:** `git archive HEAD` exporta o que está **commitado**, não o *working tree* — um
+`enviar.sh` corrido antes do `git commit` envia código antigo para o servidor sem avisar. O
+`.env` e o `assistente.db` estão no `.gitignore`, logo nunca são sobrescritos pelo archive.
 
 Não é preciso reiniciar nada: o serviço é `oneshot` e lê tudo do disco em cada passagem — a
 base de conhecimento incluída. Se as dependências mudarem, é preciso correr `pip install` no
@@ -176,4 +179,4 @@ Duas formas, por ordem de agressividade:
 - [[security|Segurança]] — o passo de verificação obrigatório
 - [[operations|Ferramentas de operação]] — o que correr depois de instalado
 - [[error-handling|Tratamento de erros]] — o que os eventos `erro-*` significam
-- [[technical-debt|Dívida técnica]] — CI/CD, alertas e backup em falta
+- [[technical-debt|Dívida técnica]] — o que ainda falta (P0-2, M-3)

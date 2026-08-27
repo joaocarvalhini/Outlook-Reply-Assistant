@@ -40,16 +40,10 @@ estava. Ver Finding P0-2 em [[technical-debt|Dívida técnica]] e [[security|Seg
 
 ## P1 — Alto impacto
 
-### P1-1 · Testes unitários para `processar()`
+### ✅ P1-1 · Testes unitários para `processar()`
 
-| | |
-|---|---|
-| **Problema** | 10 pontos de retorno, zero cobertura. É a concentração de risco do sistema |
-| **Solução** | Duplos para `Graph`, `Shopify` e cliente Anthropic. **Os padrões já existem** (`ShopifyFalsa`, `ClienteFalso`) |
-| **Impacto** | Alto |
-| **Complexidade** | Média — trabalho de horas, não de dias |
-
-Finding H-2.
+**Feito a 27/08/2026.** 28 testes novos, os três duplos (`GraphFalso`, `ShopifyFalsa`,
+`ClienteFalso`) estendidos para cobrir todos os métodos que `processar()` chama. Finding H-2.
 
 ### ✅ P1-2 · Retentativa com *backoff* em Graph e Shopify
 
@@ -166,27 +160,27 @@ poderia fechar parte dos 9% restantes a custo controlado. Mensurável com o
 
 ```mermaid
 flowchart LR
-    A["<b>Agora</b><br/>semana de observação<br/><i>até ~02/09</i>"] --> B["<b>✅ Feito 27/08</b><br/>H-1 · M-1 · M-2 · M-4<br/>M-5 · M-6 · L-1 · L-2 · L-3"]
+    A["<b>Agora</b><br/>semana de observação<br/><i>até ~02/09</i>"] --> B["<b>✅ Feito 27/08</b><br/>C-1 · H-1 · H-2 · H-3<br/>M-1 · M-2 · M-4 · M-5 · M-6<br/>L-1 · L-2 · L-3"]
     B --> C["<b>Curto prazo</b><br/>P0-2: só falta o endereço<br/>no OUTRA_CAIXA_VERIFICACAO"]
-    C --> D["<b>Médio prazo</b><br/>H-2 testes"]
-    D --> E["<b>Depois dos dados</b><br/>P2-4 stock<br/>P2-7 deriva<br/>decisão de modelo"]
+    C --> D["<b>Depois dos dados</b><br/>P2-4 stock<br/>P2-7 deriva<br/>decisão de modelo"]
 
     style A fill:#e8d5f2
     style B fill:#c8e6c9
 ```
 
-> [!TIP] Dez correções fechadas a 27/08/2026
-> H-1, M-1, M-2, M-4, M-5, M-6, L-1, L-2, L-3 e o crítico C-1. Fecharam riscos reais: decisão de
-> custo com informação errada, perda de estado, retenção indefinida de correspondência,
-> ferramentas offline inconsistentes com a produção, deploy sem gate de qualidade, e falhas
-> silenciosas sem alerta nenhum.
+> [!TIP] Doze correções fechadas a 27/08/2026
+> C-1, H-1, H-2, H-3, M-1, M-2, M-4, M-5, M-6, L-1, L-2 e L-3. Fecharam riscos reais: perda
+> silenciosa de email, decisão de custo com informação errada, a maior concentração de risco do
+> sistema sem um único teste, retenção indefinida de correspondência, ferramentas offline
+> inconsistentes com a produção, deploy sem gate de qualidade, e falhas silenciosas sem alerta
+> nenhum.
 >
-> H-3 fechou a seguir (não havia bug — o teste é que tinha o `expect` errado, confirmado
-> diretamente com o lojista).
+> H-3 fechou por confirmação direta do lojista (não havia bug — o teste é que tinha o `expect`
+> errado).
 >
 > O que resta: **P0-2** (verificação periódica do Exchange, esforço baixo — falta só um endereço
-> no `.env`) e **H-2** (testes de `processar()`, o único que dá trabalho a sério). **M-3** (linha
-> de base da deriva) depende dos dados da semana de observação, ainda em curso.
+> no `.env`) e **M-3** (linha de base da deriva), que depende dos dados da semana de observação,
+> ainda em curso.
 
 ## Related
 

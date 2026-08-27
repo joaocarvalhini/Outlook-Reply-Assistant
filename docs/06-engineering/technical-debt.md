@@ -20,8 +20,8 @@ no commit `bc5408b`. Cada finding traz evidência verificável.
 ```mermaid
 pie showData
     title Findings por estado
-    "Corrigidos" : 11
-    "Alta em aberto" : 1
+    "Corrigidos" : 12
+    "Alta em aberto" : 0
     "Média em aberto" : 1
     "Baixa em aberto" : 0
 ```
@@ -31,7 +31,7 @@ pie showData
 | C-1 | 🔴 Crítica | Perda de email quando o modelo falha a meio de lote | Trivial | ✅ **Corrigido 27/08** |
 | P0-2 | 🔴 Crítica | Restrição de acesso do Exchange nunca reverificada | Baixa | 🟡 **Construído 27/08, por ativar** |
 | ~~H-1~~ | ✅ **Corrigido** | Premissa de custo/cache desatualizada em 3 locais | Trivial | Feito 27/08 |
-| H-2 | 🟠 Alta | `processar()` sem cobertura de testes | Média | ⬜ Aberto |
+| ~~H-2~~ | ✅ **Corrigido** | `processar()` sem cobertura de testes | Média | Feito 27/08 |
 | ~~H-3~~ | ✅ **Corrigido** | Regra do pack — não havia bug, o teste é que estava errado | Trivial | Feito 27/08 |
 | ~~M-1~~ | ✅ **Corrigido** | README contradiz a integração Shopify | Trivial | Feito 27/08 |
 | ~~M-2~~ | ✅ **Corrigido** | Sem retentativa em Graph/Shopify | Baixa | Feito 27/08 |
@@ -43,10 +43,10 @@ pie showData
 | ~~L-2~~ | ✅ **Corrigido** | Ferramentas offline sem exceções de formulário | Trivial | Feito 27/08 |
 | ~~L-3~~ | ✅ **Corrigido** | `Persistent=true` inócuo | Trivial | Feito 27/08 |
 
-> [!TIP] Onze fechados, dois em aberto — mais o P0-2, pronto mas por ativar
-> A dívida deste projeto é rasa. Dos que faltam, só o H-2 (testes de `processar()`) exige
-> trabalho a sério; M-3 depende dos dados da semana de observação. O P0-2 já está construído —
-> falta só um endereço de outra caixa do inquilino no `.env` para ligar.
+> [!TIP] Doze fechados, um em aberto — mais o P0-2, pronto mas por ativar
+> A dívida deste projeto é rasa. Do que falta, só o M-3 (linha de base da deriva) exige dados
+> ainda por vir, da semana de observação. O P0-2 já está construído — falta só um endereço de
+> outra caixa do inquilino no `.env` para ligar.
 
 ---
 
@@ -142,15 +142,15 @@ Ver [[security|Segurança]].
 
 ---
 
-## 🟠 H-2 — `processar()` sem cobertura de testes
+## ✅ H-2 — `processar()` sem cobertura de testes (fechado 27/08/2026)
 
-**Evidência:** `processar()` tem ~280 linhas e 10 pontos de retorno. `test_assistente.py` importa
-30 símbolos de `assistente` — **`processar` e `main` não estão entre eles**.
+**O problema:** `processar()` tem ~280 linhas e 10 pontos de retorno — a maior concentração de
+risco do sistema — e não tinha um único teste. `test_assistente.py` importava 30 símbolos de
+`assistente`; `processar` e `main` não estavam entre eles. `eval.py` também não a exercita:
+chama `a.decidir()` diretamente com `dados_encomenda` pré-cozinhado do JSON, sem passar pelo
+encaminhamento, pela resolução de identidade nem pela aplicação da decisão.
 
-`eval.py` também não a exercita: chama `a.decidir()` diretamente com `dados_encomenda`
-pré-cozinhado do JSON.
-
-**Lógica não testada:**
+**Lógica que ficou sem cobertura até agora:**
 
 ```mermaid
 flowchart LR
@@ -161,12 +161,24 @@ flowchart LR
     A --> F["rebaixamento de<br/>corpo vazio"]
     A --> G["decisão de criar<br/>rascunho"]
     A --> H["aplicação de<br/>categorias"]
-    style A fill:#ffcdd2
+    style A fill:#c8e6c9
 ```
 
-**Correção:** testes com duplos para `Graph`, `Shopify` e cliente Anthropic. **Os padrões já
-existem** no ficheiro de testes (`ShopifyFalsa`, `ClienteFalso`) — falta aplicá-los à função que
-mais precisa.
+**A correção:** 28 testes novos (`Processar`), cobrindo os 10 pontos de retorno e os ramos que os
+alimentam — repetido, saltado por triagem/cabeçalhos/formulário-não-reconhecido, mensagem
+apagada a meio (404 vs. outros erros), anexos e histórico (caminho feliz e falha absorvida),
+compromissos, as quatro combinações de resolução de identidade (modo compatibilidade, por
+níveis, confiança média sem revelar dados, vários candidatos), erro da Shopify absorvido, falha
+do modelo devolvendo `"falhado"` sem gravar, `tem_dossie` incluindo o caso "sem tipo mas com
+conteúdo → exceção", rascunho (completo, parcial, corpo vazio rebaixado a escalação) e escalação
+(com e sem dossiê, `dry_run` nos dois casos).
+
+Isto exigiu estender os três duplos já existentes (`GraphFalso`, `ShopifyFalsa`, `ClienteFalso`)
+para cobrirem todos os métodos que `processar()` chama, não só os que os testes anteriores
+usavam — `GraphFalso`, em particular, passou de um duplo com uma só chamada simulada para um com
+seis, cada uma configurável para devolver um valor ou lançar uma exceção.
+
+175 → 203 testes (`test_assistente -q`); `eval.py --triagem` continua em 8/8, sem regressão.
 
 Ver [[qa|QA e testes]].
 
