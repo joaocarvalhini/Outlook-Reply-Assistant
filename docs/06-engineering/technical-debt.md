@@ -20,8 +20,8 @@ no commit `bc5408b`. Cada finding traz evidência verificável.
 ```mermaid
 pie showData
     title Findings por estado
-    "Corrigidos" : 10
-    "Alta em aberto" : 2
+    "Corrigidos" : 11
+    "Alta em aberto" : 1
     "Média em aberto" : 1
     "Baixa em aberto" : 0
 ```
@@ -32,7 +32,7 @@ pie showData
 | P0-2 | 🔴 Crítica | Restrição de acesso do Exchange nunca reverificada | Baixa | 🟡 **Construído 27/08, por ativar** |
 | ~~H-1~~ | ✅ **Corrigido** | Premissa de custo/cache desatualizada em 3 locais | Trivial | Feito 27/08 |
 | H-2 | 🟠 Alta | `processar()` sem cobertura de testes | Média | ⬜ Aberto |
-| H-3 | 🟠 Alta | Regra do pack falha em ambos os modelos | Baixa | ⬜ Aberto |
+| ~~H-3~~ | ✅ **Corrigido** | Regra do pack — não havia bug, o teste é que estava errado | Trivial | Feito 27/08 |
 | ~~M-1~~ | ✅ **Corrigido** | README contradiz a integração Shopify | Trivial | Feito 27/08 |
 | ~~M-2~~ | ✅ **Corrigido** | Sem retentativa em Graph/Shopify | Baixa | Feito 27/08 |
 | M-3 | 🟡 Média | Referência de deriva nunca medida | Baixa | ⬜ Aberto |
@@ -43,10 +43,10 @@ pie showData
 | ~~L-2~~ | ✅ **Corrigido** | Ferramentas offline sem exceções de formulário | Trivial | Feito 27/08 |
 | ~~L-3~~ | ✅ **Corrigido** | `Persistent=true` inócuo | Trivial | Feito 27/08 |
 
-> [!TIP] Dez fechados, três em aberto — mais o P0-2, pronto mas por ativar
+> [!TIP] Onze fechados, dois em aberto — mais o P0-2, pronto mas por ativar
 > A dívida deste projeto é rasa. Dos que faltam, só o H-2 (testes de `processar()`) exige
-> trabalho a sério; H-3 é pequeno, M-3 depende dos dados da semana de observação. O P0-2 já está
-> construído — falta só um endereço de outra caixa do inquilino no `.env` para ligar.
+> trabalho a sério; M-3 depende dos dados da semana de observação. O P0-2 já está construído —
+> falta só um endereço de outra caixa do inquilino no `.env` para ligar.
 
 ---
 
@@ -172,7 +172,7 @@ Ver [[qa|QA e testes]].
 
 ---
 
-## 🟠 H-3 — Regra do pack falha em ambos os modelos (diagnóstico revisto a 27/08/2026)
+## ✅ H-3 — Regra do pack: não havia bug, o teste é que estava errado (fechado 27/08/2026)
 
 **Evidência:** o caso `reembolso-artigo-de-pack-divide-igualmente` testa uma regra escrita e
 confirmada pelo lojista: o valor de um artigo dentro de um pack é o total dividido pelo número de
@@ -200,20 +200,26 @@ Haiku idem.
 >    regra geral, lida à letra, pediria `"escalar"`. **É defensável que o modelo esteja a seguir
 >    a regra mais forte e mais repetida do prompt, não a falhar contas.**
 
-**O que isto muda:** já não é um problema de aritmética resolvível movendo um cálculo para
-Python — é uma ambiguidade de especificação entre duas regras que se aplicam ao mesmo caso.
-Resolver exige uma de duas coisas:
+**Resolução, perguntado diretamente ao lojista:** *"Depois de calculares os 30€, o assistente
+pode escrever logo ao cliente 'o valor desse artigo é 30€' e enviar isso automaticamente, ou
+isso tem de ficar à espera que alguém da equipa veja e aprove antes de sair, como acontece com os
+outros reembolsos?"* Resposta: **fica em rascunho, para o lojista analisar o email** — ou seja,
+escala como qualquer outro reembolso.
 
-- **Confirmar com o lojista** se "informar o valor calculado" conta como exceção à regra geral de
-  reembolso (é uma pergunta informativa do cliente, não um pedido para processar), e reescrever a
-  secção do pack para o dizer explicitamente — ou
-- **Medir empiricamente** com o `eval.py` se uma reformulação da secção do pack (a explicitar a
-  exceção) muda o comportamento, o que implica uma corrida paga.
+> [!IMPORTANT] Não havia bug nenhum no código
+> **Sonnet 5 e Haiku 4.5 já escalavam este caso** nas duas corridas de eval de 26/08/2026 — a
+> tabela de resultados desse dia mostrava isto como "FALHA" só porque o campo `expect` do caso
+> dizia `"rascunhar"`. A própria secção do pack em `devolucoes.md` já dizia *"segue a regra
+> normal de Reembolso"*; só tinha sido lida (por mim, ao escrever o caso a 21/08) como aplicando-se
+> só ao processo (crédito primeiro, etc.), não ao valor em si.
+>
+> **A correção foi ao teste, não ao código nem à base de conhecimento:** `expect` mudou de
+> `"rascunhar"` para `"escalar"`, com `expect_dossie_com_conteudo: true`. 175 testes continuam a
+> passar; a triagem determinística confirma zero clientes perdidos.
 
-Nenhuma das duas foi feita — fica como está até uma delas acontecer. Ver
-[[decision-making|Tomada de decisão]] para o padrão que **continua** válido para decisões
-verdadeiramente aritméticas (como o prazo de devolução), e [[prompts|Prompts]] para o texto
-completo da regra de reembolso.
+Ver [[decision-making|Tomada de decisão]] para o padrão que continua válido para decisões
+verdadeiramente aritméticas (como o prazo de devolução), e [[evaluation|Banco de ensaio]] para
+o resto dos casos que dependem de verificação manual do texto, não de asserção automática.
 
 ---
 

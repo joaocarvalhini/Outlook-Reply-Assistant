@@ -1100,8 +1100,9 @@
     },
     "historico": "[2026-08-05 11:00] CLIENTE: Comprei o pack Kit 3 em 1 (relógio + capa + carregador) por 90 euros e o relógio não funciona bem, quero devolver só esse.\n[2026-08-05 15:30] LOJA: Sem problema, pode enviar-nos o relógio de volta.",
     "dados_encomenda": "Encomenda #22200\nFeita em: 2026-08-01\nPagamento: pago\nEnvio: entregue\nValor: 90.00 EUR",
-    "expect": "rascunhar",
-    "note": "cliente comprou um pack de 3 artigos por 90 euros e quer reembolso so de um deles (o relogio). Regra confirmada diretamente pelo lojista, 21/08/2026: o valor de cada artigo dentro de um pack e o preco total a dividir igualmente pelo numero de artigos -- aqui, 90 / 3 = 30 euros, nao o preco de venda avulso do relogio nem um valor fixo generico. Verificacao manual do texto, nao ha assercao automatica: o corpo deve indicar 30 euros como o valor do relogio (dividindo os 90 euros pelos 3 artigos do pack), nao outro valor nem escalar sem necessidade so por causa do calculo."
+    "expect": "escalar",
+    "expect_dossie_com_conteudo": true,
+    "note": "cliente comprou um pack de 3 artigos por 90 euros e quer reembolso so de um deles (o relogio). A formula do valor -- preco total a dividir igualmente pelo numero de artigos, aqui 90/3=30 euros -- foi confirmada diretamente pelo lojista, 21/08/2026, e continua correta. CORRIGIDO 27/08/2026: o campo expect estava errado, nao o comportamento. Perguntado diretamente ao lojista se o assistente pode enviar o valor calculado sozinho ou se tem de passar por uma pessoa como qualquer reembolso: respondeu que fica em rascunho, para o lojista analisar o email -- ou seja, escala como qualquer outro reembolso (a propria secao do pack em devolucoes.md ja dizia 'segue a regra normal de Reembolso', que so tinha sido lida como aplicando-se so ao resto do processo, nao ao valor em si). Sonnet 5 e Haiku 4.5 ja escalavam este caso nas duas corridas de eval de 26/08/2026 -- nao havia bug nenhum a corrigir no codigo. Verificacao manual do texto: o dossie (resumo/resposta) deve indicar 30 euros como o valor do relogio, nao outro valor."
   },
   {
     "id": "identidade-nao-confirmada-pede-email-e-telefone",

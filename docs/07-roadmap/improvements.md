@@ -61,19 +61,13 @@ exponencial. Finding M-2.
 **Feito a 27/08/2026.** Os três locais corrigidos, com os números medidos e a distinção entre
 cache quente e fria. Finding H-1.
 
-### 🔴 P1-4 · Regra do pack — diagnóstico corrigido, ainda por resolver
+### ✅ P1-4 · Regra do pack — fechado, não havia bug
 
-**Revisto a 27/08/2026.** A solução proposta ("mover o cálculo para código") não se sustenta:
-o número de artigos do pack só existe em texto livre da conversa, não em dados estruturados da
-Shopify, e há uma tensão real entre a regra geral de reembolso ("escala sempre, mesmo em
-pergunta") e a secção do pack (que pede resposta direta com o valor). Ver Finding H-3 em
-[[technical-debt|Dívida técnica]] para a análise completa.
-
-| | |
-|---|---|
-| **Precisa de** | Uma decisão do cliente (a resposta direta é mesmo a exceção pretendida?) **ou** uma corrida de eval paga para testar uma reformulação |
-| **Impacto** | Médio — trabalho manual recorrente e evitável, se for mesmo um bug de especificação |
-| **Complexidade** | Indeterminada até à decisão acima |
+**Resolvido a 27/08/2026.** Perguntado ao lojista se o assistente pode enviar o valor calculado
+sozinho: respondeu que fica em rascunho, para ele analisar o email. Ou seja, escala como
+qualquer outro reembolso — que é exatamente o que Sonnet 5 e Haiku 4.5 já faziam nas duas
+corridas de eval de 26/08. A correção foi ao `expect` do caso de teste, não ao código nem à base
+de conhecimento. Ver Finding H-3 em [[technical-debt|Dívida técnica]].
 
 ### ✅ P1-5 · Alerta em falha de passagem
 
@@ -174,7 +168,7 @@ poderia fechar parte dos 9% restantes a custo controlado. Mensurável com o
 flowchart LR
     A["<b>Agora</b><br/>semana de observação<br/><i>até ~02/09</i>"] --> B["<b>✅ Feito 27/08</b><br/>H-1 · M-1 · M-2 · M-4<br/>M-5 · M-6 · L-1 · L-2 · L-3"]
     B --> C["<b>Curto prazo</b><br/>P0-2: só falta o endereço<br/>no OUTRA_CAIXA_VERIFICACAO"]
-    C --> D["<b>Médio prazo</b><br/>H-2 testes<br/>H-3 pack"]
+    C --> D["<b>Médio prazo</b><br/>H-2 testes"]
     D --> E["<b>Depois dos dados</b><br/>P2-4 stock<br/>P2-7 deriva<br/>decisão de modelo"]
 
     style A fill:#e8d5f2
@@ -187,9 +181,12 @@ flowchart LR
 > ferramentas offline inconsistentes com a produção, deploy sem gate de qualidade, e falhas
 > silenciosas sem alerta nenhum.
 >
-> O que resta: **P0-2** (verificação periódica do Exchange, esforço baixo), **H-3** (pack, baixo)
-> e **H-2** (testes de `processar()`, o único que dá trabalho a sério). **M-3** (linha de base
-> da deriva) depende dos dados da semana de observação, ainda em curso.
+> H-3 fechou a seguir (não havia bug — o teste é que tinha o `expect` errado, confirmado
+> diretamente com o lojista).
+>
+> O que resta: **P0-2** (verificação periódica do Exchange, esforço baixo — falta só um endereço
+> no `.env`) e **H-2** (testes de `processar()`, o único que dá trabalho a sério). **M-3** (linha
+> de base da deriva) depende dos dados da semana de observação, ainda em curso.
 
 ## Related
 
