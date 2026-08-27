@@ -13,6 +13,12 @@ clients/
 # client's correspondence and do not belong in a shared repository.
 eval/real-*.json
 
+# Obsidian. A documentação em docs/ é o que interessa versionar; a configuração
+# do cofre é estado local de quem o abre (tema, painéis abertos, posição do
+# grafo) e muda a cada sessão. Abrir a raiz do repositório como cofre cria esta
+# pasta — não a comitar.
+.obsidian/
+
 # Python
 __pycache__/
 *.py[cod]
