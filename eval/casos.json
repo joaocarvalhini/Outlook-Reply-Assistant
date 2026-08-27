@@ -1023,6 +1023,19 @@
     "note": "diferenca de cor na impressao de capa personalizada, nao e defeito fisico -- deve propor diretamente credito de loja de 20 euros, sem escalar o valor (regra fixa, confirmada pelo cliente 18/08/2026, ao contrario dos outros vales/creditos que sao caso a caso). Verificacao manual do texto: o corpo deve mencionar os 20 euros de credito de loja."
   },
   {
+    "id": "cor-diferente-por-falta-de-stock-pergunta-se-aceita",
+    "email": {
+      "from": "tomas.rocha99@gmail.com",
+      "from_name": "Tomas",
+      "subject": "Carteira magnetica com a cor errada",
+      "to": ["{mailbox}"],
+      "body": "Boa tarde, pedi a carteira magnetica na cor preta e chegou-me castanha."
+    },
+    "expect": "rascunhar",
+    "expect_sem_dossie": true,
+    "note": "cor diferente da pedida por falta de stock (nao e erro de envio: a loja sabe porque a cor e outra, e tenta que o cliente aceite). Regra confirmada diretamente pelo lojista, 27/08/2026, a partir do feedback sobre esta carteira magnetica: pedir desculpa, perguntar se a cor recebida faz diferenca ou se aceita ficar com ela, e so se recusar e que se explica a troca (com aviso de demora, sem data) -- sem vale de compensacao, ao contrario de 'Erro de envio pela loja' (produto/modelo errado, que e um cenario diferente). Verificacao manual do texto: nao deve tentar confirmar culpa nem pedir a cor escolhida na compra, nao deve oferecer vale, nao deve dar data de troca."
+  },
+  {
     "id": "unidade-extra-oferta-checkout-ja-expedida",
     "email": {
       "from": "tiago.almeida@gmail.com",
@@ -1070,6 +1083,20 @@
     "expect": "escalar",
     "expect_dossie_com_conteudo": true,
     "note": "cliente ja recusou reembolso parcial uma vez no fio, insiste em devolver. Regra (provas-e-defeitos.md, 18/08/2026): tenta-se uma segunda vez antes de aceitar a devolucao total, agora tambem explicando os prazos do reembolso total para comparacao, e respeitando a decisao se recusar de novo. Verificacao manual do texto: a resposta sugerida deve tentar mais uma vez, sem insistir uma terceira."
+  },
+  {
+    "id": "reembolso-parcial-recusado-com-valor-concreto-pede-contraproposta",
+    "email": {
+      "from": "cliente.insatisfeito22@gmail.com",
+      "from_name": "Cliente Insatisfeito",
+      "subject": "Re: Reembolso parcial",
+      "to": ["{mailbox}"],
+      "body": "Boa tarde, lamento informar que a vossa proposta nao me interessa. Considero, inclusive, bastante inadequado que, perante uma compra no valor de 53 euros, a solucao apresentada seja um reembolso de apenas 5 euros, como se esse valor fosse suficiente para resolver a minha insatisfacao. Por essa razao, nao pretendo aceitar qualquer outra forma de compensacao ou reembolso parcial. Reitero que pretendo devolver o produto e receber o reembolso total do valor pago, correspondente a 53 euros. Agradeco que me indiquem o procedimento necessario para efetuar a devolucao do produto e proceder ao respetivo reembolso integral."
+    },
+    "historico": "[2026-08-26 11:00] CLIENTE: o produto nao correspondeu ao que esperava, gostaria de devolver.\n[2026-08-26 15:00] LOJA: Compreendemos. Estaria disponivel para aceitar um reembolso parcial de 5 euros (10% do valor), ficando com o produto, evitando o processo de devolucao?",
+    "expect": "escalar",
+    "expect_dossie_com_conteudo": true,
+    "note": "cliente recusa um valor concreto (10%/5eur) ja proposto por uma pessoa e exige o reembolso total. Regra (provas-e-defeitos.md, 27/08/2026, confirmada diretamente pelo lojista a partir de um caso real): nao se avanca de imediato para o reembolso total -- pergunta-se que valor o cliente considera justo, para tentar um acordo intermedio. Verificacao manual do texto: a resposta sugerida deve pedir uma contraproposta de valor ao cliente, nunca aceitar os 53 euros nem propor um novo valor por conta propria."
   },
   {
     "id": "devolucao-adiar-envio-verifica-prazo-14-dias",

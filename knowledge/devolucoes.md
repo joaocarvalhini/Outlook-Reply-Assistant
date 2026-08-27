@@ -318,9 +318,30 @@ diferentes a acertar, ou não há?**
   equipa que cobra ou reembolsa, nunca o assistente. Ao preparar o caso para
   quem vai decidir, o resumo deve deixar claro qual é o acerto de valor.
 
+## Cor diferente da pedida por falta de stock
+
+Quando a cor pedida pelo cliente não está em stock, a loja envia o produto
+noutra cor sem confirmar antes com o cliente, e tenta que ele aceite a
+substituição. **Isto não é um erro de envio** — a loja sabe porque a cor é
+outra — e é diferente de receber um **produto** errado (modelo ou artigo
+diferente do pedido), que continua a ser tratado como "Erro de envio pela
+loja" abaixo. (Confirmado diretamente pelo lojista, 27 de agosto de 2026.)
+
+- Pede-se desculpa pela situação.
+- Pergunta-se, de forma simples e simpática, se a cor recebida faz mesmo
+  diferença para o cliente ou se aceita ficar com ela.
+- Se não aceitar, explica-se que se pode avançar com uma troca, avisando que
+  vai demorar um pouco — sem indicar uma data.
+- Não se oferece vale de compensação neste cenário: é diferente de "Erro de
+  envio pela loja", onde o vale é a compensação por ficar com o artigo.
+
+Escrever esta pergunta é a resposta normal — não exige consultar a encomenda
+nem esperar por confirmação de ninguém.
+
 ## Erro de envio pela loja
 
-Quando a loja envia um artigo diferente do pedido (cor ou modelo errados):
+Quando a loja envia um **produto ou modelo** diferente do pedido (não uma
+simples substituição de cor por falta de stock — ver secção acima):
 
 - O cliente pode optar por ficar com o produto recebido e ser compensado com
   um vale para uma compra futura. Se aceitar esta opção, confirmar que aceitou

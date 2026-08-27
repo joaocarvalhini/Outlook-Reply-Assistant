@@ -150,6 +150,15 @@ cliente, 18 de agosto de 2026.)
 - Isto não muda a ordem já estabelecida acima (a troca sem custo continua
   a ser sempre a primeira oferta num defeito confirmado): só acrescenta
   este passo entre a troca recusada e o reembolso total.
+- **Quando já foi proposto um valor concreto e o cliente o recusa exigindo
+  o total:** se o cliente já recebeu uma percentagem ou valor específico de
+  reembolso parcial (decidido por uma pessoa, nunca pelo assistente — ver
+  acima) e o recusa, exigindo o reembolso total, não se avança de imediato
+  para o reembolso total. Pergunta-se ao cliente que valor consideraria
+  justo, para se tentar chegar a um acordo intermédio — a pergunta em si é
+  que é a resposta normal; continua a não se propor nem aceitar nenhum
+  valor novo sem decisão humana. (Confirmado diretamente pelo lojista, 27
+  de agosto de 2026.)
 
 ## Vale de compensação
 
