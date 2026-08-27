@@ -29,6 +29,7 @@ pie showData
 | ID | Gravidade | Título | Esforço | Estado |
 |---|---|---|---|---|
 | C-1 | 🔴 Crítica | Perda de email quando o modelo falha a meio de lote | Trivial | ✅ **Corrigido 27/08** |
+| P0-2 | 🔴 Crítica | Restrição de acesso do Exchange nunca reverificada | Baixa | 🟡 **Construído 27/08, por ativar** |
 | ~~H-1~~ | ✅ **Corrigido** | Premissa de custo/cache desatualizada em 3 locais | Trivial | Feito 27/08 |
 | H-2 | 🟠 Alta | `processar()` sem cobertura de testes | Média | ⬜ Aberto |
 | H-3 | 🟠 Alta | Regra do pack falha em ambos os modelos | Baixa | ⬜ Aberto |
@@ -42,9 +43,10 @@ pie showData
 | ~~L-2~~ | ✅ **Corrigido** | Ferramentas offline sem exceções de formulário | Trivial | Feito 27/08 |
 | ~~L-3~~ | ✅ **Corrigido** | `Persistent=true` inócuo | Trivial | Feito 27/08 |
 
-> [!TIP] Dez fechados, três em aberto
+> [!TIP] Dez fechados, três em aberto — mais o P0-2, pronto mas por ativar
 > A dívida deste projeto é rasa. Dos que faltam, só o H-2 (testes de `processar()`) exige
-> trabalho a sério; H-3 é pequeno, M-3 depende dos dados da semana de observação.
+> trabalho a sério; H-3 é pequeno, M-3 depende dos dados da semana de observação. O P0-2 já está
+> construído — falta só um endereço de outra caixa do inquilino no `.env` para ligar.
 
 ---
 
@@ -100,6 +102,43 @@ informação errada.
 ambos os modelos, com os números medidos, e que a diferença real é de qualidade de escalação. O
 `README.md` ganhou também a distinção entre cache quente (~0,02 €/email) e cache fria
 (~0,12 €/email), que é o que domina o custo numa loja de pouco volume.
+
+---
+
+## 🟡 P0-2 — Restrição de acesso do Exchange nunca reverificada
+
+**Gravidade:** Crítica · **Estado:** Construído a 27/08/2026, **por ativar**
+
+**Evidência:** `verificar.py --outra-caixa` prova, no dia da instalação, que a aplicação não
+consegue ler outra caixa do inquilino. Depois disso, nada repete o teste. Se o
+`New-ApplicationAccessPolicy` do Exchange (que faz essa restrição, fora deste repositório) for
+removido ou nunca reaplicado depois de uma migração, a aplicação passa a poder ler o correio de
+toda a empresa — e nada no sistema o assinalaria.
+
+**O que ficou construído:** `verificar_restricao_diaria()`, chamada no arranque de `main()`,
+repete o mesmo teste **uma vez por dia** (marcado em `meta`, para não gastar uma chamada extra
+ao Graph em cada passagem de 2 minutos):
+
+| Resposta ao ler `OUTRA_CAIXA_VERIFICACAO` | Significado | Ação |
+|---|---|---|
+| `403` | A restrição continua a funcionar | Regista a data, silencioso |
+| `404` | Inconclusivo — o endereço pode não existir | Regista a data com um aviso no log, não repete no mesmo dia |
+| Outro erro (rede, token) | Não prova nada sobre a política | Tenta outra vez na passagem seguinte |
+| **Sucesso (200)** | **A aplicação leu uma caixa que não é a sua** | `sys.exit()` com uma mensagem de alarme — dispara `OnFailure=` e o alerta do M-6 |
+
+> [!IMPORTANT] Falta um endereço real, e isso não se inventa
+> O teste precisa do endereço de **outra caixa real do mesmo inquilino** — não há um genérico
+> que sirva para qualquer instalação. Fica em `OUTRA_CAIXA_VERIFICACAO` no `.env`, vazio por
+> omissão: sem ele, `verificar_restricao_diaria()` devolve imediatamente sem fazer nada, e o
+> comportamento é o mesmo de antes desta correção.
+>
+> **Para ativar:** preencher `OUTRA_CAIXA_VERIFICACAO` com um endereço real do inquilino da
+> tripat3s no `.env` do servidor. É uma decisão do cliente, não uma correção de código.
+
+6 testes novos (`GraphFalso`, classe `VerificarRestricaoDiaria`), cobrindo os quatro ramos da
+tabela acima e a confirmação de que uma verificação já feita hoje não repete a chamada.
+
+Ver [[security|Segurança]].
 
 ---
 

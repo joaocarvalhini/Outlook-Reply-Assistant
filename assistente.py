@@ -88,6 +88,7 @@ class Config:
     registo_compromissos: bool
     respostas_parciais: bool
     processar_imagens: bool
+    outra_caixa_verificacao: str
 
     @property
     def dominio(self) -> str:
@@ -163,6 +164,13 @@ def carregar_config(dry_run_flag: bool | None) -> Config:
         # imagem. Desligar volta ao comportamento anterior: anexos existem mas
         # nunca são vistos, como se o email não os tivesse.
         processar_imagens=ligado("ENABLE_IMAGE_ATTACHMENTS", "true"),
+        # Endereço de outra caixa real do mesmo inquilino, só para
+        # verificar_restricao_diaria() confirmar que a aplicação continua sem
+        # lhe conseguir aceder -- a prova de que o New-ApplicationAccessPolicy
+        # ainda restringe Mail.ReadWrite a esta caixa. Vazio por omissão: não
+        # há um endereço genérico que sirva para qualquer instalação, isto é
+        # sempre um endereço real do inquilino do cliente.
+        outra_caixa_verificacao=os.environ.get("OUTRA_CAIXA_VERIFICACAO", "").strip().lower(),
     )
 
 
@@ -1179,6 +1187,23 @@ def gravar_cursor(con: sqlite3.Connection, valor: str) -> None:
         "INSERT INTO meta (chave, valor) VALUES ('cursor', ?) "
         "ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor",
         (valor,),
+    )
+    con.commit()
+
+
+def ler_meta(con: sqlite3.Connection, chave: str, omissao: str = "") -> str:
+    """Versão genérica de cursor_atual(), para outras chaves da tabela meta
+    que não sejam o cursor -- por agora só a data da última verificação de
+    segurança (ver verificar_restricao_diaria())."""
+    linha = con.execute("SELECT valor FROM meta WHERE chave = ?", (chave,)).fetchone()
+    return linha[0] if linha else omissao
+
+
+def gravar_meta(con: sqlite3.Connection, chave: str, valor: str) -> None:
+    con.execute(
+        "INSERT INTO meta (chave, valor) VALUES (?, ?) "
+        "ON CONFLICT(chave) DO UPDATE SET valor = excluded.valor",
+        (chave, valor),
     )
     con.commit()
 
@@ -2425,6 +2450,59 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
     return "saltado"
 
 
+def verificar_restricao_diaria(con: sqlite3.Connection, cfg: Config, graph: "Graph") -> None:
+    """P0-2: confirma, uma vez por dia, que a aplicação continua sem conseguir
+    ler outra caixa do inquilino -- a única prova de que o
+    New-ApplicationAccessPolicy (uma política do Exchange, fora deste
+    repositório) ainda restringe Mail.ReadWrite a esta caixa. Sem isto, a
+    política podia ser removida ou nunca ter sido aplicada, e nada o
+    assinalaria -- é o mesmo teste que verificar.py --outra-caixa faz à mão
+    na instalação, só que repetido sozinho.
+
+    Sem OUTRA_CAIXA_VERIFICACAO no .env, não há uma segunda caixa real do
+    inquilino conhecida para testar, e a verificação fica desligada -- não se
+    inventa um endereço só para ter uma verificação a correr.
+    """
+    if not cfg.outra_caixa_verificacao:
+        return
+    hoje = agora()[:10]
+    if ler_meta(con, "ultima-verificacao-seguranca") == hoje:
+        return
+
+    url = f"{GRAPH}/users/{cfg.outra_caixa_verificacao}/mailFolders/inbox/messages"
+    try:
+        graph._pedir("GET", url, params={"$select": "id", "$top": "1"})
+    except RuntimeError as exc:
+        texto = str(exc)
+        if "403" in texto:
+            gravar_meta(con, "ultima-verificacao-seguranca", hoje)
+            return
+        if "404" in texto:
+            # Não prova nada -- o endereço pode simplesmente não existir hoje
+            # (uma pessoa que saiu, uma caixa renomeada). Fica registado para
+            # não ficar a repetir o mesmo aviso a cada passagem do dia.
+            log("aviso-verificacao-seguranca",
+                motivo=f"{cfg.outra_caixa_verificacao} devolveu 404 -- endereço "
+                       "pode não existir, a restrição não ficou provada nem "
+                       "desmentida")
+            gravar_meta(con, "ultima-verificacao-seguranca", hoje)
+            return
+        # Um erro diferente (rede, token) não prova nada sobre a política de
+        # acesso -- tenta-se outra vez amanhã, sem gravar a data.
+        log("erro-verificacao-seguranca", erro=texto[:200])
+        return
+    else:
+        # Não houve exceção: o pedido teve sucesso. A aplicação leu uma caixa
+        # que não é a sua. A política de acesso não está a restringir.
+        sys.exit(
+            f"ALERTA DE SEGURANÇA: a aplicação conseguiu ler "
+            f"{cfg.outra_caixa_verificacao}, uma caixa que não é a sua. "
+            "A política de acesso (New-ApplicationAccessPolicy) não está a "
+            "restringir Mail.ReadWrite a esta caixa -- corrigir antes de "
+            "continuar."
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Uma passagem pela caixa de apoio")
     grupo = parser.add_mutually_exclusive_group()
@@ -2452,6 +2530,8 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:
         log("erro-graph", erro=f"{type(exc).__name__}: {exc}")
         return 1
+
+    verificar_restricao_diaria(con, cfg, graph)
 
     if not mensagens:
         return 0

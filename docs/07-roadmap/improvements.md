@@ -26,16 +26,15 @@ Priorizado por rácio impacto/esforço, com base no que o código revela.
 **Feito a 27/08/2026.** `cursor_seguro()` + 7 testes. Era o Finding C-1.
 Ver [[technical-debt|Dívida técnica]].
 
-### P0-2 · Verificação periódica da política de acesso do Exchange
+### 🟡 P0-2 · Verificação periódica da política de acesso do Exchange — construído, por ativar
 
-| | |
-|---|---|
-| **Problema** | `verificar.py --outra-caixa` prova a restrição, mas só corre quando alguém se lembra. Se a política for removida, a aplicação passa a poder ler **todas** as caixas do inquilino e nada o assinala |
-| **Solução** | Incluir a verificação na passagem, uma vez por dia, com falha ruidosa |
-| **Impacto** | **Crítico** — é a única defesa contra acesso indevido ao correio da empresa |
-| **Complexidade** | Baixa — a lógica já existe em `verificar.py` |
+**Construído a 27/08/2026.** `verificar_restricao_diaria()` repete, uma vez por dia, o mesmo
+teste que `verificar.py --outra-caixa` faz na instalação — e para a passagem com um alarme
+(`sys.exit`, que dispara o alerta do M-6) se conseguir ler outra caixa.
 
-Ver [[security|Segurança]].
+**Falta uma decisão do cliente, não código:** o teste precisa de `OUTRA_CAIXA_VERIFICACAO` no
+`.env` — um endereço real de outra caixa do inquilino da tripat3s. Sem isso, fica desligado como
+estava. Ver Finding P0-2 em [[technical-debt|Dívida técnica]] e [[security|Segurança]].
 
 ---
 
@@ -172,7 +171,7 @@ poderia fechar parte dos 9% restantes a custo controlado. Mensurável com o
 ```mermaid
 flowchart LR
     A["<b>Agora</b><br/>semana de observação<br/><i>até ~02/09</i>"] --> B["<b>✅ Feito 27/08</b><br/>H-1 · M-1 · M-2 · M-4<br/>M-5 · M-6 · L-1 · L-2 · L-3"]
-    B --> C["<b>Curto prazo</b><br/>P0-2 verificação"]
+    B --> C["<b>Curto prazo</b><br/>P0-2: só falta o endereço<br/>no OUTRA_CAIXA_VERIFICACAO"]
     C --> D["<b>Médio prazo</b><br/>H-2 testes<br/>H-3 pack"]
     D --> E["<b>Depois dos dados</b><br/>P2-4 stock<br/>P2-7 deriva<br/>decisão de modelo"]
 

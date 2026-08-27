@@ -75,8 +75,11 @@ O ficheiro documenta a sua própria razão de existir:
 > É o passo mais importante do projeto e o mais fácil de esquecer, e um aviso no README não é um
 > travão. Aqui é.
 
-> [!WARNING] Mas só corre quando alguém se lembra
-> A verificação é manual, não periódica. É a recomendação **P0-2** em [[improvements|Melhorias]].
+> [!NOTE] Também repetida automaticamente, uma vez ativada
+> `verificar_restricao_diaria()` (`assistente.py`) corre o mesmo teste uma vez por dia a partir
+> de 27/08/2026, e para a passagem com um alarme de segurança se conseguir ler outra caixa —
+> mas só se `OUTRA_CAIXA_VERIFICACAO` estiver definida no `.env` com um endereço real do
+> inquilino, o que ainda não foi decidido. Ver Finding P0-2 em [[technical-debt|Dívida técnica]].
 
 ## Gestão de segredos
 

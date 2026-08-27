@@ -27,6 +27,7 @@ from assistente import (
     Config,
     Correspondencia,
     _com_retentativa,
+    agora,
     compromissos_do_fio,
     decidir,
     emails_iguais,
@@ -44,7 +45,9 @@ from assistente import (
     desembrulhar_formularios,
     extrair_numero_encomenda,
     extrair_numeros_encomenda,
+    gravar_meta,
     ja_processado,
+    ler_meta,
     para_html,
     para_texto,
     registar,
@@ -52,6 +55,7 @@ from assistente import (
     resumir_historico,
     saudacao,
     selecionar_anexos_de_imagem,
+    verificar_restricao_diaria,
     sem_lixo_apos_assinatura,
     triar,
     triar_cabecalhos,
@@ -74,6 +78,7 @@ def cfg(**over: object) -> Config:
         "empresa": "A Loja", "assinatura": "Equipa",
         "cat_rascunho": "IA-Rascunhado", "cat_humano": "Precisa de humano",
         "aviso": "--- rascunho automático ---",
+        "outra_caixa_verificacao": "",
     }
     base.update(over)
     return Config(**base)  # type: ignore[arg-type]
@@ -1257,6 +1262,80 @@ class CursorSeguro(unittest.TestCase):
             ("2026-08-06T09:00:00Z", "rascunhado"),
         ])
         self.assertEqual(seguro, "2026-08-06T09:00:00Z")
+
+
+class GraphFalso:
+    """Dublê mínimo de Graph, só com o que verificar_restricao_diaria() usa."""
+
+    def __init__(self, resultado: Exception | None) -> None:
+        # None simula sucesso (200) -- a caixa foi lida, o que é o cenário
+        # mau. Uma exceção simula o que _pedir() levanta para esse status.
+        self._resultado = resultado
+        self.chamadas = 0
+
+    def _pedir(self, metodo: str, url: str, **kw: object) -> dict:
+        self.chamadas += 1
+        if self._resultado is not None:
+            raise self._resultado
+        return {"value": [{"id": "x"}]}
+
+
+class VerificarRestricaoDiaria(unittest.TestCase):
+    """P0-2: a única defesa automática contra a política de acesso do
+    Exchange ser removida. Ver Finding P0-2 em docs/07-roadmap/improvements.md.
+    """
+
+    def setUp(self) -> None:
+        pasta = TemporaryDirectory()
+        self.addCleanup(pasta.cleanup)
+        self.con = abrir_db(Path(pasta.name) / "t.db")
+        self.addCleanup(self.con.close)
+
+    def test_sem_outra_caixa_configurada_nao_faz_nada(self) -> None:
+        c = cfg(outra_caixa_verificacao="")
+        g = GraphFalso(RuntimeError("Graph 403: negado"))
+        verificar_restricao_diaria(self.con, c, g)
+        self.assertEqual(g.chamadas, 0)
+
+    def test_403_confirma_a_restricao_e_grava_a_data(self) -> None:
+        c = cfg(outra_caixa_verificacao="colega@tripat3s.com")
+        g = GraphFalso(RuntimeError("Graph 403: negado"))
+        verificar_restricao_diaria(self.con, c, g)
+        self.assertEqual(g.chamadas, 1)
+        self.assertEqual(ler_meta(self.con, "ultima-verificacao-seguranca"), agora()[:10])
+
+    def test_404_nao_prova_nada_mas_nao_repete_no_mesmo_dia(self) -> None:
+        c = cfg(outra_caixa_verificacao="pessoa-que-ja-saiu@tripat3s.com")
+        g = GraphFalso(RuntimeError("Graph 404: não encontrado"))
+        verificar_restricao_diaria(self.con, c, g)
+        self.assertEqual(ler_meta(self.con, "ultima-verificacao-seguranca"), agora()[:10])
+
+    def test_erro_diferente_nao_grava_data_tenta_outra_vez_depois(self) -> None:
+        c = cfg(outra_caixa_verificacao="colega@tripat3s.com")
+        g = GraphFalso(RuntimeError("Graph 500: falha do servidor"))
+        verificar_restricao_diaria(self.con, c, g)
+        self.assertEqual(ler_meta(self.con, "ultima-verificacao-seguranca"), "")
+
+    def test_ja_verificado_hoje_nao_chama_o_graph_outra_vez(self) -> None:
+        c = cfg(outra_caixa_verificacao="colega@tripat3s.com")
+        gravar_meta(self.con, "ultima-verificacao-seguranca", agora()[:10])
+        g = GraphFalso(RuntimeError("Graph 403: negado"))
+        verificar_restricao_diaria(self.con, c, g)
+        self.assertEqual(g.chamadas, 0)
+
+    def test_sucesso_a_ler_a_outra_caixa_e_um_alarme_de_seguranca(self) -> None:
+        """O cenário que a verificação existe para apanhar: a política de
+        acesso deixou de restringir, e a aplicação leu uma caixa que não é a
+        sua."""
+        c = cfg(outra_caixa_verificacao="colega@tripat3s.com")
+        g = GraphFalso(None)
+        with self.assertRaises(SystemExit) as ctx:
+            verificar_restricao_diaria(self.con, c, g)
+        self.assertIn("ALERTA DE SEGURANÇA", str(ctx.exception))
+        # De propósito, não fica gravado como "verificado" -- não seria
+        # verdade, e mascararia o alarme se alguém corrigir a política e a
+        # passagem seguinte relançar a verificação no mesmo dia.
+        self.assertEqual(ler_meta(self.con, "ultima-verificacao-seguranca"), "")
 
 
 class RegistoDeCompromissos(unittest.TestCase):
