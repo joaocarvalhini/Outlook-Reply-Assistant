@@ -1129,10 +1129,13 @@
       "to": [
         "{mailbox}"
       ],
+      "headers": [
+        ["List-Unsubscribe", "<mailto:unsubscribe@formspree.io>"]
+      ],
       "body": "You've received a new form submission. --\n\nNew form submission on Devolução site\n\nSomeone just submitted a form on www.tripat3s.com/. Here's what they had to say:\n\nnumero_pedido\n#22301\n\nemail\nrita.confirma99@gmail.com\n\nnome\nRita Confirma\n\ntelefone\n925001122\n\nproduto\nSmartwatch Z81\n\nmotivo_principal\ndefeito\n\nonde_erro\nproduto\n\ndescricao\nO relógio não liga de todo, tentei carregar 24 horas e nada.\n\ndetalhe_motivo\nComprado há 5 dias, nunca funcionou bem."
     },
     "expect": "rascunhar",
-    "note": "submissao real do formulario de devolucao do site (o passo padrao da propria knowledge base, 'Como iniciar uma devolucao'), reencaminhada pelo Formspree como noreply@formspree.io. Bug corrigido em 22/08/2026, encontrado em producao: 'noreply' apanhava isto em _ROBOS e o Formspree ainda carimba list-unsubscribe por cima -- as duas juntas descartavam TODA submissao deste formulario desde sempre, sem excecao. Verificacao manual do texto: deve responder ao pedido de garantia do smartwatch (produto nao liga), nao aparecer como saltado nem pedir dados que ja vieram no formulario (email, telefone, numero da encomenda)."
+    "note": "submissao real do formulario de devolucao do site (o passo padrao da propria knowledge base, 'Como iniciar uma devolucao'), reencaminhada pelo Formspree como noreply@formspree.io. Bug corrigido em 22/08/2026, encontrado em producao: 'noreply' apanhava isto em _ROBOS e o Formspree ainda carimba list-unsubscribe por cima -- as duas juntas descartavam TODA submissao deste formulario desde sempre, sem excecao. O cabecalho list-unsubscribe simulado aqui (acrescentado 27/08/2026) e o que faz este caso exercitar mesmo essa segunda parte do bug -- sem ele o caso so testava a excecao do local-part 'noreply', nao a exceção de cabecalhos. Verificacao manual do texto: deve responder ao pedido de garantia do smartwatch (produto nao liga), nao aparecer como saltado nem pedir dados que ja vieram no formulario (email, telefone, numero da encomenda)."
   },
   {
     "id": "duas-encomendas-mencionadas-pergunta-qual",

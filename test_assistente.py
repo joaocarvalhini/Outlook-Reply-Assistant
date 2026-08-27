@@ -15,6 +15,7 @@ import json
 import re
 import sqlite3
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -25,6 +26,7 @@ from assistente import (
     DOMINIOS_BASE,
     Config,
     Correspondencia,
+    _com_retentativa,
     compromissos_do_fio,
     decidir,
     emails_iguais,
@@ -39,6 +41,7 @@ from assistente import (
     cursor_seguro,
     desembrulhar_formulario_contacto,
     desembrulhar_formulario_devolucao,
+    desembrulhar_formularios,
     extrair_numero_encomenda,
     extrair_numeros_encomenda,
     ja_processado,
@@ -410,6 +413,117 @@ class FormularioDevolucaoFormspree(unittest.TestCase):
         m = dict(original)
         self.assertFalse(desembrulhar_formulario_devolucao(m))
         self.assertEqual(m, original)
+
+
+class DesembrulharFormularios(unittest.TestCase):
+    """A função partilhada por processar() e pelas ferramentas offline
+    (medir_deriva.py, reprocessar.py, eval.py) -- ver Finding L-2: sem ela,
+    essas ferramentas descartavam submissões de formulário que a produção
+    processa corretamente, porque nunca calculavam os flags que
+    triar_cabecalhos() precisa para as exceções de feedback-id/list-unsubscribe.
+    """
+
+    def test_email_normal_nao_e_tocado(self) -> None:
+        original = msg()
+        m = dict(original)
+        contacto, devolucao, motivo = desembrulhar_formularios(m)
+        self.assertEqual((contacto, devolucao, motivo), (False, False, None))
+        self.assertEqual(m, original)
+
+    def test_formulario_de_contacto_reconhecido(self) -> None:
+        m = msg(de="mailer@shopify.com", corpo=FormularioContactoShopify.CORPO_REAL)
+        contacto, devolucao, motivo = desembrulhar_formularios(m)
+        self.assertEqual((contacto, devolucao, motivo), (True, False, None))
+        self.assertEqual(m["de"], "duartepatricia2005@hotmail.com")
+
+    def test_formulario_de_devolucao_reconhecido(self) -> None:
+        # eh_formulario_devolucao() exige também que o assunto bata com o
+        # padrão do Formspree -- ao contrário do de contacto, que só olha
+        # para o remetente.
+        m = msg(
+            de="noreply@formspree.io",
+            assunto="New submission from Devolução site",
+            corpo=FormularioDevolucaoFormspree.CORPO_REAL,
+        )
+        contacto, devolucao, motivo = desembrulhar_formularios(m)
+        self.assertEqual((contacto, devolucao, motivo), (False, True, None))
+        self.assertEqual(m["de"], "alexandramatiaszz@gmail.com")
+
+    def test_contacto_com_cara_de_formulario_mas_corpo_nao_bate_certo(self) -> None:
+        """Remetente mailer@shopify.com sem o corpo do formulário: descarta,
+        e os dois flags voltam a False -- a mensagem nunca chega a
+        triar_cabecalhos(), por isso não faz sentido dizer que "veio" de lá."""
+        m = msg(de="mailer@shopify.com", corpo="Aviso qualquer da plataforma.")
+        self.assertEqual(
+            desembrulhar_formularios(m),
+            (False, False, "formulario-contacto-nao-reconhecido"),
+        )
+
+    def test_devolucao_com_cara_de_formulario_mas_corpo_nao_bate_certo(self) -> None:
+        m = msg(
+            de="noreply@formspree.io",
+            assunto="New submission from Devolução site",
+            corpo="New form submission on Devolução site\n\nnome\nAlguém\n\n",
+        )
+        self.assertEqual(
+            desembrulhar_formularios(m),
+            (False, False, "formulario-devolucao-nao-reconhecido"),
+        )
+
+
+class _RespostaFalsa:
+    def __init__(self, status: int, headers: dict[str, str] | None = None) -> None:
+        self.status_code = status
+        self.headers = headers or {}
+
+
+class RetentativaHttp(unittest.TestCase):
+    """Graph._pedir() (só GET) e Shopify._procurar() partilham isto -- ver
+    Finding M-2. Um 429/5xx é transitório e vale a pena repetir; um 4xx
+    permanente (token inválido, pedido mal formado) sai já na primeira, sem
+    disfarçar o erro real atrás de tentativas inúteis.
+    """
+
+    def setUp(self) -> None:
+        # As esperas reais (1s, 2s, ...) tornariam esta classe a mais lenta da
+        # suite de longe; o que se testa é a lógica de decisão, não o relógio.
+        self._sleep = patch("assistente.time.sleep").start()
+        self.addCleanup(patch.stopall)
+
+    def test_sucede_depois_de_um_503(self) -> None:
+        respostas = iter([_RespostaFalsa(503), _RespostaFalsa(200)])
+        r = _com_retentativa(lambda: next(respostas))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(self._sleep.call_count, 1)
+
+    def test_esgota_as_tentativas_e_devolve_o_ultimo_erro(self) -> None:
+        chamadas = []
+
+        def pedido() -> _RespostaFalsa:
+            chamadas.append(1)
+            return _RespostaFalsa(429)
+
+        r = _com_retentativa(pedido, tentativas=3)
+        self.assertEqual(r.status_code, 429)
+        self.assertEqual(len(chamadas), 3)
+
+    def test_erro_permanente_nao_repete(self) -> None:
+        chamadas = []
+
+        def pedido() -> _RespostaFalsa:
+            chamadas.append(1)
+            return _RespostaFalsa(404)
+
+        r = _com_retentativa(pedido, tentativas=3)
+        self.assertEqual(r.status_code, 404)
+        self.assertEqual(len(chamadas), 1)
+        self._sleep.assert_not_called()
+
+    def test_respeita_retry_after_do_429(self) -> None:
+        respostas = iter([_RespostaFalsa(429, {"retry-after": "7"}), _RespostaFalsa(200)])
+        r = _com_retentativa(lambda: next(respostas))
+        self.assertEqual(r.status_code, 200)
+        self._sleep.assert_called_once_with(7.0)
 
 
 class Blocklist(unittest.TestCase):

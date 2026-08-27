@@ -39,6 +39,8 @@ import os
 import re
 import sqlite3
 import sys
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
@@ -422,6 +424,30 @@ def desembrulhar_formulario_devolucao(msg: dict) -> bool:
         msg["nome"] = campos["nome"]
     msg["corpo"] = "\n".join(linhas)
     return True
+
+
+def desembrulhar_formularios(msg: dict) -> tuple[bool, bool, str | None]:
+    """Reconhece e desembrulha um email vindo de um formulário do site --
+    contacto (via Shopify) ou devolução (via Formspree) -- mutando `msg` no
+    lugar quando reconhece. Só faz sentido chamar depois de graph.detalhe(),
+    porque os dois formulários só se confirmam com o corpo em mãos.
+
+    Devolve (veio_do_formulario_contacto, veio_do_formulario_devolucao, motivo).
+    Os dois primeiros vêm calculados a partir do remetente ANTES de o
+    desembrulhar substituir msg["de"] pelo email real do cliente -- é o que
+    triar_cabecalhos() precisa para aplicar as exceções de feedback-id e
+    list-unsubscribe (ver a docstring de triar_cabecalhos()). `motivo` só vem
+    preenchido quando o remetente tinha a cara de um formulário mas o corpo
+    não bateu certo: aí os dois flags voltam a False, porque a mensagem já vai
+    ser descartada antes de chegar a triar_cabecalhos().
+    """
+    veio_do_formulario_contacto = msg["de"] == "mailer@shopify.com"
+    if veio_do_formulario_contacto and not desembrulhar_formulario_contacto(msg):
+        return False, False, "formulario-contacto-nao-reconhecido"
+    veio_do_formulario_devolucao = eh_formulario_devolucao(msg)
+    if veio_do_formulario_devolucao and not desembrulhar_formulario_devolucao(msg):
+        return False, False, "formulario-devolucao-nao-reconhecido"
+    return veio_do_formulario_contacto, veio_do_formulario_devolucao, None
 
 
 def carregar_blocklist(caminho: Path) -> frozenset[str]:
@@ -1358,6 +1384,31 @@ def extrair_numero_encomenda(assunto: str, corpo: str) -> str | None:
     return numeros[0] if numeros else None
 
 
+# Partilhado por Graph._pedir() e Shopify._procurar(). Um 429 ou 5xx é
+# transitório -- limite de taxa, o servidor a reiniciar -- e vale a pena
+# tentar outra vez. Um 4xx que não seja 429 (token inválido, pedido mal
+# formado) é permanente: insistir não resolve, e cada tentativa a mais só
+# atrasa o erro real a aparecer.
+_HTTP_TRANSITORIO = {429, 500, 502, 503, 504}
+
+
+def _com_retentativa(pedido: Callable[[], httpx.Response], tentativas: int = 3) -> httpx.Response:
+    espera = 1.0
+    for tentativa in range(tentativas):
+        r = pedido()
+        ultima = tentativa == tentativas - 1
+        if r.status_code not in _HTTP_TRANSITORIO or ultima:
+            return r
+        # O 429 costuma vir com Retry-After; sem ele, espera exponencial.
+        atraso = espera
+        cabecalho = r.headers.get("retry-after", "")
+        if r.status_code == 429 and cabecalho.isdigit():
+            atraso = float(cabecalho)
+        time.sleep(atraso)
+        espera *= 2
+    return r
+
+
 class Shopify:
     """Client credentials grant: só funciona porque a app e a loja pertencem à
     mesma organização Shopify. O token expira ao fim de 24h; pede-se um novo
@@ -1396,11 +1447,11 @@ class Shopify:
     )
 
     def _procurar(self, **params: str) -> list[dict]:
-        r = self.http.get(
+        r = _com_retentativa(lambda: self.http.get(
             f"{self.base}/orders.json",
             headers={"X-Shopify-Access-Token": self._obter_token()},
             params={"status": "any", "fields": self.CAMPOS_ENCOMENDA, **params},
-        )
+        ))
         if r.status_code >= 400:
             raise RuntimeError(f"Shopify orders {r.status_code}: {r.text[:200]}")
         return list(r.json().get("orders", []))
@@ -1695,7 +1746,7 @@ class Graph:
         return str(r["access_token"])
 
     def _pedir(self, metodo: str, url: str, **kw: object) -> dict:
-        r = self.http.request(
+        fazer = lambda: self.http.request(  # noqa: E731
             metodo,
             url,
             headers={
@@ -1704,6 +1755,12 @@ class Graph:
             },
             **kw,
         )
+        # Só GET se repete sozinho. Um POST (createReply) ou PATCH (marcar)
+        # a meio de um 5xx pode já ter sido aplicado do lado do Graph --
+        # repeti-lo às cegas arrisca duplicar um rascunho. Falha imediata é
+        # o comportamento mais seguro para os dois, e essas chamadas já
+        # ficam isoladas por processar() (ver erro-dossie, por exemplo).
+        r = _com_retentativa(fazer) if metodo == "GET" else fazer()
         if r.status_code >= 400:
             raise RuntimeError(f"Graph {r.status_code}: {r.text[:200]}")
         return r.json() if r.content else {}
@@ -2110,13 +2167,11 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         # aqui não deve derrubar as restantes mensagens da passagem.
         registar(con, msg, "saltar", "mensagem-desapareceu-antes-do-detalhe", "")
         return "saltado"
-    veio_do_formulario_contacto = msg["de"] == "mailer@shopify.com"
-    if veio_do_formulario_contacto and not desembrulhar_formulario_contacto(msg):
-        registar(con, msg, "saltar", "formulario-contacto-nao-reconhecido", "")
-        return "saltado"
-    veio_do_formulario_devolucao = eh_formulario_devolucao(msg)
-    if veio_do_formulario_devolucao and not desembrulhar_formulario_devolucao(msg):
-        registar(con, msg, "saltar", "formulario-devolucao-nao-reconhecido", "")
+    veio_do_formulario_contacto, veio_do_formulario_devolucao, motivo = (
+        desembrulhar_formularios(msg)
+    )
+    if motivo:
+        registar(con, msg, "saltar", motivo, "")
         return "saltado"
     motivo = triar_cabecalhos(msg, veio_do_formulario_contacto, veio_do_formulario_devolucao)
     if motivo:

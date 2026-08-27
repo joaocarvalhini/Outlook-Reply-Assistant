@@ -196,9 +196,15 @@ def main(argv: list[str] | None = None) -> int:
     ja_nao_rascunha = 0
 
     for msg, real in casos:
-        if a.triar(msg, cfg, bloqueados) or (
-            graph.detalhe(msg, cfg.max_body) and a.triar_cabecalhos(msg)
-        ):
+        if a.triar(msg, cfg, bloqueados):
+            continue
+        graph.detalhe(msg, cfg.max_body)
+        # Sem isto, um email do formulário de devolução (noreply@formspree.io,
+        # com list-unsubscribe carimbado por cima) era descartado aqui como se
+        # fosse bulk mail -- exatamente o bug de produção de 22/08/2026 que a
+        # exceção em triar_cabecalhos() existe para evitar.
+        veio_contacto, veio_devolucao, motivo_formulario = a.desembrulhar_formularios(msg)
+        if motivo_formulario or a.triar_cabecalhos(msg, veio_contacto, veio_devolucao):
             continue
 
         assunto = msg["assunto"]

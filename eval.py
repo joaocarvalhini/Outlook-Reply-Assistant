@@ -98,7 +98,15 @@ def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
     if motivo:
         return "saltar", "triagem", motivo
 
-    motivo = a.triar_cabecalhos(msg)
+    # Sem isto, um caso que simule o formulário de devolução (Formspree, com
+    # list-unsubscribe carimbado) era descartado aqui como bulk mail, e o
+    # corpo que chegava ao modelo nos casos que passassem era o dump em bruto
+    # do formulário, não o texto reformatado que a produção usa.
+    veio_contacto, veio_devolucao, motivo = a.desembrulhar_formularios(msg)
+    if motivo:
+        return "saltar", "triagem", motivo
+
+    motivo = a.triar_cabecalhos(msg, veio_contacto, veio_devolucao)
     if motivo:
         return "saltar", "cabeçalhos", motivo
 
