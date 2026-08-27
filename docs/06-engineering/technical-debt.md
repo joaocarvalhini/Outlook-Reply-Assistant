@@ -172,25 +172,48 @@ Ver [[qa|QA e testes]].
 
 ---
 
-## 🟠 H-3 — Regra do pack falha em ambos os modelos
+## 🟠 H-3 — Regra do pack falha em ambos os modelos (diagnóstico revisto a 27/08/2026)
 
 **Evidência:** o caso `reembolso-artigo-de-pack-divide-igualmente` testa uma regra escrita e
 confirmada pelo lojista: o valor de um artigo dentro de um pack é o total dividido pelo número de
-artigos (90 € ÷ 3 = 30 €). A regra está em `devolucoes.md`.
+artigos (90 € ÷ 3 = 30 €). A regra está em `devolucoes.md`, **com o exemplo numérico já
+resolvido** ("pack de 3 artigos por 90€ → 30€ por artigo").
 
 Na medição de 26/08/2026, **ambos os modelos falharam**: Sonnet escalou em vez de responder;
-Haiku idem. **Não é diferença entre modelos — é a regra a não ser aplicada.**
+Haiku idem.
 
-**Impacto:** um cliente que pergunte o valor de reembolso de um artigo de pack recebe uma
-escalação em vez de resposta, apesar de a loja ter regra escrita. Trabalho manual evitável, de
-forma recorrente.
+> [!WARNING] O diagnóstico original (H-3 tal como descrito no PDF de 27/08 de manhã) estava
+> incompleto
+> Tinha atribuído isto a "aritmética sem espaço de raciocínio", pelo mesmo padrão que resolveu o
+> prazo de devolução — e propus mover o cálculo para código. **Reexaminado ao tentar
+> implementar isso**, e não se sustenta:
+>
+> 1. **Os números não vêm de dados estruturados.** O prazo de devolução vem de campos reais da
+>    Shopify (data de entrega, +14 dias). Aqui, "pack de 3 artigos" e "90€" só existem no texto
+>    livre da conversa — a Shopify não tem conceito de "pack" nos dados que `resumir_encomenda()`
+>    recebe. Pré-calcular exigiria interpretar linguagem natural em código, o que é frágil e
+>    arrisca extrair o número errado de emails que não sejam sobre isto.
+> 2. **Há uma tensão real entre duas regras do prompt.** A regra geral diz, com ênfase repetido:
+>    *"Reembolso (…) escala sempre, mesmo em forma de pergunta (…) não escreves no 'corpo' de um
+>    rascunho."* A secção do pack diz para responder com o valor calculado **diretamente** — que
+>    é precisamente um valor de reembolso num rascunho. O caso de eval espera `"rascunhar"`; a
+>    regra geral, lida à letra, pediria `"escalar"`. **É defensável que o modelo esteja a seguir
+>    a regra mais forte e mais repetida do prompt, não a falhar contas.**
 
-**Correção — Inference:** a causa provável é aritmética sem espaço de raciocínio, o mesmo padrão
-que motivou mover o cálculo do prazo de devolução para Python. A solução consistente com a
-arquitetura seria **fornecer o valor por artigo já calculado** nos dados da encomenda, em vez de
-pedir ao modelo que divida.
+**O que isto muda:** já não é um problema de aritmética resolvível movendo um cálculo para
+Python — é uma ambiguidade de especificação entre duas regras que se aplicam ao mesmo caso.
+Resolver exige uma de duas coisas:
 
-Ver [[decision-making|Tomada de decisão]] — é exatamente o padrão "mover para fora do modelo".
+- **Confirmar com o lojista** se "informar o valor calculado" conta como exceção à regra geral de
+  reembolso (é uma pergunta informativa do cliente, não um pedido para processar), e reescrever a
+  secção do pack para o dizer explicitamente — ou
+- **Medir empiricamente** com o `eval.py` se uma reformulação da secção do pack (a explicitar a
+  exceção) muda o comportamento, o que implica uma corrida paga.
+
+Nenhuma das duas foi feita — fica como está até uma delas acontecer. Ver
+[[decision-making|Tomada de decisão]] para o padrão que **continua** válido para decisões
+verdadeiramente aritméticas (como o prazo de devolução), e [[prompts|Prompts]] para o texto
+completo da regra de reembolso.
 
 ---
 

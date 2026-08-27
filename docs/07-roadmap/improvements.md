@@ -61,17 +61,19 @@ exponencial. Finding M-2.
 **Feito a 27/08/2026.** Os três locais corrigidos, com os números medidos e a distinção entre
 cache quente e fria. Finding H-1.
 
-### P1-4 · Resolver o cálculo do pack em código
+### 🔴 P1-4 · Regra do pack — diagnóstico corrigido, ainda por resolver
+
+**Revisto a 27/08/2026.** A solução proposta ("mover o cálculo para código") não se sustenta:
+o número de artigos do pack só existe em texto livre da conversa, não em dados estruturados da
+Shopify, e há uma tensão real entre a regra geral de reembolso ("escala sempre, mesmo em
+pergunta") e a secção do pack (que pede resposta direta com o valor). Ver Finding H-3 em
+[[technical-debt|Dívida técnica]] para a análise completa.
 
 | | |
 |---|---|
-| **Problema** | A regra "valor = total ÷ nº artigos" está escrita mas falha em **ambos** os modelos |
-| **Solução** | Fornecer o valor por artigo já calculado nos dados da encomenda, em vez de pedir ao modelo que divida |
-| **Impacto** | Médio — trabalho manual recorrente e evitável |
-| **Complexidade** | Baixa |
-
-Finding H-3. É o mesmo padrão que resolveu o prazo de devolução — ver
-[[technical-decisions|Decisões técnicas]].
+| **Precisa de** | Uma decisão do cliente (a resposta direta é mesmo a exceção pretendida?) **ou** uma corrida de eval paga para testar uma reformulação |
+| **Impacto** | Médio — trabalho manual recorrente e evitável, se for mesmo um bug de especificação |
+| **Complexidade** | Indeterminada até à decisão acima |
 
 ### ✅ P1-5 · Alerta em falha de passagem
 
