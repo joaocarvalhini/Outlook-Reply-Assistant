@@ -38,30 +38,32 @@ flowchart TD
     NUM -->|Sim| BUSCA["Shopify: por_numero(nº)"]
     BUSCA --> MATCH{"Quantas têm o email<br/>do remetente?"}
     MATCH -->|"Exatamente 1"| N1["<b>EXATA</b><br/>nº + email da compra"]
-    MATCH -->|"Mais de 1"| X1["<b>NENHUMA</b><br/>vários candidatos"]
+    MATCH -->|"Mais de 1"| X1["<b>NENHUMA, com opções</b><br/>email bate, várias encomendas"]
     MATCH -->|Zero| CAND{"Quantos candidatos<br/>com esse número?"}
 
     CAND -->|1| SIN{"Há outro indício?<br/>nome completo · telefone<br/>· código postal"}
     SIN -->|Sim| N2["<b>ALTA</b><br/>nº + indício"]
     SIN -->|Não| N3["<b>MEDIA</b><br/>só o número"]
-    CAND -->|"Mais de 1"| X2["<b>NENHUMA</b>"]
+    CAND -->|"Mais de 1"| X2["<b>NENHUMA</b><br/>email não bate com nenhuma"]
     CAND -->|Zero| X3["<b>NENHUMA</b><br/>sem correspondência"]
 
     NUM -->|Não| EM["Shopify: por_email(remetente)"]
     EM --> Q{"Quantas encomendas?"}
     Q -->|"Exatamente 1"| N4["<b>ALTA</b><br/>email único"]
-    Q -->|"Mais de 1"| X4["<b>NENHUMA</b>"]
+    Q -->|"Mais de 1"| X4["<b>NENHUMA, com opções</b><br/>email bate, várias encomendas"]
     Q -->|Zero| X5["<b>NENHUMA</b>"]
 
-    N1 & N2 & N4 --> REV["✅ pode_revelar<br/>dados vão ao modelo"]
+    N1 & N2 & N4 --> REV["✅ pode_revelar<br/>dados completos vão ao modelo"]
     N3 --> AV1["⚠️ aviso: existe,<br/>mas não se prova"]
-    X1 & X2 & X4 --> AV2["⚠️ aviso: N candidatos"]
+    X1 & X4 --> AV2O["📋 aviso: nº + data de cada<br/>uma -- pede para especificar,<br/><b>sem escalar por isto</b>"]
+    X2 --> AV2["⚠️ aviso: N candidatos,<br/>nenhum dado"]
     X3 --> AV3["⚠️ aviso: nº dado,<br/>nada encontrado"]
     X5 --> SEM["sem dados nem aviso<br/><i>(não deu número)</i>"]
 
     style REV fill:#c8e6c9
     style AV1 fill:#ffccbc
     style AV2 fill:#ffccbc
+    style AV2O fill:#fff3e0
     style AV3 fill:#ffccbc
     style N3 fill:#fff3e0
 ```
@@ -72,7 +74,19 @@ flowchart TD
 | **alta** | Número + outro indício de identidade | ✅ |
 | **alta** | Sem número, mas o email tem **exatamente uma** encomenda | ✅ |
 | **media** | Só o número, sem mais nada | ❌ |
-| **nenhuma** | Vários candidatos, ou nada encontrado | ❌ |
+| **nenhuma**, com opções | Email do remetente bate com **mais do que uma** encomenda | ❌ (dados completos) — mas número + data de cada uma vão no aviso |
+| **nenhuma** | Vários candidatos sem nenhum email a bater, ou nada encontrado | ❌ |
+
+> [!TIP] "Nenhuma, com opções" não é o mesmo risco que "nenhuma" — corrigido 27/08/2026
+> Antes desta correção, um cliente recorrente sem o número à mão (email a bater com 2+
+> encomendas) escalava sempre como `IDENTIDADE_NAO_VERIFICADA`, tratado exatamente como o caso em
+> que o email **nem sequer bate**. Isso é sobrecautela: o email já prova a titularidade (é o
+> mesmo nível de confiança que revela tudo quando há só uma correspondência); só falta saber qual
+> das compras. `Correspondencia.opcoes` leva o número e a data de cada uma (não são segredo — ver
+> abaixo) para o modelo pedir diretamente ao cliente para especificar, **sem escalar por causa
+> disto**. Ver Finding "identidade — várias encomendas do mesmo email" em
+> [[technical-debt|Dívida técnica]] e o caso `cliente-com-duas-encomendas-mesmo-email-pergunta-qual`
+> no [[evaluation|banco de ensaio]].
 
 ## O nível `media` — a decisão mais importante
 
@@ -162,15 +176,19 @@ resolução por níveis produzisse um falso positivo em produção, desliga-se s
 ## Cobertura de teste
 
 **Implemented** — `test_assistente.py`, classe `ResolucaoDeIdentidade`, com uma `ShopifyFalsa`.
-Cobre os quatro níveis e os casos de vários candidatos.
+Cobre os quatro níveis, os casos de vários candidatos, e que `opcoes` só se preenche quando o
+email já bateu (`test_varios_candidatos_com_email_a_bater_leva_opcoes` e o par
+`test_varios_candidatos_sem_email_a_bater_nao_leva_opcoes`). A nível de `processar()`, a classe
+`Processar` confirma que o aviso construído nunca inclui mais do que número e data.
 
-E no [[evaluation|banco de ensaio]], dois casos dedicados:
+E no [[evaluation|banco de ensaio]], quatro casos dedicados:
 
 | Caso | Testa |
 |---|---|
 | `identidade-nao-verificada-nao-revela-nada` | Não revelar em `media`, categoria correta |
 | `identidade-por-confirmar-nao-prepara-dossie` | Não preparar dossiê sem identidade |
 | `identidade-nao-confirmada-pede-email-e-telefone` | Sugerir o pedido de confirmação certo |
+| `cliente-com-duas-encomendas-mesmo-email-pergunta-qual` | Responder direto, sem escalar, citando as duas encomendas — verificação manual do texto, ainda não corrida contra o modelo real |
 
 ## Related
 

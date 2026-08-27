@@ -20,6 +20,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from exportar import anonimizar, anonimizar_endereco, palpitar
+from medir_deriva import fechar_ciclo
+from verificar_kb import analisar_base
 
 from assistente import (
     CATEGORIAS,
@@ -1132,6 +1134,27 @@ class ResolucaoDeIdentidade(unittest.TestCase):
         self.assertFalse(r.pode_revelar)
         self.assertIn("varios_candidatos", r.razoes)
 
+    def test_varios_candidatos_com_email_a_bater_leva_opcoes(self) -> None:
+        """O email do remetente confirma que são todas dele -- diferente do
+        caso sem nenhum email a bater, aqui há uma lista segura (número +
+        data) para o cliente escolher, em vez do silêncio total."""
+        s = ShopifyFalsa(por_numero=[
+            encomenda_falsa(name="#21910", created_at="2026-08-10T10:00:00Z"),
+            encomenda_falsa(name="#21910", created_at="2026-08-20T10:00:00Z"),
+        ])
+        r = resolver_encomenda(s, msg(de="cliente@gmail.com"), "", "21910")
+        self.assertFalse(r.pode_revelar)
+        self.assertEqual(r.opcoes, (("#21910", "2026-08-10"), ("#21910", "2026-08-20")))
+
+    def test_varios_candidatos_sem_email_a_bater_nao_leva_opcoes(self) -> None:
+        s = ShopifyFalsa(por_numero=[
+            encomenda_falsa(name="#21910", email="a@a.pt"),
+            encomenda_falsa(name="#21910", email="b@b.pt"),
+        ])
+        r = resolver_encomenda(s, msg(de="curioso@gmail.com"), "", "21910")
+        self.assertFalse(r.pode_revelar)
+        self.assertEqual(r.opcoes, ())
+
     def test_sem_numero_mas_email_com_uma_encomenda(self) -> None:
         # Capacidade nova: antes disto, sem número nunca se procurava.
         s = ShopifyFalsa(por_email=[encomenda_falsa()])
@@ -1144,6 +1167,10 @@ class ResolucaoDeIdentidade(unittest.TestCase):
         r = resolver_encomenda(s, msg(de="cliente@gmail.com"), "", None)
         self.assertIsNone(r.encomenda)
         self.assertFalse(r.pode_revelar)
+        # O email já é a prova de identidade (é o que revela quando há só uma
+        # correspondência) -- ter mais do que uma leva às opções, não ao
+        # silêncio total do "media" ou do número sem email a bater.
+        self.assertEqual(r.opcoes, (("#21910", "2026-08-10"), ("#22000", "2026-08-10")))
 
     def test_sem_numero_e_email_desconhecido(self) -> None:
         s = ShopifyFalsa()
@@ -1315,6 +1342,9 @@ class GraphFalso:
         conteudo_anexo: bytes | Exception = b"",
         historico: list[dict] | Exception | None = None,
         rascunho_id: str = "AAMk-fake",
+        criar_rascunho: Exception | None = None,
+        marcar: Exception | None = None,
+        detalhe_rascunho: dict | None | Exception = "omisso",
     ) -> None:
         # `resultado`: usado só por verificar_restricao_diaria() via _pedir()
         # -- None simula sucesso (200, a caixa foi lida, o cenário mau).
@@ -1324,6 +1354,11 @@ class GraphFalso:
         self._conteudo_anexo = conteudo_anexo
         self._historico = historico if historico is not None else []
         self._rascunho_id = rascunho_id
+        self._erro_criar_rascunho = criar_rascunho
+        self._erro_marcar = marcar
+        # "omisso" (sentinela) em vez de None, porque None é uma resposta
+        # válida de detalhe_rascunho() (mensagem apagada).
+        self._detalhe_rascunho = detalhe_rascunho
         self.chamadas: list[tuple[object, ...]] = []
 
     def _pedir(self, metodo: str, url: str, **kw: object) -> dict:
@@ -1360,10 +1395,22 @@ class GraphFalso:
 
     def criar_rascunho(self, message_id: str, corpo_html: str) -> str:
         self.chamadas.append(("criar_rascunho", message_id, corpo_html))
+        if self._erro_criar_rascunho is not None:
+            raise self._erro_criar_rascunho
         return self._rascunho_id
 
     def marcar(self, msg: dict, categoria: str) -> None:
         self.chamadas.append(("marcar", msg["message_id"], categoria))
+        if self._erro_marcar is not None:
+            raise self._erro_marcar
+
+    def detalhe_rascunho(self, rascunho_id: str) -> dict | None:
+        self.chamadas.append(("detalhe_rascunho", rascunho_id))
+        if isinstance(self._detalhe_rascunho, Exception):
+            raise self._detalhe_rascunho
+        if self._detalhe_rascunho == "omisso":
+            return None
+        return self._detalhe_rascunho
 
 
 class VerificarRestricaoDiaria(unittest.TestCase):
@@ -1638,7 +1685,8 @@ class Processar(unittest.TestCase):
 
     def _linha(self, message_id: str) -> dict:
         cols = ("message_id", "acao", "motivo", "corpo", "categoria", "dossie_tipo",
-                "dossie_resumo", "dossie_resposta", "por_responder", "lacuna_tema")
+                "dossie_resumo", "dossie_resposta", "por_responder", "lacuna_tema",
+                "rascunho_id")
         linha = self.con.execute(
             f"SELECT {', '.join(cols)} FROM processados WHERE message_id = ?", (message_id,)
         ).fetchone()
@@ -1789,17 +1837,46 @@ class Processar(unittest.TestCase):
         conteudo = cliente.pedidos[0]["messages"][0]["content"]
         self.assertIn("DADOS_ENCOMENDA_EM_FALTA", conteudo)
 
-    def test_varios_candidatos_avisa_sem_revelar(self) -> None:
-        m = msg(corpo="Encomenda 21910, qual o estado?")
+    def test_varias_encomendas_do_mesmo_email_pede_para_especificar_sem_escalar(self) -> None:
+        """Diferente de 'media' ou de um número sem correspondência: aqui o
+        email de quem escreveu bate com as duas encomendas -- a identidade
+        já está provada, só falta saber qual delas. Não é suposto forçar
+        IDENTIDADE_NAO_VERIFICADA nem esconder o número e a data, que já não
+        são segredo (ver Correspondencia.opcoes)."""
+        m = msg(de="cliente@gmail.com", corpo="Encomenda 21910, qual o estado?")
         shopify = ShopifyFalsa(por_numero=[
             encomenda_falsa(name="#21910", email="cliente@gmail.com"),
-            encomenda_falsa(name="#21910", email="cliente@gmail.com"),
+            encomenda_falsa(name="#21910", email="cliente@gmail.com",
+                             created_at="2026-08-20T10:00:00Z"),
+        ])
+        cliente = ClienteFalso(self._SALTAR)
+        self._correr(m, cfg(), cliente, shopify=shopify)
+        conteudo = cliente.pedidos[0]["messages"][0]["content"]
+        self.assertNotIn("IDENTIDADE_NAO_VERIFICADA", conteudo)
+        self.assertIn("#21910 (2026-08-10)", conteudo)
+        self.assertIn("#21910 (2026-08-20)", conteudo)
+        self.assertIn("perguntando a qual das encomendas", conteudo)
+        # A garantia de segurança que continua a valer: nenhum outro dado
+        # da encomenda (o nome da cliente é "Marta Pinho" na fixture).
+        self.assertNotIn("Marta", conteudo)
+        self.assertNotIn("2620-537", conteudo)
+
+    def test_numero_com_varios_candidatos_sem_email_a_bater_continua_a_escalar(self) -> None:
+        """O caso genuinamente inseguro: o número existe em mais do que uma
+        encomenda e nenhuma tem o email de quem escreveu -- aqui não há
+        titularidade provada nenhuma, e o tratamento continua a ser o
+        silêncio total, sem opções."""
+        m = msg(de="curioso@gmail.com", corpo="Encomenda 21910, qual o estado?")
+        shopify = ShopifyFalsa(por_numero=[
+            encomenda_falsa(name="#21910", email="outra-pessoa@gmail.com"),
+            encomenda_falsa(name="#21910", email="mais-outra@gmail.com"),
         ])
         cliente = ClienteFalso(self._SALTAR)
         self._correr(m, cfg(), cliente, shopify=shopify)
         conteudo = cliente.pedidos[0]["messages"][0]["content"]
         self.assertIn("IDENTIDADE_NAO_VERIFICADA", conteudo)
         self.assertIn("2 encomendas possíveis", conteudo)
+        self.assertNotIn("2026-08-10", conteudo)
 
     # --- Aplicação da decisão: rascunhar ---------------------------------
 
@@ -1819,6 +1896,34 @@ class Processar(unittest.TestCase):
         self.assertEqual(nomes.count("criar_rascunho"), 1)
         self.assertEqual([c for c in graph.chamadas if c[0] == "marcar"],
                           [("marcar", m["message_id"], "IA-Rascunhado")])
+        self.assertEqual(self._linha(m["message_id"])["rascunho_id"], "AAMk-fake")
+
+    def test_erro_a_criar_rascunho_nao_derruba_a_passagem(self) -> None:
+        """Bug encontrado ao ligar o rascunho_id ao registo: sem try/except
+        aqui, uma falha do Graph nesta chamada propagava por processar() e
+        main() acima, derrubando a passagem inteira -- não só este email, mas
+        todos os que viriam a seguir no mesmo lote."""
+        m = msg()
+        graph = GraphFalso(criar_rascunho=RuntimeError("Graph 500: instável"))
+        resultado, graph, _ = self._correr(
+            m, cfg(dry_run=False), ClienteFalso(self._RASCUNHAR), graph=graph
+        )
+        self.assertEqual(resultado, "rascunhado")
+        linha = self._linha(m["message_id"])
+        self.assertEqual(linha["acao"], "rascunhar")
+        self.assertEqual(linha["rascunho_id"], "")
+        # Sem rascunho criado, marcar "IA-Rascunhado" seria enganador -- por
+        # isso não se tenta.
+        self.assertNotIn("marcar", [c[0] for c in graph.chamadas])
+
+    def test_erro_a_marcar_rascunho_nao_derruba_a_passagem(self) -> None:
+        m = msg()
+        graph = GraphFalso(marcar=RuntimeError("Graph 500: instável"))
+        resultado, _, _ = self._correr(
+            m, cfg(dry_run=False), ClienteFalso(self._RASCUNHAR), graph=graph
+        )
+        self.assertEqual(resultado, "rascunhado")
+        self.assertEqual(self._linha(m["message_id"])["rascunho_id"], "AAMk-fake")
 
     def test_rascunho_parcial_marca_as_duas_categorias(self) -> None:
         m = msg()
@@ -1863,7 +1968,27 @@ class Processar(unittest.TestCase):
         criados = [c for c in graph.chamadas if c[0] == "criar_rascunho"]
         self.assertEqual(len(criados), 1)
         self.assertIn("Vamos verificar se conseguimos", criados[0][2])
-        self.assertEqual(self._linha(m["message_id"])["dossie_tipo"], "cancelamento")
+        linha = self._linha(m["message_id"])
+        self.assertEqual(linha["dossie_tipo"], "cancelamento")
+        self.assertEqual(linha["rascunho_id"], "AAMk-fake")
+
+    def test_erro_a_criar_rascunho_sugerido_nao_derruba_a_passagem(self) -> None:
+        cliente = ClienteFalso([self._ESCALAR, self._DOSSIE_COMPLETO])
+        m = msg()
+        graph = GraphFalso(criar_rascunho=RuntimeError("Graph 500: instável"))
+        resultado, _, _ = self._correr(m, cfg(dry_run=False), cliente, graph=graph)
+        self.assertEqual(resultado, "escalado")
+        # O registo já tinha corrido antes da tentativa de rascunho -- fica
+        # sem rascunho_id, mas não se perde a escalação em si.
+        self.assertEqual(self._linha(m["message_id"])["rascunho_id"], "")
+
+    def test_erro_a_marcar_precisa_de_humano_nao_derruba_a_passagem(self) -> None:
+        cliente = ClienteFalso([self._ESCALAR, self._DOSSIE_COMPLETO])
+        m = msg()
+        graph = GraphFalso(marcar=RuntimeError("Graph 500: instável"))
+        resultado, _, _ = self._correr(m, cfg(dry_run=False), cliente, graph=graph)
+        self.assertEqual(resultado, "escalado")
+        self.assertEqual(self._linha(m["message_id"])["rascunho_id"], "AAMk-fake")
 
     def test_dossie_sem_tipo_mas_com_conteudo_vira_excecao(self) -> None:
         """Visto em produção, 18/08/2026: o modelo escreve um dossiê bom mas
@@ -1907,6 +2032,128 @@ class Processar(unittest.TestCase):
         resultado, _, _ = self._correr(m, cfg(), cliente)
         self.assertEqual(resultado, "falhado")
         self.assertFalse(ja_processado(self.con, m["message_id"]))
+
+
+class FecharCiclo(unittest.TestCase):
+    """medir_deriva.py --fechar-ciclo -- fecho de ciclo do draft pelo id,
+    sem chamar o Claude. A parte que decide se um rascunho foi aceite tal e
+    qual, editado, ou apagado, é a única com lógica a proteger; o resto do
+    ficheiro só imprime."""
+
+    def setUp(self) -> None:
+        pasta = TemporaryDirectory()
+        self.addCleanup(pasta.cleanup)
+        self.con = abrir_db(Path(pasta.name) / "t.db")
+        self.addCleanup(self.con.close)
+
+    def _semear(self, message_id: str, corpo: str, rascunho_id: str, **over) -> None:
+        m = msg(message_id=message_id)
+        registar(self.con, m, "rascunhar", "sabia responder", corpo,
+                 rascunho_id=rascunho_id, **over)
+
+    def _resultado(self, message_id: str) -> tuple[str, object]:
+        linha = self.con.execute(
+            "SELECT resultado_estado, resultado_semelhanca FROM processados "
+            "WHERE message_id = ?", (message_id,)
+        ).fetchone()
+        return linha
+
+    def test_rascunho_apagado(self) -> None:
+        self._semear("<a@x>", "Boa tarde,\n\nO seu artigo já foi enviado.", "D1")
+        graph = GraphFalso(detalhe_rascunho=None)
+        fechar_ciclo(graph, self.con, 0)
+        estado, sem = self._resultado("<a@x>")
+        self.assertEqual(estado, "apagado")
+        self.assertIsNone(sem)
+
+    def test_rascunho_ainda_pendente(self) -> None:
+        self._semear("<a@x>", "Boa tarde,\n\nO seu artigo já foi enviado.", "D1")
+        graph = GraphFalso(detalhe_rascunho={"sentDateTime": None, "body": {"content": ""}})
+        fechar_ciclo(graph, self.con, 0)
+        estado, sem = self._resultado("<a@x>")
+        self.assertEqual(estado, "pendente")
+        self.assertIsNone(sem)
+
+    def test_rascunho_enviado_tal_e_qual(self) -> None:
+        corpo = "Boa tarde,\n\nO seu artigo já foi enviado.\n\nCumprimentos,\nA Loja"
+        self._semear("<a@x>", corpo, "D1")
+        graph = GraphFalso(detalhe_rascunho={
+            "sentDateTime": "2026-08-27T10:00:00Z",
+            "body": {"content": f"<html><body><p>{corpo}</p></body></html>"},
+        })
+        fechar_ciclo(graph, self.con, 0)
+        estado, sem = self._resultado("<a@x>")
+        self.assertEqual(estado, "enviado-tal-e-qual")
+        self.assertGreaterEqual(sem, 90.0)
+
+    def test_rascunho_enviado_editado(self) -> None:
+        self._semear("<a@x>", "Boa tarde,\n\nO seu artigo já foi enviado.", "D1")
+        graph = GraphFalso(detalhe_rascunho={
+            "sentDateTime": "2026-08-27T10:00:00Z",
+            "body": {"content": "<p>Boa tarde. Afinal ainda não foi enviado, "
+                                 "peço desculpa pelo erro, vamos verificar já.</p>"},
+        })
+        fechar_ciclo(graph, self.con, 0)
+        estado, sem = self._resultado("<a@x>")
+        self.assertEqual(estado, "enviado-editado")
+        self.assertLess(sem, 90.0)
+
+    def test_sem_rascunho_id_nunca_e_verificado(self) -> None:
+        self._semear("<a@x>", "texto", "")  # rascunho_id vazio: nunca criado
+        graph = GraphFalso(detalhe_rascunho=None)
+        fechar_ciclo(graph, self.con, 0)
+        self.assertEqual(graph.chamadas, [])
+        self.assertEqual(self._resultado("<a@x>"), (None, None))
+
+    def test_ja_resolvido_nao_e_reverificado(self) -> None:
+        self._semear("<a@x>", "texto", "D1")
+        self.con.execute(
+            "UPDATE processados SET resultado_estado = 'apagado' WHERE message_id = '<a@x>'"
+        )
+        self.con.commit()
+        graph = GraphFalso(detalhe_rascunho={"sentDateTime": "2026-08-27T10:00:00Z", "body": {}})
+        fechar_ciclo(graph, self.con, 0)
+        self.assertEqual(graph.chamadas, [])  # não voltou a perguntar ao Graph
+
+    def test_pendente_e_reverificado_na_proxima_corrida(self) -> None:
+        """Diferente de 'apagado'/'enviado-*', que são estados finais --
+        'pendente' significa que ainda pode mudar, por isso continua a ser
+        candidato nas corridas seguintes."""
+        self._semear("<a@x>", "texto", "D1")
+        self.con.execute(
+            "UPDATE processados SET resultado_estado = 'pendente' WHERE message_id = '<a@x>'"
+        )
+        self.con.commit()
+        graph = GraphFalso(detalhe_rascunho=None)
+        fechar_ciclo(graph, self.con, 0)
+        self.assertEqual(len(graph.chamadas), 1)
+        self.assertEqual(self._resultado("<a@x>")[0], "apagado")
+
+
+class AnalisarBase(unittest.TestCase):
+    """verificar_kb.py: só a parte que não precisa de rede -- montar o pedido
+    e interpretar a resposta. Confirmar se o Claude acha mesmo boas
+    contradições exige uma chamada real, fora do que testes automáticos
+    cobrem."""
+
+    def test_sem_contradicoes_devolve_lista_vazia(self) -> None:
+        cliente = ClienteFalso({"contradicoes": []})
+        self.assertEqual(analisar_base(cliente, cfg(), "# base\nregra unica"), [])
+
+    def test_contradicoes_chegam_tal_e_qual(self) -> None:
+        achado = {"contradicoes": [
+            {"documentos": "a.md > X e b.md > Y", "descricao": "dizem coisas diferentes",
+             "gravidade": "alta"},
+        ]}
+        cliente = ClienteFalso(achado)
+        resultado = analisar_base(cliente, cfg(), "# base")
+        self.assertEqual(resultado, achado["contradicoes"])
+
+    def test_pedido_leva_a_base_inteira_no_conteudo(self) -> None:
+        cliente = ClienteFalso({"contradicoes": []})
+        analisar_base(cliente, cfg(), "REGRA-MUITO-ESPECIFICA-DE-TESTE")
+        self.assertIn("REGRA-MUITO-ESPECIFICA-DE-TESTE",
+                       cliente.pedidos[0]["messages"][0]["content"])
 
 
 if __name__ == "__main__":

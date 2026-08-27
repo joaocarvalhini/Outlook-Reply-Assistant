@@ -20,7 +20,7 @@ no commit `bc5408b`. Cada finding traz evidência verificável.
 ```mermaid
 pie showData
     title Findings por estado
-    "Corrigidos" : 12
+    "Corrigidos" : 13
     "Alta em aberto" : 0
     "Média em aberto" : 1
     "Baixa em aberto" : 0
@@ -29,6 +29,7 @@ pie showData
 | ID | Gravidade | Título | Esforço | Estado |
 |---|---|---|---|---|
 | C-1 | 🔴 Crítica | Perda de email quando o modelo falha a meio de lote | Trivial | ✅ **Corrigido 27/08** |
+| ~~H-4~~ | ✅ **Corrigido** | Falha em `criar_rascunho()`/`marcar()` podia derrubar o lote inteiro | Baixa | Feito 27/08 |
 | P0-2 | 🔴 Crítica | Restrição de acesso do Exchange nunca reverificada | Baixa | 🟡 **Construído 27/08, por ativar** |
 | ~~H-1~~ | ✅ **Corrigido** | Premissa de custo/cache desatualizada em 3 locais | Trivial | Feito 27/08 |
 | ~~H-2~~ | ✅ **Corrigido** | `processar()` sem cobertura de testes | Média | Feito 27/08 |
@@ -43,10 +44,12 @@ pie showData
 | ~~L-2~~ | ✅ **Corrigido** | Ferramentas offline sem exceções de formulário | Trivial | Feito 27/08 |
 | ~~L-3~~ | ✅ **Corrigido** | `Persistent=true` inócuo | Trivial | Feito 27/08 |
 
-> [!TIP] Doze fechados, um em aberto — mais o P0-2, pronto mas por ativar
+> [!TIP] Treze fechados, um em aberto — mais o P0-2, pronto mas por ativar
 > A dívida deste projeto é rasa. Do que falta, só o M-3 (linha de base da deriva) exige dados
-> ainda por vir, da semana de observação. O P0-2 já está construído — falta só um endereço de
-> outra caixa do inquilino no `.env` para ligar.
+> ainda por vir — e o `medir_deriva.py --fechar-ciclo` novo (27/08) é precisamente a peça que
+> faltava para a medir. O P0-2 já está construído — falta só um endereço de outra caixa do
+> inquilino no `.env` para ligar. H-4 (falha não apanhada em `criar_rascunho()`/`marcar()`) foi
+> encontrado e fechado no mesmo dia, ao instrumentar o fecho de ciclo do draft.
 
 ---
 
@@ -74,6 +77,35 @@ Verificado contra uma base SQLite real (o bug reproduz-se sem a correção e des
 7 testes novos.
 
 Ver [[error-handling|Tratamento de erros]].
+
+---
+
+## ✅ H-4 — Falha em `criar_rascunho()`/`marcar()` podia derrubar o lote inteiro
+
+**Gravidade:** Alta · **Estado:** Corrigido a 27/08/2026
+
+**O problema:** ao contrário de todas as outras chamadas ao Graph dentro de `processar()`
+(anexos, histórico, Shopify — todas com `try/except` e um `log("erro-*")` de recuperação), as
+duas chamadas que aplicam a decisão (`graph.criar_rascunho()` e `graph.marcar()`, nos ramos
+`rascunhar` e `escalar`) não tinham nenhuma. Encontrado ao instrumentar o `rascunho_id` para o
+Finding "fecho de ciclo do draft" — mexer nestas linhas obrigou a olhar para elas com atenção.
+
+**Cenário:** um 5xx transitório no `createReply` (a mesma classe de falha que o M-2 já resolveu
+para os GET, mas POST/PATCH ficam de propósito fora do `_com_retentativa()` — não são
+idempotentes). Sem `try/except`, a exceção propagava por `processar()` e por `main()` sem ser
+apanhada em lado nenhum, **derrubando a passagem inteira**: não só o email em causa, mas todos os
+que viriam a seguir no mesmo lote ficavam por processar até à passagem seguinte.
+
+> [!NOTE] Não havia perda de email, mas havia atraso desnecessário
+> O `registar()` já corre antes (ramo `escalar`) ou logo a seguir (ramo `rascunhar`) da chamada
+> que falha, por isso a mensagem causadora não desaparecia — mas todas as que vinham depois dela
+> no lote ficavam à espera de mais um ciclo de 2 minutos sem necessidade nenhuma, e o sintoma no
+> journal era um traceback não tratado, não um `erro-*` como as restantes falhas absorvidas.
+
+**A correção:** as duas chamadas passam a ter `try/except`, com `log("erro-rascunho"/"erro-marcar")`
+a seguir o mesmo padrão do resto da função. Sem rascunho criado, não se tenta `marcar()` a
+categoria "IA-Rascunhado" (seria enganador). 6 testes novos, incluindo a reprodução exata do
+crash sem a correção. Ver [[error-handling|Tratamento de erros]].
 
 ---
 
@@ -397,7 +429,7 @@ não está lá e que é o `OnBootSec` que cobre o arranque após paragem.
 
 | Item | Natureza | Custo hoje |
 |---|---|---|
-| Monólito de 2565 linhas | Decisão D2 | Baixo com um mantenedor; alto com equipa |
+| Monólito de 2673 linhas | Decisão D2 | Baixo com um mantenedor; alto com equipa |
 | Sem multi-tenancy | Decisão de âmbito | Zero hoje; bloqueante a partir de ~10 lojas |
 | Base de conhecimento sem verificação de contradições | Lacuna de processo | Cresce com a base |
 | Sem fecho de ciclo (rascunho enviado vs. editado) | Lacuna de observabilidade | Deriva não detetável |

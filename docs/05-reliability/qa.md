@@ -19,7 +19,7 @@ Cada uma responde a uma pergunta diferente e tem um custo diferente.
 ```mermaid
 flowchart TB
     subgraph G["GRÁTIS — sem chamadas ao modelo"]
-        T1["<b>test_assistente.py</b><br/>203 testes unitários<br/><i>o código faz o que diz?</i><br/>~1,7 s"]
+        T1["<b>test_assistente.py</b><br/>220 testes unitários<br/><i>o código faz o que diz?</i><br/>~1,7 s"]
         T2["<b>eval.py --triagem</b><br/>só regras determinísticas<br/><i>a triagem está certa?</i><br/>instantâneo"]
         T3["<b>verificar.py</b><br/>pré-instalação<br/><i>está seguro para ligar?</i>"]
         T4["<b>casos_antigos.py</b><br/>pares reais para ler<br/><i>como se resolvia antes?</i>"]
@@ -41,7 +41,7 @@ flowchart TB
 
 ## Camada 1 — Testes unitários
 
-**Implemented** — 203 testes, `unittest` da biblioteca padrão, **zero dependências de teste**.
+**Implemented** — 220 testes, `unittest` da biblioteca padrão, **zero dependências de teste**.
 
 | Área | Classes | Cobre |
 |---|---|---|
@@ -49,12 +49,14 @@ flowchart TB
 | Formulários | `FormularioContactoShopify`, `FormularioDevolucaoFormspree`, `DesembrulharFormularios` | Desembrulhar e rejeitar |
 | Texto | `Texto`, `HtmlDeSaida`, `LixoAposAssinatura` | HTML→texto, corte de citação, escape |
 | Encomendas | `NumeroDeEncomenda`, `ResumoDeEncomenda` | Extração e formatação |
-| Identidade | `ResolucaoDeIdentidade`, `EmailsIguais` | Os 4 níveis, com `ShopifyFalsa` |
+| Identidade | `ResolucaoDeIdentidade`, `EmailsIguais` | Os 4 níveis + opções seguras quando o email já bate, com `ShopifyFalsa` |
 | Anexos | `AnexosDeImagem`, `DecidirComImagens` | Filtro e notas, com `ClienteFalso` |
 | Persistência | `Registo`, `RegistoDeCompromissos`, `CursorSeguro` | Cursor, dedup, compromissos |
 | Rede | `RetentativaHttp` | Backoff em GET, 429/5xx vs. erros permanentes |
 | Segurança | `VerificarRestricaoDiaria` | Verificação diária da restrição do Exchange |
-| Orquestração | `Processar` | A função inteira: triagem, identidade, dossiê, aplicação da decisão |
+| Orquestração | `Processar` | A função inteira: triagem, identidade, dossiê, aplicação da decisão, robustez a falhas do Graph na aplicação |
+| Fecho de ciclo | `FecharCiclo` | Classificação apagado/pendente/enviado pelo `rascunho_id`, com `GraphFalso` |
+| Base de conhecimento | `AnalisarBase` | `verificar_kb.py` — montagem do pedido e leitura da resposta, com `ClienteFalso` |
 | Anonimização | `Anonimizacao`, `EnderecoAnonimizado`, `Palpite` | `exportar.py` |
 
 ```bash

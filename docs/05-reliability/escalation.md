@@ -39,6 +39,7 @@ de precisar de uma pessoa."*
 |---|---|---|---|
 | `DADOS_ENCOMENDA_EM_FALTA` | Deu um número, a consulta não encontrou | Janela >60 dias (`read_all_orders`) | 🟡 Parcialmente |
 | `IDENTIDADE_NAO_VERIFICADA` | Existe encomenda, titularidade não provada | Nada — é a decisão correta | ❌ Não |
+| ~~`IDENTIDADE_NAO_VERIFICADA` por várias encomendas do mesmo email~~ | O email já prova quem é, só a compra ficava por identificar | Corrigido 27/08/2026 — passa a `rascunhar`, pede para especificar | ✅ **Fechado** |
 | `INVENTARIO_INDISPONIVEL` | Pergunta de stock | Scope `read_products` | ✅ **Sim** |
 | `CONTEXTO_EM_FALTA` | Fio não veio ou insuficiente | Mais mensagens/chars | 🟡 Parcialmente |
 | `LACUNA_DE_CONHECIMENTO` | A base não cobre | Escrever o facto | ✅ **Sim** |
@@ -224,10 +225,12 @@ flowchart LR
     B["LACUNA_DE_CONHECIMENTO"] -->|"ciclo lacunas.py"| B1["✅ contínuo"]
     C["DADOS_ENCOMENDA_EM_FALTA"] -->|"read_all_orders"| C1["🟡 bloqueado<br/>externamente"]
     D["CONTEXTO_EM_FALTA"] -->|"THREAD_MESSAGES ↑"| D1["🟡 trivial, com custo<br/>de tokens"]
-    E["ACAO_SOBRE_ENCOMENDA<br/>JULGAMENTO_HUMANO<br/>IDENTIDADE_NAO_VERIFICADA"] --> E1["❌ não deve fechar<br/><i>é o objetivo</i>"]
+    F["IDENTIDADE_NAO_VERIFICADA<br/>por várias encomendas"] -->|"email já prova<br/>quem é"| F1["✅ fechado 27/08"]
+    E["ACAO_SOBRE_ENCOMENDA<br/>JULGAMENTO_HUMANO<br/>resto de IDENTIDADE_NAO_VERIFICADA"] --> E1["❌ não deve fechar<br/><i>é o objetivo</i>"]
 
     style A1 fill:#c8e6c9
     style B1 fill:#c8e6c9
+    style F1 fill:#c8e6c9
     style E1 fill:#e1e1e1
 ```
 

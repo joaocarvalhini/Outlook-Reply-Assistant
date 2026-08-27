@@ -134,6 +134,10 @@ erDiagram
         TEXT dossie_resposta
         TEXT dossie_link
         TEXT por_responder
+        TEXT rascunho_id "id do Graph, para fechar o ciclo"
+        TEXT resultado_estado "pendente|apagado|enviado-tal-e-qual|enviado-editado"
+        REAL resultado_semelhanca "0-100, só quando enviado"
+        TEXT resultado_medido_em
     }
     compromissos {
         TEXT conversation_id PK
@@ -152,8 +156,9 @@ Uma linha, chave `cursor`. Marca temporal da mensagem mais recente processada co
 
 ### `processados` — uma linha por email
 
-19 colunas. As 7 primeiras são originais; as 12 restantes foram acrescentadas ao longo do tempo
-por `ALTER TABLE`.
+23 colunas. As 7 primeiras são originais; as restantes foram acrescentadas ao longo do tempo por
+`ALTER TABLE` — as quatro últimas (`rascunho_id`, `resultado_*`) a 27/08/2026, para fechar o
+ciclo do draft (ver abaixo).
 
 > [!TIP] Migrações aditivas e `INSERT` nomeado
 > **Implemented** — `abrir_db()` acrescenta cada coluna em falta com `ALTER TABLE`, em vez de
@@ -165,6 +170,39 @@ por `ALTER TABLE`.
 
 O campo `corpo` guarda o texto do rascunho. Existe para uma coisa só: comparar mais tarde com o
 que o lojista realmente enviou. Ver [[qa|QA e testes]].
+
+### Fecho de ciclo do draft — `rascunho_id` e `resultado_*`
+
+**Implemented** a 27/08/2026. `criar_rascunho()` sempre devolveu o id do Graph do rascunho
+criado; até aqui, `processar()` descartava-o assim que o log era escrito. Passou a gravar-se em
+`rascunho_id` — o mesmo id que o Graph mantém depois de alguém enviar o rascunho (só
+`sentDateTime` passa a vir preenchido), o que permite verificar mais tarde, **pelo próprio id**,
+sem ambiguidade, o que aconteceu:
+
+```mermaid
+flowchart LR
+    A["rascunho_id gravado"] --> B["medir_deriva.py<br/>--fechar-ciclo"]
+    B --> C{"GET /messages/id"}
+    C -->|"404"| D["apagado"]
+    C -->|"sentDateTime vazio"| E["pendente"]
+    C -->|"sentDateTime preenchido"| F["compara corpo enviado<br/>com o corpo gravado"]
+    F -->|"≥90% igual"| G["enviado-tal-e-qual"]
+    F -->|"&lt;90% igual"| H["enviado-editado"]
+    D & G & H --> I[("resultado_estado<br/>resultado_semelhanca")]
+    I --> J["metricas.py<br/>taxa de aceitação"]
+
+    style D fill:#ffcdd2
+    style G fill:#c8e6c9
+    style H fill:#fff3e0
+```
+
+Mais preciso do que a heurística anterior (procurar "a próxima resposta da loja na conversa",
+que ainda existe em `medir_deriva.py` para casos anteriores a esta data, sem `rascunho_id`): não
+depende de a conversa ter só uma troca, e distingue "apagado sem enviar" de "ainda por rever" —
+coisas que a heurística por conversa não conseguia separar.
+
+Não chama o Claude — só lê o Graph. `metricas.py` lê `resultado_estado` já gravado, sem repetir
+estas chamadas. Ver [[qa|QA e testes]] e [[operations|Ferramentas de operação]].
 
 ### `compromissos` — estado, não histórico
 

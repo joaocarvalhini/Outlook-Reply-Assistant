@@ -98,10 +98,10 @@ nem reconexões a gerir. Um *crash* custa 2 minutos.
 
 ### 2. Monólito no caminho de produção, satélites à volta
 
-`assistente.py` (2565 linhas) contém **todo** o caminho crítico. As 10 ferramentas de operação
+`assistente.py` (2673 linhas) contém **todo** o caminho crítico. As 11 ferramentas de operação
 importam-no como módulo; nenhuma corre no caminho de produção (o timer só chama `assistente.py`).
-Nove só leem; o `manutencao.py` escreve, mas só no registo local, e só via cron, à parte da
-passagem de 2 minutos.
+Nove só leem; `manutencao.py` (via cron) e `medir_deriva.py --fechar-ciclo` escrevem no registo
+local — nunca na caixa nem em qualquer serviço externo.
 
 ```mermaid
 graph LR
@@ -111,17 +111,20 @@ graph LR
         L["lacunas.py"]
         D["dossie.py"]
         R["reprocessar.py"]
-        MD["medir_deriva.py"]
+        MD["medir_deriva.py<br/><i>--fechar-ciclo escreve</i>"]
         E["eval.py"]
         V["verificar.py"]
+        VK["verificar_kb.py"]
         X["exportar.py"]
         CA["casos_antigos.py"]
-        MN["manutencao.py<br/><i>só este escreve</i><br/><i>via cron</i>"]
+        MN["manutencao.py<br/><i>escreve, via cron</i>"]
     end
-    M & L & D & R & MD & E & V & X & CA -.->|import, só leitura| A
+    M & L & D & R & E & V & VK & X & CA -.->|import, só leitura| A
+    MD -.->|import, leitura + escrita| A
     MN -.->|import, escreve| A
     style A fill:#e8d5f2
     style MN fill:#ffe0b2
+    style MD fill:#fff3e0
 ```
 
 Ver [[components|Componentes]] e [[operations|Ferramentas de operação]].
@@ -160,7 +163,7 @@ Resumo. O detalhe, com trade-offs e alternativas rejeitadas, está em
 | # | Decisão | Motivo curto |
 |---|---|---|
 | D1 | Passagem única, sem processo permanente | Robustez sem equipa de plantão |
-| D2 | Monólito de 2565 linhas | Um mantenedor; navegabilidade |
+| D2 | Monólito de 2673 linhas | Um mantenedor; navegabilidade |
 | D3 | Base de conhecimento inteira no prompt, sem RAG | Elimina falhas de *retrieval* |
 | D4 | Duas chamadas ao modelo, não uma | Esquema de 19 propriedades causava timeout |
 | D5 | Identidade decidida em código | O erro mais caro é expor dados entre clientes |

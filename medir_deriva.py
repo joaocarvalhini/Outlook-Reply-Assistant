@@ -47,6 +47,22 @@ importava). Ler é obrigatório; o número só ajuda a decidir por onde começar
 
 Referência do projeto (comentário em registar(), nunca antes medido): acima de
 60% editado, o rascunho é ruído.
+
+    python medir_deriva.py --fechar-ciclo        verifica pelo id do rascunho
+    python medir_deriva.py --fechar-ciclo -n 30  só os 30 mais recentes
+
+--fechar-ciclo é um modo à parte, mais preciso e mais barato do que o resto
+deste ficheiro: em vez de procurar heuristicamente "a próxima resposta da
+loja na conversa" (que pode ser sobre outra coisa, numa devolução com várias
+trocas), pergunta ao Graph pelo próprio id do rascunho criado -- o mesmo id
+que se mantém depois de alguém o enviar, só passando a ter sentDateTime
+preenchido. Não chama o Claude, não gasta créditos: só lê o Graph. O
+resultado fica gravado (resultado_estado, resultado_semelhanca), para
+metricas.py os poder mostrar sem repetir estas chamadas.
+
+Só funciona para rascunhos criados depois de 27/08/2026 (quando o rascunho_id
+passou a ser gravado -- Finding "fecho de ciclo do draft"); registos mais
+antigos ficam de fora, sem alternativa possível.
 """
 
 from __future__ import annotations
@@ -54,12 +70,15 @@ from __future__ import annotations
 import argparse
 import sqlite3
 import sys
+from collections import Counter
 from difflib import SequenceMatcher
 
 import anthropic
 
 import assistente as a
 import casos_antigos as ca
+
+_LIMIAR_TAL_E_QUAL = 90.0
 
 
 def resposta_real(graph: a.Graph, msg: dict, aviso: str) -> str | None:
@@ -110,6 +129,57 @@ def buscar_email(graph: a.Graph, message_id: str) -> dict | None:
 
 def semelhanca(a_: str, b_: str) -> float:
     return SequenceMatcher(None, a_.strip().lower(), b_.strip().lower()).ratio() * 100
+
+
+def fechar_ciclo(graph: a.Graph, con: sqlite3.Connection, limite: int) -> None:
+    """Verifica, pelo id do próprio rascunho, se cada um foi enviado tal e
+    qual, editado, apagado sem ser enviado, ou continua pendente -- e grava
+    o resultado. Só lê o Graph; não chama o Claude."""
+    linhas = con.execute(
+        "SELECT message_id, corpo, rascunho_id FROM processados "
+        "WHERE rascunho_id != '' "
+        "  AND COALESCE(resultado_estado, '') NOT IN "
+        "      ('enviado-tal-e-qual', 'enviado-editado', 'apagado') "
+        "ORDER BY em DESC"
+    ).fetchall()
+    if limite:
+        linhas = linhas[:limite]
+    if not linhas:
+        print("\nNenhum rascunho por verificar: ou nenhum tem rascunho_id ainda "
+              "(só passou a ser gravado a partir de 27/08/2026), ou todos já têm "
+              "um resultado final.\n")
+        return
+
+    contagem: Counter[str] = Counter()
+    for message_id, corpo_original, rascunho_id in linhas:
+        detalhe = graph.detalhe_rascunho(rascunho_id)
+        semelhante: float | None = None
+        if detalhe is None:
+            estado = "apagado"
+        elif not detalhe.get("sentDateTime"):
+            estado = "pendente"
+        else:
+            corpo_final = a.cortar_citacao(
+                a.para_texto((detalhe.get("body") or {}).get("content", ""))
+            )
+            semelhante = semelhanca(corpo_original or "", corpo_final)
+            estado = "enviado-tal-e-qual" if semelhante >= _LIMIAR_TAL_E_QUAL else "enviado-editado"
+        contagem[estado] += 1
+        con.execute(
+            "UPDATE processados SET resultado_estado = ?, resultado_semelhanca = ?, "
+            "resultado_medido_em = ? WHERE message_id = ?",
+            (estado, semelhante, a.agora(), message_id),
+        )
+    con.commit()
+
+    print(f"\n{len(linhas)} rascunho(s) verificado(s) pelo id\n")
+    for estado, n in contagem.most_common():
+        print(f"  {estado:<20} {n}")
+    pendentes = contagem["pendente"]
+    if pendentes:
+        print(f"\n{pendentes} continuam pendentes (ainda na pasta de rascunhos, "
+              "nem enviados nem apagados) -- ficam para a próxima verificação.")
+    print()
 
 
 def casos_do_registo(graph: a.Graph, cfg: a.Config, con: sqlite3.Connection,
@@ -172,11 +242,21 @@ def main(argv: list[str] | None = None) -> int:
         help="fonte alternativa ao registo local: uma pasta do Graph (ex.: "
              "deleteditems). Chama o Claude para cada caso, gasta créditos.",
     )
+    p.add_argument(
+        "--fechar-ciclo", action="store_true",
+        help="verifica pelo id do rascunho se foi enviado tal e qual, editado, "
+             "ou apagado; grava o resultado. Só lê o Graph, não gasta créditos.",
+    )
     args = p.parse_args(argv)
 
     a.saida_utf8()
     cfg = a.carregar_config(True)
     graph = a.Graph(cfg)
+
+    if args.fechar_ciclo:
+        fechar_ciclo(graph, sqlite3.connect(cfg.db), args.n)
+        return 0
+
     shopify = a.Shopify(cfg)
     cliente = anthropic.Anthropic(api_key=cfg.api_key, timeout=60.0)
     prompt = a.construir_prompt(cfg)

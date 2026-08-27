@@ -38,9 +38,9 @@ rejeitadas.
 
 ---
 
-## D2 — Monólito de 2565 linhas
+## D2 — Monólito de 2673 linhas
 
-**Escolha:** todo o caminho de produção num ficheiro; as 10 ferramentas importam-no.
+**Escolha:** todo o caminho de produção num ficheiro; as 11 ferramentas importam-no.
 
 **Motivo** — **Inference**: manutenção por uma pessoa, navegabilidade num ficheiro.
 

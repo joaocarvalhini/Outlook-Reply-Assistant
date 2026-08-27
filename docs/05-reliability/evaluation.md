@@ -130,10 +130,10 @@ E alguns casos documentam **deliberadamente não testar** algo:
 
 | | n | % |
 |---|---|---|
-| `rascunhar` | 38 | 47% |
-| `escalar` | 33 | 41% |
+| `rascunhar` | 39 | 48% |
+| `escalar` | 33 | 40% |
 | `saltar` | 10 | 12% |
-| **Total** | **81** | |
+| **Total** | **82** | |
 
 ## Modos de execução
 

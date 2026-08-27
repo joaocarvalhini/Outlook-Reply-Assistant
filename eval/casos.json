@@ -1122,6 +1122,20 @@
     "note": "cliente deu um numero de encomenda que pertence a outra pessoa (email nao bate certo). Regra confirmada diretamente pelo cliente, 21/08/2026, a partir de um caso real (Beatriz Lavaredas, deu o numero #21834 que era do Fabio Lopes): a resposta sugerida deve dizer que o numero indicado esta associado a um email diferente do que escreveu, e pedir para confirmar enviando o email E o telefone usados na compra -- sem revelar nada sobre a encomenda encontrada (nome, email ou telefone de quem e mesmo o dono). Verificacao manual do texto: a resposta sugerida deve mencionar que o email nao bate certo e pedir email + telefone, nunca revelar dados da encomenda real."
   },
   {
+    "id": "cliente-com-duas-encomendas-mesmo-email-pergunta-qual",
+    "email": {
+      "from": "marta.pinho@gmail.com",
+      "from_name": "Marta Pinho",
+      "subject": "Duvida sobre a minha encomenda",
+      "to": ["{mailbox}"],
+      "body": "Boa tarde, o meu artigo ja chegou? Nao dei o numero porque nao o tenho a mao."
+    },
+    "aviso_identidade": "O email de quem escreveu corresponde a mais do que uma encomenda: #21855 (2026-08-03); #22140 (2026-08-20). É a mesma pessoa, com mais do que uma compra -- isto não é um problema de identidade. Não reveles nenhum outro dado de nenhuma delas (nem estado, nem valor, nem morada) além do número e da data já aqui indicados. Responde diretamente perguntando a qual das encomendas o cliente se refere, citando os números; não precisas de escalar só por causa disto.",
+    "expect": "rascunhar",
+    "expect_sem_dossie": true,
+    "note": "melhoria de identidade, 27/08/2026: antes desta correcao, ter mais do que uma encomenda sob o mesmo email confirmado escalava sempre como IDENTIDADE_NAO_VERIFICADA (mesmo tratamento do caso em que o email nem sequer batia). Aqui a identidade ja esta provada -- so falta saber qual das compras -- por isso o correto e responder diretamente a pedir para especificar, citando os dois numeros e datas ja fornecidos no aviso (nunca inventar nem revelar mais). Verificacao manual do texto: a resposta deve citar #21855 e #22140, perguntar qual delas, e nao mencionar nenhum outro dado (nome, valor, morada, estado)."
+  },
+  {
     "id": "formulario-devolucao-formspree-nao-e-descartado",
     "email": {
       "from": "noreply@formspree.io",

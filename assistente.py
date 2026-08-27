@@ -1134,6 +1134,10 @@ COLUNAS_NOVAS = (
     ("dossie_risco", "TEXT"),
     ("dossie_resposta", "TEXT"),
     ("dossie_link", "TEXT"),
+    ("rascunho_id", "TEXT"),
+    ("resultado_estado", "TEXT"),
+    ("resultado_semelhanca", "REAL"),
+    ("resultado_medido_em", "TEXT"),
 )
 
 
@@ -1300,11 +1304,13 @@ def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: 
              dossie_resumo: str = "", dossie_validacao: str = "",
              dossie_accao: str = "", dossie_risco: str = "",
              dossie_resposta: str = "", dossie_link: str = "",
-             por_responder: str = "") -> None:
+             por_responder: str = "", rascunho_id: str = "") -> None:
     """Guarda a decisão. O corpo fica gravado para a medição de deriva.
 
-    Uma vez por semana compara-se o rascunho guardado com o que foi realmente
-    enviado na mesma conversa: acima de 60% editado, o rascunho é ruído.
+    `rascunho_id` é o id do Graph devolvido por criar_rascunho() -- pelo seu
+    próprio id, e não pela conversa, dá para verificar mais tarde, sem
+    ambiguidade, se o rascunho foi enviado tal e qual, editado ou apagado.
+    Ver medir_deriva.py --fechar-ciclo.
 
     As colunas vão nomeadas e não por posição: a tabela ganha colunas com o
     tempo, e um INSERT posicional passa a gravar valores na coluna errada sem
@@ -1315,18 +1321,30 @@ def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: 
         "(message_id, conversation_id, assunto, acao, motivo, corpo, em, "
         " categoria, lacuna_tema, lacuna_em_falta, confianca_encomenda, "
         " dossie_tipo, dossie_resumo, dossie_validacao, dossie_accao, "
-        " dossie_risco, dossie_resposta, dossie_link, por_responder) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        " dossie_risco, dossie_resposta, dossie_link, por_responder, rascunho_id) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             msg["message_id"], msg["conversation_id"], msg["assunto"],
             acao, motivo, corpo, agora(),
             categoria, lacuna_tema, lacuna_em_falta, confianca_encomenda,
             dossie_tipo, dossie_resumo, dossie_validacao, dossie_accao,
-            dossie_risco, dossie_resposta, dossie_link, por_responder,
+            dossie_risco, dossie_resposta, dossie_link, por_responder, rascunho_id,
         ),
     )
     if msg["recebido"] > cursor_atual(con):
         gravar_cursor(con, msg["recebido"])
+    con.commit()
+
+
+def gravar_rascunho_id(con: sqlite3.Connection, message_id: str, rascunho_id: str) -> None:
+    """Só usado no ramo 'escalar', onde o rascunho da resposta sugerida é
+    criado depois de registar() já ter corrido -- um UPDATE pequeno em vez de
+    reordenar as escritas, para não perder a garantia de que o registo fica
+    gravado mesmo que a criação do rascunho falhe a seguir."""
+    con.execute(
+        "UPDATE processados SET rascunho_id = ? WHERE message_id = ?",
+        (rascunho_id, message_id),
+    )
     con.commit()
 
 
@@ -1545,6 +1563,12 @@ class Correspondencia:
     confianca: str          # "exata" | "alta" | "media" | "nenhuma"
     razoes: tuple[str, ...]
     candidatos: int = 0
+    # (número, data) de cada candidata -- só preenchido quando o email de
+    # quem escreveu já bate com todas elas (ver resolver_encomenda). Nesse
+    # caso a titularidade está provada; falta só saber qual das compras é.
+    # Número e data não são segredo (ver pode_revelar), por isso podem ir
+    # para o cliente escolher, ao contrário dos restantes dados da encomenda.
+    opcoes: tuple[tuple[str, str], ...] = ()
 
     @property
     def pode_revelar(self) -> bool:
@@ -1603,6 +1627,17 @@ def _sinais_de_identidade(encomenda: dict, msg: dict, historico: str) -> list[st
     return razoes
 
 
+def _opcoes(encomendas: list[dict]) -> tuple[tuple[str, str], ...]:
+    """(número, data) de cada encomenda -- só os dois campos que já não são
+    segredo (ver Correspondencia.opcoes). Nunca passar o dict inteiro daqui
+    para a frente: é assim que se garante que morada, telefone e valor não
+    seguem por engano para o aviso ao modelo."""
+    return tuple(
+        (str(enc.get("name", "")), str(enc.get("created_at", ""))[:10])
+        for enc in encomendas
+    )
+
+
 def resolver_encomenda(shopify: "Shopify", msg: dict, historico: str,
                        numero: str | None) -> Correspondencia:
     """Encontra a encomenda de quem escreveu, por níveis de certeza.
@@ -1628,9 +1663,13 @@ def resolver_encomenda(shopify: "Shopify", msg: dict, historico: str,
                                    ("numero_e_email_da_compra",), len(candidatos))
         if len(do_remetente) > 1:
             # O email bate, mas há mais do que uma encomenda em jogo e não se
-            # sabe de qual o cliente fala. Escolher a primeira seria adivinhar.
+            # sabe de qual o cliente fala. Escolher a primeira seria adivinhar
+            # -- mas, ao contrário do nível "media", o email já prova que é a
+            # mesma pessoa, por isso leva as opções (não revela os outros
+            # dados), em vez do silêncio total de quando a identidade nem
+            # chegou a confirmar-se.
             return Correspondencia(None, "nenhuma", ("varios_candidatos",),
-                                   len(do_remetente))
+                                   len(do_remetente), _opcoes(do_remetente))
         if len(candidatos) == 1:
             enc = candidatos[0]
             sinais = _sinais_de_identidade(enc, msg, historico)
@@ -1652,8 +1691,12 @@ def resolver_encomenda(shopify: "Shopify", msg: dict, historico: str,
     if len(porEmail) == 1:
         return Correspondencia(porEmail[0], "alta", ("email_da_compra_unico",), 1)
     if len(porEmail) > 1:
+        # Mesmo raciocínio do ramo acima: o email do remetente já é a prova
+        # de identidade (é o nível que revela quando há só uma correspondência
+        # -- "email_da_compra_unico"); ter mais do que uma só muda o problema
+        # de "quem é" para "qual das compras é".
         return Correspondencia(None, "nenhuma", ("email_com_varias_encomendas",),
-                               len(porEmail))
+                               len(porEmail), _opcoes(porEmail))
     return Correspondencia(None, "nenhuma", ("sem_numero_e_email_desconhecido",), 0)
 
 
@@ -1870,6 +1913,24 @@ class Graph:
             json={"comment": corpo_html},
         )
         return str(dados.get("id", ""))
+
+    def detalhe_rascunho(self, rascunho_id: str) -> dict | None:
+        """O estado atual de um rascunho criado por criar_rascunho(), pelo seu
+        próprio id -- não por procurar na conversa. O id mantém-se o mesmo
+        quando alguém envia o rascunho (só sentDateTime passa a vir
+        preenchido); só muda se a mensagem for apagada sem ter sido enviada.
+
+        Devolve None se já não existe (apagada); levanta em qualquer outro
+        erro -- só o 404 tem um significado próprio aqui."""
+        try:
+            return self._pedir(
+                "GET", f"{self.base}/messages/{rascunho_id}",
+                params={"$select": "sentDateTime,body"},
+            )
+        except RuntimeError as exc:
+            if "Graph 404" in str(exc):
+                return None
+            raise
 
     def marcar(self, msg: dict, categoria: str) -> None:
         if categoria in msg["categorias"]:
@@ -2320,7 +2381,25 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
             "telefone que usou no momento da compra. Categoria: "
             "IDENTIDADE_NAO_VERIFICADA."
         )
-    elif "varios_candidatos" in achado.razoes or "email_com_varias_encomendas" in achado.razoes:
+    elif achado.opcoes:
+        # O email de quem escreveu já bate com todas as candidatas -- ao
+        # contrário do "media" ou do "vários candidatos" sem email
+        # confirmado, aqui não há dúvida de quem é, só de qual das compras
+        # fala. Não é um problema de identidade: é normal pedir para
+        # especificar, tal como quando não dá número nenhum. Só o número e a
+        # data vão no aviso (nunca o resto dos dados de cada encomenda).
+        lista = "; ".join(f"{numero} ({data})" for numero, data in achado.opcoes)
+        aviso_identidade = (
+            f"O email de quem escreveu corresponde a mais do que uma "
+            f"encomenda: {lista}. É a mesma pessoa, com mais do que uma "
+            "compra -- isto não é um problema de identidade. Não reveles "
+            "nenhum outro dado de nenhuma delas (nem estado, nem valor, nem "
+            "morada) além do número e da data já aqui indicados. Responde "
+            "diretamente perguntando a qual das encomendas o cliente se "
+            "refere, citando os números; não precisas de escalar só por "
+            "causa disto."
+        )
+    elif "varios_candidatos" in achado.razoes:
         aviso_identidade = (
             f"A procura devolveu {achado.candidatos} encomendas possíveis e "
             "nenhuma pode ser assumida como a certa. Não reveles dados de "
@@ -2399,25 +2478,43 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         html_corpo = para_html(corpo)
         if cfg.aviso:
             html_corpo = f"<p>{html.escape(cfg.aviso)}</p>" + html_corpo
+        rascunho_id = ""
         if not cfg.dry_run:
-            rascunho = graph.criar_rascunho(msg["id"], html_corpo)
-            log("rascunho", email=msg["message_id"][:40], draft=rascunho[:20],
-                shopify=bool(dados_encomenda), identidade=confianca,
-                parcial=extra["por_responder"] or "-")
+            try:
+                rascunho_id = graph.criar_rascunho(msg["id"], html_corpo)
+                log("rascunho", email=msg["message_id"][:40], draft=rascunho_id[:20],
+                    shopify=bool(dados_encomenda), identidade=confianca,
+                    parcial=extra["por_responder"] or "-")
+            except Exception as exc:
+                # Sem isto, uma falha aqui (ex.: 5xx no createReply) derrubava
+                # a passagem inteira sem apanhar -- perdendo não só este
+                # email como todos os que viriam a seguir no mesmo lote.
+                # Fica registado como "rascunhar" na mesma (o texto existe,
+                # só não há rascunho de facto na caixa); visível no journal
+                # para se criar à mão se for preciso.
+                log("erro-rascunho", email=msg["message_id"][:40],
+                    erro=f"{type(exc).__name__}: {exc}")
         else:
             log("rascunho-simulado", email=msg["message_id"][:40],
                 shopify=bool(dados_encomenda), identidade=confianca,
                 parcial=extra["por_responder"] or "-")
-        registar(con, msg, "rascunhar", motivo, corpo, **extra)
-        if not cfg.dry_run:
-            graph.marcar(msg, cfg.cat_rascunho)
-            # Um rascunho parcial responde a uma parte do email e deixa outra
-            # por tratar. Sem esta segunda marca ficaria na fila dos
-            # rascunhados normais e alguém enviava-o como se estivesse
-            # completo — o rascunho é uma ajuda a quem revê, não uma resposta
-            # fechada.
-            if parcial:
-                graph.marcar(msg, cfg.cat_humano)
+        registar(con, msg, "rascunhar", motivo, corpo, rascunho_id=rascunho_id, **extra)
+        # Sem rascunho_id não há rascunho nenhum na caixa (criar_rascunho()
+        # falhou acima) -- marcar "IA-Rascunhado" seria enganador, dava a
+        # entender que há uma resposta pronta à espera quando não há nada.
+        if not cfg.dry_run and rascunho_id:
+            try:
+                graph.marcar(msg, cfg.cat_rascunho)
+                # Um rascunho parcial responde a uma parte do email e deixa outra
+                # por tratar. Sem esta segunda marca ficaria na fila dos
+                # rascunhados normais e alguém enviava-o como se estivesse
+                # completo — o rascunho é uma ajuda a quem revê, não uma resposta
+                # fechada.
+                if parcial:
+                    graph.marcar(msg, cfg.cat_humano)
+            except Exception as exc:
+                log("erro-marcar", email=msg["message_id"][:40],
+                    erro=f"{type(exc).__name__}: {exc}")
         return "rascunhado-parcial" if parcial else "rascunhado"
 
     if acao == "rascunhar":
@@ -2438,10 +2535,21 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         # há rascunho: fica só a categoria a marcar que precisa de humano.
         resposta_sugerida = extra["dossie_resposta"].strip()
         if not cfg.dry_run:
-            graph.marcar(msg, cfg.cat_humano)
+            try:
+                graph.marcar(msg, cfg.cat_humano)
+            except Exception as exc:
+                # Ver a nota equivalente no ramo "rascunhar": sem isto, uma
+                # falha aqui derrubava o resto do lote, não só este email.
+                log("erro-marcar", email=msg["message_id"][:40],
+                    erro=f"{type(exc).__name__}: {exc}")
             if resposta_sugerida:
-                rascunho = graph.criar_rascunho(msg["id"], para_html(resposta_sugerida))
-                log("rascunho-sugerido", email=msg["message_id"][:40], draft=rascunho[:20])
+                try:
+                    rascunho_id = graph.criar_rascunho(msg["id"], para_html(resposta_sugerida))
+                    log("rascunho-sugerido", email=msg["message_id"][:40], draft=rascunho_id[:20])
+                    gravar_rascunho_id(con, msg["message_id"], rascunho_id)
+                except Exception as exc:
+                    log("erro-rascunho", email=msg["message_id"][:40],
+                        erro=f"{type(exc).__name__}: {exc}")
         elif resposta_sugerida:
             log("rascunho-sugerido-simulado", email=msg["message_id"][:40])
         return "escalado"

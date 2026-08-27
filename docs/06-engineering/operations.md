@@ -12,9 +12,10 @@ tags:
 > **Pergunta que este documento responde:** que ferramentas existem para operar e diagnosticar o
 > sistema, e quais custam dinheiro?
 
-Dez satélites que importam `assistente.py`. Nove **só leem**; o `manutencao.py` é o único que
-escreve, e escreve apenas no registo local. Nenhum corre no caminho de produção — `manutencao.py`
-corre à parte, via cron.
+Onze satélites que importam `assistente.py`. Nove só leem; `manutencao.py` (backup e purga) e o
+modo `medir_deriva.py --fechar-ciclo` (grava o resultado da verificação) escrevem no registo
+local — nenhum escreve na caixa nem em qualquer serviço externo. Nenhum corre no caminho de
+produção — `manutencao.py` corre à parte, via cron.
 
 ## Mapa por custo
 
@@ -28,14 +29,16 @@ flowchart TB
         G5["<b>exportar.py</b><br/>casos anonimizados"]
         G6["<b>eval.py --triagem</b><br/>só regras determinísticas"]
         G7["<b>manutencao.py</b><br/>cópia de segurança e purga"]
+        G8["<b>medir_deriva.py --fechar-ciclo</b><br/>só lê o Graph, sem Claude"]
     end
     subgraph Q["QUASE GRÁTIS"]
         Q1["<b>verificar.py</b><br/>1 chamada de 1 token"]
     end
     subgraph P["PAGO — chamadas reais"]
-        P1["<b>eval.py</b><br/>81 casos"]
+        P1["<b>eval.py</b><br/>82 casos"]
         P2["<b>reprocessar.py</b><br/>decisões passadas"]
-        P3["<b>medir_deriva.py</b><br/>vs. resposta real"]
+        P3["<b>medir_deriva.py</b><br/>vs. resposta real (sem --fechar-ciclo)"]
+        P4["<b>verificar_kb.py</b><br/>1 chamada, a base inteira"]
     end
     style G fill:#d5f2e0
     style Q fill:#e8f5e9
@@ -169,6 +172,7 @@ Marca cada linha com `MUDOU` ou `=`, e indicadores de que contexto esteve dispon
 python medir_deriva.py -n 15
 python medir_deriva.py --incluir-escalados
 python medir_deriva.py --pasta deleteditems -n 30
+python medir_deriva.py --fechar-ciclo          # ver abaixo -- grátis, sem Claude
 ```
 
 Regenera o rascunho com o código de hoje e compara com o que o lojista realmente enviou.
@@ -178,6 +182,43 @@ Ver [[qa|QA e testes]].
 > Por omissão, o registo local (só o que o assistente já viu). Com `--pasta`, qualquer pasta do
 > Graph — *"um universo muito maior de conversas reais, incluindo as que nunca chegaram a passar
 > pelo assistente"*. A segunda gasta créditos por caso.
+
+### `medir_deriva.py --fechar-ciclo` — o que aconteceu ao rascunho, de verdade
+
+```bash
+python medir_deriva.py --fechar-ciclo
+python medir_deriva.py --fechar-ciclo -n 30
+```
+
+**Implemented** a 27/08/2026. Diferente do resto do ficheiro: não chama o Claude, não procura
+heuristicamente "a próxima resposta na conversa" — pergunta ao Graph pelo **próprio id** do
+rascunho criado (gravado em `rascunho_id` desde esta data) e classifica em `apagado`, `pendente`,
+`enviado-tal-e-qual` ou `enviado-editado`, comparando o corpo enviado com o corpo gravado. Grava
+o resultado; `metricas.py` lê-o sem repetir as chamadas.
+
+> [!NOTE] Só cobre rascunhos criados depois de 27/08/2026
+> Registos anteriores não têm `rascunho_id` — ficam de fora deste modo, sem alternativa possível
+> (o id não foi gravado na altura). Ver [[data-flow|Fluxo de dados]].
+
+Correr periodicamente (ex.: junto com a revisão semanal) para a taxa de aceitação em
+`metricas.py` deixar de estar vazia. É a peça que faltava para medir a referência de deriva do
+Finding M-3.
+
+### `verificar_kb.py` — contradições na base de conhecimento
+
+```bash
+python verificar_kb.py
+```
+
+**Implemented** a 27/08/2026. Uma chamada só ao Claude, offline: lê a base inteira e pede uma
+lista estruturada de contradições (regras que respondem de forma diferente à mesma pergunta,
+prioridades ambíguas entre secções). Corre-se à mão depois de editar `knowledge/*.md`, antes do
+commit — não é deteção contínua, não corre em produção.
+
+> [!IMPORTANT] Gasta uma chamada -- confirmar o custo antes de correr
+> Ao contrário dos outros scripts "grátis" desta lista, isto fala com a API da Anthropic. O
+> resultado é uma sugestão para leitura humana, nunca uma correção automática: só confirmar com o
+> lojista deve levar a editar `knowledge/*.md`.
 
 ---
 

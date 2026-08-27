@@ -26,6 +26,20 @@ Priorizado por rácio impacto/esforço, com base no que o código revela.
 **Feito a 27/08/2026.** `cursor_seguro()` + 7 testes. Era o Finding C-1.
 Ver [[technical-debt|Dívida técnica]].
 
+### ✅ P0-3 · Identidade — várias encomendas do mesmo email deixa de escalar sempre
+
+**Feito a 27/08/2026.** Encontrado ao investigar porque é que o sistema escala cedo demais:
+quando o email de quem escreveu já bate com mais do que uma encomenda (um cliente recorrente sem
+o número à mão, o cenário mais comum de todos os "vários candidatos"), o sistema tratava isto
+como se fosse o mesmo nível de risco de "email não bate com nada" — silêncio total, categoria
+`IDENTIDADE_NAO_VERIFICADA`, escala sempre. Mas a titularidade **já está provada** (é o mesmo
+nível de confiança que revela tudo quando há só uma correspondência); só falta saber qual das
+compras. `Correspondencia.opcoes` passa a levar o número e a data de cada uma (não são segredo)
+para o modelo responder diretamente a pedir para especificar, sem escalar. 4 testes novos a nível
+de `resolver_encomenda()`, 2 a nível de `processar()`, e um caso novo no
+[[evaluation|banco de ensaio]] (ainda por confirmar contra o modelo real — ver
+[[identity-resolution|Resolução de identidade]]).
+
 ### 🟡 P0-2 · Verificação periódica da política de acesso do Exchange — construído, por ativar
 
 **Construído a 27/08/2026.** `verificar_restricao_diaria()` repete, uma vez por dia, o mesmo
@@ -79,8 +93,8 @@ Canal externo opcional via `ALERTA_WEBHOOK_URL` — vazio até ser configurado. 
 | ~~P2-3~~ | ✅ **Reconciliar o README** — feito 27/08 | | |
 | P2-4 | **Fechar `INVENTARIO_INDISPONIVEL`** | Scope `read_products` + consulta de stock | Média |
 | ~~P2-5~~ | ✅ **Política de retenção** — feito 27/08, purga aos 90 dias | | |
-| P2-6 | **Deteção de contradições na base** | Nada verifica se duas secções se contradizem | Média |
-| P2-7 | **Medir a linha de base da deriva** | A referência dos 60% nunca foi medida | Baixa |
+| ~~P2-6~~ | ✅ **Deteção de contradições na base** — construído 27/08, `verificar_kb.py` | | |
+| P2-7 | **Medir a linha de base da deriva** | Ferramenta pronta (`--fechar-ciclo`); falta correr um período e agregar | Baixa |
 
 ### Sobre P2-4 — a categoria mais facilmente eliminável
 
@@ -95,11 +109,16 @@ flowchart LR
 O padrão de integração já existe (autenticação, cliente HTTP, tradução de estados). Falta pedir
 o scope e escrever a consulta.
 
-### Sobre P2-6 — deteção de contradições
+### Sobre P2-6 — deteção de contradições (fechado 27/08/2026)
 
-**Inference:** uma verificação por LLM, **offline**, que leia os 7 documentos e assinale regras
-conflituantes, correndo apenas quando `knowledge/` muda. Não entra no caminho de produção nem
-custa por email.
+**Implemented.** `verificar_kb.py` — uma chamada só ao Claude, offline, que lê os 7 documentos e
+devolve uma lista estruturada de contradições (`ESQUEMA_CONTRADICOES`), para correr à mão depois
+de editar `knowledge/*.md`, antes do commit. Não entra no caminho de produção nem custa por
+email — custa uma chamada isolada, cada vez que se corre.
+
+A parte sem rede (montar o pedido, interpretar a resposta) tem 3 testes com `ClienteFalso`. A
+qualidade real da deteção — se o Claude encontra mesmo boas contradições nesta base — só se
+confirma com uma chamada real, ainda não corrida.
 
 ---
 
@@ -107,30 +126,35 @@ custa por email.
 
 | # | Melhoria | Nota |
 |---|---|---|
-| P3-1 | **Fecho de ciclo com o resultado real** | Saber se o rascunho foi enviado tal e qual, editado ou apagado |
+| ~~P3-1~~ | ✅ **Fecho de ciclo com o resultado real** — feito 27/08, `medir_deriva.py --fechar-ciclo` | |
 | P3-2 | **Editor de base de conhecimento** | Hoje exige editar Markdown e fazer commit |
 | P3-3 | **Raciocínio seletivo por categoria** | `thinking` adaptativo só em devoluções/garantia |
 | P3-4 | **Painel de operação** | Custo, latência e qualidade ao longo do tempo |
 | P3-5 | **Multi-tenancy** | Ver [[future-architecture\|Arquitetura futura]] |
 
-### Sobre P3-1 — a lacuna de observabilidade mais importante
+### Sobre P3-1 — a lacuna de observabilidade mais importante (fechada 27/08/2026)
 
-O sistema regista o que **decidiu**, mas não sabe o que **aconteceu depois**.
+O sistema registava o que **decidiu**, mas não sabia o que **acontecia depois**.
 
 ```mermaid
 flowchart LR
-    A["Decisão gravada<br/>✅ sabemos"] --> B["Rascunho criado<br/>✅ sabemos"]
-    B --> C["Operador revê<br/>❌ não sabemos"]
-    C --> D["Enviado tal e qual?<br/>Editado? Apagado?<br/>❌ não sabemos"]
-    style C fill:#ffe0e0
-    style D fill:#ffe0e0
+    A["Decisão gravada<br/>✅ sabemos"] --> B["Rascunho criado<br/>✅ sabemos<br/><i>rascunho_id gravado</i>"]
+    B --> C["Operador revê<br/>✅ sabemos<br/><i>--fechar-ciclo</i>"]
+    C --> D["Enviado tal e qual?<br/>Editado? Apagado?<br/>✅ sabemos"]
+    style C fill:#c8e6c9
+    style D fill:#c8e6c9
 ```
 
-**Inference:** detetável comparando o rascunho gravado com a mensagem efetivamente enviada na
-conversa — **a lógica já existe em `medir_deriva.py`**, falta a cadência automática.
+**Implemented.** `rascunho_id` (o id do Graph devolvido por `criar_rascunho()`) passa a ficar
+gravado por email; `medir_deriva.py --fechar-ciclo` pergunta ao Graph pelo próprio id (não pela
+conversa) se foi enviado, editado ou apagado, e grava o resultado. `metricas.py` já mostra a taxa
+de aceitação assim que houver dados.
 
-Transformaria a medição de deriva de ferramenta manual em métrica contínua, e fecharia o risco
-de "deriva silenciosa" identificado no próprio README.
+**O que ainda falta não é técnico, é tempo:** a ferramenta só cobre rascunhos criados a partir de
+27/08/2026 (é quando o id passou a ser gravado), e a cadência é manual (correr
+`--fechar-ciclo` periodicamente) — automatizar via cron é trivial, mas só vale a pena depois de
+haver rascunhos suficientes para medir. Ver [[data-flow|Fluxo de dados]] e
+[[operations|Ferramentas de operação]].
 
 ### Sobre P3-3 — raciocínio seletivo
 
@@ -160,27 +184,35 @@ poderia fechar parte dos 9% restantes a custo controlado. Mensurável com o
 
 ```mermaid
 flowchart LR
-    A["<b>Agora</b><br/>semana de observação<br/><i>até ~02/09</i>"] --> B["<b>✅ Feito 27/08</b><br/>C-1 · H-1 · H-2 · H-3<br/>M-1 · M-2 · M-4 · M-5 · M-6<br/>L-1 · L-2 · L-3"]
-    B --> C["<b>Curto prazo</b><br/>P0-2: só falta o endereço<br/>no OUTRA_CAIXA_VERIFICACAO"]
-    C --> D["<b>Depois dos dados</b><br/>P2-4 stock<br/>P2-7 deriva<br/>decisão de modelo"]
+    A["<b>Agora</b><br/>semana de observação<br/><i>até ~02/09</i>"] --> B["<b>✅ Feito 27/08</b><br/>C-1 · H-1 · H-2 · H-3 · H-4<br/>M-1 · M-2 · M-4 · M-5 · M-6<br/>L-1 · L-2 · L-3"]
+    B --> E["<b>✅ Também feito 27/08</b><br/>identidade: várias encomendas<br/>fecho de ciclo do draft<br/>deteção de contradições na KB"]
+    E --> C["<b>Curto prazo</b><br/>P0-2: só falta o endereço<br/>no OUTRA_CAIXA_VERIFICACAO"]
+    C --> D["<b>Depois dos dados</b><br/>P2-4 stock<br/>M-3 deriva (ferramenta pronta)<br/>decisão de modelo"]
 
     style A fill:#e8d5f2
     style B fill:#c8e6c9
+    style E fill:#c8e6c9
 ```
 
-> [!TIP] Doze correções fechadas a 27/08/2026
-> C-1, H-1, H-2, H-3, M-1, M-2, M-4, M-5, M-6, L-1, L-2 e L-3. Fecharam riscos reais: perda
+> [!TIP] Treze correções e três melhorias de fundo fechadas a 27/08/2026
+> C-1, H-1, H-2, H-3, H-4, M-1, M-2, M-4, M-5, M-6, L-1, L-2 e L-3 fecharam riscos reais: perda
 > silenciosa de email, decisão de custo com informação errada, a maior concentração de risco do
-> sistema sem um único teste, retenção indefinida de correspondência, ferramentas offline
-> inconsistentes com a produção, deploy sem gate de qualidade, e falhas silenciosas sem alerta
-> nenhum.
+> sistema sem um único teste, um crash de lote inteiro por uma exceção não apanhada, retenção
+> indefinida de correspondência, ferramentas offline inconsistentes com a produção, deploy sem
+> gate de qualidade, e falhas silenciosas sem alerta nenhum.
 >
 > H-3 fechou por confirmação direta do lojista (não havia bug — o teste é que tinha o `expect`
 > errado).
 >
+> No mesmo dia, três melhorias de maior alcance, a partir de uma revisão orientada a reduzir
+> escalação e fechar o ciclo de melhoria contínua: a identidade deixa de escalar sempre quando o
+> email já prova quem é (P0-3), o resultado real de cada draft passa a poder ser verificado pelo
+> próprio id (`--fechar-ciclo`, P3-1), e há uma ferramenta para detetar contradições na base
+> (P2-6).
+>
 > O que resta: **P0-2** (verificação periódica do Exchange, esforço baixo — falta só um endereço
-> no `.env`) e **M-3** (linha de base da deriva), que depende dos dados da semana de observação,
-> ainda em curso.
+> no `.env`) e **M-3** (linha de base da deriva) — a ferramenta já existe, falta correr um
+> período e agregar. Ver [[technical-debt|Dívida técnica]] para o detalhe de cada um.
 
 ## Related
 

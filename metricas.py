@@ -61,6 +61,12 @@ def main(argv: list[str] | None = None) -> int:
         f"WHERE {condicao} ORDER BY em",
         valores,
     ).fetchall()
+    resultados_draft = con.execute(
+        f"SELECT resultado_estado FROM processados "
+        f"WHERE {condicao} AND COALESCE(resultado_estado, '') != '' "
+        f"  AND resultado_estado != 'pendente'",
+        valores,
+    ).fetchall()
 
     janela = "todo o histórico" if args.tudo else f"últimos {args.dias} dia(s)"
     print(f"\n{len(linhas)} email(is) processado(s) · {janela}\n")
@@ -98,6 +104,22 @@ def main(argv: list[str] | None = None) -> int:
             print(f"\n{sem_dossie} escalado(s) sem dossiê "
                   "(falta de conhecimento, identidade por confirmar, ou "
                   "encomenda sem correspondência)")
+
+    if resultados_draft:
+        estados = Counter(r[0] for r in resultados_draft)
+        _tabela(
+            f"Resultado de {len(resultados_draft)} rascunho(s) verificado(s) "
+            "pelo id (medir_deriva.py --fechar-ciclo)",
+            estados, len(resultados_draft),
+        )
+        aceites = estados.get("enviado-tal-e-qual", 0)
+        enviados = aceites + estados.get("enviado-editado", 0)
+        if enviados:
+            print(f"\nTaxa de aceitação sem alterações: {aceites}/{enviados} "
+                  f"dos enviados ({aceites/enviados:.0%})")
+    else:
+        print("\nResultado dos rascunhos: sem dados ainda. Correr "
+              "'medir_deriva.py --fechar-ciclo' periodicamente para começar a medir.")
 
     print(f"\n{'─' * LARGURA}")
     print("Para ver quais casos e não só quantos: dossie.py, lacunas.py")

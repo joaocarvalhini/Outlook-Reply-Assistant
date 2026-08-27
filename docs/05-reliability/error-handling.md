@@ -51,6 +51,7 @@ flowchart TD
 | Dossiê falha (2ª chamada) | `log("erro-dossie")`, mantém a classificação | Escala sem dossiê |
 | Mensagem apagada a meio (404) | Salta só essa, regista o motivo | Passagem continua |
 | **Modelo falha (1ª chamada)** | `log("erro-modelo")`, não regista, **cursor recua** | Retentado na passagem seguinte |
+| `criar_rascunho()` ou `marcar()` falham | `log("erro-rascunho"/"erro-marcar")`, segue | Corrigido 27/08/2026 — decisão fica registada na mesma; ver abaixo |
 | Graph falha na listagem | `log("erro-graph")`, sai com código 1 | Passagem inteira falha; retentada em 2 min |
 | Token Graph inválido | `sys.exit()` | Falha imediata e visível |
 
@@ -182,6 +183,7 @@ porque o cursor não avançou e a deduplicação não marcou nada.
 | 5xx transitório em Graph/Shopify | ✅ Corrigido 27/08/2026 |
 | Corrupção de SQLite | 🟡 Sem prevenção, mas recuperável — cópia diária via `manutencao.py` (M-4) |
 | Alerta de falha repetida | ✅ `OnFailure=` + webhook opcional (M-6) |
+| Crash do lote inteiro por falha em `criar_rascunho()`/`marcar()` | ✅ Corrigido 27/08/2026 |
 
 > [!NOTE] `_com_retentativa()` — até 3 tentativas, só em GET
 > O `anthropic` já fazia 2 retentativas por omissão. `Graph._pedir()` e `Shopify._procurar()`
@@ -192,15 +194,34 @@ porque o cursor não avançou e a deduplicação não marcou nada.
 > `criar_rascunho()` (POST) e `marcar()` (PATCH) ficam de fora de propósito — repetir um 5xx
 > nessas arriscaria duplicar um rascunho, que não é uma operação idempotente.
 
+## Um bug de maior alcance, encontrado e corrigido a 27/08/2026
+
+Até esta correção, `graph.criar_rascunho()` e `graph.marcar()`, na aplicação da decisão, **não
+tinham `try/except`** — ao contrário de todas as outras chamadas ao Graph em `processar()`. Uma
+falha aí (um 5xx transitório no `createReply`, por exemplo) propagava por `processar()` e por
+`main()` sem ser apanhada, **derrubando a passagem inteira**: não só o email em causa, mas todos
+os que viriam a seguir no mesmo lote ficavam por processar até à passagem seguinte.
+
+O email causador não se perdia (`registar()` já corre antes ou logo a seguir, consoante o ramo, e
+o `cursor_seguro()` só não recua desnecessariamente porque o cursor tinha avançado por
+`registar()` já ter corrido) — mas atrasava sem necessidade todos os que vinham depois dele no
+mesmo lote, num crash visível só como um traceback não tratado no journal.
+
+**Corrigido:** as duas chamadas ficam em `try/except`, com `log("erro-rascunho"/"erro-marcar")` a
+seguir o mesmo padrão das restantes falhas absorvidas desta tabela.
+
 ## Uma inconsistência residual conhecida
 
-Se `graph.marcar()` levantar **depois** de `registar()` ter corrido, o email fica registado e com
-rascunho criado, mas **sem a categoria aplicada**.
+Sem rascunho criado (`criar_rascunho()` falhou), `marcar()` também não é tentado — marcar
+"IA-Rascunhado" sem existir rascunho nenhum seria enganador. Se for `marcar()` a falhar (o
+rascunho existe, só a categoria não fica aplicada), o email fica registado e com rascunho criado,
+mas **sem a categoria**.
 
 - **Não há perda** — a passagem seguinte trata-o como `"repetido"`
 - **Mas** o email não aparece filtrado no Outlook, e o operador pode não o ver
 
-Gravidade baixa; não corrigido. Documentado para não voltar a ser descoberto de raiz.
+Gravidade baixa; visível no journal (`erro-marcar`) desde a correção acima. Documentado para não
+voltar a ser descoberto de raiz.
 
 ## Observar erros
 
