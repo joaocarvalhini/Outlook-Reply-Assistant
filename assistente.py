@@ -114,10 +114,17 @@ def carregar_config(dry_run_flag: bool | None) -> Config:
         shopify_client_id=obrigatorio("SHOPIFY_CLIENT_ID"),
         shopify_client_secret=obrigatorio("SHOPIFY_CLIENT_SECRET"),
         mailbox=obrigatorio("MAILBOX").lower(),
-        # Sonnet 5 por omissão: com uma só chamada deixou de haver etapa barata a
-        # proteger, e o mínimo de prefixo para o cache é 1024 tokens — a base de
-        # conhecimento cabe lá. No Haiku 4.5 o mínimo é 4096 e nunca chegaria a
-        # ser cacheada.
+        # Sonnet 5 por omissão. A base de conhecimento cacheia nos dois modelos:
+        # medido com count_tokens a 26/08/2026, são 28929 tokens no Sonnet 5
+        # (mínimo 1024) e 22092 no Haiku 4.5 (mínimo 4096). A nota antiga aqui
+        # dizia que no Haiku nunca chegaria a ser cacheada -- era verdade quando
+        # foi escrita e deixou de ser à medida que knowledge/devolucoes.md
+        # cresceu.
+        #
+        # A escolha entre os dois não é de mecânica de cache, é de qualidade: no
+        # subconjunto de 23 casos delicados do eval, o Haiku manteve o recall
+        # (91%) e não perdeu clientes, mas a precisão de escalação caiu de 91%
+        # para 77% -- escala casos que sabia resolver. Custa ~3x menos.
         modelo=os.environ.get("MODELO", "claude-sonnet-5").strip(),
         knowledge_dir=Path(os.environ.get("KNOWLEDGE_DIR", "knowledge")),
         blocklist=Path(os.environ.get("BLOCKLIST_FILE", "blocklist.txt")),

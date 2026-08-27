@@ -19,32 +19,32 @@ no commit `bc5408b`. Cada finding traz evidência verificável.
 
 ```mermaid
 pie showData
-    title Findings por gravidade
-    "Corrigido" : 1
-    "Alta" : 3
-    "Média" : 5
-    "Baixa" : 4
+    title Findings por estado
+    "Corrigidos" : 6
+    "Alta em aberto" : 2
+    "Média em aberto" : 4
+    "Baixa em aberto" : 1
 ```
 
 | ID | Gravidade | Título | Esforço | Estado |
 |---|---|---|---|---|
 | C-1 | 🔴 Crítica | Perda de email quando o modelo falha a meio de lote | Trivial | ✅ **Corrigido 27/08** |
-| H-1 | 🟠 Alta | Premissa de custo/cache desatualizada em 3 locais | Trivial | ⬜ Aberto |
+| ~~H-1~~ | ✅ **Corrigido** | Premissa de custo/cache desatualizada em 3 locais | Trivial | Feito 27/08 |
 | H-2 | 🟠 Alta | `processar()` sem cobertura de testes | Média | ⬜ Aberto |
 | H-3 | 🟠 Alta | Regra do pack falha em ambos os modelos | Baixa | ⬜ Aberto |
-| M-1 | 🟡 Média | README contradiz a integração Shopify | Trivial | ⬜ Aberto |
+| ~~M-1~~ | ✅ **Corrigido** | README contradiz a integração Shopify | Trivial | Feito 27/08 |
 | M-2 | 🟡 Média | Sem retentativa em Graph/Shopify | Baixa | ⬜ Aberto |
 | M-3 | 🟡 Média | Referência de deriva nunca medida | Baixa | ⬜ Aberto |
-| M-4 | 🟡 Média | Sem retenção nem backup | Baixa | ⬜ Aberto |
+| ~~M-4~~ | ✅ **Corrigido** | Sem retenção nem backup | Baixa | Feito 27/08 |
 | M-5 | 🟡 Média | Deploy sem verificação automática | Baixa | ⬜ Aberto |
 | M-6 | 🟡 Média | Sem alertas de falha | Baixa | ⬜ Aberto |
-| L-1 | ⚪ Baixa | Estimativa de tokens imprecisa | Trivial | ⬜ Aberto |
+| ~~L-1~~ | ✅ **Corrigido** | Estimativa de tokens imprecisa | Trivial | Feito 27/08 |
 | L-2 | ⚪ Baixa | Ferramentas offline sem exceções de formulário | Trivial | ⬜ Aberto |
-| L-3 | ⚪ Baixa | `Persistent=true` inócuo | Trivial | ⬜ Aberto |
+| ~~L-3~~ | ✅ **Corrigido** | `Persistent=true` inócuo | Trivial | Feito 27/08 |
 
-> [!TIP] Nove dos treze são de esforço trivial ou baixo
-> A dívida deste projeto é rasa. O que falta não é refactoring estrutural — é sobretudo
-> automatizar verificações que já existem e corrigir documentação.
+> [!TIP] Seis fechados, sete em aberto
+> A dívida deste projeto é rasa. Dos que faltam, só o H-2 (testes de `processar()`) exige
+> trabalho a sério; o resto é automatizar verificações que já existem.
 
 ---
 
@@ -75,7 +75,7 @@ Ver [[error-handling|Tratamento de erros]].
 
 ---
 
-## 🟠 H-1 — Premissa de custo/cache desatualizada
+## ✅ H-1 — Premissa de custo/cache desatualizada
 
 **Onde:** `README.md`, `.env.example`, e um comentário em `assistente.py`.
 
@@ -96,8 +96,10 @@ A comparação correta é: Haiku custa ~3× menos e perde 14 pontos de **precis�
 (91% → 77%), sem perder clientes. É uma escolha real de negócio, que estava a ser tomada com
 informação errada.
 
-**Correção:** substituir a afirmação nos três locais. A base cacheia em ambos os modelos; a
-diferença real é de qualidade de escalação, não de mecânica de cache.
+**Estado: ✅ CORRIGIDO a 27/08/2026.** Os três locais passaram a dizer que a base cacheia em
+ambos os modelos, com os números medidos, e que a diferença real é de qualidade de escalação. O
+`README.md` ganhou também a distinção entre cache quente (~0,02 €/email) e cache fria
+(~0,12 €/email), que é o que domina o custo numa loja de pouco volume.
 
 ---
 
@@ -153,7 +155,7 @@ Ver [[decision-making|Tomada de decisão]] — é exatamente o padrão "mover pa
 
 ---
 
-## 🟡 M-1 — README contradiz a integração Shopify
+## ✅ M-1 — README contradiz a integração Shopify
 
 **Evidência:** `README.md`, secção "Âmbito — o que este assistente não faz":
 
@@ -166,7 +168,9 @@ encomenda, a instrução dedicada no prompt, e casos de eval que provam o contr�
 **Impacto:** quem avalie o projeto pelo README **subestima significativamente** as suas
 capacidades.
 
-**Correção:** reescrever. A limitação real é a janela de 60 dias, não a ausência de integração.
+**Estado: ✅ CORRIGIDO a 27/08/2026.** A secção "Âmbito" passou a descrever as limitações
+reais: janela de 60 dias (com o impacto medido — 1 em 10 casos), ausência de `read_products`, e
+só-leitura. De caminho, corrigiu-se também a contagem de testes, que dizia 102.
 
 ---
 
@@ -200,7 +204,7 @@ base. Gasta créditos; usar `-n`.
 
 ---
 
-## 🟡 M-4 — Sem retenção nem backup
+## ✅ M-4 — Sem retenção nem backup
 
 **Evidência:** `processados` guarda o corpo integral dos rascunhos e cresce indefinidamente. Não
 há purga, não há backup.
@@ -212,8 +216,22 @@ há purga, não há backup.
 | **RGPD** | Correspondência de clientes retida indefinidamente, sem política declarada |
 | **Operacional** | Perder o disco = perder o cursor. A reinstalação ou reprocessa tudo ou salta emails |
 
-**Correção:** política de retenção declarada (ex.: purgar corpos com mais de 90 dias, manter as
-decisões) e cópia diária para fora da máquina.
+**Estado: ✅ CORRIGIDO a 27/08/2026** com o `manutencao.py`.
+
+| | |
+|---|---|
+| **Cópia de segurança** | API de backup do SQLite (não um `cp` — a base pode estar a ser escrita), rotação das últimas 14, em `backups/` (no `.gitignore`) |
+| **Purga** | Esvazia o texto livre com mais de 90 dias: assunto, corpo, dossiês, `por_responder` |
+| **O que fica** | Classificação (`acao`, `categoria`, `motivo`, `em`) e lacunas — é o que o `metricas.py` e o `lacunas.py` leem |
+
+> [!IMPORTANT] A purga não apaga linhas
+> A chave `message_id` é o que impede o assistente de responder duas vezes ao mesmo email.
+> Apagar a linha devolveria a mensagem ao estado de "nunca vista" — e, se alguém repuser um
+> cursor antigo a partir de uma cópia, o assistente voltaria a rascunhar emails já respondidos.
+
+Testado contra uma base real: linhas antigas com o texto anulado e a classificação intacta,
+linha recente por tocar, 198 linhas preservadas, e a cópia com `integrity_check: ok` e o cursor
+lá dentro.
 
 ---
 
@@ -241,12 +259,14 @@ segundo**.
 
 ## ⚪ Findings de prioridade baixa
 
-### L-1 — Estimativa de tokens imprecisa
+### ✅ L-1 — Estimativa de tokens imprecisa
 
-`verificar.py` usa `len(base) // 4`. O rácio real medido é ~2,34 chars/token, pelo que a
-estimativa **subestima em ~40%**. Não altera o resultado da verificação (ambos os valores estão
-acima do limiar), mas o número reportado ao operador está errado. Podia usar `count_tokens`
-(gratuito).
+`verificar.py` usava `len(base) // 4`. O rácio real é ~2,3 chars/token, pelo que a estimativa
+**subestimava em ~40%**.
+
+**Estado: ✅ CORRIGIDO a 27/08/2026.** Passou a usar `count_tokens` (gratuito), sobre o prompt
+inteiro e não só a base — é o prompt que vai para cache. Se a chamada falhar, cai numa
+estimativa marcada como tal.
 
 ### L-2 — Ferramentas offline sem exceções de formulário
 
@@ -255,11 +275,14 @@ argumentos de formulário (omissão `False`). Descartariam submissões do Formsp
 produção processa corretamente. Só afeta ferramentas de análise — mas torna as suas conclusões
 inconsistentes com o comportamento real.
 
-### L-3 — `Persistent=true` inócuo
+### ✅ L-3 — `Persistent=true` inócuo
 
-`deploy/tripat3s-assistente.timer` define `Persistent=true`, que no systemd só se aplica a
-temporizadores `OnCalendar`. Este usa `OnBootSec`/`OnUnitActiveSec`. A diretiva é inofensiva mas
-**enganadora** — sugere um comportamento de recuperação que não existe.
+`deploy/tripat3s-assistente.timer` definia `Persistent=true`, que no systemd só se aplica a
+temporizadores `OnCalendar`. Este usa `OnBootSec`/`OnUnitActiveSec`. A diretiva era inofensiva
+mas **enganadora** — sugeria um comportamento de recuperação que não existe.
+
+**Estado: ✅ CORRIGIDO a 27/08/2026.** Removida, com um comentário no lugar a explicar porque
+não está lá e que é o `OnBootSec` que cobre o arranque após paragem.
 
 ---
 

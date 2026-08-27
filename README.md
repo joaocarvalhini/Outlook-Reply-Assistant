@@ -310,14 +310,44 @@ email enviado a um cliente, ficas a saber no próprio dia que ninguém está a
 rever. Custo: zero. Esvazia-se o `DRAFT_PREFIX` quando a revisão estiver
 estabelecida.
 
+### Manutenção do registo
+
+O `assistente.db` guarda o cursor da caixa e o corpo dos rascunhos. São duas
+responsabilidades diferentes e o `manutencao.py` trata das duas:
+
+```bash
+python manutencao.py --simular    # diz o que faria, sem escrever
+python manutencao.py              # cópia de segurança + purga; é o que o cron corre
+```
+
+Uma linha no crontab do utilizador `assistente`, a correr de madrugada:
+
+```cron
+30 4 * * * cd /opt/assistente && .venv/bin/python manutencao.py >> logs/manutencao.log 2>&1
+```
+
+**A cópia de segurança** usa a API de backup do SQLite, e não um `cp`, para não
+apanhar a base a meio de uma escrita — o timer corre de dois em dois minutos e
+não vale a pena coordenar os dois. Guarda as últimas 14 em `backups/`.
+
+Perder o `assistente.db` não é perder histórico: é perder o sítio onde o
+assistente ia. Uma reinstalação sem cursor começa em "agora" e **salta em
+silêncio** tudo o que chegou entretanto.
+
+**A purga** esvazia o texto livre com mais de 90 dias (assunto, corpo, dossiês)
+e mantém a classificação, que é o que o `metricas.py` e o `lacunas.py` leem.
+Não apaga linhas nenhumas de propósito: a chave `message_id` é o que impede o
+assistente de responder duas vezes ao mesmo email.
+
 ---
 
 ## Testes e avaliação
 
 ```bash
-python -m unittest test_assistente     # 102 testes, sem rede nem credenciais
-python eval.py --triagem               # regras determinísticas, grátis
-python eval.py                         # tudo, contra o modelo real
+python -m unittest test_assistente          # 160 testes, sem rede nem credenciais
+python eval.py --triagem                    # regras determinísticas, grátis
+python eval.py --casos eval/subset.json     # 23 casos delicados, mais barato
+python eval.py                              # os 81, contra o modelo real
 ```
 
 Os testes provam que o código faz o que foi escrito. O `eval.py` prova que o
@@ -583,10 +613,28 @@ alguma coisa:
 | Inferência (Sonnet 5, com cache do prompt) | ~10 € |
 | **Total operacional** | **~14 €/mês** |
 
-O `claude-haiku-4-5` é cerca de três vezes mais barato, mas o mínimo de prefixo
-para o cache dele são 4096 tokens e a base de conhecimento é menor do que isso —
-nunca chegaria a ser cacheada. Com uma só chamada por email, e a triagem a
-filtrar o lixo de graça, a diferença real é de poucos euros.
+O valor da inferência depende muito do ritmo a que os emails chegam. Medido a
+26/08/2026, o prefixo de sistema tem 28 929 tokens no Sonnet 5:
+
+- **Emails em rajada** (menos de 5 minutos entre si): a cache está quente e
+  lê-se a 0,1× do preço base. Cerca de 0,02 € por email.
+- **Emails espaçados** (o normal numa loja pequena): paga-se a escrita da cache
+  (1,25×) sem chegar a ler o desconto. Cerca de 0,12 € por email.
+
+A tabela acima assume o primeiro regime. Numa caixa com pouco volume, o segundo
+domina, e o custo mensal pode ser várias vezes maior.
+
+O `claude-haiku-4-5` é cerca de três vezes mais barato **e também cacheia**: a
+base de conhecimento tem 22 092 tokens no tokenizador dele, bem acima do mínimo
+de 4096. (Uma versão anterior deste ficheiro dizia o contrário; era verdade
+quando foi escrita e deixou de ser à medida que `knowledge/devolucoes.md`
+cresceu.)
+
+A escolha entre os dois não é de mecânica de cache, é de qualidade. No
+subconjunto de 23 casos delicados do `eval/`, o Haiku manteve o recall de
+escalação (91%) e **não perdeu nenhum cliente**, mas a precisão caiu de 91%
+para 77% — escala casos que sabia resolver. Traduzido: não piora as respostas
+ao cliente, piora a poupança de trabalho à equipa.
 
 ---
 
@@ -627,10 +675,17 @@ ruído e vale a pena desligar.
 
 ## Âmbito — o que este assistente não faz
 
-- **Não sabe o estado das encomendas.** Sem ligação ao sistema de encomendas,
-  "onde está a minha encomenda?" cai sempre em `escalar`. Se essas forem a maioria
-  do volume, o valor entregue é pequeno — **é a pergunta a fazer antes de tudo o
-  resto**, e responde-se contando os tipos de pergunta em 100 emails de arquivo.
+- **Só lê encomendas dos últimos 60 dias.** A integração com a Shopify responde a
+  "onde está a minha encomenda?" com estado de pagamento, expedição, rastreio e
+  data de entrega — mas o scope `read_orders` só alcança 60 dias para trás.
+  Medido a 14/08/2026 sobre emails reais: das 10 encomendas mencionadas por
+  clientes, 9 estavam dentro da janela. O limite morde em cerca de 1 em 10 casos.
+  Ver `shopify-app/shopify.app.toml` para o que seria preciso para o alargar.
+- **Não sabe o stock.** Falta o scope `read_products`, por isso qualquer pergunta
+  sobre disponibilidade ou reposição escala.
+- **Não altera nada na loja.** Cancelar, reembolsar, trocar ou mudar a morada
+  escalam sempre, com o caso preparado. A aplicação tem permissão de leitura e
+  mais nada.
 - **Não envia.** Por construção.
 - **Não aprende.** Melhora quando alguém edita o `knowledge/`. É intencional: o
   mecanismo de melhoria tem de ser legível por um humano.

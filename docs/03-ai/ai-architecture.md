@@ -127,13 +127,13 @@ system=[{"type": "text", "text": prompt, "cache_control": {"type": "ephemeral"}}
 | `claude-sonnet-5` | **28 929** | 1 024 | ✅ |
 | `claude-haiku-4-5` | **22 092** | 4 096 | ✅ |
 
-> [!WARNING] Documentação desatualizada em três sítios
-> O `README.md`, o `.env.example` e um comentário em `assistente.py` afirmam que a base de
-> conhecimento é *menor* que os 4096 tokens mínimos do Haiku e que *"nunca chegaria a ser
-> cacheada"*. Era verdade quando foi escrito; deixou de ser quando `knowledge/devolucoes.md`
-> cresceu para 20 KB. **A base está hoje 5,4× acima desse mínimo.**
+> [!NOTE] A documentação dizia o contrário até 27/08/2026
+> O `README.md`, o `.env.example` e um comentário em `assistente.py` afirmavam que a base era
+> *menor* que os 4096 tokens mínimos do Haiku e que *"nunca chegaria a ser cacheada"*. Era
+> verdade quando foi escrito e deixou de ser quando `knowledge/devolucoes.md` cresceu para 20 KB.
 >
-> Finding H-1 em [[technical-debt|Dívida técnica]].
+> Corrigido nos três locais (Finding H-1). A escolha entre modelos não é de mecânica de cache:
+> é de **precisão de escalação**, 91% contra 77%.
 
 ### O que fica fora do cache, e porquê
 

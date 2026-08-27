@@ -63,16 +63,10 @@ Finding H-2.
 
 Finding M-2.
 
-### P1-3 · Corrigir a documentação de custo e cache
+### ✅ P1-3 · Corrigir a documentação de custo e cache
 
-| | |
-|---|---|
-| **Problema** | Três locais afirmam que a base não atinge o mínimo de cache do Haiku. Falso desde que a base cresceu — está 5,4× acima |
-| **Solução** | Corrigir `README.md`, `.env.example` e o comentário em `assistente.py` |
-| **Impacto** | Médio — **decisões de negócio dependem disto** |
-| **Complexidade** | Trivial |
-
-Finding H-1.
+**Feito a 27/08/2026.** Os três locais corrigidos, com os números medidos e a distinção entre
+cache quente e fria. Finding H-1.
 
 ### P1-4 · Resolver o cálculo do pack em código
 
@@ -104,10 +98,10 @@ Finding M-6.
 | # | Melhoria | Problema | Complexidade |
 |---|---|---|---|
 | P2-1 | **CI mínimo** | Nada impede deploy com testes a falhar. As verificações são grátis e demoram <1 s | Baixa |
-| P2-2 | **Backup do SQLite** | Perder o disco = perder o cursor | Trivial |
-| P2-3 | **Reconciliar o README** | A secção "Âmbito" descreve um sistema anterior à Shopify | Trivial |
+| ~~P2-2~~ | ✅ **Backup do SQLite** — feito 27/08, `manutencao.py` | | |
+| ~~P2-3~~ | ✅ **Reconciliar o README** — feito 27/08 | | |
 | P2-4 | **Fechar `INVENTARIO_INDISPONIVEL`** | Scope `read_products` + consulta de stock | Média |
-| P2-5 | **Política de retenção** | Correspondência guardada indefinidamente (RGPD) | Baixa |
+| ~~P2-5~~ | ✅ **Política de retenção** — feito 27/08, purga aos 90 dias | | |
 | P2-6 | **Deteção de contradições na base** | Nada verifica se duas secções se contradizem | Média |
 | P2-7 | **Medir a linha de base da deriva** | A referência dos 60% nunca foi medida | Baixa |
 
@@ -189,7 +183,7 @@ poderia fechar parte dos 9% restantes a custo controlado. Mensurável com o
 
 ```mermaid
 flowchart LR
-    A["<b>Agora</b><br/>semana de observação<br/><i>até ~02/09</i>"] --> B["<b>Imediato</b><br/>P1-3 documentação<br/>P2-2 backup<br/>P2-3 README"]
+    A["<b>Agora</b><br/>semana de observação<br/><i>até ~02/09</i>"] --> B["<b>✅ Feito 27/08</b><br/>P1-3 documentação<br/>P2-2 backup<br/>P2-3 README<br/>P2-5 retenção"]
     B --> C["<b>Curto prazo</b><br/>P0-2 verificação<br/>P1-5 alertas<br/>P2-1 CI"]
     C --> D["<b>Médio prazo</b><br/>P1-1 testes<br/>P1-2 retry<br/>P1-4 pack"]
     D --> E["<b>Depois dos dados</b><br/>P2-4 stock<br/>P2-7 deriva<br/>decisão de modelo"]
@@ -198,9 +192,13 @@ flowchart LR
     style B fill:#c8e6c9
 ```
 
-> [!TIP] Começar pelas triviais
-> P1-3, P2-2 e P2-3 são de esforço trivial e fecham dois riscos reais (decisão de custo com
-> informação errada; perda de estado). Valem mais por hora investida do que qualquer item de P1.
+> [!TIP] As triviais já estão fechadas
+> P1-3, P2-2, P2-3 e P2-5 foram feitas a 27/08, junto com L-1 e L-3. Fecharam três riscos reais:
+> decisão de custo com informação errada, perda de estado, e retenção indefinida de
+> correspondência.
+>
+> O que resta de barato: **P0-2** (verificação periódica do Exchange), **P1-5** (alertas) e
+> **P2-1** (CI). O único que dá trabalho a sério é o **H-2**.
 
 ## Related
 

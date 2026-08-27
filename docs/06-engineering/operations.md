@@ -12,7 +12,8 @@ tags:
 > **Pergunta que este documento responde:** que ferramentas existem para operar e diagnosticar o
 > sistema, e quais custam dinheiro?
 
-Dez satélites que importam `assistente.py` e **só leem**. Nenhum corre em produção.
+Onze satélites que importam `assistente.py`. Dez **só leem**; o `manutencao.py` é o único que
+escreve, e escreve apenas no registo local. Nenhum corre no caminho de produção.
 
 ## Mapa por custo
 
@@ -25,6 +26,7 @@ flowchart TB
         G4["<b>casos_antigos.py</b><br/>pares reais para ler"]
         G5["<b>exportar.py</b><br/>casos anonimizados"]
         G6["<b>eval.py --triagem</b><br/>só regras determinísticas"]
+        G7["<b>manutencao.py</b><br/>cópia de segurança e purga"]
     end
     subgraph Q["QUASE GRÁTIS"]
         Q1["<b>verificar.py</b><br/>1 chamada de 1 token"]
@@ -96,6 +98,40 @@ como `coberta?` as que já parecem estar na base.
 > O que ele produz aqui é a pergunta, não a resposta."*
 >
 > Ver [[knowledge-base|Base de conhecimento]].
+
+### `manutencao.py` — cópia de segurança e purga
+
+```bash
+python manutencao.py --simular    # diz o que faria, sem escrever
+python manutencao.py              # as duas coisas; é o que o cron corre
+python manutencao.py --backup     # só a cópia
+python manutencao.py --purgar --dias 30
+```
+
+Trata de duas responsabilidades distintas do `assistente.db`:
+
+| | O que faz | Porquê |
+|---|---|---|
+| **Cópia de segurança** | API de backup do SQLite, rotação das últimas 14, em `backups/` | Perder a base não é perder histórico — é perder **o cursor**. Uma reinstalação sem cursor começa em "agora" e salta em silêncio o que chegou entretanto |
+| **Purga** | Esvazia o texto livre com mais de 90 dias: assunto, corpo, dossiês, `por_responder` | É correspondência de clientes. Sem janela declarada, acumula-se para sempre — problema de RGPD, não de disco |
+
+> [!NOTE] Usa a API de backup, não um `cp`
+> Um `cp` pode apanhar a base a meio de uma escrita. O timer corre de dois em dois minutos e
+> ninguém quer coordenar cron com timer.
+
+> [!IMPORTANT] A purga não apaga linhas nenhumas
+> A chave `message_id` é o que impede o assistente de responder duas vezes ao mesmo email.
+> Apagar a linha devolveria a mensagem ao estado de "nunca vista" — e, se alguém repuser um
+> cursor antigo a partir de uma cópia, o assistente voltaria a rascunhar emails já respondidos.
+>
+> Fica a classificação (`acao`, `categoria`, `motivo`, `em`) e as lacunas, que é o que o
+> `metricas.py` e o `lacunas.py` leem.
+
+No servidor, uma linha no crontab do utilizador `assistente`:
+
+```cron
+30 4 * * * cd /opt/assistente && .venv/bin/python manutencao.py >> logs/manutencao.log 2>&1
+```
 
 ---
 
@@ -215,6 +251,13 @@ python eval.py                                 # ~1,20 €
 python metricas.py --dias 7        # a distribuição mudou?
 python lacunas.py                  # o que fechar a seguir?
 python dossie.py --lista           # que casos estão à espera?
+```
+
+### Manutenção (automática, via cron)
+
+```bash
+python manutencao.py --simular     # confirmar o que o cron vai fazer
+ls -la backups/                    # as cópias estão a ser feitas?
 ```
 
 ### Investigar uma resposta má

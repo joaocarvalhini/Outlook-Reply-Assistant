@@ -166,7 +166,7 @@ O modelo devolve **texto simples**; o HTML é construído em código com `html.e
 | Fluxo | Situação |
 |---|---|
 | Corpos de email → API da Anthropic | **Exige acordo de subcontratação escrito** |
-| Correspondência em `assistente.db` | Local, fora do git, **sem política de retenção** ⚠️ |
+| Correspondência em `assistente.db` | Local, fora do git, purgada aos 90 dias pelo `manutencao.py` |
 | Exportações para casos de teste | Pseudonimizadas, fora do git |
 
 > [!IMPORTANT] O acordo de subcontratação é um pré-requisito, não uma tarefa futura
@@ -201,8 +201,8 @@ ficheiro fica local e fora do git: *"Trate-o como dados do cliente, porque é o 
 |---|---|---|---|
 | Política do Exchange removida | Baixa | **Crítico** | `verificar.py` (manual) |
 | RGPD sem acordo de subcontratação | — | **Crítico** | Identificado como pré-requisito |
-| Retenção indefinida de correspondência | Certa | Médio | **Nenhuma** — Finding M-4 |
-| Perda do SQLite | Baixa | Médio | **Nenhuma** — sem backup |
+| Retenção indefinida de correspondência | — | Médio | ✅ Purga aos 90 dias (`manutencao.py`) |
+| Perda do SQLite | Baixa | Médio | ✅ Cópia diária com rotação (`manutencao.py`) |
 | Segredos em corpos de erro truncados | Muito baixa | Baixo | Não filtrado |
 
 ## Related

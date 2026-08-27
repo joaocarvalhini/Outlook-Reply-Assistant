@@ -2,6 +2,9 @@
 .env
 assistente.db
 logs/
+# Cópias de segurança do registo, feitas pelo manutencao.py. São o mesmo
+# conteúdo do assistente.db: correspondência de clientes.
+backups/
 
 # Documentos gerados para entregar ao cliente, não fazem parte do código
 entregas/

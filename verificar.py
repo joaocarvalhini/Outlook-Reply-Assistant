@@ -59,20 +59,45 @@ def verificar_config(r: Relatorio) -> a.Config | None:
     return cfg
 
 
+def contar_tokens(cfg: a.Config, prompt: str) -> tuple[int, bool]:
+    """(tokens, exato). O count_tokens é gratuito e é a única forma de saber o
+    número a sério -- a regra de três "caracteres a dividir por 4" subestimava
+    em cerca de 40% neste prompt (67748 caracteres para 28929 tokens, ou seja
+    ~2,3 caracteres por token, não 4). Se a chamada falhar, cai na estimativa,
+    que serve para o aviso mas não é para citar.
+    """
+    try:
+        import anthropic
+
+        cliente = anthropic.Anthropic(api_key=cfg.api_key)
+        r = cliente.messages.count_tokens(
+            model=cfg.modelo,
+            system=[{"type": "text", "text": prompt}],
+            messages=[{"role": "user", "content": "."}],
+        )
+        return int(r.input_tokens), True
+    except Exception:
+        return len(prompt) // 3, False
+
+
 def verificar_base(r: Relatorio, cfg: a.Config) -> None:
     try:
         base = a.carregar_base(cfg.knowledge_dir)
     except SystemExit as exc:
         r.falha("Base de conhecimento", str(exc))
         return
-    tokens = len(base) // 4
-    r.ok("Base de conhecimento", f"{len(base)} caracteres, ~{tokens} tokens")
+    # Conta-se o prompt inteiro, não só a base: é o prompt que vai para cache.
+    prompt = a.construir_prompt(cfg)
+    tokens, exato = contar_tokens(cfg, prompt)
+    marca = "" if exato else " (estimado)"
+    r.ok("Base de conhecimento",
+         f"{len(base)} caracteres; prompt de {tokens} tokens{marca}")
     # O cache só pega a partir de um prefixo mínimo, que varia por modelo.
     minimo = 4096 if "haiku" in cfg.modelo else 1024
     if tokens < minimo:
         r.aviso(
             "Cache do prompt",
-            f"~{tokens} tokens abaixo do mínimo de {minimo} do {cfg.modelo}: "
+            f"{tokens} tokens abaixo do mínimo de {minimo} do {cfg.modelo}: "
             "cada email paga o prompt inteiro",
         )
 

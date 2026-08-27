@@ -13,8 +13,9 @@ OnUnitActiveSec=2min
 # instante do minuto.
 RandomizedDelaySec=30s
 
-# Se a máquina estiver desligada à hora prevista, corre assim que arrancar.
-Persistent=true
+# Não há Persistent= aqui de propósito: essa diretiva só tem efeito em
+# temporizadores OnCalendar, e este é OnBootSec/OnUnitActiveSec. Quem cobre o
+# arranque depois de a máquina estar desligada é o OnBootSec acima.
 
 Unit=tripat3s-assistente.service
 

@@ -191,18 +191,26 @@ flowchart LR
 
 | Dado | Onde | Retenção | No git? |
 |---|---|---|---|
-| Cursor, decisões, compromissos | `assistente.db` (local) | **Indefinida** ⚠️ | Não |
-| Corpo dos rascunhos | `processados.corpo` | **Indefinida** ⚠️ | Não |
+| Cursor, decisões, compromissos | `assistente.db` (local) | Indefinida (classificação) | Não |
+| Corpo dos rascunhos e dossiês | `processados` | **90 dias**, depois purgado | Não |
 | Logs de passagem | journal do systemd | Política do systemd | Não |
 | Base de conhecimento | `knowledge/*.md` | Versionada | **Sim** |
 | Casos de teste | `eval/casos.json` | Versionada | **Sim** |
 | Emails reais anonimizados | `eval/real-*.json` | Local | Não (`.gitignore`) |
 | Corpos de email | Enviados à API da Anthropic | Política da Anthropic | Não |
 
-> [!WARNING] Sem política de retenção
-> `processados` cresce indefinidamente, incluindo o corpo integral dos rascunhos. Não há purga
-> nem backup. É risco de RGPD **e** risco operacional (perder o disco = perder o cursor).
-> Finding M-4 em [[technical-debt|Dívida técnica]].
+**Implemented** desde 27/08/2026 — `manutencao.py` trata das duas responsabilidades:
+
+| | |
+|---|---|
+| **Cópia de segurança** | API de backup do SQLite (não um `cp`: a base pode estar a ser escrita), rotação das últimas 14, em `backups/` |
+| **Purga** | Esvazia o texto livre com mais de 90 dias; mantém a classificação, que é o que as métricas leem |
+
+> [!IMPORTANT] A purga não apaga linhas
+> A chave `message_id` é o que impede o assistente de responder duas vezes ao mesmo email.
+> Apagar a linha devolveria a mensagem ao estado de "nunca vista".
+
+Ver [[operations|Ferramentas de operação]].
 
 ## Fluxo de saída — o HTML
 

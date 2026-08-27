@@ -104,8 +104,8 @@ Ver [[knowledge-base|Base de conhecimento]].
 | Limitação | Impacto | Esforço |
 |---|---|---|
 | Uma caixa e uma loja por instalação | Sem multi-tenancy | Alto — ver [[scalability\|Escalabilidade]] |
-| SQLite local, **sem backup** | Perder o disco = perder cursor e histórico | Trivial |
-| **Sem política de retenção** | Correspondência guardada indefinidamente (RGPD) | Baixo |
+| ~~SQLite local, sem backup~~ | ✅ Resolvido 27/08 — `manutencao.py` | — |
+| ~~Sem política de retenção~~ | ✅ Resolvido 27/08 — purga aos 90 dias | — |
 | Processamento sequencial | 25 emails × ~10 s ≈ 4 min por lote | Médio |
 | `LOTE = 25` fixo, não configurável | Uma rajada >25 divide-se por passagens | Trivial |
 | **Sem retentativa em Graph/Shopify** | Um 429/5xx transitório degrada a decisão | Baixo |

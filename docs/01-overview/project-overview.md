@@ -75,7 +75,7 @@ CI/CD, sem processo permanente, sem framework de agentes. Ver [[technical-decisi
 |---|---|---|
 | `assistente.py` | 2 386 | Todo o caminho de produção |
 | `test_assistente.py` | 1 316 | 160 testes, 23 classes |
-| 10 ferramentas satélite | ~1 750 | Só leitura, fora do caminho crítico |
+| 11 ferramentas satélite | ~1 900 | Fora do caminho crítico; só o `manutencao.py` escreve |
 | `knowledge/*.md` | 805 | A base de conhecimento |
 | `eval/casos.json` | 81 casos | Banco de ensaio |
 
@@ -108,8 +108,8 @@ Outlook-Reply-Assistant/
 ├── docs/                   ← esta knowledge base
 ├── entregas/               ← documentos para o cliente (PDF)
 ├── test_assistente.py      ← 160 testes
-└── {eval,metricas,lacunas,dossie,medir_deriva,
-     reprocessar,exportar,casos_antigos,verificar}.py
+└── {eval,metricas,lacunas,dossie,medir_deriva,reprocessar,
+     exportar,casos_antigos,verificar,manutencao}.py
                             ← ferramentas de operação
 ```
 

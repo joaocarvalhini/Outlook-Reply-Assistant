@@ -88,7 +88,7 @@ Ver [[shopify|Integração Shopify]].
 | Retentar automaticamente | ✅ | Via timer — a passagem seguinte vê o mesmo |
 | **Retentar 429/5xx no Graph/Shopify** | ❌ | Sem *backoff*. Ver [[technical-debt]] |
 | **Alertar quando falha** | ❌ | Só `journalctl` |
-| **Backup do estado** | ❌ | Nenhum |
+| Backup do estado | ✅ | `manutencao.py` — API de backup do SQLite, rotação de 14 |
 
 ## Operação e observabilidade
 
@@ -103,6 +103,7 @@ Ver [[shopify|Integração Shopify]].
 | Exportar casos anonimizados | 🟡 | `exportar.py` — pseudonimização, não garantida |
 | Ler casos históricos sem gastar créditos | ✅ | `casos_antigos.py` |
 | Desligar funcionalidades sem *deploy* | ✅ | 5 `ENABLE_*` + `DRY_RUN` |
+| Cópia de segurança e purga do registo | ✅ | `manutencao.py` |
 | **Painel / métricas ao longo do tempo** | ❌ | Tudo é a pedido |
 
 Ver [[operations|Ferramentas de operação]].
