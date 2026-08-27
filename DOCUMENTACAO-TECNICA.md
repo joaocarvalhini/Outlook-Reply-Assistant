@@ -208,7 +208,7 @@ módulo — nenhuma delas corre em produção.
 |---|---|---|
 | Linguagem | Python ≥3.11 (a correr em 3.14) | Sintaxe `X \| None`, `dict[...]` |
 | Dependências de runtime | 4: `anthropic`, `msal`, `httpx`, `python-dotenv` | [requirements.txt](requirements.txt) |
-| Dependências de teste | Nenhuma — `unittest` da biblioteca padrão | 153 testes |
+| Dependências de teste | Nenhuma — `unittest` da biblioteca padrão | 160 testes |
 | Base de dados | SQLite (ficheiro local) | 3 tabelas |
 | Agendamento | systemd timer (`oneshot`) | Alternativa Windows em [deploy/](deploy/) |
 | Modelo | `claude-sonnet-5` (configurável via `MODELO`) | Saída estruturada + cache de prompt |
@@ -934,7 +934,7 @@ distintos. É a área mais desenvolvida do projeto e a que mais o separa de um p
 ```mermaid
 graph TB
     subgraph GRATIS["Grátis — sem chamadas ao modelo"]
-        T1["<b>test_assistente.py</b><br/>153 testes unitários<br/>unittest, sem dependências<br/>~0,7 s"]
+        T1["<b>test_assistente.py</b><br/>160 testes unitários<br/>unittest, sem dependências<br/>~0,7 s"]
         T2["<b>eval.py --triagem</b><br/>só regras determinísticas<br/>instantâneo"]
         T3["<b>verificar.py</b><br/>pré-instalação<br/>(1 chamada de 1 token)"]
         T4["<b>casos_antigos.py</b><br/>pares pergunta-resposta<br/>reais, leitura humana"]
@@ -957,9 +957,9 @@ graph TB
     style PROD fill:#d5e8f2
 ```
 
-### 9.1 Testes unitários — 153 testes
+### 9.1 Testes unitários — 160 testes
 
-22 classes de teste, `unittest` da biblioteca padrão, **zero dependências de teste**. Cobrem:
+23 classes de teste, `unittest` da biblioteca padrão, **zero dependências de teste**. Cobrem:
 triagem (2 classes), formulários (2), texto e HTML (3), saudação, números de encomenda, resumo
 de encomenda, anexos, histórico, resolução de identidade, taxonomia, registo, compromissos,
 anonimização (3).
@@ -1055,7 +1055,7 @@ escala por falta de dados) mas nunca a impede.
 | Data de entrega indisponível | `log("erro-data-entrega")`, omite a linha | Prompt já instrui a não adivinhar | [1603](assistente.py:1603) |
 | Dossiê falha (2ª chamada) | `log("erro-dossie")`, mantém a classificação | Escala sem dossiê | [2033](assistente.py:2033) |
 | Mensagem apagada a meio (404) | Salta só essa mensagem, regista | Passagem continua | [2078](assistente.py:2078) |
-| **Modelo falha (1ª chamada)** | `log("erro-modelo")`, `return "falhado"` | **Não regista** — ver Finding **C-1** | [2233](assistente.py:2233) |
+| Modelo falha (1ª chamada) | `log("erro-modelo")`, `return "falhado"` | Não regista; o cursor é recuado no fim da passagem para a mensagem voltar a ser vista | [2233](assistente.py:2233), [2413](assistente.py:2413) |
 | Graph falha na listagem | `log("erro-graph")`, sai com código 1 | Passagem inteira falha, retentada em 2 min | [2365](assistente.py:2365) |
 | Token Graph inválido | `sys.exit()` | Falha imediata e visível | [1660-1661](assistente.py:1660) |
 
@@ -1083,7 +1083,7 @@ O modelo `oneshot` reforça isto ([assistente.py:11-14](assistente.py:11)):
 | 5xx transitório | **Não coberto** em Graph/Shopify — sem retentativa |
 | Passagens sobrepostas | Coberto (`OnUnitActiveSec` conta do fim da anterior) |
 | Corrupção de SQLite | Não coberto — sem backup automático |
-| Perda de email por falha do modelo a meio de lote | **Não coberto** — Finding C-1 |
+| Perda de email por falha do modelo a meio de lote | Coberto desde 27/08/2026 — `cursor_seguro()` |
 
 ---
 
@@ -1388,7 +1388,7 @@ comportamento de desligado documentado no `.env.example`. Uma funcionalidade que
 
 Shopify em baixo → escala por falta de dados. Fio indisponível → escala por falta de contexto.
 Anexos falham → decide sem imagens. Dossiê falha → escala sem dossiê. **Em nenhum caso se perde
-um email** (com a exceção documentada em C-1).
+um email**: o cursor nunca ultrapassa uma mensagem que ficou por tratar.
 
 ### 14.7 Onde o sistema é convencional
 
@@ -1469,7 +1469,7 @@ maturidade operacional (CI/CD, observabilidade, multi-tenancy) ainda ao nível d
 
 | Risco | Probabilidade | Impacto | Mitigação atual |
 |---|---|---|---|
-| Perda de email por falha do modelo a meio de lote | **Média** | **Alto** | Nenhuma — Finding C-1 |
+| Perda de email por falha do modelo a meio de lote | Média | Alto | **Corrigido 27/08/2026** — `cursor_seguro()` + 7 testes |
 | Política de acesso do Exchange removida ou não aplicada | Baixa | **Crítico** | `verificar.py --outra-caixa` (manual) |
 | Deriva silenciosa da qualidade | Média | Médio | `medir_deriva.py` (manual, sem cadência) |
 | Dependência de um único mantenedor | **Alta** | Médio | Comentários densos; README extenso |
@@ -1613,9 +1613,8 @@ Mensurável com o banco de ensaio existente antes de decidir.
 
 ### P0 — Crítico
 
-**P0-1 · Corrigir a perda de email quando o modelo falha a meio de um lote**
-Ver Finding C-1. Uma linha de correção; consequência potencial é um cliente sem resposta.
-*Impacto: alto. Complexidade: trivial.*
+**P0-1 · ✅ Feito — perda de email quando o modelo falha a meio de um lote**
+Corrigido a 27/08/2026 com `cursor_seguro()` e 7 testes. Ver Finding C-1.
 
 **P0-2 · Automatizar a verificação da política de acesso do Exchange**
 `verificar.py --outra-caixa` prova a restrição, mas só corre quando alguém se lembra. Se a
@@ -1694,7 +1693,7 @@ Integrações:      Outlook/M365 · Shopify · formulário de contacto (Shopify)
                   · formulário de devolução (Formspree)
 Automação:        systemd timer, 2 min, OnUnitActiveSec (sem sobreposição)
                   Alternativa Windows: Agendador de Tarefas (deploy/)
-QA:               153 testes unitários (unittest, sem dependências)
+QA:               160 testes unitários (unittest, sem dependências)
                   81 casos de avaliação ponta a ponta com métricas assimétricas
                   Medição de deriva contra respostas reais
                   Verificação pré-instalação com teste ativo de segurança
@@ -1781,7 +1780,7 @@ Código:           ~5450 linhas Python (2386 no núcleo) · 805 linhas de conhec
 | Endurecimento systemd | ✅ | `deploy/*.service` | 8 diretivas de restrição |
 | Verificação pré-instalação | ✅ | `verificar.py` | Com teste ativo de segurança |
 | Banco de ensaio | ✅ | `eval.py` | 81 casos, métricas assimétricas |
-| Testes unitários | ✅ | `test_assistente.py` | 153 testes |
+| Testes unitários | ✅ | `test_assistente.py` | 160 testes |
 | Medição de deriva | 🟡 | `medir_deriva.py` | Funciona; referência de 60% nunca medida |
 | Anonimização para exportação | 🟡 | `exportar.py` | Pseudonimização; limites documentados |
 | Testes de `processar()` | ❌ | — | A função mais complexa, sem cobertura |
@@ -1792,7 +1791,7 @@ Código:           ~5450 linhas Python (2386 no núcleo) · 805 linhas de conhec
 | Multi-tenancy | ❌ | — | Uma caixa, uma loja |
 | Consulta de stock | ❌ | — | Falta `read_products` |
 | Retenção/purga de dados | ❌ | — | Crescimento indefinido |
-| Perda de email em falha do modelo a meio de lote | ⚠️ | `assistente.py:2230` | Ver Finding C-1 |
+| Cursor recuado em falha a meio de lote | ✅ | `assistente.py:1153` | Corrige o Finding C-1; 7 testes dedicados |
 | Documentação de custo/cache | ⚠️ | README, `.env.example`, código | Premissa desatualizada |
 | README "não sabe o estado das encomendas" | ⚠️ | `README.md:630` | Contradiz a Shopify implementada |
 
@@ -1831,11 +1830,25 @@ houve perda — mas com dois ou mais emails no lote, teria havido.
 zero", [eval.py:15](eval.py:15)). Um email de cliente descartado não deixa rasto nenhum — que é
 exatamente a falha que a arquitetura toda foi desenhada para evitar.
 
-**Recomendação:** garantir que o cursor nunca ultrapassa a mensagem não processada mais antiga
-da passagem. A correção mais simples é acumular as falhas e, no fim da passagem, repor o cursor
-no valor imediatamente anterior à falha mais antiga. Em alternativa, registar a mensagem falhada
-com `acao="falhado"` e excluí-la de `ja_processado()` (mais invasivo, mas torna a falha visível
-no registo).
+**Estado: ✅ CORRIGIDO em 27/08/2026**, durante esta auditoria.
+
+A correção introduz `cursor_seguro()` ([assistente.py:1153](assistente.py:1153)), uma função
+pura que calcula até onde o cursor pode avançar: percorre os resultados da passagem por ordem e
+**para na primeira falha**. `main()` aplica-a no fim do lote e recua o cursor se este tiver
+passado à frente ([assistente.py:2413-2416](assistente.py:2413)).
+
+Reprocessar as mensagens que já correram bem não custa nada — `ja_processado()` apanha-as pelo
+Message-ID e devolve `"repetido"` sem chamar o modelo.
+
+**Verificação:** o cenário foi reproduzido contra uma base SQLite real. Sem a correção, o cursor
+fica em `10:02:00Z` e a mensagem das `10:01` nunca mais reaparece. Com a correção, o cursor fica
+em `10:00:00Z`, a falhada volta a ser vista, e as duas bem-sucedidas continuam no registo.
+Acrescentados 7 testes unitários (classe `CursorSeguro`), incluindo o caso exato do incidente.
+
+**Nota residual (fora do âmbito de C-1):** se `graph.marcar()` levantar *depois* de `registar()`
+ter corrido, a mensagem fica registada e com rascunho criado, mas sem a categoria aplicada. Não
+há perda — a passagem seguinte trata-a como `"repetido"` — mas o email não aparece filtrado no
+Outlook. Baixa gravidade, não corrigido.
 
 ---
 
@@ -1879,8 +1892,9 @@ eles**. Confirmado: `grep -c "a\.processar\|a\.decidir" test_assistente.py` → 
 
 **Impacto:** a lógica **não testada** inclui: resolução de identidade integrada, agregação de
 múltiplas encomendas, construção dos avisos de identidade, gating do dossiê (`tem_dossie`),
-rebaixamento de `rascunhar` vazio, decisão de criar rascunho, aplicação de categorias, e o
-tratamento de erro do Finding C-1. É a concentração de risco do sistema.
+rebaixamento de `rascunhar` vazio, decisão de criar rascunho, aplicação de categorias, É a concentração de risco do sistema.
+(O tratamento de erro do Finding C-1 passou a estar coberto, mas por testes à função
+`cursor_seguro()` isolada, não a `processar()`.)
 
 **Recomendação:** testes com duplos para `Graph`, `Shopify` e cliente Anthropic. Os padrões já
 existem no ficheiro de testes (`ShopifyFalsa` em [test_assistente.py:891](test_assistente.py:891),
@@ -2046,7 +2060,7 @@ como artefacto de teste e provavelmente deve ser versionado; o PDF pertence a `e
 
 | ID | Gravidade | Título | Esforço |
 |---|---|---|---|
-| C-1 | 🔴 Crítica | Perda de email quando o modelo falha a meio de lote | Trivial |
+| ~~C-1~~ | ✅ **Corrigido** | Perda de email quando o modelo falha a meio de lote | Feito 27/08 |
 | H-1 | 🟠 Alta | Premissa de custo/cache desatualizada em 3 locais | Trivial |
 | H-2 | 🟠 Alta | `processar()` sem cobertura de testes | Média |
 | H-3 | 🟠 Alta | Regra de pack falha em ambos os modelos | Baixa |
@@ -2112,10 +2126,14 @@ da suite em vez de os remover.
 
 ### O achado que mais importa
 
-A auditoria encontrou um caminho pelo qual **um email de cliente pode desaparecer sem deixar
+A auditoria encontrou um caminho pelo qual **um email de cliente podia desaparecer sem deixar
 rasto** (Finding C-1) — precisamente a falha que toda a arquitetura foi desenhada para
-impossibilitar. A correção é de uma linha. É a única coisa neste documento que justifica
-interromper a semana de observação em curso.
+impossibilitar. Quando a chamada ao modelo falhava a meio de um lote, o cursor avançava com a
+mensagem seguinte e a falhada nunca mais era vista.
+
+**Foi corrigido a 27/08/2026**, com `cursor_seguro()`, 7 testes dedicados e verificação do
+cenário contra uma base real. Era o único item deste documento que justificava interromper a
+semana de observação em curso.
 
 ### O que o distingue
 

@@ -36,6 +36,7 @@ from assistente import (
     carregar_blocklist,
     cortar_citacao,
     cursor_atual,
+    cursor_seguro,
     desembrulhar_formulario_contacto,
     desembrulhar_formulario_devolucao,
     extrair_numero_encomenda,
@@ -1077,6 +1078,71 @@ class Registo(unittest.TestCase):
         linha = self.con.execute("SELECT acao, corpo FROM processados").fetchone()
         self.assertEqual(linha[0], "rascunhar")
         self.assertIn("entregas", linha[1])
+
+
+class CursorSeguro(unittest.TestCase):
+    """Uma falha a meio do lote não pode deixar o cursor à frente dela.
+
+    O registar() de uma mensagem posterior empurrava o cursor para diante da
+    que falhou, e a passagem seguinte -- que só pede o que veio depois do
+    cursor -- nunca mais a via: sem rascunho, sem categoria e sem registo.
+    """
+
+    INICIAL = "2026-08-06T08:00:00Z"
+
+    def test_sem_falhas_avanca_ate_a_ultima(self) -> None:
+        seguro = cursor_seguro(self.INICIAL, [
+            ("2026-08-06T10:00:00Z", "rascunhado"),
+            ("2026-08-06T10:01:00Z", "escalado"),
+            ("2026-08-06T10:02:00Z", "saltado"),
+        ])
+        self.assertEqual(seguro, "2026-08-06T10:02:00Z")
+
+    def test_falha_a_meio_para_antes_dela(self) -> None:
+        """O caso que perdia o email: falha às 10:01, sucesso às 10:02."""
+        seguro = cursor_seguro(self.INICIAL, [
+            ("2026-08-06T10:00:00Z", "rascunhado"),
+            ("2026-08-06T10:01:00Z", "falhado"),
+            ("2026-08-06T10:02:00Z", "escalado"),
+        ])
+        # Tem de ficar ANTES das 10:01, para essa voltar a aparecer.
+        self.assertEqual(seguro, "2026-08-06T10:00:00Z")
+        self.assertLess(seguro, "2026-08-06T10:01:00Z")
+
+    def test_falha_na_primeira_nao_avanca_nada(self) -> None:
+        seguro = cursor_seguro(self.INICIAL, [
+            ("2026-08-06T10:00:00Z", "falhado"),
+            ("2026-08-06T10:01:00Z", "rascunhado"),
+        ])
+        self.assertEqual(seguro, self.INICIAL)
+
+    def test_duas_falhas_para_na_mais_antiga(self) -> None:
+        seguro = cursor_seguro(self.INICIAL, [
+            ("2026-08-06T10:00:00Z", "escalado"),
+            ("2026-08-06T10:01:00Z", "falhado"),
+            ("2026-08-06T10:02:00Z", "falhado"),
+        ])
+        self.assertEqual(seguro, "2026-08-06T10:00:00Z")
+
+    def test_repetido_conta_como_tratado(self) -> None:
+        """Já está no registo; passar à frente dele não perde nada."""
+        seguro = cursor_seguro(self.INICIAL, [
+            ("2026-08-06T10:00:00Z", "repetido"),
+            ("2026-08-06T10:01:00Z", "rascunhado"),
+        ])
+        self.assertEqual(seguro, "2026-08-06T10:01:00Z")
+
+    def test_lote_vazio_deixa_o_cursor_quieto(self) -> None:
+        self.assertEqual(cursor_seguro(self.INICIAL, []), self.INICIAL)
+
+    def test_nunca_recua_para_antes_do_cursor_inicial(self) -> None:
+        """Defesa contra ordem inesperada do Graph: uma mensagem mais antiga
+        que o cursor não o pode puxar para trás."""
+        seguro = cursor_seguro(self.INICIAL, [
+            ("2026-08-06T07:00:00Z", "saltado"),
+            ("2026-08-06T09:00:00Z", "rascunhado"),
+        ])
+        self.assertEqual(seguro, "2026-08-06T09:00:00Z")
 
 
 class RegistoDeCompromissos(unittest.TestCase):

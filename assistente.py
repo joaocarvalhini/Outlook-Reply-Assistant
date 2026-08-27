@@ -1150,6 +1150,32 @@ def gravar_cursor(con: sqlite3.Connection, valor: str) -> None:
     con.commit()
 
 
+def cursor_seguro(inicial: str, resultados: list[tuple[str, str]]) -> str:
+    """Até onde o cursor pode avançar sem saltar uma mensagem por processar.
+
+    `resultados` é (recebido, resultado) por mensagem, na ordem em que foram
+    tratadas. O cursor avança até à última mensagem tratada antes da primeira
+    que falhou, e nunca para lá dela.
+
+    Sem isto, uma falha a meio de um lote perdia a mensagem em silêncio: o
+    registar() de uma mensagem *posterior* empurrava o cursor para diante da
+    falhada, e a passagem seguinte -- que só pede mensagens recebidas depois do
+    cursor -- nunca mais a via. Ficava sem rascunho, sem categoria e sem
+    registo, que é exatamente o "cliente perdido" que o eval.py conta e que
+    todo o resto foi desenhado para tornar impossível.
+
+    Reprocessar as que já correram bem não custa nada: ja_processado() apanha-as
+    pelo Message-ID e devolve "repetido" sem chamar o modelo.
+    """
+    seguro = inicial
+    for recebido, resultado in resultados:
+        if resultado == "falhado":
+            break
+        if recebido > seguro:
+            seguro = recebido
+    return seguro
+
+
 def ja_processado(con: sqlite3.Connection, message_id: str) -> bool:
     return (
         con.execute(
@@ -2374,9 +2400,20 @@ def main(argv: list[str] | None = None) -> int:
     bloqueados = carregar_blocklist(cfg.blocklist)
 
     contagem: dict[str, int] = {}
+    resultados: list[tuple[str, str]] = []
     for msg in mensagens:
         resultado = processar(msg, cfg, graph, shopify, con, cliente, prompt, bloqueados)
         contagem[resultado] = contagem.get(resultado, 0) + 1
+        resultados.append((msg["recebido"], resultado))
+
+    # O registar() avança o cursor mensagem a mensagem, à medida que cada uma é
+    # tratada. Se uma falhou a meio do lote, o cursor já passou à frente dela --
+    # recua-se para o último ponto seguro, para a passagem seguinte a voltar a
+    # ver. Ver cursor_seguro().
+    seguro = cursor_seguro(cursor, resultados)
+    if cursor_atual(con) > seguro:
+        gravar_cursor(con, seguro)
+        log("cursor-recuado", para=seguro, falhadas=contagem.get("falhado", 0))
 
     log("passagem", vistos=len(mensagens), dry_run=cfg.dry_run, **contagem)
     return 0
