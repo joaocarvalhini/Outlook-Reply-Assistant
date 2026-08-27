@@ -3,6 +3,11 @@ Description=Assistente de rascunhos de apoio ao cliente (tripat3s)
 Documentation=https://github.com/joaocarvalhini/Outlook-Reply-Assistant
 After=network-online.target
 Wants=network-online.target
+# Antes disto, uma falha só se via a olhar para o journalctl à mão -- ver
+# Finding M-6. tripat3s-assistente-alerta.service escreve sempre para o
+# journal (visível mesmo sem configuração) e, se ALERTA_WEBHOOK_URL estiver
+# no .env, envia também um aviso para fora da máquina.
+OnFailure=tripat3s-assistente-alerta.service
 
 [Service]
 # Uma passagem e sai. Não é um serviço permanente — quem agenda é o .timer.

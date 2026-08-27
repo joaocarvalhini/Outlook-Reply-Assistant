@@ -52,16 +52,10 @@ Ver [[security|Segurança]].
 
 Finding H-2.
 
-### P1-2 · Retentativa com *backoff* em Graph e Shopify
+### ✅ P1-2 · Retentativa com *backoff* em Graph e Shopify
 
-| | |
-|---|---|
-| **Problema** | Um 429/5xx transitório degrada silenciosamente a decisão — escala por falta de dados quando os dados existiam |
-| **Solução** | `httpx.HTTPTransport(retries=…)` ou decorador com *backoff*, limitado a 429/5xx |
-| **Impacto** | Médio-alto |
-| **Complexidade** | Baixa |
-
-Finding M-2.
+**Feito a 27/08/2026.** `_com_retentativa()`, só em GET, até 3 tentativas com espera
+exponencial. Finding M-2.
 
 ### ✅ P1-3 · Corrigir a documentação de custo e cache
 
@@ -97,7 +91,7 @@ Finding M-6.
 
 | # | Melhoria | Problema | Complexidade |
 |---|---|---|---|
-| P2-1 | **CI mínimo** | Nada impede deploy com testes a falhar. As verificações são grátis e demoram <1 s | Baixa |
+| ~~P2-1~~ | ✅ **CI mínimo** — feito 27/08, `deploy/enviar.sh` | | |
 | ~~P2-2~~ | ✅ **Backup do SQLite** — feito 27/08, `manutencao.py` | | |
 | ~~P2-3~~ | ✅ **Reconciliar o README** — feito 27/08 | | |
 | P2-4 | **Fechar `INVENTARIO_INDISPONIVEL`** | Scope `read_products` + consulta de stock | Média |
@@ -184,21 +178,21 @@ poderia fechar parte dos 9% restantes a custo controlado. Mensurável com o
 ```mermaid
 flowchart LR
     A["<b>Agora</b><br/>semana de observação<br/><i>até ~02/09</i>"] --> B["<b>✅ Feito 27/08</b><br/>P1-3 documentação<br/>P2-2 backup<br/>P2-3 README<br/>P2-5 retenção"]
-    B --> C["<b>Curto prazo</b><br/>P0-2 verificação<br/>P1-5 alertas<br/>P2-1 CI"]
-    C --> D["<b>Médio prazo</b><br/>P1-1 testes<br/>P1-2 retry<br/>P1-4 pack"]
+    B --> C["<b>Curto prazo</b><br/>P0-2 verificação<br/>P1-5 alertas"]
+    C --> D["<b>Médio prazo</b><br/>P1-1 testes<br/>P1-4 pack"]
     D --> E["<b>Depois dos dados</b><br/>P2-4 stock<br/>P2-7 deriva<br/>decisão de modelo"]
 
     style A fill:#e8d5f2
     style B fill:#c8e6c9
 ```
 
-> [!TIP] As triviais já estão fechadas
-> P1-3, P2-2, P2-3 e P2-5 foram feitas a 27/08, junto com L-1 e L-3. Fecharam três riscos reais:
-> decisão de custo com informação errada, perda de estado, e retenção indefinida de
-> correspondência.
+> [!TIP] Nove correções fechadas a 27/08/2026
+> P1-2, P1-3, P2-1, P2-2, P2-3 e P2-5 (mais L-1, L-2, L-3). Fecharam riscos reais: decisão de
+> custo com informação errada, perda de estado, retenção indefinida de correspondência,
+> ferramentas offline inconsistentes com a produção, e deploy sem gate de qualidade.
 >
-> O que resta de barato: **P0-2** (verificação periódica do Exchange), **P1-5** (alertas) e
-> **P2-1** (CI). O único que dá trabalho a sério é o **H-2**.
+> O que resta de barato: **P0-2** (verificação periódica do Exchange) e **P1-5** (alertas). O
+> único que dá trabalho a sério é o **H-2**.
 
 ## Related
 

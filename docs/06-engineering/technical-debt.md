@@ -20,10 +20,10 @@ no commit `bc5408b`. Cada finding traz evidência verificável.
 ```mermaid
 pie showData
     title Findings por estado
-    "Corrigidos" : 6
+    "Corrigidos" : 9
     "Alta em aberto" : 2
-    "Média em aberto" : 4
-    "Baixa em aberto" : 1
+    "Média em aberto" : 2
+    "Baixa em aberto" : 0
 ```
 
 | ID | Gravidade | Título | Esforço | Estado |
@@ -33,18 +33,18 @@ pie showData
 | H-2 | 🟠 Alta | `processar()` sem cobertura de testes | Média | ⬜ Aberto |
 | H-3 | 🟠 Alta | Regra do pack falha em ambos os modelos | Baixa | ⬜ Aberto |
 | ~~M-1~~ | ✅ **Corrigido** | README contradiz a integração Shopify | Trivial | Feito 27/08 |
-| M-2 | 🟡 Média | Sem retentativa em Graph/Shopify | Baixa | ⬜ Aberto |
+| ~~M-2~~ | ✅ **Corrigido** | Sem retentativa em Graph/Shopify | Baixa | Feito 27/08 |
 | M-3 | 🟡 Média | Referência de deriva nunca medida | Baixa | ⬜ Aberto |
 | ~~M-4~~ | ✅ **Corrigido** | Sem retenção nem backup | Baixa | Feito 27/08 |
-| M-5 | 🟡 Média | Deploy sem verificação automática | Baixa | ⬜ Aberto |
+| ~~M-5~~ | ✅ **Corrigido** | Deploy sem verificação automática | Baixa | Feito 27/08 |
 | M-6 | 🟡 Média | Sem alertas de falha | Baixa | ⬜ Aberto |
 | ~~L-1~~ | ✅ **Corrigido** | Estimativa de tokens imprecisa | Trivial | Feito 27/08 |
-| L-2 | ⚪ Baixa | Ferramentas offline sem exceções de formulário | Trivial | ⬜ Aberto |
+| ~~L-2~~ | ✅ **Corrigido** | Ferramentas offline sem exceções de formulário | Trivial | Feito 27/08 |
 | ~~L-3~~ | ✅ **Corrigido** | `Persistent=true` inócuo | Trivial | Feito 27/08 |
 
-> [!TIP] Seis fechados, sete em aberto
+> [!TIP] Nove fechados, quatro em aberto
 > A dívida deste projeto é rasa. Dos que faltam, só o H-2 (testes de `processar()`) exige
-> trabalho a sério; o resto é automatizar verificações que já existem.
+> trabalho a sério; o resto (H-3, M-3, M-6) é mais pequeno.
 
 ---
 
@@ -174,18 +174,22 @@ só-leitura. De caminho, corrigiu-se também a contagem de testes, que dizia 102
 
 ---
 
-## 🟡 M-2 — Sem retentativa em Graph e Shopify
+## ✅ M-2 — Sem retentativa em Graph e Shopify
 
-**Evidência:** `Graph._pedir()` e `Shopify._procurar()` levantam imediatamente em qualquer
+**Evidência:** `Graph._pedir()` e `Shopify._procurar()` levantavam imediatamente em qualquer
 `status_code >= 400`. Sem *backoff*, sem distinguir 429/5xx (transitórios) de 4xx (permanentes).
-O SDK da Anthropic faz *retries*; estas duas não.
 
-**Impacto:** um 429 transitório da Shopify faz a decisão degradar para "escala por falta de
-dados" quando os dados existiam — trabalho manual evitável. Um 5xx do Graph na listagem aborta a
-passagem inteira.
+**Estado: ✅ CORRIGIDO a 27/08/2026** com `_com_retentativa()` — até 3 tentativas com espera
+exponencial (1s, 2s), respeitando `Retry-After` num 429. Um 4xx permanente continua a sair já na
+primeira, sem disfarçar o erro real.
 
-**Correção:** `httpx.HTTPTransport(retries=...)` ou um decorador com *backoff* exponencial
-limitado a 429/5xx.
+> [!NOTE] Só GET se repete
+> `criar_rascunho()` (POST) e `marcar()` (PATCH) ficam de fora de propósito: um 5xx a meio de um
+> `createReply` pode já ter sido aplicado do lado do Graph, e repeti-lo às cegas arriscaria
+> duplicar um rascunho. Falha imediata é o comportamento mais seguro para operações não
+> idempotentes.
+
+4 testes novos, com `time.sleep` mockado — não acrescentam tempo real à suite.
 
 ---
 
@@ -235,16 +239,14 @@ lá dentro.
 
 ---
 
-## 🟡 M-5 — Deploy sem verificação automática
+## ✅ M-5 — Deploy sem verificação automática
 
-**Evidência:** o deploy é `git archive HEAD | ssh … tar -x`. Nada corre os testes antes. Não
-existe `.github/workflows/` nem qualquer hook.
+**Evidência:** o deploy era `git archive HEAD | ssh … tar -x`. Nada corria os testes antes.
 
-**Impacto:** código com testes a falhar pode chegar a produção sem qualquer sinal. As duas
-verificações relevantes (`unittest` e `eval.py --triagem`) são **grátis e demoram menos de 1
-segundo**.
-
-**Correção:** um script de deploy que corra ambas e aborte se falharem.
+**Estado: ✅ CORRIGIDO a 27/08/2026** com `deploy/enviar.sh` — corre `unittest` e
+`eval.py --triagem` (ambos grátis, <1s) e aborta sem tocar em SSH se algum falhar. Testado nos
+dois sentidos: com um `PYTHON` falso a simular testes a falhar (aborta antes da rede) e com o
+gate a passar (envia e confirma no servidor).
 
 ---
 
@@ -268,12 +270,19 @@ segundo**.
 inteiro e não só a base — é o prompt que vai para cache. Se a chamada falhar, cai numa
 estimativa marcada como tal.
 
-### L-2 — Ferramentas offline sem exceções de formulário
+### ✅ L-2 — Ferramentas offline sem exceções de formulário
 
-`medir_deriva.py`, `reprocessar.py` e `eval.py` chamam `triar_cabecalhos(msg)` sem os dois
-argumentos de formulário (omissão `False`). Descartariam submissões do Formspree/Shopify que a
-produção processa corretamente. Só afeta ferramentas de análise — mas torna as suas conclusões
-inconsistentes com o comportamento real.
+`medir_deriva.py`, `reprocessar.py` e `eval.py` chamavam `triar_cabecalhos(msg)` sem os dois
+argumentos de formulário (omissão `False`), e nunca desembrulhavam o corpo. Descartavam
+submissões do formulário de devolução que a produção processa corretamente, e para as que
+passassem, alimentavam o modelo com o dump em bruto do Formspree em vez do texto reformatado.
+
+**Estado: ✅ CORRIGIDO a 27/08/2026.** Extraída `desembrulhar_formularios()` de dentro de
+`processar()` — comportamento idêntico lá, agora partilhado pelas três ferramentas. O caso de
+eval do Formspree ganhou o cabeçalho `list-unsubscribe` simulado, para testar mesmo a parte do
+bug histórico que faltava (antes só testava a exceção do local-part "noreply"). Verificado sem
+gastar créditos: o caso passa a chegar ao modelo com o email e nome reais do cliente já
+extraídos. 5 testes novos.
 
 ### ✅ L-3 — `Persistent=true` inócuo
 

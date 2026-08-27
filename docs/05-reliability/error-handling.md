@@ -178,15 +178,19 @@ porque o cursor não avançou e a deduplicação não marcou nada.
 | JSON malformado | ✅ `JSONDecodeError` → `erro-modelo` |
 | Passagens sobrepostas | ✅ `OnUnitActiveSec` conta do fim da anterior |
 | Perda de email em falha do modelo | ✅ Corrigido 27/08/2026 |
-| **Rate limit (429)** | ❌ Sem *backoff* em Graph/Shopify |
-| **5xx transitório** | ❌ Sem retentativa em Graph/Shopify |
+| Rate limit (429) em Graph/Shopify | ✅ Corrigido 27/08/2026 |
+| 5xx transitório em Graph/Shopify | ✅ Corrigido 27/08/2026 |
 | **Corrupção de SQLite** | ❌ Sem backup |
 | **Alerta de falha repetida** | ❌ Só `journalctl` |
 
-> [!NOTE] O SDK da Anthropic faz *retries*; as outras duas integrações não
-> O `anthropic` faz 2 retentativas por omissão. `Graph._pedir()` e `Shopify._procurar()` levantam
-> imediatamente em qualquer `status_code >= 400`, sem distinguir transitório de permanente.
-> Finding M-2 em [[technical-debt|Dívida técnica]].
+> [!NOTE] `_com_retentativa()` — até 3 tentativas, só em GET
+> O `anthropic` já fazia 2 retentativas por omissão. `Graph._pedir()` e `Shopify._procurar()`
+> levantavam imediatamente em qualquer `status_code >= 400`, sem distinguir transitório de
+> permanente. Corrigido a 27/08/2026 (Finding M-2): 429 e 5xx repetem com espera exponencial
+> (respeitando `Retry-After` num 429); um 4xx permanente continua a sair já na primeira.
+>
+> `criar_rascunho()` (POST) e `marcar()` (PATCH) ficam de fora de propósito — repetir um 5xx
+> nessas arriscaria duplicar um rascunho, que não é uma operação idempotente.
 
 ## Uma inconsistência residual conhecida
 

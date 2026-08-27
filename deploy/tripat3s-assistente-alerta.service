@@ -1,0 +1,25 @@
+[Unit]
+Description=Avisa quando o assistente de rascunhos (tripat3s) falha
+Documentation=https://github.com/joaocarvalhini/Outlook-Reply-Assistant
+
+[Service]
+Type=oneshot
+User=assistente
+Group=assistente
+WorkingDirectory=/opt/assistente
+ExecStart=/opt/assistente/.venv/bin/python /opt/assistente/deploy/alertar.py
+TimeoutStartSec=30
+
+# Mesmo endurecimento do serviço principal -- isto só lê o journal e faz um
+# POST, não precisa de mais.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+ReadWritePaths=/opt/assistente
+
+StandardOutput=journal
+StandardError=journal

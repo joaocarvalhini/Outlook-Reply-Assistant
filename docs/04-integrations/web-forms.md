@@ -112,6 +112,13 @@ def triar_cabecalhos(msg, veio_do_formulario_contacto=False,
 `desembrulhar_*()` substituir `msg["de"]` pelo email real do cliente. A essa altura, `msg` já não
 tem `mailer@shopify.com` para se poder detetar ali dentro.
 
+> [!TIP] A lógica das duas fases está numa função só
+> `desembrulhar_formularios()` (`assistente.py`) calcula os dois flags, tenta os dois
+> desembrulhares e devolve `(contacto, devolucao, motivo)`. `processar()` e as três ferramentas
+> offline (`medir_deriva.py`, `reprocessar.py`, `eval.py`) chamam a mesma função, em vez de cada
+> uma repetir a sequência — até 27/08/2026 as três repetiam-na mal, sem os flags, e descartavam
+> submissões que a produção processa bem. Ver Finding L-2 em [[technical-debt|Dívida técnica]].
+
 ## O que cada formulário traz
 
 ### Contacto (Shopify)

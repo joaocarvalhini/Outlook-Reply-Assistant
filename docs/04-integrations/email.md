@@ -144,7 +144,8 @@ def e_da_loja(endereco: str, caixa: str) -> bool:
 | Detalhe devolve 404 | Mensagem apagada/movida a meio — **salta só essa**, regista |
 | Fio falha | `erro-historico`, decide sem contexto |
 | Anexos falham | `erro-anexos`, decide sem imagens |
-| 429 / 5xx transitório | **Sem retentativa** — Finding M-2 |
+| 429 / 5xx em GET | ✅ Repete até 3× com espera exponencial (`_com_retentativa`) |
+| 429 / 5xx em POST/PATCH | Sem retentativa, de propósito — `createReply`/`marcar` não são idempotentes |
 
 Ver [[error-handling|Tratamento de erros]].
 
