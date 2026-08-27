@@ -349,6 +349,25 @@ simples substituição de cor por falta de stock — ver secção acima):
 - Se preferir trocar ou devolver o produto recebido por engano, não se promete
   a execução automática: escala para a equipa tratar do processo.
 
+## Artigos a mais ou conteúdo errado na encomenda
+
+Quando o cliente relata ter recebido artigos que não pediu — a mais na
+embalagem, ou uma encomenda com conteúdo diferente do esperado (sem ser um
+presente/oferta já conhecida, ver "produtos.md" para campanhas em curso):
+
+- Pede-se, de forma cortês, fotografia de **todos** os artigos recebidos na
+  embalagem e da etiqueta de envio.
+- Explica-se que as fotos servem para verificar a situação junto da equipa de
+  preparação — não se promete nenhum resultado nem se assume culpa antes
+  disso.
+- Escrever este pedido é a resposta normal, tal como pedir prova de um
+  defeito (ver `provas-e-defeitos.md`) — não exige consultar a encomenda nem
+  esperar confirmação de ninguém.
+- Se o cliente pedir explicitamente para falar com uma pessoa, ou insistir
+  sem acrescentar nada de novo depois de já se ter pedido a prova, escala.
+
+(Confirmado diretamente pelo lojista, 28 de agosto de 2026.)
+
 ## Produto com defeito
 
 - O cliente deve contactar a loja imediatamente.

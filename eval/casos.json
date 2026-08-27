@@ -1036,6 +1036,19 @@
     "note": "cor diferente da pedida por falta de stock (nao e erro de envio: a loja sabe porque a cor e outra, e tenta que o cliente aceite). Regra confirmada diretamente pelo lojista, 27/08/2026, a partir do feedback sobre esta carteira magnetica: pedir desculpa, perguntar se a cor recebida faz diferenca ou se aceita ficar com ela, e so se recusar e que se explica a troca (com aviso de demora, sem data) -- sem vale de compensacao, ao contrario de 'Erro de envio pela loja' (produto/modelo errado, que e um cenario diferente). Verificacao manual do texto: nao deve tentar confirmar culpa nem pedir a cor escolhida na compra, nao deve oferecer vale, nao deve dar data de troca."
   },
   {
+    "id": "artigo-a-mais-na-encomenda-pede-fotos",
+    "email": {
+      "from": "ines.marques27@gmail.com",
+      "from_name": "Ines Marques",
+      "subject": "Re: Precisa de humano",
+      "to": ["{mailbox}"],
+      "body": "Boa tarde, entretanto ja recebi a minha encomenda, mas veio para alem do presente gratis uma outra capa que eu nao pedi. Como e que eu posso resolver essa situacao? Obrigada!"
+    },
+    "expect": "rascunhar",
+    "expect_sem_dossie": true,
+    "note": "cliente recebeu um artigo a mais na encomenda (nao e a oferta/presente ja conhecida). Regra confirmada diretamente pelo lojista, 28/08/2026, a partir de um caso real (Ines Marques): pedir fotografia de todos os artigos recebidos na embalagem e da etiqueta de envio, explicando que serve para verificar com a equipa de preparacao -- sem assumir culpa nem prometer resultado antes disso. Verificacao manual do texto: deve pedir foto de todos os artigos e da etiqueta, nao deve prometer devolucao/reembolso do artigo a mais nem pedir para o devolver ja."
+  },
+  {
     "id": "unidade-extra-oferta-checkout-ja-expedida",
     "email": {
       "from": "tiago.almeida@gmail.com",
