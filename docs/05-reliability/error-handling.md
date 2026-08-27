@@ -180,8 +180,8 @@ porque o cursor não avançou e a deduplicação não marcou nada.
 | Perda de email em falha do modelo | ✅ Corrigido 27/08/2026 |
 | Rate limit (429) em Graph/Shopify | ✅ Corrigido 27/08/2026 |
 | 5xx transitório em Graph/Shopify | ✅ Corrigido 27/08/2026 |
-| **Corrupção de SQLite** | ❌ Sem backup |
-| **Alerta de falha repetida** | ❌ Só `journalctl` |
+| Corrupção de SQLite | 🟡 Sem prevenção, mas recuperável — cópia diária via `manutencao.py` (M-4) |
+| Alerta de falha repetida | ✅ `OnFailure=` + webhook opcional (M-6) |
 
 > [!NOTE] `_com_retentativa()` — até 3 tentativas, só em GET
 > O `anthropic` já fazia 2 retentativas por omissão. `Graph._pedir()` e `Shopify._procurar()`

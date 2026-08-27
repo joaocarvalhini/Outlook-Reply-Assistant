@@ -153,9 +153,13 @@ cd /opt/assistente && sudo -u assistente .venv/bin/python assistente.py
 | `cursor-recuado` | Uma mensagem falhou; o cursor recuou para a voltar a ver |
 | `erro-*` | Falha isolada e absorvida (shopify, historico, anexos, dossie, modelo) |
 
-> [!WARNING] Sem alertas
-> Uma passagem que falhe repetidamente só se descobre por inspeção manual do journal. Um
-> `OnFailure=` no systemd resolveria. Finding M-... em [[technical-debt|Dívida técnica]].
+> [!NOTE] Alertas via `OnFailure=`
+> `tripat3s-assistente.service` dispara `tripat3s-assistente-alerta.service` sempre que falha —
+> escreve o contexto no journal e, se `ALERTA_WEBHOOK_URL` estiver no `.env`, envia também um
+> POST para fora da máquina. Corrigido 27/08/2026 (Finding M-6).
+>
+> Exige o utilizador `assistente` no grupo `systemd-journal` (`usermod -aG systemd-journal
+> assistente`) — sem isso, `journalctl` recusa-se a ler mesmo os próprios logs da unidade.
 
 ## Reverter
 

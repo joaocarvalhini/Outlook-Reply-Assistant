@@ -20,9 +20,9 @@ no commit `bc5408b`. Cada finding traz evidência verificável.
 ```mermaid
 pie showData
     title Findings por estado
-    "Corrigidos" : 9
+    "Corrigidos" : 10
     "Alta em aberto" : 2
-    "Média em aberto" : 2
+    "Média em aberto" : 1
     "Baixa em aberto" : 0
 ```
 
@@ -37,14 +37,14 @@ pie showData
 | M-3 | 🟡 Média | Referência de deriva nunca medida | Baixa | ⬜ Aberto |
 | ~~M-4~~ | ✅ **Corrigido** | Sem retenção nem backup | Baixa | Feito 27/08 |
 | ~~M-5~~ | ✅ **Corrigido** | Deploy sem verificação automática | Baixa | Feito 27/08 |
-| M-6 | 🟡 Média | Sem alertas de falha | Baixa | ⬜ Aberto |
+| ~~M-6~~ | ✅ **Corrigido** | Sem alertas de falha | Baixa | Feito 27/08 |
 | ~~L-1~~ | ✅ **Corrigido** | Estimativa de tokens imprecisa | Trivial | Feito 27/08 |
 | ~~L-2~~ | ✅ **Corrigido** | Ferramentas offline sem exceções de formulário | Trivial | Feito 27/08 |
 | ~~L-3~~ | ✅ **Corrigido** | `Persistent=true` inócuo | Trivial | Feito 27/08 |
 
-> [!TIP] Nove fechados, quatro em aberto
+> [!TIP] Dez fechados, três em aberto
 > A dívida deste projeto é rasa. Dos que faltam, só o H-2 (testes de `processar()`) exige
-> trabalho a sério; o resto (H-3, M-3, M-6) é mais pequeno.
+> trabalho a sério; H-3 é pequeno, M-3 depende dos dados da semana de observação.
 
 ---
 
@@ -250,12 +250,30 @@ gate a passar (envia e confirma no servidor).
 
 ---
 
-## 🟡 M-6 — Sem alertas de falha
+## ✅ M-6 — Sem alertas de falha
 
-**Evidência:** uma passagem que falhe repetidamente só se descobre por inspeção manual do
+**Evidência:** uma passagem que falhe repetidamente só se descobria por inspeção manual do
 `journalctl`.
 
-**Correção:** `OnFailure=` no systemd com um envio simples.
+**Estado: ✅ CORRIGIDO a 27/08/2026.** `tripat3s-assistente.service` ganhou
+`OnFailure=tripat3s-assistente-alerta.service`, uma unit dedicada que corre `deploy/alertar.py`:
+escreve sempre para o journal (as últimas linhas do serviço principal, para dar contexto) e, se
+`ALERTA_WEBHOOK_URL` estiver definido no `.env`, envia também um POST de texto simples para fora
+da máquina — serve um tópico grátis do ntfy.sh ou qualquer endpoint equivalente.
+
+O canal (que webhook usar) não vinha decidido, por isso `ALERTA_WEBHOOK_URL` fica vazio por
+omissão: sem ele, o comportamento é o mesmo de sempre, só mais visível no journal.
+
+> [!NOTE] Achado durante a instalação: faltava uma permissão
+> O utilizador `assistente` não conseguia ler o próprio journal — `journalctl` sem estar no
+> grupo `systemd-journal` devolve "insufficient permissions" mesmo para os logs da própria
+> unidade. Corrigido com `usermod -aG systemd-journal assistente` no servidor (só leitura,
+> reversível). Sem isto, o alerta corria mas chegava sempre vazio de contexto.
+
+Testado nos três casos: sem webhook (silencioso, só journal), webhook a funcionar (confirmado
+que o corpo chega tal e qual ao outro lado), e webhook inacessível (falha a enviar mas não
+derruba o próprio alerta). Confirmado também via `systemctl show ... -p OnFailure` que a
+ligação entre as duas units está feita, e a unit de alerta corre com sucesso quando invocada.
 
 ---
 

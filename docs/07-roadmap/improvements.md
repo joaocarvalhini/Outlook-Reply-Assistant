@@ -74,16 +74,10 @@ cache quente e fria. Finding H-1.
 Finding H-3. É o mesmo padrão que resolveu o prazo de devolução — ver
 [[technical-decisions|Decisões técnicas]].
 
-### P1-5 · Alerta em falha de passagem
+### ✅ P1-5 · Alerta em falha de passagem
 
-| | |
-|---|---|
-| **Problema** | Uma passagem que falhe repetidamente só se descobre por inspeção manual |
-| **Solução** | `OnFailure=` no systemd com um envio simples |
-| **Impacto** | Médio |
-| **Complexidade** | Baixa |
-
-Finding M-6.
+**Feito a 27/08/2026.** `OnFailure=` + `tripat3s-assistente-alerta.service` + `deploy/alertar.py`.
+Canal externo opcional via `ALERTA_WEBHOOK_URL` — vazio até ser configurado. Finding M-6.
 
 ---
 
@@ -177,22 +171,24 @@ poderia fechar parte dos 9% restantes a custo controlado. Mensurável com o
 
 ```mermaid
 flowchart LR
-    A["<b>Agora</b><br/>semana de observação<br/><i>até ~02/09</i>"] --> B["<b>✅ Feito 27/08</b><br/>P1-3 documentação<br/>P2-2 backup<br/>P2-3 README<br/>P2-5 retenção"]
-    B --> C["<b>Curto prazo</b><br/>P0-2 verificação<br/>P1-5 alertas"]
-    C --> D["<b>Médio prazo</b><br/>P1-1 testes<br/>P1-4 pack"]
+    A["<b>Agora</b><br/>semana de observação<br/><i>até ~02/09</i>"] --> B["<b>✅ Feito 27/08</b><br/>H-1 · M-1 · M-2 · M-4<br/>M-5 · M-6 · L-1 · L-2 · L-3"]
+    B --> C["<b>Curto prazo</b><br/>P0-2 verificação"]
+    C --> D["<b>Médio prazo</b><br/>H-2 testes<br/>H-3 pack"]
     D --> E["<b>Depois dos dados</b><br/>P2-4 stock<br/>P2-7 deriva<br/>decisão de modelo"]
 
     style A fill:#e8d5f2
     style B fill:#c8e6c9
 ```
 
-> [!TIP] Nove correções fechadas a 27/08/2026
-> P1-2, P1-3, P2-1, P2-2, P2-3 e P2-5 (mais L-1, L-2, L-3). Fecharam riscos reais: decisão de
+> [!TIP] Dez correções fechadas a 27/08/2026
+> H-1, M-1, M-2, M-4, M-5, M-6, L-1, L-2, L-3 e o crítico C-1. Fecharam riscos reais: decisão de
 > custo com informação errada, perda de estado, retenção indefinida de correspondência,
-> ferramentas offline inconsistentes com a produção, e deploy sem gate de qualidade.
+> ferramentas offline inconsistentes com a produção, deploy sem gate de qualidade, e falhas
+> silenciosas sem alerta nenhum.
 >
-> O que resta de barato: **P0-2** (verificação periódica do Exchange) e **P1-5** (alertas). O
-> único que dá trabalho a sério é o **H-2**.
+> O que resta: **P0-2** (verificação periódica do Exchange, esforço baixo), **H-3** (pack, baixo)
+> e **H-2** (testes de `processar()`, o único que dá trabalho a sério). **M-3** (linha de base
+> da deriva) depende dos dados da semana de observação, ainda em curso.
 
 ## Related
 
