@@ -1128,6 +1128,21 @@
     "note": "cliente recebeu a encomenda a 6/08 (dado explicito em dados_encomenda, tal como o proprio codigo agora fornece) mas so pediu a devolucao a 15/08, e agora pede para atrasar ainda mais o envio, para 'a semana que vem' -- ja depois de 20/08. Regra confirmada diretamente pelo lojista, 21/08/2026 -- corrigindo uma leitura anterior errada: o prazo de 14 dias para enviar conta-se sempre a partir da RECECAO da encomenda, nunca do pedido de devolucao. Desde 21/08/2026 a data-limite vem PRE-CALCULADA em dados_encomenda ('Prazo de devolucao... termina em') por assistente.py:resumir_encomenda() -- o modelo so compara, nao soma os 14 dias sozinho (visto em producao: mesmo com a data de entrega certa, uma resposta ainda errou a conta quando tinha de somar). Espera-se 'escalar' porque 'a semana que vem' cai claramente depois de 20/08. Verificacao manual do texto, nao ha assercao automatica: a resposta (dossie ou corpo) deve referir que o prazo (20/08) ja passou ou esta prestes a passar, nao aprovar o adiamento sem mais nem inventar outra data."
   },
   {
+    "id": "prazo-ja-passou-cliente-contesta-oferece-troca",
+    "email": {
+      "from": "clarisse.mendes88@gmail.com",
+      "from_name": "Clarisse Mendes",
+      "subject": "Re: Devolucao dos fones",
+      "to": ["{mailbox}"],
+      "body": "Ola, em momento nenhum foi me dito que havia um prazo de 14 dias, nem nos emails ja trocados para a devolucao nem mesmo nos emails de confirmacao de encomenda estava la escrito essa informacao. Peco que revejam essa situacao e ponderem a devolucao dos fones, eles estao em perfeitas condicoes, so os usei uma unica vez e foi para os experimentar, posso enviar novas fotos que comprovam que estao impecaveis. Obrigada."
+    },
+    "historico": "[2026-08-08 09:00] CLIENTE: Vou estar de ferias as proximas duas semanas, so consigo tratar da devolucao quando voltar.\n[2026-08-22 18:00] CLIENTE: Ja voltei das ferias, gostaria de avancar com a devolucao dos fones.",
+    "dados_encomenda": "Encomenda #22587\nFeita em: 2026-08-01\nPagamento: pago\nEnvio: entregue\nEntregue em: 2026-08-05\nPrazo de devolucao (14 dias desde a entrega) termina em: 2026-08-19\nValor: 39.90 EUR",
+    "expect": "rascunhar",
+    "expect_sem_dossie": true,
+    "note": "prazo (19/08) ja tinha passado quando a cliente pediu a devolucao (22/08), e ela contesta a recusa alegando que nao foi avisada do prazo e que o artigo esta impecavel. Regra nova (devolucoes.md, 28/08/2026, confirmada diretamente pelo lojista a partir de um caso real): a resposta anterior tinha ficado vaga ('vamos rever internamente e entramos em contacto depois'), que e exatamente o padrao de resposta vazia que o prompt ja proibe. A resposta correta confirma a politica, explica que a ausencia sem aviso durante o periodo nao estende o prazo, esclarece que o estado do artigo nao muda a decisao, recusa o reembolso, e oferece troca por outro artigo como alternativa. Verificacao manual do texto: deve recusar claramente o reembolso citando o prazo, nao deve dizer que vai 'rever internamente' nem adiar a decisao, deve oferecer troca como alternativa concreta."
+  },
+  {
     "id": "reembolso-artigo-de-pack-divide-igualmente",
     "email": {
       "from": "teresa.marques@gmail.com",

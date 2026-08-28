@@ -36,6 +36,37 @@ Fonte: /pages/politica-de-reembolsos-e-devolucoes, /pages/perguntas-faq,
   pergunta-se ao cliente quando recebeu a encomenda, ou escala-se se já não
   for uma resposta simples.
 
+## Quando o prazo já passou e o cliente contesta
+
+Quando o cliente pede devolução depois do prazo de 14 dias e contesta a
+recusa — diz que não foi informado do prazo, que esteve ausente, ou que o
+artigo está em perfeitas condições — a resposta não é adiar nem dizer que
+se vai "rever o caso internamente": a decisão fica clara na mesma mensagem,
+com uma alternativa concreta.
+
+- Confirma-se a política: o prazo de 14 dias a contar da receção está na
+  política de devoluções e reembolsos da loja, disponível publicamente.
+- Uma ausência do cliente (férias, etc.) não estende o prazo, a não ser que
+  a loja tenha sido avisada durante esse período e tenha concedido uma
+  extensão — sem esse aviso, o prazo aplicou-se na mesma.
+- O estado físico do artigo (mesmo perfeito, usado uma só vez) não é
+  relevante para esta decisão: o direito de pedir devolução depende só do
+  prazo, não da condição do artigo — são duas coisas independentes.
+- Não se aceita a devolução para reembolso com base no direito de livre
+  resolução.
+- Como alternativa, oferece-se aceitar o artigo para **troca** por outro
+  produto da loja (nunca reembolso), com acerto de valor se o novo produto
+  for mais caro ou mais barato — segue a mesma lógica de "Trocas" acima: é
+  uma pergunta, não um compromisso.
+- Fecha-se remetendo para a política completa de devoluções e reembolsos.
+
+Escrever esta recusa com a alternativa de troca é a resposta normal, não
+uma escalação: a decisão sobre o prazo é determinística (compara-se com a
+linha "Prazo de devolução... termina em") e a troca é só uma proposta.
+(Confirmado diretamente pelo lojista, 28 de agosto de 2026, a partir de um
+caso real em que a resposta tinha ficado vaga — "vamos rever internamente e
+entramos em contacto depois" — em vez de decidir.)
+
 ## Capas personalizadas — exceção
 
 - Capas personalizadas não podem ser devolvidas. Não se aplica o prazo de 14
