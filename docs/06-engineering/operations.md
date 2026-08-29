@@ -30,6 +30,7 @@ flowchart TB
         G6["<b>eval.py --triagem</b><br/>só regras determinísticas"]
         G7["<b>manutencao.py</b><br/>cópia de segurança e purga"]
         G8["<b>medir_deriva.py --fechar-ciclo</b><br/>só lê o Graph, sem Claude"]
+        G9["<b>medir_deriva.py --comparar-gravado</b><br/>só lê o Graph, sem Claude"]
     end
     subgraph Q["QUASE GRÁTIS"]
         Q1["<b>verificar.py</b><br/>1 chamada de 1 token"]
@@ -173,6 +174,7 @@ python medir_deriva.py -n 15
 python medir_deriva.py --incluir-escalados
 python medir_deriva.py --pasta deleteditems -n 30
 python medir_deriva.py --fechar-ciclo          # ver abaixo -- grátis, sem Claude
+python medir_deriva.py --comparar-gravado      # ver abaixo -- grátis, sem Claude
 ```
 
 Regenera o rascunho com o código de hoje e compara com o que o lojista realmente enviou.
@@ -182,6 +184,24 @@ Ver [[qa|QA e testes]].
 > Por omissão, o registo local (só o que o assistente já viu). Com `--pasta`, qualquer pasta do
 > Graph — *"um universo muito maior de conversas reais, incluindo as que nunca chegaram a passar
 > pelo assistente"*. A segunda gasta créditos por caso.
+
+### `medir_deriva.py --comparar-gravado` — o que a IA escreveu, de facto, foi editado?
+
+```bash
+python medir_deriva.py --comparar-gravado
+python medir_deriva.py --comparar-gravado -n 20
+```
+
+**Implemented** a 28/08/2026. Diferente do resto do ficheiro: usa o texto **tal como foi gravado
+na altura** (`processados.corpo`), nunca o regenera com o código de hoje. Responde a uma pergunta
+diferente da do resto do ficheiro — não "o código de hoje resolve isto bem?", mas "o que foi
+escrito na altura foi editado, e quanto?". Não chama o Claude, só o Graph.
+
+> [!NOTE] Porque é que isto é um modo à parte
+> O resto de `medir_deriva.py` regenera de propósito (ver a nota no topo do ficheiro): comparar
+> código antigo contra a resposta real não diz nada sobre a qualidade do assistente agora. Mas
+> às vezes a pergunta que interessa é literalmente "o que o lojista mudou neste rascunho
+> concreto" — para isso, regenerar seria mentir sobre o que aconteceu de facto.
 
 ### `medir_deriva.py --fechar-ciclo` — o que aconteceu ao rascunho, de verdade
 

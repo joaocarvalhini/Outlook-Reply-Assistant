@@ -11,6 +11,8 @@ não confiáveis, e o registo local — incluindo a chave em que assenta.
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import re
 import sqlite3
@@ -20,7 +22,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from exportar import anonimizar, anonimizar_endereco, palpitar
-from medir_deriva import fechar_ciclo
+from medir_deriva import comparar_gravado, fechar_ciclo
 from verificar_kb import analisar_base
 
 from assistente import (
@@ -28,6 +30,7 @@ from assistente import (
     DOMINIOS_BASE,
     Config,
     Correspondencia,
+    Graph,
     _com_retentativa,
     agora,
     compromissos_do_fio,
@@ -1334,6 +1337,9 @@ class GraphFalso:
     processar() decidiu chamar.
     """
 
+    # Estático de verdade em Graph; delega em vez de duplicar a conversão.
+    _converter = staticmethod(Graph._converter)
+
     def __init__(
         self,
         resultado: Exception | None = None,
@@ -1345,6 +1351,7 @@ class GraphFalso:
         criar_rascunho: Exception | None = None,
         marcar: Exception | None = None,
         detalhe_rascunho: dict | None | Exception = "omisso",
+        pedir_respostas: dict[str, dict] | None = None,
     ) -> None:
         # `resultado`: usado só por verificar_restricao_diaria() via _pedir()
         # -- None simula sucesso (200, a caixa foi lida, o cenário mau).
@@ -1359,12 +1366,25 @@ class GraphFalso:
         # "omisso" (sentinela) em vez de None, porque None é uma resposta
         # válida de detalhe_rascunho() (mensagem apagada).
         self._detalhe_rascunho = detalhe_rascunho
+        self._pedir_respostas = pedir_respostas or {}
+        # Só usado para montar URLs em chamadas que o dublê não intercepta
+        # diretamente (buscar_email(), resposta_real() em medir_deriva.py) --
+        # o conteúdo não importa, _pedir() decide a resposta pelo $filter.
+        self.base = "https://graph.example/v1.0/me"
         self.chamadas: list[tuple[object, ...]] = []
 
     def _pedir(self, metodo: str, url: str, **kw: object) -> dict:
         self.chamadas.append(("_pedir", metodo))
         if self._resultado is not None:
             raise self._resultado
+        # Deixa configurar respostas diferentes por chave (ex.: um message_id
+        # ou conversation_id), procurada dentro do $filter do pedido -- usado
+        # por comparar_gravado(), que faz duas procuras diferentes na mesma
+        # chamada (por internetMessageId, depois por conversationId).
+        filtro = str((kw.get("params") or {}).get("$filter", ""))
+        for chave, resposta in self._pedir_respostas.items():
+            if chave in filtro:
+                return resposta
         return {"value": [{"id": "x"}]}
 
     def detalhe(self, msg: dict, max_body: int) -> dict:
@@ -2128,6 +2148,100 @@ class FecharCiclo(unittest.TestCase):
         fechar_ciclo(graph, self.con, 0)
         self.assertEqual(len(graph.chamadas), 1)
         self.assertEqual(self._resultado("<a@x>")[0], "apagado")
+
+
+class CompararGravado(unittest.TestCase):
+    """medir_deriva.py --comparar-gravado -- o corpo tal como foi escrito na
+    altura, nunca regenerado, contra a resposta real. Não chama o Claude."""
+
+    def setUp(self) -> None:
+        pasta = TemporaryDirectory()
+        self.addCleanup(pasta.cleanup)
+        self.con = abrir_db(Path(pasta.name) / "t.db")
+        self.addCleanup(self.con.close)
+
+    def _semear(self, message_id: str, corpo: str, acao: str = "rascunhar") -> None:
+        m = msg(message_id=message_id)
+        registar(self.con, m, acao, "sabia responder", corpo)
+
+    def _correr(self, graph, incluir_escalados=False, limite=0, so_numero=True) -> str:
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida):
+            comparar_gravado(graph, cfg(), self.con, incluir_escalados, limite, so_numero)
+        return saida.getvalue()
+
+    def _msg_falsa(self, message_id: str, conversation_id: str, recebido: str) -> dict:
+        return {
+            "id": "AAMk-1", "internetMessageId": message_id,
+            "conversationId": conversation_id, "subject": "Duvida",
+            "from": {"emailAddress": {"address": "cliente@gmail.com"}},
+            "receivedDateTime": recebido,
+        }
+
+    def _resposta_loja(self, recebido: str, corpo_html: str) -> dict:
+        return {"value": [{
+            "from": {"emailAddress": {"address": CAIXA}},
+            "receivedDateTime": recebido,
+            "body": {"content": corpo_html},
+        }]}
+
+    def test_compara_corpo_gravado_com_resposta_real(self) -> None:
+        self._semear("<a@x>", "Texto que a IA escreveu.")
+        graph = GraphFalso(pedir_respostas={
+            "<a@x>": {"value": [self._msg_falsa("<a@x>", "conv-1", "2026-08-20T10:00:00Z")]},
+            "conv-1": self._resposta_loja(
+                "2026-08-20T15:00:00Z", "<p>Texto que a IA escreveu.</p>"
+            ),
+        })
+        saida = self._correr(graph)
+        self.assertIn("1 email(is) com resposta real", saida)
+        self.assertIn("100%", saida)
+
+    def test_resposta_editada_da_semelhanca_baixa(self) -> None:
+        self._semear("<a@x>", "Texto original da IA, bem diferente.")
+        graph = GraphFalso(pedir_respostas={
+            "<a@x>": {"value": [self._msg_falsa("<a@x>", "conv-1", "2026-08-20T10:00:00Z")]},
+            "conv-1": self._resposta_loja(
+                "2026-08-20T15:00:00Z", "<p>Resposta totalmente reescrita pelo lojista.</p>"
+            ),
+        })
+        saida = self._correr(graph)
+        self.assertNotIn("100%", saida)
+
+    def test_mostra_o_texto_quando_nao_e_so_numero(self) -> None:
+        self._semear("<a@x>", "Texto original.")
+        graph = GraphFalso(pedir_respostas={
+            "<a@x>": {"value": [self._msg_falsa("<a@x>", "conv-1", "2026-08-20T10:00:00Z")]},
+            "conv-1": self._resposta_loja("2026-08-20T15:00:00Z", "<p>Texto original.</p>"),
+        })
+        saida = self._correr(graph, so_numero=False)
+        self.assertIn("[O QUE A IA ESCREVEU NA ALTURA]", saida)
+        self.assertIn("[O QUE FOI REALMENTE ENVIADO]", saida)
+
+    def test_sem_resposta_ainda_visivel_nao_entra_na_comparacao(self) -> None:
+        self._semear("<a@x>", "Texto.")
+        graph = GraphFalso(pedir_respostas={
+            "<a@x>": {"value": [self._msg_falsa("<a@x>", "conv-1", "2026-08-20T10:00:00Z")]},
+            "conv-1": {"value": []},
+        })
+        saida = self._correr(graph)
+        self.assertIn("0 email(is) com resposta real", saida)
+        self.assertIn("1 sem resposta ainda visível", saida)
+
+    def test_escalados_de_fora_por_omissao(self) -> None:
+        self._semear("<a@x>", "Texto rascunhado.", acao="rascunhar")
+        self._semear("<b@x>", "Resumo do dossiê.", acao="escalar")
+        graph = GraphFalso(pedir_respostas={
+            "<a@x>": {"value": [self._msg_falsa("<a@x>", "conv-1", "2026-08-20T10:00:00Z")]},
+            "conv-1": self._resposta_loja("2026-08-20T15:00:00Z", "<p>Texto rascunhado.</p>"),
+        })
+        saida = self._correr(graph)
+        self.assertIn("1 email(is) com resposta real", saida)
+
+    def test_sem_nenhum_email_gravado_sai_com_erro(self) -> None:
+        graph = GraphFalso()
+        with self.assertRaises(SystemExit):
+            comparar_gravado(graph, cfg(), self.con, False, 0, True)
 
 
 class AnalisarBase(unittest.TestCase):

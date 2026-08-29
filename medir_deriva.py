@@ -63,6 +63,17 @@ metricas.py os poder mostrar sem repetir estas chamadas.
 Só funciona para rascunhos criados depois de 27/08/2026 (quando o rascunho_id
 passou a ser gravado -- Finding "fecho de ciclo do draft"); registos mais
 antigos ficam de fora, sem alternativa possível.
+
+    python medir_deriva.py --comparar-gravado        compara o corpo gravado
+    python medir_deriva.py --comparar-gravado -n 20  com o que foi enviado
+
+--comparar-gravado responde a uma pergunta diferente da do resto do
+ficheiro: não "o código de hoje resolve isto bem?", mas "o que a IA
+escreveu na altura foi editado, e quanto?". Usa o texto exatamente como
+ficou gravado em `corpo` (nunca regenera com o código de hoje) e vai buscar
+a resposta real enviada na mesma conversa -- não chama o Claude, só o
+Graph. Serve para ver diretamente o que o lojista mudou num rascunho, sem
+a variável de o código ter mudado entretanto.
 """
 
 from __future__ import annotations
@@ -129,6 +140,58 @@ def buscar_email(graph: a.Graph, message_id: str) -> dict | None:
 
 def semelhanca(a_: str, b_: str) -> float:
     return SequenceMatcher(None, a_.strip().lower(), b_.strip().lower()).ratio() * 100
+
+
+def comparar_gravado(graph: a.Graph, cfg: a.Config, con: sqlite3.Connection,
+                      incluir_escalados: bool, limite: int, so_numero: bool) -> None:
+    """O que a IA escreveu na altura (gravado em `corpo`) vs. o que foi
+    realmente enviado -- sem regenerar nada com o código de hoje. Não chama
+    o Claude, só o Graph."""
+    acoes = "('rascunhar','escalar')" if incluir_escalados else "('rascunhar')"
+    linhas = con.execute(
+        f"SELECT message_id, assunto, corpo FROM processados "
+        f"WHERE acao IN {acoes} AND corpo != '' AND conversation_id != '' "
+        f"ORDER BY em DESC"
+    ).fetchall()
+    if limite:
+        linhas = linhas[:limite]
+    if not linhas:
+        sys.exit("Nenhum email com corpo gravado encontrado com estes critérios.")
+
+    resultados = []
+    sem_resposta = 0
+    for message_id, assunto, corpo_gravado in linhas:
+        msg = buscar_email(graph, message_id)
+        if msg is None:
+            continue
+        msg["_caixa"] = cfg.mailbox
+        try:
+            real = resposta_real(graph, msg, cfg.aviso)
+        except Exception:
+            real = None
+        if not real:
+            sem_resposta += 1
+            continue
+        resultados.append((assunto, corpo_gravado, real, semelhanca(corpo_gravado, real)))
+
+    resultados.sort(key=lambda r: r[3])
+    print(f"\n{len(resultados)} email(is) com resposta real para comparar "
+          f"({sem_resposta} sem resposta ainda visível na caixa)\n")
+    print(f"{'igual':>10}  assunto")
+    print("─" * 70)
+    for assunto, _c, _r, sem in resultados:
+        print(f"{sem:9.0f}%  {assunto[:60]}")
+    if resultados:
+        valores = sorted(r[3] for r in resultados)
+        print(f"\nmediana: {valores[len(valores)//2]:.0f}%   "
+              f"abaixo de {_LIMIAR_TAL_E_QUAL:.0f}%: "
+              f"{sum(1 for v in valores if v < _LIMIAR_TAL_E_QUAL)}/{len(valores)}")
+
+    if not so_numero:
+        for assunto, corpo_gravado, real, sem in resultados:
+            print(f"\n{'═' * 70}\n{assunto}  ({sem:.0f}% igual)\n{'═' * 70}")
+            print(f"\n[O QUE A IA ESCREVEU NA ALTURA]\n{corpo_gravado}")
+            print(f"\n[O QUE FOI REALMENTE ENVIADO]\n{real[:1200]}")
 
 
 def fechar_ciclo(graph: a.Graph, con: sqlite3.Connection, limite: int) -> None:
@@ -247,6 +310,11 @@ def main(argv: list[str] | None = None) -> int:
         help="verifica pelo id do rascunho se foi enviado tal e qual, editado, "
              "ou apagado; grava o resultado. Só lê o Graph, não gasta créditos.",
     )
+    p.add_argument(
+        "--comparar-gravado", action="store_true",
+        help="compara o corpo gravado na altura (não regenerado) com o que foi "
+             "realmente enviado. Só lê o Graph, não gasta créditos.",
+    )
     args = p.parse_args(argv)
 
     a.saida_utf8()
@@ -255,6 +323,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.fechar_ciclo:
         fechar_ciclo(graph, sqlite3.connect(cfg.db), args.n)
+        return 0
+
+    if args.comparar_gravado:
+        comparar_gravado(graph, cfg, sqlite3.connect(cfg.db),
+                          args.incluir_escalados, args.n, args.so_numero)
         return 0
 
     shopify = a.Shopify(cfg)
