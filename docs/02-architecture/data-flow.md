@@ -67,7 +67,7 @@ O que ocupa espaço no pedido, e porquê está onde está.
 |---|---|---|---|
 | Instruções do prompt | ~430 linhas | ✅ | Nunca muda |
 | Base de conhecimento | ~29K tokens | ✅ | Muda raramente, e só por commit |
-| Saudação + data atual | 2 linhas | ❌ | **Muda ao longo do dia** |
+| Saudação + data atual | 2 linhas | ❌ | A data **muda ao longo do dia**; a saudação é fixa ("Olá") desde 28/08/2026 |
 | Compromissos registados | Variável | ❌ | Por conversa |
 | Fio da conversa | ≤8 × 400 chars | ❌ | Por conversa |
 | Email novo | ≤4000 chars | ❌ | Por email |
@@ -75,9 +75,12 @@ O que ocupa espaço no pedido, e porquê está onde está.
 | Imagens | ≤4 × 5 MB | ❌ | Por email |
 
 > [!IMPORTANT] Porque é que a saudação não está no prompt de sistema
-> **Implemented** — `decidir()`: a saudação muda de "Bom dia" para "Boa tarde" às 13h. Se
-> estivesse no bloco de sistema, **invalidava o cache da base de conhecimento inteira** a cada
-> mudança. Fica na mensagem do utilizador, que não é cacheada.
+> **Implemented** — `decidir()`: até 27/08/2026 a saudação mudava de "Bom dia" para "Boa tarde"
+> ao longo do dia; se estivesse no bloco de sistema, **invalidava o cache da base de
+> conhecimento inteira** a cada mudança. A regra atual (28/08/2026, confirmada pelo lojista) é
+> sempre "Olá" — já não varia — mas a saudação continua fora do prefixo cacheado, para não haver
+> duas fontes de verdade se a regra mudar outra vez. Fica na mensagem do utilizador, que não é
+> cacheada.
 
 ## Dados que entram no modelo — e os que não entram
 

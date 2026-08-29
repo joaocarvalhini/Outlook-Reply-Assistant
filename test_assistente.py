@@ -678,33 +678,16 @@ class LixoAposAssinatura(unittest.TestCase):
 
 
 class Saudacao(unittest.TestCase):
-    """Regra do cliente: 8h-13h bom dia, 13h-20h boa tarde, resto boa noite."""
+    """Regra do lojista, 28/08/2026: "Olá" substitui bom dia/boa tarde/boa
+    noite -- confirmado a partir de edições reais em produção."""
 
-    def test_manha(self) -> None:
-        for h in (8, 10, 12):
-            self.assertEqual(saudacao(h), "Bom dia", f"hora {h}")
+    def test_e_sempre_ola(self) -> None:
+        self.assertEqual(saudacao(), "Olá")
 
-    def test_tarde(self) -> None:
-        for h in (13, 16, 19):
-            self.assertEqual(saudacao(h), "Boa tarde", f"hora {h}")
-
-    def test_noite(self) -> None:
-        for h in (20, 23, 0, 5, 7):
-            self.assertEqual(saudacao(h), "Boa noite", f"hora {h}")
-
-    def test_fronteiras(self) -> None:
-        # As fronteiras exatas são as que o cliente ditou: às 8 já é bom dia,
-        # às 13 já é boa tarde, às 20 já é boa noite.
-        self.assertEqual(saudacao(7), "Boa noite")
-        self.assertEqual(saudacao(8), "Bom dia")
-        self.assertEqual(saudacao(12), "Bom dia")
-        self.assertEqual(saudacao(13), "Boa tarde")
-        self.assertEqual(saudacao(19), "Boa tarde")
-        self.assertEqual(saudacao(20), "Boa noite")
-
-    def test_cobre_as_24_horas(self) -> None:
-        for h in range(24):
-            self.assertIn(saudacao(h), {"Bom dia", "Boa tarde", "Boa noite"})
+    def test_nao_depende_da_hora(self) -> None:
+        # saudacao() já não aceita argumento nenhum -- não há mais uma hora
+        # para variar. Chamar sem argumentos várias vezes dá sempre o mesmo.
+        self.assertEqual(saudacao(), saudacao())
 
 
 class NumeroDeEncomenda(unittest.TestCase):

@@ -137,8 +137,11 @@ system=[{"type": "text", "text": prompt, "cache_control": {"type": "ephemeral"}}
 
 ### O que fica fora do cache, e porquê
 
-A saudação e a data atual vão na mensagem do **utilizador**, não no sistema. Se estivessem no
-prefixo, invalidariam a base de conhecimento inteira sempre que a saudação mudasse (às 13h).
+A saudação e a data atual vão na mensagem do **utilizador**, não no sistema. Até 27/08/2026 a
+saudação mudava ao longo do dia ("Bom dia"/"Boa tarde"/"Boa noite"); se estivesse no prefixo,
+invalidaria a base de conhecimento inteira a cada mudança. Desde 28/08/2026 é sempre "Olá"
+(confirmado pelo lojista) — já não varia, mas continua fora do prefixo pela mesma razão que a
+data: mudar de novo não deve implicar reescrever o cache.
 
 ## Anatomia do pedido
 
@@ -154,7 +157,7 @@ prefixo, invalidariam a base de conhecimento inteira sempre que a saudação mud
 │   <documento nome="devolucoes.md">…</documento> × 7     │
 └─────────────────────────────────────────────────────────┘
 ┌─ UTILIZADOR — variável ─────────────────────────────────┐
-│ Saudação a usar: Boa tarde         ← calculada em código│
+│ Saudação a usar: Olá               ← fixa, em código    │
 │ Data e hora atuais: 2026-08-27 14:30                    │
 │ Compromissos já registados: …      ← do SQLite          │
 │ Conversa anterior neste fio: …     ← 8 × 400 chars      │
