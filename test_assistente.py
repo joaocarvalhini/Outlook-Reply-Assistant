@@ -45,6 +45,7 @@ from assistente import (
     cortar_citacao,
     cursor_atual,
     cursor_seguro,
+    custo_estimado,
     desembrulhar_formulario_contacto,
     desembrulhar_formulario_devolucao,
     desembrulhar_formularios,
@@ -2131,6 +2132,106 @@ class FecharCiclo(unittest.TestCase):
         fechar_ciclo(graph, self.con, 0)
         self.assertEqual(len(graph.chamadas), 1)
         self.assertEqual(self._resultado("<a@x>")[0], "apagado")
+
+
+class CustoEstimado(unittest.TestCase):
+    """A aritmética de custo. Não é faturação -- serve para comparar antes e
+    depois de uma alteração sem esperar pela fatura mensal."""
+
+    def test_leitura_de_cache_custa_um_decimo_da_entrada(self) -> None:
+        """É a razão de ser do TTL de 1 hora: ler o prefixo em vez de o
+        reescrever."""
+        so_leitura = custo_estimado("claude-sonnet-5", {"cache_leitura": 1_000_000})
+        so_entrada = custo_estimado("claude-sonnet-5", {"entrada": 1_000_000})
+        self.assertAlmostEqual(so_leitura, so_entrada * 0.1, places=6)
+
+    def test_escrita_de_cache_custa_o_dobro_da_entrada(self) -> None:
+        so_escrita = custo_estimado("claude-sonnet-5", {"cache_escrita": 1_000_000})
+        so_entrada = custo_estimado("claude-sonnet-5", {"entrada": 1_000_000})
+        self.assertAlmostEqual(so_escrita, so_entrada * 2.0, places=6)
+
+    def test_soma_todas_as_componentes(self) -> None:
+        c = custo_estimado("claude-sonnet-5", {
+            "entrada": 1_000_000, "saida": 1_000_000,
+            "cache_escrita": 1_000_000, "cache_leitura": 1_000_000,
+        })
+        # 2 (entrada) + 10 (saída) + 4 (escrita 2x) + 0,20 (leitura 0,1x)
+        self.assertAlmostEqual(c, 16.20, places=4)
+
+    def test_modelo_desconhecido_devolve_zero_em_vez_de_inventar(self) -> None:
+        self.assertEqual(custo_estimado("modelo-que-nao-existe", {"entrada": 999}), 0.0)
+
+    def test_uso_vazio_nao_rebenta(self) -> None:
+        self.assertEqual(custo_estimado("claude-sonnet-5", {}), 0.0)
+
+    def test_haiku_e_mais_barato_que_sonnet_no_mesmo_uso(self) -> None:
+        uso = {"entrada": 100_000, "saida": 10_000}
+        self.assertLess(
+            custo_estimado("claude-haiku-4-5", uso),
+            custo_estimado("claude-sonnet-5", uso),
+        )
+
+
+class RegistoDeCusto(unittest.TestCase):
+    """O custo tem de chegar ao registo, senão não há como medir nada."""
+
+    def setUp(self) -> None:
+        pasta = TemporaryDirectory()
+        self.addCleanup(pasta.cleanup)
+        self.con = abrir_db(Path(pasta.name) / "t.db")
+        self.addCleanup(self.con.close)
+
+    def _custo(self, message_id: str) -> tuple:
+        return self.con.execute(
+            "SELECT modelo, tokens_entrada, tokens_saida, tokens_cache_escrita, "
+            "tokens_cache_leitura, chamadas_modelo, custo_estimado "
+            "FROM processados WHERE message_id = ?", (message_id,)
+        ).fetchone()
+
+    def test_saltado_pela_triagem_fica_a_zero(self) -> None:
+        """Um email descartado pela triagem não chega ao modelo -- zero é o
+        valor certo, não um valor em falta."""
+        m = msg(de="newsletter@x.com")
+        registar(self.con, m, "saltar", "remetente-automatico:newsletter", "")
+        modelo, entrada, saida, esc, leit, chamadas, custo = self._custo(m["message_id"])
+        self.assertEqual((entrada, saida, esc, leit, chamadas), (0, 0, 0, 0, 0))
+        self.assertEqual(custo, 0.0)
+
+    def test_uso_reportado_pela_api_fica_gravado(self) -> None:
+        m = msg()
+        registar(self.con, m, "rascunhar", "sabia responder", "Olá,", modelo="claude-sonnet-5",
+                 uso={"entrada": 500, "saida": 300, "cache_escrita": 0,
+                      "cache_leitura": 29_000, "chamadas": 1})
+        modelo, entrada, saida, esc, leit, chamadas, custo = self._custo(m["message_id"])
+        self.assertEqual(modelo, "claude-sonnet-5")
+        self.assertEqual((entrada, saida, esc, leit, chamadas), (500, 300, 0, 29_000, 1))
+        self.assertGreater(custo, 0)
+
+    def test_email_com_cache_quente_custa_menos_que_com_cache_fria(self) -> None:
+        """A comparação que justifica o TTL de 1 hora, no próprio registo."""
+        quente = msg(message_id="<quente@x>")
+        registar(self.con, quente, "rascunhar", "x", "corpo", modelo="claude-sonnet-5",
+                 uso={"entrada": 500, "saida": 300, "cache_escrita": 0,
+                      "cache_leitura": 29_000, "chamadas": 1})
+        fria = msg(message_id="<fria@x>")
+        registar(self.con, fria, "rascunhar", "x", "corpo", modelo="claude-sonnet-5",
+                 uso={"entrada": 500, "saida": 300, "cache_escrita": 29_000,
+                      "cache_leitura": 0, "chamadas": 1})
+        self.assertLess(self._custo("<quente@x>")[6], self._custo("<fria@x>")[6])
+
+    def test_processar_grava_o_uso_que_o_cliente_reportou(self) -> None:
+        """Ponta a ponta: o que a API reporta em usage tem de chegar ao
+        registo por si só, sem ninguém o copiar à mão."""
+        pasta = TemporaryDirectory()
+        self.addCleanup(pasta.cleanup)
+        cliente = ClienteFalso({"acao": "saltar", "motivo": "x", "corpo": "",
+                                "categoria": "OUTRO"})
+        m = msg()
+        processar(m, cfg(), GraphFalso(), ShopifyFalsa(), self.con, cliente,
+                  "prompt", BLOQUEADOS)
+        modelo, _e, _s, _esc, _l, chamadas, _c = self._custo(m["message_id"])
+        self.assertEqual(modelo, "claude-sonnet-5")
+        self.assertEqual(chamadas, 1)  # o ClienteFalso não traz usage, mas contou a chamada
 
 
 class CompararGravado(unittest.TestCase):

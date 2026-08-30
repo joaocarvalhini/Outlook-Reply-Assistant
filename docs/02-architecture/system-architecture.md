@@ -163,7 +163,7 @@ Resumo. O detalhe, com trade-offs e alternativas rejeitadas, está em
 | # | Decisão | Motivo curto |
 |---|---|---|
 | D1 | Passagem única, sem processo permanente | Robustez sem equipa de plantão |
-| D2 | Monólito de 2673 linhas | Um mantenedor; navegabilidade |
+| D2 | Monólito de 2761 linhas | Um mantenedor; navegabilidade |
 | D3 | Base de conhecimento inteira no prompt, sem RAG | Elimina falhas de *retrieval* |
 | D4 | Duas chamadas ao modelo, não uma | Esquema de 19 propriedades causava timeout |
 | D5 | Identidade decidida em código | O erro mais caro é expor dados entre clientes |

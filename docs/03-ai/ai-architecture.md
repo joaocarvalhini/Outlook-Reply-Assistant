@@ -114,11 +114,22 @@ ESQUEMA_NUCLEO = {
 
 ## Cache de prompt
 
-O prefixo de sistema é marcado para cache:
+O prefixo de sistema é marcado para cache, **com TTL de 1 hora**:
 
 ```python
-system=[{"type": "text", "text": prompt, "cache_control": {"type": "ephemeral"}}],
+system=[{
+    "type": "text", "text": prompt,
+    "cache_control": {"type": "ephemeral", "ttl": "1h"},
+}],
 ```
+
+> [!IMPORTANT] Porque 1 hora e não os 5 minutos por omissão — corrigido 30/08/2026
+> Medido sobre os *timestamps* reais de produção: o intervalo mediano entre emails que chegam ao
+> modelo é de **14,9 minutos**, e 109 dos 170 intervalos caem entre 5 e 60 minutos. Com o TTL de
+> 5 minutos, só **25%** das chamadas apanhavam a cache quente — as outras 75% reescreviam as 29K
+> tokens do prefixo. Com 1 hora, **89%** apanham-na. A escrita passa a custar 2× em vez de 1,25×,
+> mas acontece 6× menos vezes: redução estimada de ~54% na fatura.
+> Ver [[cost-optimization|Auditoria de custo]].
 
 **Medição real** com `client.messages.count_tokens` (endpoint gratuito), 26/08/2026:
 

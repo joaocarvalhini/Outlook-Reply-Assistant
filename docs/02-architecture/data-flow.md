@@ -141,6 +141,13 @@ erDiagram
         TEXT resultado_estado "pendente|apagado|enviado-tal-e-qual|enviado-editado"
         REAL resultado_semelhanca "0-100, só quando enviado"
         TEXT resultado_medido_em
+        TEXT modelo "qual modelo respondeu"
+        INTEGER tokens_entrada
+        INTEGER tokens_saida
+        INTEGER tokens_cache_escrita "a 2x"
+        INTEGER tokens_cache_leitura "a 0,1x"
+        INTEGER chamadas_modelo "1, ou 2 se escalou"
+        REAL custo_estimado "dolares"
     }
     compromissos {
         TEXT conversation_id PK
@@ -159,9 +166,10 @@ Uma linha, chave `cursor`. Marca temporal da mensagem mais recente processada co
 
 ### `processados` — uma linha por email
 
-23 colunas. As 7 primeiras são originais; as restantes foram acrescentadas ao longo do tempo por
-`ALTER TABLE` — as quatro últimas (`rascunho_id`, `resultado_*`) a 27/08/2026, para fechar o
-ciclo do draft (ver abaixo).
+30 colunas. As 7 primeiras são originais; as restantes foram acrescentadas ao longo do tempo por
+`ALTER TABLE` — `rascunho_id` e `resultado_*` a 27/08/2026 para fechar o ciclo do draft (ver
+abaixo), e `modelo`/`tokens_*`/`custo_estimado` a 30/08/2026 para medir o custo por email
+(ver [[cost-optimization|Auditoria de custo]]).
 
 > [!TIP] Migrações aditivas e `INSERT` nomeado
 > **Implemented** — `abrir_db()` acrescenta cada coluna em falta com `ALTER TABLE`, em vez de

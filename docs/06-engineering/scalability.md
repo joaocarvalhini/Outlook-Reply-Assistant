@@ -123,6 +123,12 @@ flowchart LR
     style D fill:#ffcdd2
 ```
 
+> [!NOTE] Medido e corrigido a 30/08/2026
+> Esta secção foi escrita antes de haver dados reais. Já os há: o intervalo mediano entre emails
+> é de ~15 minutos, e passar o TTL da cache de 5 minutos para 1 hora levou a taxa de acerto de
+> **25% para 89%**. O regime de cache fria descrito abaixo era real — e deixou de dominar.
+> Ver [[cost-optimization|Auditoria de custo]].
+
 > [!WARNING] Numa loja pequena, o regime de cache fria domina
 > Com emails espaçados — o normal numa PME — o Sonnet paga quase sempre a sobretaxa de escrever
 > o cache sem nunca chegar a ler o desconto. Nesse regime é **~19× mais caro** que o Haiku, não

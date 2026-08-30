@@ -73,6 +73,7 @@ Três percursos, consoante o que precisas de perceber.
 - [[operations|Ferramentas de operação]] — os 11 satélites de diagnóstico e manutenção
 - [[limitations|Limitações]] — o que o sistema não consegue fazer hoje
 - [[technical-debt|Dívida técnica e findings]] — o que está mal e quanto custa
+- [[cost-optimization|Auditoria de custo]] — onde vai o dinheiro da API, e o que já foi cortado
 - [[scalability|Escalabilidade]] — de 1 loja a 1000
 
 ### 07 — Roadmap

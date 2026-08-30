@@ -38,7 +38,7 @@ rejeitadas.
 
 ---
 
-## D2 — Monólito de 2673 linhas
+## D2 — Monólito de 2761 linhas
 
 **Escolha:** todo o caminho de produção num ficheiro; as 11 ferramentas importam-no.
 

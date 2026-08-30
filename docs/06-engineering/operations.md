@@ -62,7 +62,13 @@ python metricas.py --dias 7
 python metricas.py --tudo
 ```
 
-Distribuição de ações, categorias dos escalados, e risco dos dossiês preparados. Barras em texto.
+Distribuição de ações, categorias dos escalados, risco dos dossiês preparados, e — desde
+30/08/2026 — o **custo real**: por email, por rascunho, por escalação, e a taxa de acerto da
+cache. Barras em texto.
+
+> [!TIP] O custo por resultado é a pergunta de negócio
+> Não "quantos tokens", mas quanto custa cada rascunho e cada escalação — é isso que se compara
+> com o tempo de trabalho que poupa. Ver [[cost-optimization|Auditoria de custo]].
 
 > [!NOTE] Não faz chamadas nem toca na caixa
 > *"Lê só o que já está gravado em processados. Os números não mudam se este script correr dez

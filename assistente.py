@@ -1133,6 +1133,15 @@ COLUNAS_NOVAS = (
     ("resultado_estado", "TEXT"),
     ("resultado_semelhanca", "REAL"),
     ("resultado_medido_em", "TEXT"),
+    # Custo real por email (o que a API reportou em usage), para se poder
+    # medir o efeito de uma alteração sem esperar pela fatura mensal.
+    ("modelo", "TEXT"),
+    ("tokens_entrada", "INTEGER"),
+    ("tokens_saida", "INTEGER"),
+    ("tokens_cache_escrita", "INTEGER"),
+    ("tokens_cache_leitura", "INTEGER"),
+    ("chamadas_modelo", "INTEGER"),
+    ("custo_estimado", "REAL"),
 )
 
 
@@ -1299,7 +1308,8 @@ def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: 
              dossie_resumo: str = "", dossie_validacao: str = "",
              dossie_accao: str = "", dossie_risco: str = "",
              dossie_resposta: str = "", dossie_link: str = "",
-             por_responder: str = "", rascunho_id: str = "") -> None:
+             por_responder: str = "", rascunho_id: str = "",
+             modelo: str = "", uso: dict | None = None) -> None:
     """Guarda a decisão. O corpo fica gravado para a medição de deriva.
 
     `rascunho_id` é o id do Graph devolvido por criar_rascunho() -- pelo seu
@@ -1311,19 +1321,26 @@ def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: 
     tempo, e um INSERT posicional passa a gravar valores na coluna errada sem
     dar erro.
     """
+    u = uso or {}
     con.execute(
         "INSERT OR REPLACE INTO processados "
         "(message_id, conversation_id, assunto, acao, motivo, corpo, em, "
         " categoria, lacuna_tema, lacuna_em_falta, confianca_encomenda, "
         " dossie_tipo, dossie_resumo, dossie_validacao, dossie_accao, "
-        " dossie_risco, dossie_resposta, dossie_link, por_responder, rascunho_id) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        " dossie_risco, dossie_resposta, dossie_link, por_responder, rascunho_id, "
+        " modelo, tokens_entrada, tokens_saida, tokens_cache_escrita, "
+        " tokens_cache_leitura, chamadas_modelo, custo_estimado) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+        "        ?, ?, ?, ?, ?, ?, ?)",
         (
             msg["message_id"], msg["conversation_id"], msg["assunto"],
             acao, motivo, corpo, agora(),
             categoria, lacuna_tema, lacuna_em_falta, confianca_encomenda,
             dossie_tipo, dossie_resumo, dossie_validacao, dossie_accao,
             dossie_risco, dossie_resposta, dossie_link, por_responder, rascunho_id,
+            modelo, u.get("entrada", 0), u.get("saida", 0),
+            u.get("cache_escrita", 0), u.get("cache_leitura", 0),
+            u.get("chamadas", 0), custo_estimado(modelo, u) if modelo else 0.0,
         ),
     )
     if msg["recebido"] > cursor_atual(con):
@@ -2070,6 +2087,43 @@ def nota_anexos_ignorados(ignorados: list[dict]) -> str:
 # Claude — uma chamada por email
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Dólares por milhão de tokens, por modelo. Os multiplicadores de cache são
+# os da tabela de preços da Anthropic: leitura 0,1x do preço de entrada,
+# escrita 1,25x com TTL de 5 minutos e 2x com TTL de 1 hora (usamos 1 hora --
+# ver a nota em _chamar()).
+#
+# Isto serve só para estimar o custo no registo local, para se poder comparar
+# antes/depois de uma alteração sem esperar pela fatura. Não é faturação: se
+# os preços mudarem, este número fica desatualizado em silêncio -- confirmar
+# na página de preços da Anthropic antes de tirar conclusões de um valor
+# absoluto. As comparações relativas (antes vs. depois) continuam válidas.
+PRECOS = {
+    "claude-sonnet-5": (2.00, 10.00),
+    "claude-haiku-4-5": (1.00, 5.00),
+    "claude-opus-5": (5.00, 25.00),
+}
+_MULT_CACHE_ESCRITA_1H = 2.0
+_MULT_CACHE_LEITURA = 0.1
+
+
+def custo_estimado(modelo: str, uso: dict) -> float:
+    """Custo em dólares de um email, a partir dos tokens que a API reportou.
+
+    Devolve 0.0 para um modelo que não esteja na tabela -- é melhor não
+    mostrar custo nenhum do que mostrar um número inventado com o preço do
+    modelo errado.
+    """
+    precos = PRECOS.get(modelo)
+    if not precos:
+        return 0.0
+    entrada, saida = precos
+    return (
+        uso.get("entrada", 0) * entrada
+        + uso.get("cache_escrita", 0) * entrada * _MULT_CACHE_ESCRITA_1H
+        + uso.get("cache_leitura", 0) * entrada * _MULT_CACHE_LEITURA
+        + uso.get("saida", 0) * saida
+    ) / 1_000_000
+
 
 def decidir(
     cliente: object, cfg: Config, prompt: str, msg: dict,
@@ -2114,6 +2168,12 @@ def decidir(
     if nota_anexos:
         pedido += nota_anexos
 
+    # Soma do que cada chamada gastou, para o registo saber o custo real deste
+    # email. Sem isto não há forma de provar que uma alteração de cache ou de
+    # modelo fez o que se esperava -- a fatura da Anthropic é mensal e
+    # agregada, e não se consegue atribuir a nada.
+    uso = {"entrada": 0, "saida": 0, "cache_escrita": 0, "cache_leitura": 0, "chamadas": 0}
+
     def _chamar(schema: dict, conteudo: str) -> dict:
         # Imagens vão sempre nas duas chamadas (núcleo e dossiê): são prova do
         # mesmo email, não fazem sentido só numa delas. Ficam na mensagem do
@@ -2142,11 +2202,33 @@ def decidir(
             # A base de conhecimento é o prefixo de todas as chamadas e não
             # muda durante a passagem, nem entre o núcleo e o dossiê do mesmo
             # email: marcá-la para cache paga-se ao segundo uso.
-            system=[{"type": "text", "text": prompt, "cache_control": {"type": "ephemeral"}}],
+            #
+            # ttl="1h" e não o de 5 minutos por omissão: medido sobre os
+            # timestamps reais de produção (26-30/08/2026, 171 emails), o
+            # intervalo mediano entre emails que chegam ao modelo é de ~15
+            # minutos. Com 5 minutos, só 25% das chamadas apanhavam a cache
+            # quente e 75% reescreviam as ~29K tokens do prefixo a 1,25x; com
+            # 1 hora, 89% apanham-na e só 11% escrevem, a 2x. A escrita custa
+            # o dobro mas acontece 6x menos vezes. Ver docs/06-engineering/
+            # cost-optimization.md para a medição e a aritmética.
+            system=[{
+                "type": "text",
+                "text": prompt,
+                "cache_control": {"type": "ephemeral", "ttl": "1h"},
+            }],
             thinking={"type": "disabled"},
             output_config={"format": {"type": "json_schema", "schema": schema}},
             messages=[{"role": "user", "content": conteudo_msg}],
         )
+        # getattr com omissão: os dublês dos testes não constroem um objeto
+        # usage, e não vale a pena obrigá-los a isso só para contar tokens.
+        u = getattr(resposta, "usage", None)
+        uso["chamadas"] += 1
+        uso["entrada"] += int(getattr(u, "input_tokens", 0) or 0)
+        uso["saida"] += int(getattr(u, "output_tokens", 0) or 0)
+        uso["cache_escrita"] += int(getattr(u, "cache_creation_input_tokens", 0) or 0)
+        uso["cache_leitura"] += int(getattr(u, "cache_read_input_tokens", 0) or 0)
+
         texto = next(
             (b.text for b in resposta.content if getattr(b, "type", "") == "text"), ""
         )
@@ -2221,6 +2303,9 @@ def decidir(
             dossie.get("dossie_resposta", ""), cfg.assinatura
         )
 
+    # Prefixado com "_" para se distinguir dos campos que vieram do modelo:
+    # este é medição do que a chamada custou, não parte da decisão.
+    resultado["_uso"] = uso
     return resultado
 
 
@@ -2469,6 +2554,11 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         "dossie_resposta": decisao["dossie_resposta"] if tem_dossie else "",
         "dossie_link": link_admin(cfg, achado.encomenda) if tem_dossie else "",
         "por_responder": decisao["por_responder"] if cfg.respostas_parciais else "",
+        # Só os emails que chegaram ao modelo têm custo -- os saltados pela
+        # triagem registam-se antes daqui e ficam com tudo a zero, que é o
+        # valor certo: não custaram nada.
+        "modelo": cfg.modelo,
+        "uso": decisao.get("_uso") or {},
     }
 
     if acao == "rascunhar" and corpo.strip():

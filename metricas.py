@@ -67,6 +67,12 @@ def main(argv: list[str] | None = None) -> int:
         f"  AND resultado_estado != 'pendente'",
         valores,
     ).fetchall()
+    custos = con.execute(
+        f"SELECT acao, custo_estimado, tokens_entrada, tokens_saida, "
+        f"       tokens_cache_escrita, tokens_cache_leitura, chamadas_modelo "
+        f"FROM processados WHERE {condicao} AND COALESCE(chamadas_modelo, 0) > 0",
+        valores,
+    ).fetchall()
 
     janela = "todo o histórico" if args.tudo else f"últimos {args.dias} dia(s)"
     print(f"\n{len(linhas)} email(is) processado(s) · {janela}\n")
@@ -120,6 +126,36 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print("\nResultado dos rascunhos: sem dados ainda. Correr "
               "'medir_deriva.py --fechar-ciclo' periodicamente para começar a medir.")
+
+    if custos:
+        total = sum(c[1] or 0 for c in custos)
+        chamadas = sum(c[6] or 0 for c in custos)
+        escrita = sum(c[4] or 0 for c in custos)
+        leitura = sum(c[5] or 0 for c in custos)
+        print(f"\n{'─' * LARGURA}")
+        print(f"Custo · {len(custos)} email(is) que chegaram ao modelo\n")
+        print(f"  total                     ${total:.2f}")
+        print(f"  por email                 ${total/len(custos):.4f}")
+        print(f"  chamadas ao modelo        {chamadas}  ({chamadas/len(custos):.2f} por email)")
+
+        # A taxa de acerto da cache é o número que decide o custo nesta
+        # arquitetura: o prefixo (~29K tokens) é o mesmo em todas as chamadas,
+        # e lê-se a 0,1x ou reescreve-se a 2x consoante apanhe a cache quente.
+        if escrita + leitura:
+            print(f"  cache                     {100*leitura/(escrita+leitura):.0f}% lida "
+                  f"({leitura:,} tokens) · {escrita:,} tokens reescritos".replace(",", " "))
+
+        # Custo por resultado útil, não por token: um rascunho poupa uma
+        # resposta inteira ao lojista; uma escalação poupa-lhe a investigação.
+        for acao, etiqueta in (("rascunhar", "por rascunho"), ("escalar", "por escalação")):
+            linhas_acao = [c for c in custos if c[0] == acao]
+            if linhas_acao:
+                soma = sum(c[1] or 0 for c in linhas_acao)
+                print(f"  {etiqueta:<25} ${soma/len(linhas_acao):.4f}  "
+                      f"({len(linhas_acao)} email(is), ${soma:.2f})")
+    else:
+        print("\nCusto: sem dados ainda. O registo de tokens começou a 30/08/2026; "
+              "emails anteriores não o têm.")
 
     print(f"\n{'─' * LARGURA}")
     print("Para ver quais casos e não só quantos: dossie.py, lacunas.py")
