@@ -184,6 +184,52 @@ porque o cursor não avançou e a deduplicação não marcou nada.
 | Corrupção de SQLite | 🟡 Sem prevenção, mas recuperável — cópia diária via `manutencao.py` (M-4) |
 | Alerta de falha repetida | ✅ `OnFailure=` + webhook opcional (M-6) |
 | Crash do lote inteiro por falha em `criar_rascunho()`/`marcar()` | ✅ Corrigido 27/08/2026 |
+| **Paragem total silenciosa** (saldo, chave, API em baixo) | ✅ Corrigido 30/08/2026 — ver abaixo |
+
+## A avaria que o alerta não apanhava
+
+**Encontrada em produção a 30/08/2026**, ao descobrir por acaso que a conta da Anthropic tinha
+ficado sem créditos.
+
+O alerta do M-6 dispara pelo `OnFailure=` do systemd — ou seja, quando a passagem **sai com
+código diferente de zero**. Mas uma falha do modelo é apanhada pelo `try/except` de
+`processar()`, registada como `erro-modelo`, e `main()` devolvia `0` na mesma. Para o systemd, a
+passagem tinha corrido bem.
+
+> [!WARNING] O modo de falha mais perigoso é o que não faz barulho
+> Uma avaria que impede **todas** as respostas — saldo esgotado, chave revogada, API em baixo —
+> produzia exatamente o mesmo sinal que um dia sem emails: passagens a correr de 2 em 2 minutos,
+> a sair com código 0, sem alerta nenhum. Só se descobria quando alguém reparasse que não saíam
+> respostas.
+
+**A correção:** `main()` conta as passagens seguidas em que o modelo não decidiu nada e sai com
+erro ao fim de 3 (~6 minutos), disparando o alerta que já existia.
+
+```mermaid
+flowchart LR
+    A["Passagem"] --> B{"Produziu alguma<br/>decisão?"}
+    B -->|Sim| C["contador = 0"]
+    B -->|"Não, e houve falhas"| D["contador + 1"]
+    B -->|"Nem uma coisa<br/>nem outra"| E["contador inalterado<br/><i>não diz nada sobre a API</i>"]
+    D --> F{"contador ≥ 3?"}
+    F -->|Sim| G["<b>sai com erro</b><br/>→ OnFailure= → alerta"]
+    F -->|Não| H["absorve, tenta<br/>daqui a 2 min"]
+
+    style G fill:#ffcdd2
+    style C fill:#c8e6c9
+    style E fill:#fff3e0
+```
+
+Três distinções que evitam falsos alarmes:
+
+| Situação | Comportamento | Porquê |
+|---|---|---|
+| Uma falha isolada num lote que correu bem | Absorvida, contador a zero | O timer já a resolve na passagem seguinte |
+| Lote só de newsletters (nem chega ao modelo) | Contador **inalterado** | Não diz nada sobre a saúde da API — zerar esconderia uma avaria a decorrer |
+| Avaria com horas | Alerta ao cruzar o limite, depois **de hora a hora** | Não encher o telemóvel de quem o recebe |
+
+Cobertura: 8 testes (`FalhasSeguidas`), incluindo a reprodução da forma exata das passagens do
+dia em que o saldo se esgotou.
 
 > [!NOTE] `_com_retentativa()` — até 3 tentativas, só em GET
 > O `anthropic` já fazia 2 retentativas por omissão. `Graph._pedir()` e `Shopify._procurar()`

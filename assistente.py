@@ -2699,6 +2699,49 @@ def verificar_restricao_diaria(con: sqlite3.Connection, cfg: Config, graph: "Gra
         )
 
 
+# Quantas passagens seguidas sem nenhuma decisão antes de a passagem sair com
+# erro -- o que dispara o OnFailure= do systemd e o alerta (deploy/alertar.py).
+# Três passagens são ~6 minutos: uma falha isolada, que se resolve sozinha na
+# seguinte, não acorda ninguém; uma avaria que não se resolve, acorda.
+#
+# Sem isto, uma paragem total era invisível: processar() apanha a exceção,
+# regista "falhado", e main() saía com código 0 -- para o systemd a passagem
+# tinha corrido bem, e o alerta do M-6 nunca disparava. Visto em produção a
+# 30/08/2026: a conta da Anthropic ficou sem créditos e nada o assinalou.
+FALHAS_SEGUIDAS_PARA_ALERTA = 3
+# Depois do primeiro aviso, repete-se de hora a hora em vez de a cada 2
+# minutos: uma avaria longa não deve encher o telemóvel de quem a recebe.
+PASSAGENS_ENTRE_AVISOS = 30
+
+
+def falhas_seguidas(contagem: dict[str, int], antes: int) -> int:
+    """O contador de passagens seguidas em que o modelo não decidiu nada.
+
+    Três casos, e o terceiro é o que importa distinguir:
+
+    - a passagem produziu alguma decisão -> zero, está tudo bem;
+    - houve falhas do modelo e mais nada -> +1, pode ser uma avaria;
+    - nem uma coisa nem outra (ex.: um lote só de newsletters, que a triagem
+      descarta antes de chegar ao modelo) -> **inalterado**. Não diz nada
+      sobre a saúde da API, e zerar aqui esconderia uma avaria a decorrer.
+    """
+    produziu = sum(contagem.get(k, 0) for k in
+                   ("rascunhado", "rascunhado-parcial", "escalado"))
+    if produziu:
+        return 0
+    if contagem.get("falhado", 0):
+        return antes + 1
+    return antes
+
+
+def deve_alertar(seguidas: int) -> bool:
+    """Na passagem em que se cruza o limite, e depois de hora a hora."""
+    if seguidas < FALHAS_SEGUIDAS_PARA_ALERTA:
+        return False
+    return (seguidas == FALHAS_SEGUIDAS_PARA_ALERTA
+            or seguidas % PASSAGENS_ENTRE_AVISOS == 0)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Uma passagem pela caixa de apoio")
     grupo = parser.add_mutually_exclusive_group()
@@ -2754,6 +2797,20 @@ def main(argv: list[str] | None = None) -> int:
         log("cursor-recuado", para=seguro, falhadas=contagem.get("falhado", 0))
 
     log("passagem", vistos=len(mensagens), dry_run=cfg.dry_run, **contagem)
+
+    # Uma falha isolada continua a ser absorvida (o timer volta a tentar daqui
+    # a 2 minutos, e o cursor não avançou). O que não pode passar em silêncio é
+    # *nada* ser decidido, passagem após passagem.
+    antes = ler_meta(con, "falhas_seguidas", "0")
+    seguidas = falhas_seguidas(contagem, int(antes) if antes.isdigit() else 0)
+    gravar_meta(con, "falhas_seguidas", str(seguidas))
+    if deve_alertar(seguidas):
+        sys.exit(
+            f"ALERTA: {seguidas} passagens seguidas sem nenhuma decisão do "
+            "modelo — tudo o que lhe chegou falhou. Causas mais prováveis: "
+            "saldo esgotado na conta da Anthropic, chave inválida, ou a API "
+            "em baixo. Ver: journalctl -u tripat3s-assistente | grep erro-modelo"
+        )
     return 0
 
 

@@ -19,13 +19,13 @@ Cada uma responde a uma pergunta diferente e tem um custo diferente.
 ```mermaid
 flowchart TB
     subgraph G["GRÁTIS — sem chamadas ao modelo"]
-        T1["<b>test_assistente.py</b><br/>233 testes unitários<br/><i>o código faz o que diz?</i><br/>~1,7 s"]
+        T1["<b>test_assistente.py</b><br/>241 testes unitários<br/><i>o código faz o que diz?</i><br/>~1,7 s"]
         T2["<b>eval.py --triagem</b><br/>só regras determinísticas<br/><i>a triagem está certa?</i><br/>instantâneo"]
         T3["<b>verificar.py</b><br/>pré-instalação<br/><i>está seguro para ligar?</i>"]
         T4["<b>casos_antigos.py</b><br/>pares reais para ler<br/><i>como se resolvia antes?</i>"]
     end
     subgraph P["PAGO — chamadas reais ao modelo"]
-        T5["<b>eval.py</b><br/>81 casos etiquetados<br/><i>o modelo decide bem?</i>"]
+        T5["<b>eval.py</b><br/>86 casos etiquetados<br/><i>o modelo decide bem?</i>"]
         T6["<b>reprocessar.py</b><br/>decisões passadas<br/><i>a mudança melhorou?</i>"]
         T7["<b>medir_deriva.py</b><br/>vs. resposta real<br/><i>o rascunho é enviável?</i>"]
     end
@@ -41,7 +41,7 @@ flowchart TB
 
 ## Camada 1 — Testes unitários
 
-**Implemented** — 233 testes, `unittest` da biblioteca padrão, **zero dependências de teste**.
+**Implemented** — 241 testes, `unittest` da biblioteca padrão, **zero dependências de teste**.
 
 | Área | Classes | Cobre |
 |---|---|---|
@@ -74,7 +74,7 @@ python -m unittest test_assistente -q
 
 ## Camada 2 — Banco de ensaio
 
-81 casos etiquetados, com métricas assimétricas. Tem documento próprio:
+86 casos etiquetados, com métricas assimétricas. Tem documento próprio:
 [[evaluation|Banco de ensaio]].
 
 ## Camada 3 — Medição de deriva
@@ -156,7 +156,7 @@ flowchart TD
     B -->|passa| C["eval.py --triagem<br/><i>grátis</i>"]
     B -->|falha| A
     C -->|passa| D["eval.py --casos eval/subset.json<br/><i>23 casos, ~0,30 €</i>"]
-    D -->|passa| E["eval.py completo<br/><i>81 casos, uma vez no fim</i>"]
+    D -->|passa| E["eval.py completo<br/><i>86 casos, uma vez no fim</i>"]
     D -->|falha| A
     E -->|passa| F["commit + deploy"]
     E -->|falha| A
@@ -168,7 +168,7 @@ flowchart TD
 ```
 
 > [!TIP] Subconjunto primeiro, corrida completa uma vez
-> Correr os 81 casos a cada iteração é desperdício. O `eval/subset.json` tem 23 casos
+> Correr os 86 casos a cada iteração é desperdício. O `eval/subset.json` tem 23 casos
 > escolhidos pelos mais delicados (devoluções, garantias, identidade) e dá o sinal em ~⅓ do
 > custo.
 

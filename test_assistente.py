@@ -28,6 +28,10 @@ from verificar_kb import analisar_base
 from assistente import (
     CATEGORIAS,
     DOMINIOS_BASE,
+    FALHAS_SEGUIDAS_PARA_ALERTA,
+    PASSAGENS_ENTRE_AVISOS,
+    deve_alertar,
+    falhas_seguidas,
     Config,
     Correspondencia,
     Graph,
@@ -2132,6 +2136,58 @@ class FecharCiclo(unittest.TestCase):
         fechar_ciclo(graph, self.con, 0)
         self.assertEqual(len(graph.chamadas), 1)
         self.assertEqual(self._resultado("<a@x>")[0], "apagado")
+
+
+class FalhasSeguidas(unittest.TestCase):
+    """A deteção de paragem total. Sem isto, uma avaria que impede TODAS as
+    respostas (saldo esgotado, chave inválida) saía com código 0 e o alerta
+    do systemd nunca disparava -- visto em produção a 30/08/2026."""
+
+    def test_passagem_que_produziu_algo_poe_a_zero(self) -> None:
+        self.assertEqual(falhas_seguidas({"rascunhado": 1}, 5), 0)
+        self.assertEqual(falhas_seguidas({"escalado": 1}, 5), 0)
+        self.assertEqual(falhas_seguidas({"rascunhado-parcial": 1}, 5), 0)
+
+    def test_produzir_algo_conta_mesmo_havendo_falhas(self) -> None:
+        """Uma falha isolada no meio de um lote que correu bem não é avaria."""
+        self.assertEqual(falhas_seguidas({"escalado": 2, "falhado": 1}, 2), 0)
+
+    def test_so_falhas_incrementa(self) -> None:
+        self.assertEqual(falhas_seguidas({"falhado": 1}, 0), 1)
+        self.assertEqual(falhas_seguidas({"falhado": 1, "repetido": 1}, 1), 2)
+
+    def test_lote_que_nem_chega_ao_modelo_nao_mexe_no_contador(self) -> None:
+        """Só newsletters: a triagem descarta-as antes do modelo, por isso a
+        passagem não diz nada sobre a saúde da API. Zerar aqui esconderia uma
+        avaria a decorrer; incrementar inventaria uma que não se viu."""
+        self.assertEqual(falhas_seguidas({"saltado": 3}, 2), 2)
+        self.assertEqual(falhas_seguidas({"repetido": 1}, 2), 2)
+        self.assertEqual(falhas_seguidas({}, 0), 0)
+
+    def test_alerta_so_ao_cruzar_o_limite(self) -> None:
+        self.assertFalse(deve_alertar(0))
+        self.assertFalse(deve_alertar(FALHAS_SEGUIDAS_PARA_ALERTA - 1))
+        self.assertTrue(deve_alertar(FALHAS_SEGUIDAS_PARA_ALERTA))
+
+    def test_nao_repete_o_alerta_a_cada_passagem(self) -> None:
+        """Uma avaria de horas não deve encher o telemóvel de quem a recebe."""
+        seguintes = range(FALHAS_SEGUIDAS_PARA_ALERTA + 1, PASSAGENS_ENTRE_AVISOS)
+        self.assertFalse(any(deve_alertar(n) for n in seguintes))
+
+    def test_repete_de_hora_a_hora(self) -> None:
+        self.assertTrue(deve_alertar(PASSAGENS_ENTRE_AVISOS))
+        self.assertTrue(deve_alertar(PASSAGENS_ENTRE_AVISOS * 2))
+
+    def test_o_caso_real_de_30_08(self) -> None:
+        """A forma exata das passagens do dia em que o saldo se esgotou:
+        'vistos=2 repetido=1 falhado=1', repetida passagem após passagem."""
+        contagem = {"repetido": 1, "falhado": 1}
+        n = 0
+        alertas = []
+        for _ in range(5):
+            n = falhas_seguidas(contagem, n)
+            alertas.append(deve_alertar(n))
+        self.assertEqual(alertas, [False, False, True, False, False])
 
 
 class CustoEstimado(unittest.TestCase):

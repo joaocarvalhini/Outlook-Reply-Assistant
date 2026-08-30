@@ -20,7 +20,7 @@ no commit `bc5408b`. Cada finding traz evidência verificável.
 ```mermaid
 pie showData
     title Findings por estado
-    "Corrigidos" : 13
+    "Corrigidos" : 14
     "Alta em aberto" : 0
     "Média em aberto" : 1
     "Baixa em aberto" : 0
@@ -30,6 +30,7 @@ pie showData
 |---|---|---|---|---|
 | C-1 | 🔴 Crítica | Perda de email quando o modelo falha a meio de lote | Trivial | ✅ **Corrigido 27/08** |
 | ~~H-4~~ | ✅ **Corrigido** | Falha em `criar_rascunho()`/`marcar()` podia derrubar o lote inteiro | Baixa | Feito 27/08 |
+| ~~C-2~~ | ✅ **Corrigido** | Paragem total do modelo não disparava alerta nenhum | Baixa | Feito 30/08 |
 | P0-2 | 🔴 Crítica | Restrição de acesso do Exchange nunca reverificada | Baixa | 🟡 **Construído 27/08, por ativar** |
 | ~~H-1~~ | ✅ **Corrigido** | Premissa de custo/cache desatualizada em 3 locais | Trivial | Feito 27/08 |
 | ~~H-2~~ | ✅ **Corrigido** | `processar()` sem cobertura de testes | Média | Feito 27/08 |
@@ -75,6 +76,31 @@ registo.
 **A correção:** `cursor_seguro()` para na primeira falha; `main()` recua o cursor no fim do lote.
 Verificado contra uma base SQLite real (o bug reproduz-se sem a correção e desaparece com ela).
 7 testes novos.
+
+Ver [[error-handling|Tratamento de erros]].
+
+---
+
+## ✅ C-2 — Paragem total do modelo não disparava alerta nenhum
+
+**Gravidade:** Crítica · **Estado:** Corrigido a 30/08/2026
+
+**Como foi encontrado:** por acaso, a meio da [[cost-optimization|auditoria de custo]] — a conta
+da Anthropic tinha ficado sem créditos e **nada o assinalava**. As passagens continuavam a correr
+de 2 em 2 minutos, a sair com código 0.
+
+**O problema:** o alerta do M-6 dispara pelo `OnFailure=` do systemd, ou seja, quando a passagem
+sai com código diferente de zero. Mas uma falha do modelo é apanhada pelo `try/except` de
+`processar()` e `main()` devolvia `0` na mesma — a mesma coisa que uma passagem sem emails
+nenhuns.
+
+O sistema tinha alertas para falhas de infraestrutura (o Graph em baixo derruba a passagem, sai
+com 1, alerta) mas **não para a falha que impede todas as respostas**.
+
+**A correção:** contador de passagens seguidas sem nenhuma decisão, em `meta`; ao fim de 3 (~6
+minutos) a passagem sai com erro e dispara o alerta que já existia. Uma falha isolada continua a
+ser absorvida; um lote que nem chega ao modelo não mexe no contador. 8 testes novos
+(`falhas_seguidas()` e `deve_alertar()`, funções puras no mesmo padrão do `cursor_seguro`).
 
 Ver [[error-handling|Tratamento de erros]].
 
