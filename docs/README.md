@@ -63,7 +63,7 @@ Três percursos, consoante o que precisas de perceber.
 
 ### 05 — Fiabilidade
 - [[qa|QA e testes]] — estratégia de verificação em quatro camadas
-- [[evaluation|Banco de ensaio]] — os 90 casos e as métricas assimétricas
+- [[evaluation|Banco de ensaio]] — os 91 casos e as métricas assimétricas
 - [[escalation|Sistema de escalação]] — quando e como envolve uma pessoa
 - [[error-handling|Tratamento de erros]] — degradação por camadas
 - [[security|Segurança]] — permissões, segredos, injeção de prompt, dados pessoais
