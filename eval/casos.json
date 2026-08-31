@@ -1392,5 +1392,22 @@
     "expect": "rascunhar",
     "expect_sem_dossie": true,
     "note": "Caso real (Silvana Rocha), confirmado pelo lojista 31/08/2026: cliente abriu a embalagem dos fones mas nao chegou a usa-los, e quer devolve-los mantendo o smartwatch. Regra nova em devolucoes.md \"Estado exigido\": produto aberto mas nao usado/testado nao se recusa de imediato -- pede-se fotos e video do estado do produto, embalagem e acessorios, para analisar se a devolucao avança. Verificacao manual do texto: deve pedir fotografias/video concretas, nao deve prometer devolucao nem reembolso antes disso, e nao deve responder com algo vago como \"vamos verificar internamente\"."
+  },
+  {
+    "id": "duas-encomendas-pergunta-so-por-uma-nao-junta-a-outra",
+    "email": {
+      "from": "katerinaydenko@outlook.com",
+      "from_name": "Kateryna",
+      "subject": "RE: Encomenda #22378",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\nOutra questao, fiz tambem uma encomenda com o nr #22379 e ainda nao tenho informacao de que esta a caminho.\nPodem clarificar? Obrigada!"
+    },
+    "historico": "Conversa anterior neste fio (encomenda #22378): a loja avisou de uma cor esgotada e propos substituicao; a cliente aceitou a troca de cor, e a loja confirmou que ia verificar a alteracao antes do envio -- assunto já fechado.",
+    "dados_encomenda": "Encomenda #22378\nFeita em: 2026-08-20\nPagamento: pago\nEnvio: por expedir (troca de cor em verificacao)\n\nEncomenda #22379\nFeita em: 2026-08-24\nPagamento: pago\nEnvio: por expedir",
+    "expect": "rascunhar",
+    "expect_sem_dossie": true,
+    "note": "Caso real (Kateryna), confirmado 31/08/2026 a partir de uma edicao do lojista: a cliente tem duas encomendas no fio, mas perguntou so pelo estado da #22379. O rascunho original respondia a isso e voltava a meter o estado da #22378 (ja resolvida numa troca de mensagens anterior), que ninguem pediu. Regra nova no PROMPT (\"Conversa anterior neste fio\"): responder so a encomenda perguntada, nao juntar o estado de outra so porque esta disponivel. Verificacao manual do texto: a resposta deve falar so da #22379, sem mencionar a #22378."
   }
 ]

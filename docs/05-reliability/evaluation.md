@@ -23,7 +23,7 @@ Esta é a parte mais interessante do desenho.
 
 ```mermaid
 flowchart TD
-    A["91 casos<br/>etiquetados"] --> B{"Resultado obtido<br/>vs. esperado"}
+    A["92 casos<br/>etiquetados"] --> B{"Resultado obtido<br/>vs. esperado"}
 
     B --> C["<b>CLIENTES PERDIDOS</b><br/>devia rascunhar ou escalar,<br/>e foi descartado"]
     B --> D["<b>RECALL</b><br/>dos que deviam escalar,<br/>quantos escalaram"]
@@ -130,17 +130,17 @@ E alguns casos documentam **deliberadamente não testar** algo:
 
 | | n | % |
 |---|---|---|
-| `rascunhar` | 46 | 51% |
+| `rascunhar` | 47 | 51% |
 | `escalar` | 35 | 38% |
 | `saltar` | 10 | 11% |
-| **Total** | **91** | |
+| **Total** | **92** | |
 
 ## Modos de execução
 
 ```bash
 python eval.py --triagem                      # grátis, só regras determinísticas
 python eval.py --casos eval/subset.json       # 23 casos delicados, ~0,30 €
-python eval.py                                # os 91, ~1,30 €
+python eval.py                                # os 92, ~1,30 €
 python eval.py --caixa apoio@outraloja.pt     # sobrepõe MAILBOX
 ```
 
