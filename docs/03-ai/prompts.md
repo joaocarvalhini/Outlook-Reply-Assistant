@@ -55,12 +55,13 @@ fronteiras inclinam para escalar. Ver [[decision-making|Tomada de decisão]].
 
 ### Quando existe "Conversa anterior neste fio"
 
-Duas regras que resolvem problemas distintos:
+Três regras que resolvem problemas distintos:
 
 | Regra | Problema que resolve |
 |---|---|
 | O que a LOJA disse é um **compromisso assumido** — nunca contradizer nem repetir como novo | O modelo tratava respostas antigas da loja como contexto neutro |
 | O histórico dá **contexto**, não factos novos sobre políticas | O modelo inferia políticas do que a loja tinha dito antes |
+| **Informação prática já dada** (morada, instruções, pedido de comprovativo) não se repete quando o cliente só confirma que a vai seguir | Caso real, 31/08/2026 (Finding "repetição desnecessária"): o modelo repetia a morada de devolução inteira e voltava a pedir o comprovativo a um cliente que só tinha respondido a confirmar que já preenchera o formulário |
 
 E uma distinção fina, com secção própria:
 
@@ -123,13 +124,14 @@ devolver".
 
 ### Tom da resposta
 
-Três princípios, cada um com um limite explícito para não descambar:
+Quatro princípios, cada um com um limite explícito para não descambar:
 
 | Princípio | Limite |
 |---|---|
 | **Reenquadramento positivo** — dizer o que é possível, não o que não pode ser | *"Reenquadrar não é omitir"* — continua obrigado a dizer as limitações reais |
 | **Empatia ativa** — nomear o problema desta pessoa | Não "lamentamos o incómodo" genérico |
 | **Resolução focada** — passos claros | *"não sobre encurtar opções"* — se há mais do que um caminho, di-lo |
+| **Reconhecer uma confirmação como confirmação** — agradecer especificamente, e fechar o assunto | Caso real, 31/08/2026: "obrigado pela sua mensagem" genérico e "fica confirmado" (como se fosse a primeira vez) quando o cliente só concordava com algo já combinado no fio |
 
 ### As duas grandes proibições
 

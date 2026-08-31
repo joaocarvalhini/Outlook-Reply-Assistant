@@ -681,6 +681,48 @@
     "note": "pergunta pelo codigo de rastreio que ainda nao chegou -- das perguntas mais frequentes. Regra confirmada diretamente pelo lojista, 31/08/2026, a partir de um caso real (encomenda #22314): a resposta anterior dizia so que o cliente 'recebera automaticamente por email o codigo', sem esclarecer QUEM o envia -- e um cliente que julgue que e a loja fica a espera do lado errado e volta a escrever. Verificacao manual do texto: a resposta deve dizer que o codigo vem diretamente da TRANSPORTADORA e que e so aguardar, que o recebe em breve. Nao deve prometer data concreta nem dizer que a loja envia o codigo."
   },
   {
+    "id": "atraso-pontual-por-falta-de-equipa-na-transportadora",
+    "email": {
+      "from": "marta.oliveira77@gmail.com",
+      "from_name": "Marta Oliveira",
+      "subject": "Re: Codigo de rastreio",
+      "to": ["{mailbox}"],
+      "body": "Obrigada pela resposta, mas ja la vao alguns dias e continuo sem novidades. Ha algum motivo para o atraso?"
+    },
+    "historico": "[2026-08-29 10:00] CLIENTE: Ainda nao recebi o codigo de rastreio da minha encomenda 22350.\n[2026-08-29 11:30] LOJA: Ola, o codigo vem diretamente da transportadora, e so aguardar mais um pouco.",
+    "expect": "rascunhar",
+    "expect_sem_dossie": true,
+    "note": "cliente insiste, ja lhe tinha sido dito para aguardar. Regra confirmada diretamente pelo lojista, 31/08/2026, vigente so no periodo de agosto de 2026 (ver knowledge/entregas.md): quando perguntam pelo motivo do atraso, a explicacao real e um atraso pontual porque os postos da transportadora estao com equipa reduzida nesta epoca. Verificacao manual do texto: deve dar essa razao (equipa reduzida / periodo de agosto), pedir para aguardar mais um pouco, e nao inventar uma data concreta. Este caso perde validade quando a nota em entregas.md for removida (fim do periodo sazonal)."
+  },
+  {
+    "id": "confirmacao-de-devolucao-nao-repete-instrucoes",
+    "email": {
+      "from": "lara.ferreira21@gmail.com",
+      "from_name": "Lara Ferreira",
+      "subject": "Re: Devolucao",
+      "to": ["{mailbox}"],
+      "body": "Obrigada, ja preenchi o formulario de devolucao."
+    },
+    "historico": "[2026-08-30 09:00] CLIENTE: Quero devolver o smartwatch, ja nao preciso dele.\n[2026-08-30 09:45] LOJA: Sem problema. Pode enviar-nos para tripat3s, Praceta Lucilia do Carmo, n.o 6, Loja D, 2620-537 Ramada, Portugal. Inclua uma folha com o numero da encomenda, o seu nome e o motivo da devolucao. Assim que enviar, agradecemos o comprovativo de expedicao e o codigo de rastreio.",
+    "expect": "rascunhar",
+    "expect_sem_dossie": true,
+    "note": "cliente so confirma que preencheu o formulario -- a morada, as instrucoes e o pedido de comprovativo ja tinham sido dados na mensagem anterior da loja no mesmo fio. Regra confirmada diretamente pelo lojista, 31/08/2026, a partir de um caso real (Lara, smartwatch): a IA repetiu a morada inteira e voltou a pedir o comprovativo, e o lojista cortou tudo para um agradecimento simples antes de enviar. Verificacao manual do texto: a resposta deve ser curta (um agradecimento/confirmacao), sem repetir a morada nem as instrucoes ja dadas no fio. Nao deve voltar a pedir o comprovativo, que ja tinha sido pedido."
+  },
+  {
+    "id": "cliente-confirma-que-fica-tudo-na-mesma",
+    "email": {
+      "from": "catarina.pires12@gmail.com",
+      "from_name": "Catarina Pires",
+      "subject": "Re: Obrigado pela confianca!",
+      "to": ["{mailbox}"],
+      "body": "Perfeito, fica entao tudo como esta, obrigada pela ajuda."
+    },
+    "historico": "[2026-08-30 15:00] CLIENTE: Pedi os fones e a capa na cor preta, mas afinal ainda estou a pensar se quero antes os prateados. Ainda vai a tempo de mudar?\n[2026-08-30 15:20] LOJA: Fica confirmado que a encomenda 22351 se mantem como esta, na cor preta, sem qualquer alteracao. Quando quiser adquirir os prateados, ficamos disponiveis para ajudar nessa nova compra.",
+    "expect": "rascunhar",
+    "expect_sem_dossie": true,
+    "note": "cliente so confirma uma decisao ja fechada no fio anterior (manter a cor preta). Regra confirmada diretamente pelo lojista, 31/08/2026: quando o email do cliente e so uma confirmacao (nao uma pergunta nova), agradecer especificamente pela confirmacao, nao com um 'obrigado pela sua mensagem' generico -- e ao repetir o que ficou combinado, usar uma formulacao de fecho ('fica entao confirmado', nao 'fica confirmado' como se fosse a primeira vez). Verificacao manual do texto, ajuste de tom fino sem assercao automatica."
+  },
+  {
     "id": "entrega-para-as-ilhas-e-lacuna",
     "email": {
       "from": "nuno.pereira@gmail.com",

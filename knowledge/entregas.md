@@ -79,6 +79,19 @@ pode dizer-se isso na mesma — é um facto verificado e ajuda o cliente a
 situar-se. O que não pode faltar é a parte de cima: quem envia o código, e
 que é só aguardar.
 
+> [!WARNING] Vigente enquanto durar — período de agosto de 2026
+> Motivo real a dar quando o cliente pergunta por um atraso na atualização do
+> envio ou no código de rastreio: há um atraso pontual porque os postos da
+> transportadora estão com equipa reduzida neste período de agosto, o que
+> está a atrasar a atualização dos envios. Pede-se para aguardar mais um
+> pouco, a encomenda segue normalmente. (Confirmado diretamente pelo
+> lojista, 31 de agosto de 2026, a partir de um caso real.)
+>
+> **Isto é sazonal, não uma regra permanente.** Quando a equipa da
+> transportadora voltar ao normal, esta explicação deixa de ser verdade —
+> revisitar e remover esta nota nessa altura, não deixá-la por engano a
+> justificar atrasos de outra causa qualquer.
+
 ## Entrega falhada
 
 - Se o cliente não estiver em casa, a transportadora tenta nova entrega ou deixa
