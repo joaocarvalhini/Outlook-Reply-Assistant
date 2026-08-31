@@ -49,7 +49,53 @@ if ! "$PYTHON" eval.py --triagem; then
 fi
 
 echo
-echo "== 3/3 · a enviar para $SERVIDOR:$DESTINO =="
+echo "== 3/4 · impacto na cache da Anthropic =="
+# Só o PROMPT e a knowledge/ entram no prefixo em cache. Um deploy que mexa em
+# docs, testes ou ferramentas satélite não invalida nada e é gratuito; um que
+# mexa no prompt obriga a reescrever as ~31K do prefixo -- duas vezes, porque o
+# núcleo e o dossiê têm entradas separadas (medido a 31/08/2026, ver
+# docs/06-engineering/cost-optimization.md). Vale ~0,13 $ de cada vez.
+#
+# O \r\n é normalizado: o checkout no Windows tem CRLF e o servidor recebe LF
+# via git archive, e sem isto a impressão digital nunca batia certo.
+impressao() {
+  "$1" -c "
+import hashlib, pathlib
+import assistente
+h = hashlib.sha256(assistente.PROMPT.encode())
+for f in sorted(pathlib.Path('knowledge').glob('*.md')):
+    h.update(f.read_bytes().replace(b'\r\n', b'\n'))
+print(h.hexdigest()[:12])
+" 2>/dev/null
+}
+
+local_impressao="$(impressao "$PYTHON" || true)"
+remota_impressao="$(ssh "$SERVIDOR" "cd '$DESTINO' 2>/dev/null && sudo -u '$UTILIZADOR_REMOTO' .venv/bin/python -c \"
+import hashlib, pathlib
+import assistente
+h = hashlib.sha256(assistente.PROMPT.encode())
+for f in sorted(pathlib.Path('knowledge').glob('*.md')):
+    h.update(f.read_bytes().replace(b'\r\n', b'\n'))
+print(h.hexdigest()[:12])
+\"" 2>/dev/null || true)"
+
+if [ -z "$local_impressao" ] || [ -z "$remota_impressao" ]; then
+  echo "Não consegui comparar o prompt (local='$local_impressao' remoto='$remota_impressao')."
+  echo "Segue na mesma -- isto é informativo, não é um gate."
+elif [ "$local_impressao" = "$remota_impressao" ]; then
+  echo "Prompt inalterado ($local_impressao) -- a cache continua quente, este deploy é grátis."
+else
+  echo "Prompt ALTERADO ($remota_impressao -> $local_impressao)."
+  echo "A cache vai ser reescrita nas próximas passagens: ~0,13 \$ (duas entradas de ~31K)."
+  echo
+  echo "Se tiveres mais alterações à base de conhecimento para hoje, agrupa-as num"
+  echo "só deploy em vez de uma de cada vez -- cada deploy separado paga isto outra"
+  echo "vez. A 31/08/2026, 6 deploys espalhados pelo dia custaram 0,77 \$, um quarto"
+  echo "da fatura desse dia."
+fi
+
+echo
+echo "== 4/4 · a enviar para $SERVIDOR:$DESTINO =="
 git archive HEAD | ssh "$SERVIDOR" "
   set -e
   tar -x -C '$DESTINO'

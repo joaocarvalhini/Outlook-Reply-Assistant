@@ -128,8 +128,73 @@ Honestidade sobre o que **não** vale a pena — para não voltar a ser investig
 | **Baixar o `effort`** | Não se aplica: `thinking` já está desativado, que é o mais barato nesse eixo |
 | **Batch API (-50%)** | O produto é o rascunho já estar lá quando o lojista abre o Outlook. O *batch* tem até 24 h de latência — mataria o produto para poupar metade de uma fatura pequena |
 | **Encolher a base de conhecimento** | Com o TTL corrigido, o prefixo é lido a 0,1× em 89% das chamadas — o seu custo marginal colapsou. Cortá-la agora poupava pouco e arriscava a qualidade que é o valor do sistema |
-| **Combinar as 2 chamadas numa** | Já foi tentado e reverteu-se: um esquema único com 19 propriedades fazia a API responder *"Grammar compilation timed out"*. Ver decisão D4 em [[technical-decisions\|Decisões técnicas]] |
+| **Combinar as 2 chamadas numa** | Já foi tentado e reverteu-se, e **voltou a ser medido a 31/08/2026** com números exatos — ver "Segunda auditoria" abaixo. Não é viável: 17 propriedades levam 68 s, acima do `timeout=60.0` do cliente. Ver decisão D4 em [[technical-decisions\|Decisões técnicas]] |
 | **Retries e loops** | Auditado no journal: **3 falhas em 5 dias**, todas auto-resolvidas na passagem seguinte. Não há fuga aqui |
+
+## Segunda auditoria — 31 de agosto de 2026
+
+Feita sobre 69 emails reais que chegaram ao modelo num dia, já com o TTL corrigido e as colunas
+de custo a registar. A decomposição contradiz a intuição de que o problema é o volume de
+contexto:
+
+| Componente | Custo | % |
+|---|---|---|
+| **Cache escrita** | $1,649 | **51,8%** |
+| Cache leitura | $0,680 | 21,4% |
+| Saída | $0,528 | 16,6% |
+| Entrada nova | $0,325 | 10,2% |
+
+Os 89% de acerto são reais, mas **os 11% de falhas custam 2,4× mais do que todos os acertos
+somados**: 14 escritas custam $1,65, 117 leituras custam $0,68.
+
+### Há duas entradas de cache, não uma
+
+Reconstruindo as 8 falhas de cache do dia evento a evento, a aritmética fecha exatamente:
+
+```
+núcleo = 31 330 tokens   (rascunhar = só a 1ª chamada)
+dossiê = 31 166 tokens   (62 496 − 31 330, nas escalações com cache fria)
+delta  =    164 tokens
+```
+
+O mesmo delta de 164 aparece outra vez, de forma independente, num par de emails 9 minutos
+apartados (31 809 vs. 31 645). **O esquema entra no prefixo em cache**, por isso o núcleo e o
+dossiê mantêm entradas separadas e um arranque a frio escreve o prompt duas vezes.
+
+> [!WARNING] Uni-los para poupar essa escrita não é possível — está medido
+> Uma chamada real por configuração, 31/08/2026:
+>
+> | Esquema | Propriedades | Tempo | Resultado |
+> |---|---|---|---|
+> | Núcleo (atual) | 11 | **5,34 s** | OK |
+> | União núcleo+dossiê | 17 | **67,89 s** | OK, mas acima do `timeout=60.0` |
+> | União + 2 (controlo) | 19 | 184,03 s | **400 "Schema is too complex"** |
+>
+> As 17 propriedades estourariam o timeout em **todas** as chamadas — falha total, não
+> intermitente. E o custo não é linear (11→5 s, 17→68 s), por isso aparar um campo ou dois
+> também não salva. **As duas entradas de cache são o preço de manter cada chamada nos ~5 s**,
+> e o desenho de duas chamadas é load-bearing, não uma verruga.
+>
+> O ensaio custou ~$0,008 e evitou um deploy que teria parado o atendimento.
+
+### O que sobra: as escritas por deploy
+
+Das 8 falhas de cache do dia, **4 foram expirações legítimas de TTL** (intervalos de 162, 62 e
+215 minutos, de madrugada) e **3 foram causadas por deploys** — cada deploy muda o prompt e
+invalida as duas entradas.
+
+| | Escrita | Custo |
+|---|---|---|
+| Expiração de TTL (inevitável) | 218 818 tokens | $0,875 |
+| **Deploys (evitável)** | **193 526 tokens** | **$0,774** |
+
+Num dia de 6 deploys como este, **um quarto da fatura foi o custo de publicar alterações à base
+de conhecimento em horário de tráfego**. O TTL de 1 h continua adequado: o desperdício não está
+na sua duração, está em reaquecer a cache várias vezes por dia sem necessidade.
+
+> [!NOTE] $3,18 não é a linha de base
+> Este foi um dia atípico, com 6 deploys. Sem eles a fatura teria sido ~$2,41. Para uma linha de
+> base real falta um dia sem deploys.
 
 ## O lever que sobra, e não é técnico
 

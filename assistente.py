@@ -608,6 +608,22 @@ ESTADOS_COMPROMISSO = ("pendente", "concluido", "cancelado", "desconhecido")
 # classificação eram "enum" e a soma disso também contribuiu para o esquema
 # pesado; passam a "string" livre, e o Python valida e substitui por um valor
 # de segurança quando o modelo devolve algo fora da lista.
+#
+# NÃO JUNTAR OS DOIS ESQUEMAS PARA POUPAR CACHE. Cada esquema tem a sua própria
+# entrada de cache (o esquema entra no prefixo), por isso um arranque a frio de
+# um caso escalado escreve as ~31K do prompt duas vezes em vez de uma — metade
+# do custo de escrita do dia. É tentador uni-los para poupar isso; foi medido a
+# 31/08/2026, com uma chamada real por configuração, e não dá:
+#
+#   11 propriedades (o núcleo atual)      5,34 s   OK
+#   17 propriedades (núcleo + dossiê)    67,89 s   OK, mas acima do timeout
+#   19 propriedades (controlo)          184,03 s   400 "Schema is too complex"
+#
+# O cliente é criado com timeout=60.0, por isso as 17 propriedades estourariam
+# o timeout em *todas* as chamadas — falha total, não intermitente. O custo não
+# é linear (11→5 s, 17→68 s), portanto aparar um ou dois campos também não
+# salva. As duas entradas de cache são o preço de manter cada chamada nos ~5 s.
+# Ver docs/06-engineering/cost-optimization.md.
 ESQUEMA_NUCLEO = {
     "type": "object",
     "properties": {

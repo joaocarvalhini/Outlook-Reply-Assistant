@@ -99,6 +99,25 @@ Não é preciso reiniciar nada: o serviço é `oneshot` e lê tudo do disco em c
 base de conhecimento incluída. Se as dependências mudarem, é preciso correr `pip install` no
 venv do servidor.
 
+### Um deploy que mexe no prompt custa dinheiro
+
+O passo 3/4 compara uma impressão digital do `PROMPT` e da `knowledge/` entre o local e o
+servidor, e diz qual dos dois casos é este:
+
+| | Custo | Porquê |
+|---|---|---|
+| Prompt inalterado (docs, testes, satélites) | **grátis** | O prefixo em cache não muda |
+| Prompt alterado (`PROMPT` ou `knowledge/*.md`) | **~0,13 $** | Reescreve ~31K tokens **duas vezes** — o núcleo e o dossiê têm entradas de cache separadas |
+
+> [!TIP] Agrupa as alterações à base de conhecimento num só deploy
+> O custo é por *deploy*, não por alteração: três regras novas publicadas juntas pagam uma vez;
+> publicadas à medida que ficam prontas pagam três. A 31/08/2026, seis deploys espalhados pelo
+> dia custaram **0,77 $ — um quarto da fatura desse dia**.
+>
+> Isto não é um *gate*: uma correção urgente para o lojista publica-se na hora e o custo é
+> irrelevante ao lado de um cliente mal respondido. É só para não fatiar trabalho não urgente
+> em seis publicações quando uma chegava. Ver [[cost-optimization|Auditoria de custo]].
+
 ## Instalação de raiz
 
 1. Utilizador `assistente` e pacotes de sistema
