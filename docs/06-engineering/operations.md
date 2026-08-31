@@ -12,10 +12,11 @@ tags:
 > **Pergunta que este documento responde:** que ferramentas existem para operar e diagnosticar o
 > sistema, e quais custam dinheiro?
 
-Onze satélites que importam `assistente.py`. Nove só leem; `manutencao.py` (backup e purga) e o
-modo `medir_deriva.py --fechar-ciclo` (grava o resultado da verificação) escrevem no registo
-local — nenhum escreve na caixa nem em qualquer serviço externo. Nenhum corre no caminho de
-produção — `manutencao.py` corre à parte, via cron.
+Doze satélites que importam `assistente.py`. Nove só leem; `manutencao.py` (backup e purga), o
+modo `medir_deriva.py --fechar-ciclo` (grava o resultado da verificação) e o `aquecer.py`
+(marca quando aqueceu) escrevem no registo local — nenhum escreve na caixa nem em qualquer
+serviço externo. Nenhum corre no caminho de produção; `manutencao.py` corre via cron e o
+`aquecer.py` via temporizador próprio.
 
 ## Mapa por custo
 
@@ -109,6 +110,21 @@ como `coberta?` as que já parecem estar na base.
 > O que ele produz aqui é a pergunta, não a resposta."*
 >
 > Ver [[knowledge-base|Base de conhecimento]].
+
+### `aquecer.py` — mantém a cache do prompt quente
+
+```bash
+python aquecer.py             # aquece só se houver 40 min de silêncio
+python aquecer.py --simular   # diz o que faria, sem chamar a API
+python aquecer.py --forcar    # aquece sempre (para verificar)
+```
+
+Corre sozinho via `tripat3s-assistente-aquecer.timer`, de 20 em 20 minutos. Custa **$0,0135**
+quando aquece e **nada** quando a cache já está quente — que é o caso na maior parte das
+passagens diurnas.
+
+É a única ferramenta que gasta créditos **sem que ninguém a mande correr**. Gasta-os para poupar
+mais: escrever a cache custa 18× o que custa lê-la. Ver [[cost-optimization|Auditoria de custo]].
 
 ### `manutencao.py` — cópia de segurança e purga
 

@@ -1,0 +1,38 @@
+[Unit]
+Description=Mantém a cache do prompt quente (tripat3s)
+Documentation=https://github.com/joaocarvalhini/Outlook-Reply-Assistant
+After=network-online.target
+Wants=network-online.target
+# Sem OnFailure de propósito, ao contrário do serviço principal: falhar a
+# aquecer não afeta nenhum cliente -- a passagem seguinte reescreve a cache,
+# como fazia antes de isto existir. Acordar alguém por causa disso seria
+# ruído. O erro fica no journal na mesma.
+
+[Service]
+Type=oneshot
+
+User=assistente
+Group=assistente
+WorkingDirectory=/opt/assistente
+ExecStart=/opt/assistente/.venv/bin/python /opt/assistente/aquecer.py
+
+# Duas chamadas curtas. Um minuto significa que encravou.
+TimeoutStartSec=120
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+# Só lê o SQLite para saber há quanto tempo foi a última chamada; não escreve
+# nada. O ReadWritePaths fica na mesma porque o SQLite abre um ficheiro-diário
+# ao lado mesmo quando só se lê.
+ReadWritePaths=/opt/assistente
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

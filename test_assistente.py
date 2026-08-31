@@ -17,10 +17,17 @@ import json
 import re
 import sqlite3
 import unittest
+from datetime import datetime
 from unittest.mock import patch
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from aquecer import (
+    CHAVE_ULTIMO_AQUECIMENTO,
+    MINUTOS_ATE_AQUECER,
+    deve_aquecer,
+    minutos_desde_ultima_chamada,
+)
 from exportar import anonimizar, anonimizar_endereco, palpitar
 from medir_deriva import comparar_gravado, fechar_ciclo
 from verificar_kb import analisar_base
@@ -2408,6 +2415,82 @@ class AnalisarBase(unittest.TestCase):
         analisar_base(cliente, cfg(), "REGRA-MUITO-ESPECIFICA-DE-TESTE")
         self.assertIn("REGRA-MUITO-ESPECIFICA-DE-TESTE",
                        cliente.pedidos[0]["messages"][0]["content"])
+
+
+class Aquecer(unittest.TestCase):
+    """A decisão de aquecer ou não é o que faz o aquecedor valer a pena: se
+    aquecesse sempre, o custo dos ciclos comia a poupança das reescritas."""
+
+    @staticmethod
+    def _base(registos: tuple[tuple[str, int], ...],
+              aquecido_em: str = "") -> sqlite3.Connection:
+        con = sqlite3.connect(":memory:")
+        con.execute("CREATE TABLE processados (em TEXT, chamadas_modelo INTEGER)")
+        con.execute("CREATE TABLE meta (chave TEXT PRIMARY KEY, valor TEXT)")
+        con.executemany("INSERT INTO processados VALUES (?, ?)", registos)
+        if aquecido_em:
+            con.execute("INSERT INTO meta VALUES (?, ?)",
+                        (CHAVE_ULTIMO_AQUECIMENTO, aquecido_em))
+        return con
+
+    def test_silencio_longo_aquece(self) -> None:
+        self.assertTrue(deve_aquecer(MINUTOS_ATE_AQUECER))
+        self.assertTrue(deve_aquecer(MINUTOS_ATE_AQUECER + 30))
+
+    def test_cache_ainda_quente_nao_aquece(self) -> None:
+        self.assertFalse(deve_aquecer(0))
+        self.assertFalse(deve_aquecer(MINUTOS_ATE_AQUECER - 1))
+
+    def test_aquece_antes_de_expirar(self) -> None:
+        """O TTL é de 60 minutos: aquecer só aos 60 já era tarde."""
+        self.assertLess(MINUTOS_ATE_AQUECER, 60)
+
+    def test_sem_registo_nenhum_aquece(self) -> None:
+        """Primeiro arranque: não há por onde saber, e a cache está fria."""
+        self.assertTrue(deve_aquecer(None))
+
+    def test_conta_minutos_desde_a_ultima_chamada(self) -> None:
+        con = self._base((("2026-08-31T10:00:00Z", 1),))
+        agora = datetime(2026, 8, 31, 10, 45, 0)
+        self.assertAlmostEqual(minutos_desde_ultima_chamada(con, agora), 45.0)
+
+    def test_ignora_emails_que_nao_chegaram_ao_modelo(self) -> None:
+        """Um email descartado pela triagem não lê a cache, logo não a renova."""
+        con = self._base((
+            ("2026-08-31T10:00:00Z", 1),
+            ("2026-08-31T10:40:00Z", 0),
+        ))
+        agora = datetime(2026, 8, 31, 10, 45, 0)
+        self.assertAlmostEqual(minutos_desde_ultima_chamada(con, agora), 45.0)
+
+    def test_base_vazia_devolve_none(self) -> None:
+        self.assertIsNone(
+            minutos_desde_ultima_chamada(self._base(()), datetime(2026, 8, 31))
+        )
+
+    def test_aquecimento_anterior_conta_como_leitura(self) -> None:
+        """Sem isto, um silêncio longo aquecia a cada passagem do temporizador
+        em vez de a cada 40 minutos -- o custo dos ciclos comia a poupança."""
+        con = self._base((("2026-08-31T10:00:00Z", 1),),
+                         aquecido_em="2026-08-31T10:50:00Z")
+        agora = datetime(2026, 8, 31, 11, 0, 0)
+        self.assertAlmostEqual(minutos_desde_ultima_chamada(con, agora), 10.0)
+        self.assertFalse(deve_aquecer(minutos_desde_ultima_chamada(con, agora)))
+
+    def test_email_real_mais_recente_que_o_aquecimento_manda(self) -> None:
+        con = self._base((("2026-08-31T10:50:00Z", 1),),
+                         aquecido_em="2026-08-31T10:00:00Z")
+        agora = datetime(2026, 8, 31, 11, 0, 0)
+        self.assertAlmostEqual(minutos_desde_ultima_chamada(con, agora), 10.0)
+
+    def test_so_aquecimento_sem_emails_conta(self) -> None:
+        con = self._base((), aquecido_em="2026-08-31T10:30:00Z")
+        agora = datetime(2026, 8, 31, 11, 0, 0)
+        self.assertAlmostEqual(minutos_desde_ultima_chamada(con, agora), 30.0)
+
+    def test_data_ilegivel_devolve_none(self) -> None:
+        con = self._base((("nao-e-uma-data", 1),))
+        self.assertIsNone(minutos_desde_ultima_chamada(con, datetime(2026, 8, 31)))
 
 
 if __name__ == "__main__":

@@ -73,9 +73,9 @@ CI/CD, sem processo permanente, sem framework de agentes. Ver [[technical-decisi
 
 | Componente | Linhas | Nota |
 |---|---|---|
-| `assistente.py` | 2 761 | Todo o caminho de produção |
-| `test_assistente.py` | 2 421 | 241 testes |
-| 11 ferramentas satélite | ~2 265 | Fora do caminho crítico; só o `manutencao.py` escreve |
+| `assistente.py` | 2 854 | Todo o caminho de produção |
+| `test_assistente.py` | 2 490 | 252 testes |
+| 12 ferramentas satélite | ~2 265 | Fora do caminho crítico; só o `manutencao.py` escreve |
 | `knowledge/*.md` | 805 | A base de conhecimento |
 | `eval/casos.json` | 93 casos | Banco de ensaio |
 
@@ -107,9 +107,9 @@ Outlook-Reply-Assistant/
 ├── shopify-app/            ← configuração da app Shopify (scopes)
 ├── docs/                   ← esta knowledge base
 ├── entregas/               ← documentos para o cliente (PDF)
-├── test_assistente.py      ← 241 testes
+├── test_assistente.py      ← 252 testes
 └── {eval,metricas,lacunas,dossie,medir_deriva,reprocessar,
-     exportar,casos_antigos,verificar,verificar_kb,manutencao}.py
+     exportar,casos_antigos,verificar,verificar_kb,manutencao,aquecer}.py
                             ← ferramentas de operação
 ```
 

@@ -196,6 +196,53 @@ na sua duração, está em reaquecer a cache várias vezes por dia sem necessida
 > Este foi um dia atípico, com 6 deploys. Sem eles a fatura teria sido ~$2,41. Para uma linha de
 > base real falta um dia sem deploys.
 
+## Aquecer a cache — o lever que restava
+
+Da segunda auditoria sobrava um número: **$0,875/dia em arranques a frio por expiração de TTL**,
+todos de madrugada (intervalos de 162, 62 e 215 minutos entre emails). Não se resolve com o TTL
+— 1 hora já é o máximo que a API oferece — nem juntando os esquemas, que está provado não dar.
+
+A saída veio de uma propriedade que foi **medida, não assumida**: cada *leitura* renova o TTL.
+No dia auditado houve **5,2 horas seguidas de uso da cache sem uma única escrita**, com
+intervalos internos até 25,6 minutos. Se o TTL contasse desde a escrita, teria expirado aos 60
+minutos e havido nova escrita; não houve.
+
+A partir daí a aritmética decide sozinha:
+
+| | Custo | |
+|---|---|---|
+| Escrever as duas entradas | $0,248 | o que um arranque a frio paga |
+| Ler as duas entradas | **$0,0135** | medido em produção, 31/08/2026 |
+
+**Ler é 18× mais barato do que escrever** — compensa aquecer até 18 vezes para evitar um único
+arranque a frio.
+
+`aquecer.py` faz duas chamadas mínimas (uma por esquema, senão a entrada do dossiê fica de fora)
+com o mesmo `system` e o mesmo `cache_control` de `decidir()` — se o prefixo não fosse idêntico,
+aquecia uma entrada diferente da que a passagem real usa e pagava-se duas vezes sem poupar nada.
+
+> [!NOTE] Não aquece às cegas
+> Olha para o registo e só gasta se houver **40 minutos** de silêncio (o TTL é 60; a folga
+> cobre a latência e a imprecisão do temporizador). De dia, com emails de dez em dez minutos,
+> não faz nada e não custa nada.
+>
+> O temporizador corre de 20 em 20 minutos, não de 40 em 40, para haver margem: as passagens que
+> apanham a cache quente saem sem chamar a API.
+
+O aquecimento regista-se em `meta` (`ultimo-aquecimento`) e conta como leitura para a decisão
+seguinte. Sem isso, um silêncio de três horas voltava a aquecer a cada passagem do temporizador
+em vez de a cada 40 minutos — **pagava-se cinco vezes o que se deve pagar uma**. Foi apanhado
+antes de instalar, não em produção.
+
+Verificado em produção antes de ser agendado: `lido=66822 escrito=0` — leu as duas entradas e
+não escreveu nada, que é exatamente o comportamento que torna isto rentável.
+
+> [!WARNING] A poupança é uma projeção, não uma medição
+> A aritmética por chamada está medida ($0,0135 a ler, $0,248 a escrever), mas quanto isto poupa
+> por dia depende do padrão de tráfego noturno, que varia. Estimativa: **~$0,40/dia (13%)**,
+> partindo dos 3 arranques a frio de 31/08. Confirma-se com `metricas.py` ao fim de alguns dias
+> — não antes.
+
 ## O lever que sobra, e não é técnico
 
 **77% dos emails escalam.** Como cada escalação faz 2 chamadas e gera ~3× mais tokens de saída

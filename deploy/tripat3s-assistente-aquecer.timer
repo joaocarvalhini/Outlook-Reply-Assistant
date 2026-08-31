@@ -1,0 +1,20 @@
+[Unit]
+Description=Aquece a cache do prompt de 20 em 20 minutos (tripat3s)
+Requires=tripat3s-assistente-aquecer.service
+
+[Timer]
+# De 20 em 20 minutos, não de 40 em 40, apesar de o aquecer.py só gastar aos
+# 40 minutos de silêncio. A razão é a folga: com passagens de 40 em 40, um
+# atraso de arranque ou uma chamada lenta podiam deixar a cache passar dos 60
+# minutos de TTL e perder-se a reescrita que isto existe para evitar. As
+# passagens que apanham a cache quente não custam nada -- o aquecer.py olha
+# para o registo e sai sem chamar a API.
+OnBootSec=5min
+OnUnitActiveSec=20min
+
+RandomizedDelaySec=60s
+
+Unit=tripat3s-assistente-aquecer.service
+
+[Install]
+WantedBy=timers.target
