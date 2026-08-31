@@ -25,7 +25,7 @@ flowchart TB
         T4["<b>casos_antigos.py</b><br/>pares reais para ler<br/><i>como se resolvia antes?</i>"]
     end
     subgraph P["PAGO — chamadas reais ao modelo"]
-        T5["<b>eval.py</b><br/>92 casos etiquetados<br/><i>o modelo decide bem?</i>"]
+        T5["<b>eval.py</b><br/>93 casos etiquetados<br/><i>o modelo decide bem?</i>"]
         T6["<b>reprocessar.py</b><br/>decisões passadas<br/><i>a mudança melhorou?</i>"]
         T7["<b>medir_deriva.py</b><br/>vs. resposta real<br/><i>o rascunho é enviável?</i>"]
     end
@@ -74,7 +74,7 @@ python -m unittest test_assistente -q
 
 ## Camada 2 — Banco de ensaio
 
-92 casos etiquetados, com métricas assimétricas. Tem documento próprio:
+93 casos etiquetados, com métricas assimétricas. Tem documento próprio:
 [[evaluation|Banco de ensaio]].
 
 ## Camada 3 — Medição de deriva
@@ -156,7 +156,7 @@ flowchart TD
     B -->|passa| C["eval.py --triagem<br/><i>grátis</i>"]
     B -->|falha| A
     C -->|passa| D["eval.py --casos eval/subset.json<br/><i>23 casos, ~0,30 €</i>"]
-    D -->|passa| E["eval.py completo<br/><i>92 casos, uma vez no fim</i>"]
+    D -->|passa| E["eval.py completo<br/><i>93 casos, uma vez no fim</i>"]
     D -->|falha| A
     E -->|passa| F["commit + deploy"]
     E -->|falha| A
@@ -168,7 +168,7 @@ flowchart TD
 ```
 
 > [!TIP] Subconjunto primeiro, corrida completa uma vez
-> Correr os 92 casos a cada iteração é desperdício. O `eval/subset.json` tem 23 casos
+> Correr os 93 casos a cada iteração é desperdício. O `eval/subset.json` tem 23 casos
 > escolhidos pelos mais delicados (devoluções, garantias, identidade) e dá o sinal em ~⅓ do
 > custo.
 

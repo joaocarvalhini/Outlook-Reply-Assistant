@@ -1409,5 +1409,20 @@
     "expect": "rascunhar",
     "expect_sem_dossie": true,
     "note": "Caso real (Kateryna), confirmado 31/08/2026 a partir de uma edicao do lojista: a cliente tem duas encomendas no fio, mas perguntou so pelo estado da #22379. O rascunho original respondia a isso e voltava a meter o estado da #22378 (ja resolvida numa troca de mensagens anterior), que ninguem pediu. Regra nova no PROMPT (\"Conversa anterior neste fio\"): responder so a encomenda perguntada, nao juntar o estado de outra so porque esta disponivel. Verificacao manual do texto: a resposta deve falar so da #22379, sem mencionar a #22378."
+  },
+  {
+    "id": "elogio-espontaneo-pede-review-trustpilot",
+    "email": {
+      "from": "catia.mendes71@gmail.com",
+      "from_name": "Catia",
+      "subject": "Re: Esta tudo a funcionar como deve ser?",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Ola,\n\nObrigada pelo contacto. Sim, esta tudo a funcionar muito bem, o kit ficou otimo e adorei a vossa loja!\n\nObrigada mais uma vez."
+    },
+    "expect": "rascunhar",
+    "expect_sem_dossie": true,
+    "note": "Caso real (Catia), confirmado pelo lojista 31/08/2026: cliente satisfeita, elogio espontaneo (nao e agradecimento por resolucao de um problema). Regra nova em empresa.md (\"Pedido de review no Trustpilot\"): agradecer e pedir review de 5 estrelas com o link https://pt.trustpilot.com/review/tripat3s.com. Verificacao manual do texto: deve conter o link do Trustpilot."
   }
 ]

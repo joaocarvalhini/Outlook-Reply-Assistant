@@ -39,3 +39,17 @@ Fonte: /pages/termos-e-condicoes, /pages/informacoes-de-contacto, /pages/quem-so
   validar a publicação), não se responde por email com os detalhes: diz-se
   para mandar mensagem ao Instagram da loja (@tripat3sss), que trata de
   tudo por lá. (Confirmado diretamente pelo cliente, 21 de agosto de 2026.)
+
+## Pedido de review no Trustpilot
+
+- Quando o cliente escreve um elogio ou agradecimento espontâneo — não em
+  resposta a um problema que a loja acabou de resolver, mas satisfação geral
+  com o produto ou com a loja — a resposta agradece e pede, de forma simpática
+  e breve, uma review de 5 estrelas no Trustpilot:
+  https://pt.trustpilot.com/review/tripat3s.com
+- Não pedir isto quando o elogio vem a fechar um caso de problema/reclamação
+  resolvido (o cliente agradecer por o assunto ter sido tratado): nesse caso
+  fecha-se a resposta normalmente, sem o pedido de review. O pedido é para
+  satisfação espontânea, não para agradecimentos de resolução de problemas.
+  (Confirmado diretamente pelo lojista, 31 de agosto de 2026, a partir de um
+  caso real.)

@@ -69,7 +69,7 @@ mesmo** (`eval.py:11-23`):
 
 ```mermaid
 flowchart LR
-    A["92 casos<br/>etiquetados"] --> B{"Resultado"}
+    A["93 casos<br/>etiquetados"] --> B{"Resultado"}
     B --> C["<b>Clientes perdidos</b><br/>devia responder,<br/>descartou"]
     B --> D["<b>Recall</b><br/>devia escalar,<br/>escalou?"]
     B --> E["<b>Precisão</b><br/>escalou,<br/>devia?"]
