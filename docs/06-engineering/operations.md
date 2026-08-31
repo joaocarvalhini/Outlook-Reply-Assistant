@@ -36,7 +36,7 @@ flowchart TB
         Q1["<b>verificar.py</b><br/>1 chamada de 1 token"]
     end
     subgraph P["PAGO — chamadas reais"]
-        P1["<b>eval.py</b><br/>86 casos"]
+        P1["<b>eval.py</b><br/>87 casos"]
         P2["<b>reprocessar.py</b><br/>decisões passadas"]
         P3["<b>medir_deriva.py</b><br/>vs. resposta real (sem --fechar-ciclo)"]
         P4["<b>verificar_kb.py</b><br/>1 chamada, a base inteira"]

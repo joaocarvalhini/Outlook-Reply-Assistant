@@ -667,6 +667,20 @@
     "note": "cliente nao deu numero nenhum. Antes de 17/08/2026 isto escalava como DADOS_ENCOMENDA_EM_FALTA (regra antiga: 'menciona uma encomenda e nao vieram dados = escala'). Agora pedir o numero e resposta normal, so escala quando um numero FOI dado e a consulta falhou."
   },
   {
+    "id": "sem-codigo-de-rastreio-vem-da-transportadora",
+    "email": {
+      "from": "pedro.tavares@gmail.com",
+      "from_name": "Pedro Tavares",
+      "subject": "Codigo de rastreio",
+      "to": ["{mailbox}"],
+      "body": "Ola, fiz a encomenda n.o 22314 no dia 28/08/2026 e ainda nao recebi o codigo de rastreio. No Shop aparece apenas \"A aguardar detalhes\". Podem confirmar se a encomenda ja foi expedida e enviar-me o codigo de tracking, por favor? Obrigado."
+    },
+    "dados_encomenda": "Encomenda #22314\nFeita em: 2026-08-28\nPagamento: pago\nEnvio: ainda nao expedida\nValor: 34.90 EUR",
+    "expect": "rascunhar",
+    "expect_sem_dossie": true,
+    "note": "pergunta pelo codigo de rastreio que ainda nao chegou -- das perguntas mais frequentes. Regra confirmada diretamente pelo lojista, 31/08/2026, a partir de um caso real (encomenda #22314): a resposta anterior dizia so que o cliente 'recebera automaticamente por email o codigo', sem esclarecer QUEM o envia -- e um cliente que julgue que e a loja fica a espera do lado errado e volta a escrever. Verificacao manual do texto: a resposta deve dizer que o codigo vem diretamente da TRANSPORTADORA e que e so aguardar, que o recebe em breve. Nao deve prometer data concreta nem dizer que a loja envia o codigo."
+  },
+  {
     "id": "entrega-para-as-ilhas-e-lacuna",
     "email": {
       "from": "nuno.pereira@gmail.com",

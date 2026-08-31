@@ -56,6 +56,29 @@ Fonte: /pages/politica-de-envio, /pages/perguntas-faq
 - O cliente recebe as informações de seguimento por email, para acompanhar o estado
   da entrega.
 
+### Quando o cliente diz que ainda não recebeu o código de rastreio
+
+É das perguntas mais frequentes, e tem uma resposta fixa. **O código de
+rastreio é enviado diretamente pela transportadora ao cliente, não pela
+loja** — dizer isto é o essencial da resposta, porque um cliente que julgue
+que é a loja a enviá-lo continua à espera do lado errado e volta a escrever.
+
+- Diz-se que o código vem **diretamente da transportadora**.
+- Diz-se que é só aguardar, e que o recebe **muito em breve**.
+- Não se promete uma data nem uma hora concretas: "em breve" é o que se pode
+  dizer, e mais do que isso seria inventar.
+- Isto é uma resposta normal e completa — não precisa de consultar nada nem
+  de esperar por ninguém.
+
+(Confirmado diretamente pelo lojista, 31 de agosto de 2026, a partir de um
+caso real em que a resposta dizia só que o cliente "receberá automaticamente
+por email", sem esclarecer que quem envia é a transportadora.)
+
+Se houver dados da encomenda e estes mostrarem que ainda não foi expedida,
+pode dizer-se isso na mesma — é um facto verificado e ajuda o cliente a
+situar-se. O que não pode faltar é a parte de cima: quem envia o código, e
+que é só aguardar.
+
 ## Entrega falhada
 
 - Se o cliente não estiver em casa, a transportadora tenta nova entrega ou deixa
