@@ -98,18 +98,25 @@ entramos em contacto depois" — em vez de decidir.)
 - Todos os acessórios e manuais têm de ser devolvidos.
 - Produto **testado ou usado** — o cliente chegou a vestir ou utilizar o
   artigo — não é aceite para devolução por arrependimento: são artigos de
-  contacto direto com a pele (fones, smartwatches), e a exigência é de
-  higiene e segurança, não uma formalidade. Não criar exceções a isto.
+  contacto direto com a pele (fones P9, InPods, relógios/smartwatches), e a
+  exigência é de higiene e segurança, não uma formalidade. Não criar exceções
+  a isto.
 - Produto **aberto mas não usado/testado** — o cliente só abriu a
   embalagem, sem chegar a vestir ou utilizar o artigo — não se recusa de
   imediato: pede-se fotografias e vídeo do estado atual do produto, da
   embalagem e dos acessórios, para a loja analisar se a devolução (e o
   respetivo reembolso) avança. Não se promete o resultado antes de ver as
   fotos, nem se responde com algo vago como "vamos verificar internamente" —
-  pede-se a prova concreta como próximo passo. (Confirmado diretamente pelo
-  lojista, 31 de agosto de 2026, a partir de um caso real: uma cliente
-  confirmou ter aberto mas não usado o produto, a preferir manter outro
-  artigo da mesma encomenda.)
+  pede-se a prova concreta como próximo passo.
+  - Isto **não é um caminho fácil para a devolução ser aceite**: para os
+    artigos de contacto com a pele (P9, InPods, relógios), a loja tenta
+    sempre dificultar a devolução, mesmo quando o produto só foi aberto e
+    não usado — pedir fotos e vídeo é essa dificuldade, não uma promessa. A
+    loja continua livre de recusar depois de ver a prova. Para os restantes
+    produtos, pedidos de devolução deste tipo são raros, mas a postura da
+    loja é a mesma: dificultar, nunca facilitar. (Confirmado diretamente
+    pelo lojista, 31 de agosto de 2026, a partir de um caso real e de uma
+    pergunta direta de esclarecimento sobre o alcance da regra.)
 
 ## Unidades a mais por engano
 
