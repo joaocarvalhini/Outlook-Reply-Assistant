@@ -60,6 +60,9 @@ from assistente import (
     desembrulhar_formulario_contacto,
     desembrulhar_formulario_devolucao,
     desembrulhar_formularios,
+    ETIQUETAS,
+    ETIQUETA_URGENTE,
+    etiquetas,
     extrair_numero_encomenda,
     extrair_numeros_encomenda,
     gravar_meta,
@@ -1414,8 +1417,12 @@ class GraphFalso:
             raise self._erro_criar_rascunho
         return self._rascunho_id
 
-    def marcar(self, msg: dict, categoria: str) -> None:
-        self.chamadas.append(("marcar", msg["message_id"], categoria))
+    def marcar(self, msg: dict, *categorias: str) -> None:
+        # Uma entrada por categoria, para os testes antigos (que esperam
+        # ("marcar", id, "Precisa de humano")) continuarem a ler-se bem quando
+        # a chamada real leva também o tipo de caso e a urgência.
+        for categoria in categorias:
+            self.chamadas.append(("marcar", msg["message_id"], categoria))
         if self._erro_marcar is not None:
             raise self._erro_marcar
 
@@ -1969,8 +1976,10 @@ class Processar(unittest.TestCase):
         resultado, graph, _ = self._correr(m, cfg(dry_run=False), cliente)
         self.assertEqual(resultado, "escalado")
         self.assertNotIn("criar_rascunho", [c[0] for c in graph.chamadas])
-        self.assertEqual([c for c in graph.chamadas if c[0] == "marcar"],
-                          [("marcar", m["message_id"], "Precisa de humano")])
+        # Além da marca de "precisa de humano", o tipo de caso traduzido para
+        # o lojista ler na lista. Sem urgência: este caso não é urgente.
+        self.assertEqual([c[2] for c in graph.chamadas if c[0] == "marcar"],
+                          ["Precisa de humano", "Falta regra"])
         linha = self._linha(m["message_id"])
         self.assertEqual(linha["dossie_tipo"], "")
         self.assertEqual(linha["lacuna_tema"], "prazo Madeira")
@@ -2415,6 +2424,111 @@ class AnalisarBase(unittest.TestCase):
         analisar_base(cliente, cfg(), "REGRA-MUITO-ESPECIFICA-DE-TESTE")
         self.assertIn("REGRA-MUITO-ESPECIFICA-DE-TESTE",
                        cliente.pedidos[0]["messages"][0]["content"])
+
+
+class Etiquetas(unittest.TestCase):
+    """As etiquetas que o lojista vê na lista de mensagens do Outlook.
+
+    Existem porque, sem elas, todos os casos escalados chegam com a mesma
+    marca e não há por onde decidir qual abrir primeiro.
+    """
+
+    def test_traduz_a_categoria_para_o_que_ha_a_fazer(self) -> None:
+        """"ACAO_SOBRE_ENCOMENDA" não diz nada a quem não escreveu o código."""
+        self.assertEqual(etiquetas("ACAO_SOBRE_ENCOMENDA", "nao"),
+                         ("Ação na encomenda",))
+        self.assertEqual(etiquetas("COMPROMISSO_ANTERIOR", "nao"), ("Já prometido",))
+
+    def test_urgente_acresce_a_do_tipo(self) -> None:
+        self.assertEqual(etiquetas("JULGAMENTO_HUMANO", "sim"),
+                         ("Decisão", "Urgente"))
+
+    def test_urgente_aceita_o_que_o_modelo_costuma_devolver(self) -> None:
+        """O campo é texto livre: o modelo pode responder "sim", "Alto" ou
+        "ALTA". Só estes contam como urgente."""
+        for valor in ("sim", "SIM", " Sim ", "alto", "alta"):
+            self.assertIn(ETIQUETA_URGENTE, etiquetas("JULGAMENTO_HUMANO", valor),
+                          f"{valor!r} devia contar como urgente")
+
+    def test_qualquer_outra_coisa_nao_e_urgente(self) -> None:
+        """Na dúvida, não urgente: uma etiqueta que aparece de mais deixa de
+        querer dizer alguma coisa."""
+        for valor in ("", "nao", "não", "medio", "baixo", "talvez", "true"):
+            self.assertNotIn(ETIQUETA_URGENTE, etiquetas("JULGAMENTO_HUMANO", valor),
+                             f"{valor!r} não devia contar como urgente")
+
+    def test_outro_nao_gera_etiqueta(self) -> None:
+        """Uma etiqueta a dizer "outro" não ajuda a decidir nada."""
+        self.assertEqual(etiquetas("OUTRO", "nao"), ())
+
+    def test_outro_urgente_leva_so_a_de_urgencia(self) -> None:
+        self.assertEqual(etiquetas("OUTRO", "sim"), (ETIQUETA_URGENTE,))
+
+    def test_categoria_desconhecida_nao_rebenta(self) -> None:
+        self.assertEqual(etiquetas("CATEGORIA_QUE_NAO_EXISTE", "nao"), ())
+
+    def test_todas_as_categorias_reais_tem_traducao(self) -> None:
+        """Menos "OUTRO", que é deliberadamente omitida."""
+        sem_traducao = [c for c in CATEGORIAS if c != "OUTRO" and c not in ETIQUETAS]
+        self.assertEqual(sem_traducao, [])
+
+    def test_nenhuma_etiqueta_e_longa_de_mais(self) -> None:
+        """Numa linha do Outlook com três etiquetas, o que é comprido corta."""
+        for nome in [*ETIQUETAS.values(), ETIQUETA_URGENTE]:
+            self.assertLessEqual(len(nome), 20, nome)
+
+
+class MarcarVarias(unittest.TestCase):
+    """O PATCH das categorias manda a lista inteira, por isso marcar duas de
+    cada vez a partir da lista original apagava a primeira."""
+
+    class _Stub:
+        base = "https://graph.example/v1.0/me"
+
+        def __init__(self) -> None:
+            self.pedidos: list[dict] = []
+
+        def _pedir(self, metodo: str, url: str, **kw: object) -> dict:
+            self.pedidos.append(dict(kw.get("json") or {}))  # type: ignore[arg-type]
+            return {}
+
+        marcar = Graph.marcar
+
+    def test_varias_categorias_num_so_pedido(self) -> None:
+        stub = self._Stub()
+        m = {"id": "1", "categorias": []}
+        stub.marcar(m, "Precisa de humano", "Decisão", "Urgente")
+        self.assertEqual(len(stub.pedidos), 1)
+        self.assertEqual(stub.pedidos[0]["categories"],
+                         ["Precisa de humano", "Decisão", "Urgente"])
+
+    def test_preserva_as_que_ja_la_estavam(self) -> None:
+        stub = self._Stub()
+        m = {"id": "1", "categorias": ["Etiqueta do lojista"]}
+        stub.marcar(m, "Decisão")
+        self.assertEqual(stub.pedidos[0]["categories"],
+                         ["Etiqueta do lojista", "Decisão"])
+
+    def test_chamadas_seguidas_nao_se_apagam(self) -> None:
+        """O erro que a assinatura antiga tinha."""
+        stub = self._Stub()
+        m = {"id": "1", "categorias": []}
+        stub.marcar(m, "Precisa de humano")
+        stub.marcar(m, "Urgente")
+        self.assertEqual(stub.pedidos[-1]["categories"],
+                         ["Precisa de humano", "Urgente"])
+
+    def test_nao_repete_o_que_ja_esta(self) -> None:
+        stub = self._Stub()
+        m = {"id": "1", "categorias": ["Decisão"]}
+        stub.marcar(m, "Decisão")
+        self.assertEqual(stub.pedidos, [])
+
+    def test_ignora_vazias(self) -> None:
+        stub = self._Stub()
+        m = {"id": "1", "categorias": []}
+        stub.marcar(m, "Decisão", "")
+        self.assertEqual(stub.pedidos[0]["categories"], ["Decisão"])
 
 
 class SuiteDeTestes(unittest.TestCase):

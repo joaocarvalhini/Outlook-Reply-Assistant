@@ -599,6 +599,44 @@ TIPOS_COMPROMISSO = (
 )
 ESTADOS_COMPROMISSO = ("pendente", "concluido", "cancelado", "desconhecido")
 
+# As categorias acima são para medir; estas são para o lojista ler na lista de
+# mensagens do Outlook. Dizem-lhe o que tem de *fazer*, não porque é que o
+# sistema escalou -- "Já prometido" avisa que alguém anda a cobrar uma promessa,
+# "Decisão" que é preciso julgar. Sem tradução, ficava ACAO_SOBRE_ENCOMENDA a
+# ocupar meia linha.
+ETIQUETAS = {
+    "ACAO_SOBRE_ENCOMENDA": "Ação na encomenda",
+    "COMPROMISSO_ANTERIOR": "Já prometido",
+    "JULGAMENTO_HUMANO": "Decisão",
+    "CONTEXTO_EM_FALTA": "Falta contexto",
+    "DADOS_ENCOMENDA_EM_FALTA": "Falta informação",
+    "LACUNA_DE_CONHECIMENTO": "Falta regra",
+    "IDENTIDADE_NAO_VERIFICADA": "Identidade",
+    "INVENTARIO_INDISPONIVEL": "Stock",
+    # "OUTRO" fica de fora de propósito: uma etiqueta que diz "outro" não ajuda
+    # a decidir nada e só ocupa espaço na linha.
+}
+
+ETIQUETA_URGENTE = "Urgente"
+
+
+def etiquetas(categoria: str, urgencia: str) -> tuple[str, ...]:
+    """As etiquetas a pôr no email, além da que marca "precisa de humano".
+
+    Medido sobre 201 dossiês: 57% eram risco "médio". Uma etiqueta cuja maioria
+    tem o mesmo valor não ajuda a priorizar -- é ruído colorido. Por isso não se
+    mostram três níveis: só aparece a de urgência, e só quando é mesmo, o que
+    nos dados históricos dava cerca de duas vezes por semana. A raridade é o que
+    lhe dá peso.
+    """
+    saida = []
+    nome = ETIQUETAS.get(categoria)
+    if nome:
+        saida.append(nome)
+    if urgencia.strip().lower() in ("sim", "alto", "alta"):
+        saida.append(ETIQUETA_URGENTE)
+    return tuple(saida)
+
 # Um único esquema com todos os campos (dossiê e compromisso incluídos) chegou
 # a 19 propriedades e a API passou a responder "Grammar compilation timed out"
 # de forma consistente — descoberto a meio de uma corrida do eval.py que ficava
@@ -668,6 +706,10 @@ ESQUEMA_NUCLEO = {
         # preenchido, o rascunho é criado à mesma mas o email leva também a
         # categoria de humano — não pode sair como se estivesse completo.
         "por_responder": {"type": "string"},
+        # Urgência: alimenta a etiqueta no Outlook. "sim" só nos casos que não
+        # podem esperar; ver a secção do prompt. Fica no núcleo e não no dossiê
+        # porque a etiqueta tem de existir mesmo quando não há dossiê nenhum.
+        "urgencia": {"type": "string"},
     },
     "required": ["acao", "motivo", "corpo", "categoria"],
     "additionalProperties": False,
@@ -927,6 +969,28 @@ que teria de mudar para este email deixar de precisar de uma pessoa:
 - COMPROMISSO_ANTERIOR — o fio mostra que a loja prometeu algo e o cliente
   pergunta pelo estado ou pela data, que só uma pessoa sabe.
 - OUTRO — nenhuma das anteriores serve de verdade. Usa com parcimónia.
+
+# A urgência
+O campo "urgencia" vira uma etiqueta na caixa de quem revê, para essa pessoa
+saber por onde começar sem abrir nada. Só tem dois valores: "sim" ou "nao".
+
+Pões "sim" **só** quando esperar piora o caso:
+
+- o cliente ameaça queixa formal, Livro de Reclamações, banco ou plataforma de
+  pagamento
+- invoca legislação ou direitos legais
+- já perguntou pelo mesmo assunto três ou mais vezes no fio
+- há uma disputa aberta numa plataforma de pagamento
+- o valor em causa é elevado para esta loja (acima de ~150 EUR)
+
+Em tudo o resto, "nao" — mesmo em casos chatos, mesmo com dinheiro envolvido,
+mesmo quando o cliente está irritado. Um cliente irritado é o normal deste
+trabalho; a etiqueta é para o que não pode esperar.
+
+**Isto só funciona se for raro.** Nos dados históricos desta loja, algo assim
+aparece cerca de duas vezes por semana. Se marcares urgente um caso em cada
+três, a etiqueta deixa de querer dizer alguma coisa e quem revê passa a
+ignorá-la — que é pior do que não existir.
 
 # O cliente não deu o número da encomenda
 Um email pode falar de uma encomenda sem dar o número — "onde está a minha
@@ -1200,6 +1264,11 @@ COLUNAS_NOVAS = (
     ("tokens_cache_leitura", "INTEGER"),
     ("chamadas_modelo", "INTEGER"),
     ("custo_estimado", "REAL"),
+    # Guardado para se poder verificar que a etiqueta continua rara. Se a taxa
+    # de "urgente" subir muito acima do que se via nos dados históricos (~2 por
+    # semana), a etiqueta deixou de querer dizer alguma coisa e o prompt tem de
+    # ser apertado -- ver a secção "A urgência".
+    ("urgencia", "TEXT"),
 )
 
 
@@ -1367,6 +1436,7 @@ def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: 
              dossie_accao: str = "", dossie_risco: str = "",
              dossie_resposta: str = "", dossie_link: str = "",
              por_responder: str = "", rascunho_id: str = "",
+             urgencia: str = "",
              modelo: str = "", uso: dict | None = None) -> None:
     """Guarda a decisão. O corpo fica gravado para a medição de deriva.
 
@@ -1387,9 +1457,9 @@ def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: 
         " dossie_tipo, dossie_resumo, dossie_validacao, dossie_accao, "
         " dossie_risco, dossie_resposta, dossie_link, por_responder, rascunho_id, "
         " modelo, tokens_entrada, tokens_saida, tokens_cache_escrita, "
-        " tokens_cache_leitura, chamadas_modelo, custo_estimado) "
+        " tokens_cache_leitura, chamadas_modelo, custo_estimado, urgencia) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
-        "        ?, ?, ?, ?, ?, ?, ?)",
+        "        ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             msg["message_id"], msg["conversation_id"], msg["assunto"],
             acao, motivo, corpo, agora(),
@@ -1399,6 +1469,7 @@ def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: 
             modelo, u.get("entrada", 0), u.get("saida", 0),
             u.get("cache_escrita", 0), u.get("cache_leitura", 0),
             u.get("chamadas", 0), custo_estimado(modelo, u) if modelo else 0.0,
+            urgencia,
         ),
     )
     if msg["recebido"] > cursor_atual(con):
@@ -2017,14 +2088,27 @@ class Graph:
                 return None
             raise
 
-    def marcar(self, msg: dict, categoria: str) -> None:
-        if categoria in msg["categorias"]:
+    def marcar(self, msg: dict, *categorias: str) -> None:
+        """Acrescenta categorias ao email, sem apagar as que já lá estão.
+
+        Aceita várias e faz um só PATCH: além de poupar chamadas, evita um erro
+        que a versão de uma categoria de cada vez tinha. Como o PATCH manda a
+        lista inteira e `msg["categorias"]` não era atualizado, duas chamadas
+        seguidas mandavam ambas a lista *original* mais a sua — e a segunda
+        apagava a primeira. Nunca deu problema porque só se marcava uma; passou
+        a dar quando se quis marcar o tipo e a urgência.
+        """
+        novas = [c for c in categorias if c and c not in msg["categorias"]]
+        if not novas:
             return
+        atualizadas = [*msg["categorias"], *novas]
         self._pedir(
             "PATCH",
             f"{self.base}/messages/{msg['id']}",
-            json={"categories": [*msg["categorias"], categoria]},
+            json={"categories": atualizadas},
         )
+        # Sem isto, uma chamada seguinte voltaria a partir da lista antiga.
+        msg["categorias"] = atualizadas
 
     def anexos(self, msg: dict) -> list[dict]:
         """Metadados dos anexos, sem o conteúdo — para filtrar antes de gastar
@@ -2325,6 +2409,10 @@ def decidir(
         # e marcar isso não acrescenta nada a quem já vai olhar para o caso.
         "por_responder": (dados.get("por_responder", "")
                           if dados["acao"] == "rascunhar" else ""),
+        # Texto livre validado em código, como as outras classificações: o
+        # modelo pode devolver "alto", "true" ou uma frase, e etiquetas() só
+        # reconhece os valores que sabe.
+        "urgencia": dados.get("urgencia", ""),
         "dossie_tipo": "nenhum",
         "dossie_resumo": "",
         "dossie_validacao": "",
@@ -2627,6 +2715,7 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         "dossie_resposta": decisao["dossie_resposta"] if tem_dossie else "",
         "dossie_link": link_admin(cfg, achado.encomenda) if tem_dossie else "",
         "por_responder": decisao["por_responder"] if cfg.respostas_parciais else "",
+        "urgencia": decisao.get("urgencia", ""),
         # Só os emails que chegaram ao modelo têm custo -- os saltados pela
         # triagem registam-se antes daqui e ficam com tudo a zero, que é o
         # valor certo: não custaram nada.
@@ -2697,7 +2786,11 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         resposta_sugerida = extra["dossie_resposta"].strip()
         if not cfg.dry_run:
             try:
-                graph.marcar(msg, cfg.cat_humano)
+                # Além da marca de "precisa de humano", o tipo de caso e a
+                # urgência: é o que permite decidir por onde começar sem abrir
+                # nada. Vão as três no mesmo PATCH.
+                graph.marcar(msg, cfg.cat_humano,
+                             *etiquetas(extra["categoria"], extra["urgencia"]))
             except Exception as exc:
                 # Ver a nota equivalente no ramo "rascunhar": sem isto, uma
                 # falha aqui derrubava o resto do lote, não só este email.

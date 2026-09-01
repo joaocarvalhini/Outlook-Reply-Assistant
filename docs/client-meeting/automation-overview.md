@@ -42,16 +42,16 @@ flowchart LR
 
 ## 2. O que consegue fazer
 
-| Capacidade | O que faz |
-|---|---|
-| **Triagem** | Descarta newsletters, notificações e ruído antes de tudo o resto |
-| **Identificação** | Procura a encomenda pelo número ou pelo email de quem escreve |
+| Capacidade            | O que faz                                                                                     |
+| --------------------- | --------------------------------------------------------------------------------------------- |
+| **Triagem**           | Descarta newsletters, notificações e ruído antes de tudo o resto                              |
+| **Identificação**     | Procura a encomenda pelo número ou pelo email de quem escreve                                 |
 | **Consulta de dados** | Estado do pagamento, se foi expedida, código de rastreio, data de entrega, prazo de devolução |
-| **Regras da loja** | Aplica as políticas escritas — devoluções, garantias, prazos, trocas |
-| **Escrita** | Redige a resposta no tom da loja, em português |
-| **Rascunhos** | Deixa o texto pronto no Outlook, na conversa certa |
-| **Sinalização** | Marca os casos que precisam de decisão humana, com o motivo |
-| **Fotografias** | Lê imagens que o cliente anexa e usa-as na análise |
+| **Regras da loja**    | Aplica as políticas escritas — devoluções, garantias, prazos, trocas                          |
+| **Escrita**           | Redige a resposta no tom da loja, em português                                                |
+| **Rascunhos**         | Deixa o texto pronto no Outlook, na conversa certa                                            |
+| **Sinalização**       | Marca os casos que precisam de decisão humana, com o motivo                                   |
+| **Fotografias**       | Lê imagens que o cliente anexa e usa-as na análise                                            |
 
 ---
 
