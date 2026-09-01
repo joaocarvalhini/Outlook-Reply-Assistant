@@ -261,6 +261,10 @@ real de produção, 18 de agosto de 2026.)
 - A loja **não emite nem disponibiliza etiqueta de devolução pré-paga**. O
   cliente despacha por conta própria, na transportadora que preferir (CTT ou
   outra) — não é a loja a gerar a etiqueta.
+  - Isto é sobre devolução por arrependimento. Numa substituição por
+    **defeito confirmado**, a loja envia um envelope DPD pré-endereçado sem
+    custo — ver "Devolver o artigo antigo não é sempre exigido" em
+    `provas-e-defeitos.md`.
 - Não é possível entregar a devolução diretamente ao estafeta da DPD no
   momento de uma entrega — tem de ser um envio separado, para ficar
   devidamente registado.

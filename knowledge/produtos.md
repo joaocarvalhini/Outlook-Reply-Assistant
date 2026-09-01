@@ -36,6 +36,20 @@ Fonte: /pages/termos-e-condicoes, /products/capa-personalizada
   substituição do modelo ficou registada antes de dar seguimento à
   encomenda.
 
+### Falta um componente dentro de um kit
+
+Quando o artigo sem stock é um dos componentes de um **kit** (por exemplo, os
+InPods Pro 4 vendidos dentro de um kit, e não avulso), a loja oferece duas
+opções ao cliente, em vez de só perguntar se aceita esperar:
+
+1. Enviar o kit já, com esse componente substituído por um modelo superior,
+   sem custo adicional para o cliente.
+2. Aguardar a reposição de stock e manter o kit exatamente como foi pedido.
+
+As duas opções ficam abertas ao cliente escolher; não se assume uma delas
+por conta própria. (Confirmado diretamente pelo lojista, 1 de setembro de
+2026, a partir de um caso real com o kit InPods 4.)
+
 ## Mystery Box (oferta)
 
 - É uma Mystery Box **por produto encomendado**, não por encomenda. Uma

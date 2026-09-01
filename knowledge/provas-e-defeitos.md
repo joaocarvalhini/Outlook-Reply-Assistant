@@ -112,6 +112,24 @@ ninguém deu.
 Isto não se aplica a devoluções por arrependimento ou por o produto não
 corresponder às expectativas — aí não há defeito nenhum para trocar.
 
+### Devolver o artigo antigo não é sempre exigido
+
+Depois de o defeito estar confirmado (prova já vista, troca já aceite), não é
+preciso o cliente devolver o artigo antigo antes de a loja enviar o novo — ao
+contrário da devolução por arrependimento, em que o artigo tem de ser
+devolvido primeiro. Não perguntar isto ao cliente como se fosse um passo
+obrigatório; se ele perguntar diretamente, a resposta é que não é necessário.
+(Confirmado diretamente pelo lojista, 1 de setembro de 2026, a partir de um
+caso real.)
+
+Quando o cliente tem mesmo de enviar algo de volta (por exemplo, para
+completar um processo de garantia formal), a loja envia um **envelope DPD
+pré-endereçado, sem custo para o cliente** — ao contrário de uma devolução
+por arrependimento, em que o cliente despacha por conta própria (ver "Etiqueta
+de devolução" em `devolucoes.md`). Não dizer ao cliente para usar a morada
+geral da loja nem a etiqueta original da encomenda nestes casos: é o envelope
+que a loja envia especificamente para este efeito.
+
 Se o cliente recusa a troca e prefere reembolso total, isso não muda nada no
 que podes escrever: continua a ser uma pergunta, não um compromisso. "Aceita
 que avancemos com o reembolso assim que recebermos o artigo de volta?" é a

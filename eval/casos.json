@@ -1424,5 +1424,53 @@
     "expect": "rascunhar",
     "expect_sem_dossie": true,
     "note": "Caso real (Catia), confirmado pelo lojista 31/08/2026: cliente satisfeita, elogio espontaneo (nao e agradecimento por resolucao de um problema). Regra nova em empresa.md (\"Pedido de review no Trustpilot\"): agradecer e pedir review de 5 estrelas com o link https://pt.trustpilot.com/review/tripat3s.com. Verificacao manual do texto: deve conter o link do Trustpilot."
+  },
+  {
+    "id": "defeito-confirmado-nao-precisa-devolver-artigo-antigo",
+    "email": {
+      "from": "joana.pereira44@gmail.com",
+      "from_name": "Joana",
+      "subject": "Re: Reclamação Encomenda #21522",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nAntes de enviarem a nova capa, e preciso de devolver a que veio danificada?\n\nObrigada."
+    },
+    "historico": "Conversa anterior neste fio: cliente enviou fotos da capa danificada, a loja confirmou o defeito e aceitou substituir sem custo.",
+    "expect": "rascunhar",
+    "expect_sem_dossie": true,
+    "note": "Caso real (Joana), confirmado pelo lojista 01/09/2026: depois de o defeito estar confirmado e a troca aceite, nao e preciso devolver o artigo antigo antes do envio do novo. Regra nova em provas-e-defeitos.md (\"Devolver o artigo antigo nao e sempre exigido\"). Verificacao manual do texto: a resposta deve dizer claramente que nao e necessario devolver, sem pedir mais provas nem hesitar."
+  },
+  {
+    "id": "defeito-confirmado-envelope-dpd-sem-custo",
+    "email": {
+      "from": "joana.pereira44@gmail.com",
+      "from_name": "Joana",
+      "subject": "Re: Reclamação Encomenda #21522",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nEntao como e que envio a capa antiga de volta? Pago eu o envio?\n\nObrigada."
+    },
+    "historico": "Conversa anterior neste fio: defeito confirmado por fotos, troca aceite pela loja, e a loja ja disse que precisa de receber a capa antiga de volta.",
+    "expect": "rascunhar",
+    "expect_sem_dossie": true,
+    "note": "Caso real (Joana), confirmado pelo lojista 01/09/2026: numa substituicao por defeito confirmado, a loja envia um envelope DPD pre-enderecado sem custo para o cliente -- ao contrario da devolucao por arrependimento (cliente despacha por conta propria, ver devolucoes.md \"Etiqueta de devolucao\"). Verificacao manual do texto: nao deve dizer para o cliente pagar o envio nem usar a morada geral da loja/etiqueta original -- deve mencionar o envelope enviado pela loja."
+  },
+  {
+    "id": "kit-sem-stock-de-um-componente-oferece-duas-opcoes",
+    "email": {
+      "from": "crislane.souza9@gmail.com",
+      "from_name": "Crislane",
+      "subject": "Re: Encomenda #22367",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nEntao o kit InPods 4 tambem nao tem stock? E agora como fica a minha troca?\n\nObrigada."
+    },
+    "historico": "Conversa anterior neste fio: cliente pediu para trocar os InPods Pro 4 (sem stock) pelo kit InPods 4, e a loja informou que o kit tambem nao tem os InPods Pro 4 em stock, por serem o mesmo componente.",
+    "expect": "rascunhar",
+    "expect_sem_dossie": true,
+    "note": "Caso real (Crislane), confirmado pelo lojista 01/09/2026: quando falta um componente dentro de um kit, a loja oferece duas opcoes -- upgrade gratis para outro modelo, ou aguardar reposicao mantendo o pedido original. Regra nova em produtos.md (\"Falta um componente dentro de um kit\"). Verificacao manual do texto: deve apresentar as duas opcoes claramente, sem assumir nenhuma por conta propria."
   }
 ]
