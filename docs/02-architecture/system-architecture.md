@@ -98,7 +98,7 @@ nem reconexões a gerir. Um *crash* custa 2 minutos.
 
 ### 2. Monólito no caminho de produção, satélites à volta
 
-`assistente.py` (2 841 linhas) contém **todo** o caminho crítico. As 11 ferramentas de operação
+`assistente.py` (2 841 linhas) contém **todo** o caminho crítico. As 12 ferramentas de operação
 importam-no como módulo; nenhuma corre no caminho de produção (o timer só chama `assistente.py`).
 Nove só leem; `manutencao.py` (via cron) e `medir_deriva.py --fechar-ciclo` escrevem no registo
 local — nunca na caixa nem em qualquer serviço externo.

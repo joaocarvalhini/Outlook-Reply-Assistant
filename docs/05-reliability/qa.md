@@ -19,7 +19,7 @@ Cada uma responde a uma pergunta diferente e tem um custo diferente.
 ```mermaid
 flowchart TB
     subgraph G["GRÁTIS — sem chamadas ao modelo"]
-        T1["<b>test_assistente.py</b><br/>275 testes unitários<br/><i>o código faz o que diz?</i><br/>~1,7 s"]
+        T1["<b>test_assistente.py</b><br/>287 testes unitários<br/><i>o código faz o que diz?</i><br/>~1,7 s"]
         T2["<b>eval.py --triagem</b><br/>só regras determinísticas<br/><i>a triagem está certa?</i><br/>instantâneo"]
         T3["<b>verificar.py</b><br/>pré-instalação<br/><i>está seguro para ligar?</i>"]
         T4["<b>casos_antigos.py</b><br/>pares reais para ler<br/><i>como se resolvia antes?</i>"]
@@ -41,7 +41,7 @@ flowchart TB
 
 ## Camada 1 — Testes unitários
 
-**Implemented** — 275 testes, `unittest` da biblioteca padrão, **zero dependências de teste**.
+**Implemented** — 287 testes, `unittest` da biblioteca padrão, **zero dependências de teste**.
 
 | Área | Classes | Cobre |
 |---|---|---|

@@ -22,6 +22,14 @@ from unittest.mock import patch
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from aprender import (
+    LIMIAR_DIVERGENCIA,
+    LIMIAR_REESCRITA,
+    agrupar,
+    classificar,
+    mesmo_padrao,
+    texto_acrescentado,
+)
 from aquecer import (
     CHAVE_ULTIMO_AQUECIMENTO,
     MINUTOS_ATE_AQUECER,
@@ -2534,6 +2542,90 @@ class MarcarVarias(unittest.TestCase):
         m = {"id": "1", "categorias": []}
         stub.marcar(m, "Decisão", "")
         self.assertEqual(stub.pedidos[0]["categories"], ["Decisão"])
+
+
+class Aprender(unittest.TestCase):
+    """As partes do aprender.py que decidem o que chega à lista do lojista.
+
+    O valor da ferramenta está em não mostrar ruído: se agrupar mal, uma lista
+    de quinze divergências não diz por onde começar, que é o problema que ela
+    existe para resolver.
+    """
+
+    def test_extrai_so_o_que_foi_acrescentado(self) -> None:
+        original = "Olá.\n\nVamos verificar internamente.\n\nCumprimentos"
+        final = "Olá.\n\nVamos verificar internamente.\n\nLeva até 10 dias úteis.\n\nCumprimentos"
+        self.assertIn("10 dias úteis", texto_acrescentado(original, final))
+
+    def test_texto_igual_nao_acrescenta_nada(self) -> None:
+        igual = "Olá.\n\nA sua encomenda foi expedida."
+        self.assertEqual(texto_acrescentado(igual, igual).strip(), "")
+
+    def test_reescritas_ficam_para_o_limiar(self) -> None:
+        """O diff sozinho não distingue uma reescrita de um acrescento: o
+        difflib pode devolver uma frase reescrita como inserção. Quem trata
+        disso é o LIMIAR_REESCRITA, que abaixo de certa semelhança mostra o
+        texto novo inteiro em vez do diff. Este teste trava a relação entre os
+        dois limiares -- uma reescrita tem de ser sempre também uma
+        divergência, senão nunca chega a ser olhada."""
+        self.assertLess(LIMIAR_REESCRITA, LIMIAR_DIVERGENCIA)
+
+    def test_texto_removido_nao_conta_como_acrescento(self) -> None:
+        """Interessa o que a pessoa achou que faltava, não o que cortou."""
+        original = "Olá.\n\nParágrafo a mais.\n\nCumprimentos"
+        final = "Olá.\n\nCumprimentos"
+        self.assertEqual(texto_acrescentado(original, final).strip(), "")
+
+    def test_mesmo_padrao_apesar_de_nomes_diferentes(self) -> None:
+        """Dois clientes, o mesmo acrescento: é um padrão, não dois casos."""
+        self.assertTrue(mesmo_padrao(
+            "Olá Maria, o reembolso leva até 10 dias úteis a chegar à conta.",
+            "Olá João, o reembolso leva até 10 dias úteis a chegar à conta.",
+        ))
+
+    def test_assuntos_diferentes_nao_sao_o_mesmo_padrao(self) -> None:
+        self.assertFalse(mesmo_padrao(
+            "O reembolso leva até 10 dias úteis a chegar à conta.",
+            "Pode enviar a capa para a morada do envelope da transportadora.",
+        ))
+
+    def test_agrupa_repeticoes_e_ordena_pelas_mais_vistas(self) -> None:
+        casos = [
+            {"acrescentado": "o reembolso leva até 10 dias úteis"},
+            {"acrescentado": "pode enviar para a morada do envelope"},
+            {"acrescentado": "o reembolso leva até 10 dias úteis a chegar"},
+            {"acrescentado": "o reembolso leva até 10 dias uteis"},
+        ]
+        grupos = agrupar(casos)
+        self.assertEqual([len(g) for g in grupos], [3, 1])
+
+    def test_caso_unico_continua_a_aparecer(self) -> None:
+        """Visto uma vez pode ser ruído, mas esconder não é a solução."""
+        grupos = agrupar([{"acrescentado": "algo que só aconteceu uma vez"}])
+        self.assertEqual(len(grupos), 1)
+
+    def test_sem_casos_nao_ha_grupos(self) -> None:
+        self.assertEqual(agrupar([]), [])
+
+    def test_classificar_sem_grupos_nao_chama_o_modelo(self) -> None:
+        cliente = ClienteFalso({"grupos": []})
+        self.assertEqual(classificar(cliente, cfg(), "# base", []), [])
+        self.assertEqual(cliente.pedidos, [])
+
+    def test_classificar_devolve_o_veredito_por_indice(self) -> None:
+        achado = {"grupos": [{"indice": 0, "veredito": "saliencia",
+                              "onde": "Reembolso", "porque": "já lá está"}]}
+        cliente = ClienteFalso(achado)
+        saida = classificar(cliente, cfg(), "# base", [[{"acrescentado": "x"}]])
+        self.assertEqual(saida, achado["grupos"])
+
+    def test_classificar_leva_a_base_e_os_acrescentos(self) -> None:
+        cliente = ClienteFalso({"grupos": []})
+        classificar(cliente, cfg(), "REGRA-DE-TESTE",
+                    [[{"acrescentado": "ACRESCENTO-DE-TESTE"}]])
+        conteudo = cliente.pedidos[0]["messages"][0]["content"]
+        self.assertIn("REGRA-DE-TESTE", conteudo)
+        self.assertIn("ACRESCENTO-DE-TESTE", conteudo)
 
 
 class SuiteDeTestes(unittest.TestCase):
