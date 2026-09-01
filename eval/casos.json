@@ -1456,5 +1456,35 @@
     "historico": "Conversa anterior neste fio: cliente pediu para trocar os InPods Pro 4 (sem stock) pelo kit InPods 4, e a loja informou que o kit tambem nao tem os InPods Pro 4 em stock, por serem o mesmo componente.",
     "expect": "rascunhar",
     "note": "Caso real (Crislane), confirmado pelo lojista 01/09/2026: quando falta um componente dentro de um kit, a loja oferece duas opcoes -- upgrade gratis para outro modelo, ou aguardar reposicao mantendo o pedido original. Regra nova em produtos.md (\"Falta um componente dentro de um kit\"). Verificacao manual do texto: deve apresentar as duas opcoes claramente, sem assumir nenhuma por conta propria."
+  },
+  {
+    "id": "recusa-por-mal-entendido-explica-em-vez-de-descer",
+    "email": {
+      "from": "gabriel.ferreira88@gmail.com",
+      "from_name": "Gabriel",
+      "subject": "Re: Um envio da encomenda #22176 foi entregue",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Para que eu vou ficar com uns fones que nao funcionam, prefiro o reembolso total"
+    },
+    "historico": "Conversa anterior neste fio: cliente relatou que ambos os fones tinham defeito de ligacao, a loja pediu video, o defeito ficou confirmado, e a loja ofereceu a troca dos fones por UM PAR NOVO, sem qualquer custo.",
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "note": "Caso real (Gabriel, encomenda #22176), confirmado pelo lojista 01/09/2026. O cliente recusa a troca com um argumento que mostra que a percebeu mal: fala em ficar com uns fones que nao funcionam, quando lhe foi oferecido um PAR NOVO. Na altura o assistente leu a recusa a letra e desceu para o reembolso parcial; o lojista corrigiu a mao, repetindo a oferta por outras palavras. Regra nova no PROMPT (Conversa anterior neste fio): comparar o argumento da recusa com o que foi mesmo oferecido, e reexplicar em vez de passar a solucao seguinte. Verificacao manual do texto: deve esclarecer que os fones sao novos, nao os avariados, e nao deve propor reembolso parcial nem total."
+  },
+  {
+    "id": "p9-vem-na-embalagem-da-loja",
+    "email": {
+      "from": "rita.almeida4@gmail.com",
+      "from_name": "Rita",
+      "subject": "Duvida antes de comprar",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, os fones P9 vem na caixa branca original da Apple ou noutra embalagem? Obrigada"
+    },
+    "expect": "rascunhar",
+    "note": "Pergunta real que escalou por falta de regra (vista pelo lacunas.py). Confirmado pelo lojista 01/09/2026: os P9 vem na embalagem da propria loja, nao na caixa branca da Apple. Regra em produtos-detalhe.md. Verificacao manual do texto: deve dizer diretamente que vem na embalagem da loja, sem escalar e sem rodeios."
   }
 ]

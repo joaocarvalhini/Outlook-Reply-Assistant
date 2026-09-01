@@ -31,6 +31,11 @@ técnico escrito pelo próprio lojista no histórico de apoio ao cliente.
   não é uma definição por corrigir — é assim que o produto funciona.
   (Confirmado diretamente pela loja, 17 de agosto de 2026.)
 - Nos InPods 4, o som que a caixa emite ao ser aberta não pode ser desativado.
+- Os fones P9 vêm na **embalagem da própria loja**, não na caixa branca da
+  Apple. Quando o cliente pergunta antes de comprar, responde-se isto
+  diretamente — não é motivo para escalar. (Confirmado diretamente pelo
+  lojista, 1 de setembro de 2026, a partir de uma pergunta real que tinha
+  escalado por falta de regra.)
 - A deteção automática do ouvido pode fazer a música parar sozinha. Desativa-se
   nas definições de Bluetooth dos fones, e é a primeira coisa a sugerir quando
   o cliente relata pausas inesperadas.
