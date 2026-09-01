@@ -214,7 +214,7 @@ clientes de uma loja online usa Gmail.
 | `DB_FILE` | `assistente.db` | Cursor e registo de decisões |
 | `MAX_BODY_CHARS` | `4000` | Corte do corpo enviado ao modelo |
 | `THREAD_MESSAGES` | `8` | Mensagens anteriores do fio dadas ao modelo |
-| `THREAD_CHARS` | `400` | Corte de cada mensagem do fio |
+| `THREAD_CHARS` | `800` | Corte de cada mensagem do fio (depois de tirada a citação) |
 | `ENABLE_ORDER_IDENTITY_RESOLUTION` | `true` | Resolução da encomenda por níveis de certeza |
 | `ENABLE_PRE_DRAFTS` | `true` | Preparar o caso quando escala um pedido acionável |
 | `ENABLE_COMMITMENT_REGISTRY` | `true` | Registar e lembrar promessas feitas ao cliente |

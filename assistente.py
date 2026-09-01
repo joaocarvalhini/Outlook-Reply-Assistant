@@ -136,7 +136,11 @@ def carregar_config(dry_run_flag: bool | None) -> Config:
         # Oito mensagens cobrem os fios reais que vimos, incluindo um de 18 que
         # se arrastou 11 dias: o que interessa é o fim, não o início.
         fio_mensagens=int(os.environ.get("THREAD_MESSAGES", "8")),
-        fio_chars=int(os.environ.get("THREAD_CHARS", "400")),
+        # 800 e não 400: com o bodyPreview (255 fixos) o 400 nunca chegava a
+        # aplicar-se. Escolhido sobre a distribuição real de 93 mensagens --
+        # a 255 cortavam-se 45%, a 800 cortam-se 6,5%, por mais ~29 tokens
+        # por mensagem. Ver Graph.historico().
+        fio_chars=int(os.environ.get("THREAD_CHARS", "800")),
         dry_run=dry if dry_run_flag is None else dry_run_flag,
         empresa=os.environ.get("COMPANY_NAME", "a loja").strip(),
         assinatura=os.environ.get("SIGNATURE", "tripat3s").strip(),
@@ -1922,8 +1926,21 @@ class Graph:
         e é indecifrável — o contexto está nas mensagens de cima, e o
         cortar_citacao() deitou-as fora de propósito para poupar tokens.
 
-        Só o bodyPreview, que o Graph já devolve truncado: chega para perceber o
-        caso e não multiplica o custo da passagem pelo tamanho do fio.
+        Lê o "body" e não o "bodyPreview". O bodyPreview parecia a escolha
+        económica, mas o Graph corta-o em **255 caracteres fixos**, e isso
+        acontecia antes de o THREAD_CHARS sequer se aplicar -- era configuração
+        morta. Medido a 01/09/2026 sobre 80 mensagens reais: 78 batiam no
+        limite, e **as 37 da própria loja batiam todas**. O modelo via o fio
+        inteiro por uma frincha, e mensagens da loja com várias opções chegavam
+        cortadas a meio da primeira.
+
+        Custou escalações: vários casos de CONTEXTO_EM_FALTA dizem
+        explicitamente "mensagem da loja cortada" ou "cliente escolheu opção 3
+        de mensagem cortada".
+
+        O cortar_citacao() é que faz o trabalho de poupança -- deita fora a
+        conversa citada, que é a parte volumosa. Medido em 93 mensagens reais:
+        mediana de 226 caracteres depois de limpa, p95 de 839.
         """
         # O $orderby combinado com o filtro por conversationId é recusado pelo
         # Graph com InefficientFilter. Ordena-se aqui.
@@ -1932,7 +1949,7 @@ class Graph:
             f"{self.base}/messages",
             params={
                 "$filter": f"conversationId eq '{msg['conversation_id']}'",
-                "$select": "internetMessageId,from,receivedDateTime,bodyPreview",
+                "$select": "internetMessageId,from,receivedDateTime,body",
                 "$top": str(max(quantas * 2, 10)),
             },
         )
@@ -1946,10 +1963,12 @@ class Graph:
             {
                 "de": str((m.get("from") or {}).get("emailAddress", {}).get("address", "")).lower(),
                 "em": str(m.get("receivedDateTime", ""))[:16].replace("T", " "),
-                # O bodyPreview traz a citação colada a seguir ao texto novo. Sem
+                # O corpo traz a citação colada a seguir ao texto novo. Sem
                 # cortar, uma resposta de quatro palavras gastava o orçamento
                 # todo a repetir mensagens que já estão noutras linhas do fio.
-                "texto": cortar_citacao(para_texto(str(m.get("bodyPreview") or "")))[:max_chars],
+                "texto": cortar_citacao(
+                    para_texto(str((m.get("body") or {}).get("content", "")))
+                )[:max_chars],
             }
             for m in anteriores[-quantas:]
         ]

@@ -2417,6 +2417,98 @@ class AnalisarBase(unittest.TestCase):
                        cliente.pedidos[0]["messages"][0]["content"])
 
 
+class SuiteDeTestes(unittest.TestCase):
+    """Guarda contra um modo de falha silencioso deste próprio ficheiro."""
+
+    def test_nao_ha_classes_de_teste_com_nome_repetido(self) -> None:
+        """Duas classes com o mesmo nome: a segunda apaga a primeira e os
+        testes dela desaparecem sem erro nenhum. Aconteceu a 01/09/2026 --
+        uma classe nova chamada HistoricoDoFio apagou 8 testes existentes, e
+        só se notou porque o total desceu quando devia ter subido."""
+        nomes = re.findall(r"^class (\w+)\(unittest\.TestCase\)",
+                           Path(__file__).read_text(encoding="utf-8"), re.M)
+        repetidos = {n for n in nomes if nomes.count(n) > 1}
+        self.assertEqual(repetidos, set(), f"classes de teste repetidas: {repetidos}")
+
+
+class GraphHistorico(unittest.TestCase):
+    """O Graph.historico real, que o GraphFalso substitui por um dublê e por
+    isso nunca era exercitado.
+
+    Nome distinto de HistoricoDoFio de propósito: essa testa o
+    resumir_historico(), e duas classes com o mesmo nome no mesmo módulo
+    fazem a segunda apagar a primeira em silêncio.
+
+    Existe porque o bodyPreview cortava tudo a 255 caracteres fixos, antes de
+    o THREAD_CHARS se aplicar. Medido a 01/09/2026: 78 de 80 mensagens batiam
+    no limite, e as 37 da própria loja batiam todas. Estes testes travam a
+    volta atrás.
+    """
+
+    class _Stub:
+        base = "https://graph.example/v1.0/me"
+
+        def __init__(self, mensagens: list[dict]) -> None:
+            self._mensagens = mensagens
+            self.params: dict = {}
+
+        def _pedir(self, metodo: str, url: str, **kw: object) -> dict:
+            self.params = dict(kw.get("params") or {})  # type: ignore[arg-type]
+            return {"value": self._mensagens}
+
+        historico = Graph.historico
+
+    @staticmethod
+    def _msg(texto: str, mid: str = "<outra@x>", de: str = "cliente@example.com") -> dict:
+        return {
+            "internetMessageId": mid,
+            "from": {"emailAddress": {"address": de}},
+            "receivedDateTime": "2026-09-01T10:00:00Z",
+            "body": {"content": texto},
+        }
+
+    def _correr(self, mensagens: list[dict], max_chars: int = 800) -> tuple:
+        stub = self._Stub(mensagens)
+        saida = stub.historico({"conversation_id": "c1", "message_id": "<eu@x>"},
+                               8, max_chars)
+        return stub, saida
+
+    def test_pede_o_corpo_e_nao_o_bodypreview(self) -> None:
+        """O bodyPreview vem cortado a 255 pelo Graph -- pedir isso era perder
+        o fio a meio de uma frase, e nenhum THREAD_CHARS o recuperava."""
+        stub, _ = self._correr([self._msg("olá")])
+        selecionado = stub.params["$select"]
+        self.assertIn("body", selecionado)
+        self.assertNotIn("bodyPreview", selecionado)
+
+    def test_le_o_texto_de_dentro_do_corpo(self) -> None:
+        _, saida = self._correr([self._msg("<p>Temos duas opções para si</p>")])
+        self.assertEqual(saida[0]["texto"], "Temos duas opções para si")
+
+    def test_texto_longo_sobrevive_ao_limite_de_255(self) -> None:
+        """O caso que motivou a mudança: uma mensagem da loja com opções."""
+        longo = "A" * 600
+        _, saida = self._correr([self._msg(longo)])
+        self.assertEqual(len(saida[0]["texto"]), 600)
+
+    def test_respeita_o_limite_pedido(self) -> None:
+        _, saida = self._correr([self._msg("B" * 900)], max_chars=800)
+        self.assertEqual(len(saida[0]["texto"]), 800)
+
+    def test_corpo_em_falta_nao_rebenta(self) -> None:
+        sem_corpo = self._msg("x")
+        del sem_corpo["body"]
+        _, saida = self._correr([sem_corpo])
+        self.assertEqual(saida[0]["texto"], "")
+
+    def test_exclui_a_propria_mensagem(self) -> None:
+        _, saida = self._correr([
+            self._msg("do fio", mid="<outra@x>"),
+            self._msg("sou eu", mid="<eu@x>"),
+        ])
+        self.assertEqual([m["texto"] for m in saida], ["do fio"])
+
+
 class Aquecer(unittest.TestCase):
     """A decisão de aquecer ou não é o que faz o aquecedor valer a pena: se
     aquecesse sempre, o custo dos ciclos comia a poupança das reescritas."""

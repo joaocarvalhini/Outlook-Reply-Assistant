@@ -144,7 +144,7 @@ Ver [[data-flow|Fluxo de dados]].
 |---|---|---|
 | `novas()` | `GET /mailFolders/inbox/messages` | Lote de 25, filtro por cursor |
 | `detalhe()` | `GET /messages/{id}` | Cabeçalhos + corpo |
-| `historico()` | `GET /messages` (por `conversationId`) | Fio, só `bodyPreview` |
+| `historico()` | `GET /messages` (por `conversationId`) | Fio, `body` sem a citação |
 | `anexos()` | `GET /messages/{id}/attachments` | Metadados, sem conteúdo |
 | `conteudo_anexo()` | `GET …/$value` | Bytes, só após aprovação |
 | `criar_rascunho()` | `POST …/createReply` | Rascunho encadeado |

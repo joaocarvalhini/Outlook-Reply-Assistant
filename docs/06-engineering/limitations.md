@@ -64,7 +64,21 @@ Sem `read_products`, qualquer pergunta sobre stock ou reposição escala em
 | Limitação | Consequência |
 |---|---|
 | `$orderby` + filtro por `conversationId` é recusado | Ordenação do fio feita em Python |
-| `bodyPreview` vem truncado | O fio tem detalhe limitado por construção |
+| ~~`bodyPreview` vem truncado~~ | ✅ **Deixou de se aplicar a 01/09/2026** — ver abaixo |
+
+> [!WARNING] Esta limitação era autoinfligida, e custou escalações
+> O `bodyPreview` não vem "truncado" por acaso: o Graph corta-o em **255 caracteres fixos**, e
+> isso acontecia *antes* de o `THREAD_CHARS` se aplicar — a definição era letra morta. Medido a
+> 01/09/2026 sobre 80 mensagens reais: **78 batiam no limite, e as 37 da própria loja batiam
+> todas**. O modelo lia o fio inteiro por uma frincha de 255 caracteres.
+>
+> Custou escalações reais. Vários casos de `CONTEXTO_EM_FALTA` dizem-no por palavras:
+> *"mensagem da loja sobre falha de stock ficou cortada"*, *"cliente escolheu opção 3 de mensagem
+> cortada da loja"*.
+>
+> Passou a ler-se o `body`, com a citação cortada em Python (que é onde estava a poupança real) e
+> truncagem em `THREAD_CHARS`, agora 800. Sobre a distribuição real de 93 mensagens: a 255
+> cortavam-se 45%, a 800 cortam-se 6,5%, por mais ~29 tokens por mensagem.
 
 ---
 

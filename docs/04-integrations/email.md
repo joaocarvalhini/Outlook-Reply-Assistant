@@ -64,7 +64,7 @@ O próprio ficheiro documenta a sua razão de existir:
 |---|---|---|---|
 | Listar novas | `GET /mailFolders/inbox/messages` | `CAMPOS_LISTA` | `$top=25`, filtro por cursor, ordem asc |
 | Detalhe | `GET /messages/{id}` | `internetMessageHeaders,body` | Só quando passa a triagem |
-| Fio | `GET /messages` | `bodyPreview` + remetente | Filtro por `conversationId` |
+| Fio | `GET /messages` | `body` + remetente | Filtro por `conversationId`; corta a citação e trunca em `THREAD_CHARS` |
 | Anexos (meta) | `GET /messages/{id}/attachments` | `id,name,contentType,size,isInline` | Sem conteúdo |
 | Anexo (bytes) | `GET …/attachments/{id}/$value` | — | Só após aprovação pelos metadados |
 | Criar rascunho | `POST /messages/{id}/createReply` | — | Encadeado na conversa |
