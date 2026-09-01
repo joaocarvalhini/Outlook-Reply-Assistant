@@ -506,7 +506,6 @@
     "dados_encomenda": "Encomenda #10482\nFeita em: 2026-08-14\nPagamento: pago\nEnvio: ainda não expedida\nValor: 49.90 EUR",
     "expect": "escalar",
     "expect_categoria": "ACAO_SOBRE_ENCOMENDA",
-    "expect_dossie": "cancelamento",
     "note": "escalar nao e despachar: a decisao continua a ser humana, mas o caso vai preparado com o que foi confirmado e a resposta ja redigida"
   },
   {
@@ -522,8 +521,8 @@
     },
     "expect": "escalar",
     "expect_categoria": "LACUNA_DE_CONHECIMENTO",
-    "expect_sem_dossie": true,
-    "note": "nao ha nada a preparar quando o proprio assistente nao sabe a resposta; preparar seria inventar"
+    "note": "nao ha nada a preparar quando o proprio assistente nao sabe a resposta; preparar seria inventar",
+    "expect_sem_corpo": true
   },
   {
     "id": "identidade-por-confirmar-nao-prepara-dossie",
@@ -539,8 +538,8 @@
     "aviso_identidade": "Existe uma encomenda com o número indicado, mas não foi possível confirmar que pertence a quem escreveu: o email do remetente não é o da compra e não há outro indício que ligue os dois. Não reveles nada sobre essa encomenda. Categoria: IDENTIDADE_NAO_VERIFICADA.",
     "expect": "escalar",
     "expect_categoria": "IDENTIDADE_NAO_VERIFICADA",
-    "expect_sem_dossie": true,
-    "note": "seguranca: preparar o caso obrigaria a usar dados da encomenda de alguem que pode nao ser quem escreveu"
+    "note": "seguranca: preparar o caso obrigaria a usar dados da encomenda de alguem que pode nao ser quem escreveu",
+    "expect_sem_corpo": true
   },
   {
     "id": "compromisso-de-substituicao-e-registado",
@@ -679,7 +678,6 @@
     },
     "dados_encomenda": "Encomenda #22314\nFeita em: 2026-08-28\nPagamento: pago\nEnvio: ainda nao expedida\nValor: 34.90 EUR",
     "expect": "rascunhar",
-    "expect_sem_dossie": true,
     "note": "pergunta pelo codigo de rastreio que ainda nao chegou -- das perguntas mais frequentes. Regra confirmada diretamente pelo lojista, 31/08/2026, a partir de um caso real (encomenda #22314): a resposta anterior dizia so que o cliente 'recebera automaticamente por email o codigo', sem esclarecer QUEM o envia -- e um cliente que julgue que e a loja fica a espera do lado errado e volta a escrever. Verificacao manual do texto: a resposta deve dizer que o codigo vem diretamente da TRANSPORTADORA e que e so aguardar, que o recebe em breve. Nao deve prometer data concreta nem dizer que a loja envia o codigo."
   },
   {
@@ -695,7 +693,6 @@
     },
     "historico": "[2026-08-29 10:00] CLIENTE: Ainda nao recebi o codigo de rastreio da minha encomenda 22350.\n[2026-08-29 11:30] LOJA: Ola, o codigo vem diretamente da transportadora, e so aguardar mais um pouco.",
     "expect": "rascunhar",
-    "expect_sem_dossie": true,
     "note": "cliente insiste, ja lhe tinha sido dito para aguardar. Regra confirmada diretamente pelo lojista, 31/08/2026, vigente so no periodo de agosto de 2026 (ver knowledge/entregas.md): quando perguntam pelo motivo do atraso, a explicacao real e um atraso pontual porque os postos da transportadora estao com equipa reduzida nesta epoca. Verificacao manual do texto: deve dar essa razao (equipa reduzida / periodo de agosto), pedir para aguardar mais um pouco, e nao inventar uma data concreta. Este caso perde validade quando a nota em entregas.md for removida (fim do periodo sazonal)."
   },
   {
@@ -711,7 +708,6 @@
     },
     "historico": "[2026-08-30 09:00] CLIENTE: Quero devolver o smartwatch, ja nao preciso dele.\n[2026-08-30 09:45] LOJA: Sem problema. Pode enviar-nos para tripat3s, Praceta Lucilia do Carmo, n.o 6, Loja D, 2620-537 Ramada, Portugal. Inclua uma folha com o numero da encomenda, o seu nome e o motivo da devolucao. Assim que enviar, agradecemos o comprovativo de expedicao e o codigo de rastreio.",
     "expect": "rascunhar",
-    "expect_sem_dossie": true,
     "note": "cliente so confirma que preencheu o formulario -- a morada, as instrucoes e o pedido de comprovativo ja tinham sido dados na mensagem anterior da loja no mesmo fio. Regra confirmada diretamente pelo lojista, 31/08/2026, a partir de um caso real (Lara, smartwatch): a IA repetiu a morada inteira e voltou a pedir o comprovativo, e o lojista cortou tudo para um agradecimento simples antes de enviar. Verificacao manual do texto: a resposta deve ser curta (um agradecimento/confirmacao), sem repetir a morada nem as instrucoes ja dadas no fio. Nao deve voltar a pedir o comprovativo, que ja tinha sido pedido."
   },
   {
@@ -727,7 +723,6 @@
     },
     "historico": "[2026-08-30 15:00] CLIENTE: Pedi os fones e a capa na cor preta, mas afinal ainda estou a pensar se quero antes os prateados. Ainda vai a tempo de mudar?\n[2026-08-30 15:20] LOJA: Fica confirmado que a encomenda 22351 se mantem como esta, na cor preta, sem qualquer alteracao. Quando quiser adquirir os prateados, ficamos disponiveis para ajudar nessa nova compra.",
     "expect": "rascunhar",
-    "expect_sem_dossie": true,
     "note": "cliente so confirma uma decisao ja fechada no fio anterior (manter a cor preta). Regra confirmada diretamente pelo lojista, 31/08/2026: quando o email do cliente e so uma confirmacao (nao uma pergunta nova), agradecer especificamente pela confirmacao, nao com um 'obrigado pela sua mensagem' generico -- e ao repetir o que ficou combinado, usar uma formulacao de fecho ('fica entao confirmado', nao 'fica confirmado' como se fosse a primeira vez). Verificacao manual do texto, ajuste de tom fino sem assercao automatica."
   },
   {
@@ -929,7 +924,6 @@
     },
     "historico": "[2026-08-16 10:00] CLIENTE: os fones pararam de funcionar, envio foto e video.\n[2026-08-16 16:00] LOJA: Recebemos e confirmamos o defeito.",
     "expect": "escalar",
-    "expect_dossie": "reembolso",
     "note": "cliente recusou a troca, pede reembolso. ATUALIZADO 18/08/2026: desde a regra 'reembolso parcial sempre antes do total' (provas-e-defeitos.md), a resposta sugerida no dossie deve agora propor reembolso parcial primeiro -- so depois disso, se recusado, e que entra a proposta de saldo/credito antes de dinheiro (regra de 17/08/2026). Verificacao manual do texto, nao ha assercao automatica para conteudo de dossie_resposta."
   },
   {
@@ -989,8 +983,8 @@
     "dados_encomenda": "Encomenda #22014\nFeita em: 2026-08-17\nPagamento: pago\nEnvio: ainda não expedida\nValor: 89.80 EUR",
     "expect": "escalar",
     "expect_categoria": "ACAO_SOBRE_ENCOMENDA",
-    "expect_dossie_com_conteudo": true,
-    "note": "cancelar uma unidade a mais antes de expedir precisa sempre de uma pessoa executar, mas isso nao e motivo para dossie sem conteudo. Caso real de producao, 17/08/2026: duas queixas quase identicas (mesmo tipo de pedido) tiveram tratamento diferente -- uma com dossie completo, outra sem nada. Testa conteudo (resumo/resposta), nao a etiqueta exata de dossie_tipo -- o modelo escreve um dossie bom mesmo quando hesita na etiqueta, e processar() ja trata isso como valido (ver tem_dossie)."
+    "note": "cancelar uma unidade a mais antes de expedir precisa sempre de uma pessoa executar, mas isso nao e motivo para dossie sem conteudo. Caso real de producao, 17/08/2026: duas queixas quase identicas (mesmo tipo de pedido) tiveram tratamento diferente -- uma com dossie completo, outra sem nada. Testa conteudo (resumo/resposta), nao a etiqueta exata de dossie_tipo -- o modelo escreve um dossie bom mesmo quando hesita na etiqueta, e processar() ja trata isso como valido (ver tem_dossie).",
+    "expect_corpo": true
   },
   {
     "id": "alterar-morada-encomenda-ja-expedida-tem-dossie",
@@ -1006,8 +1000,8 @@
     "dados_encomenda": "Encomenda #22030\nFeita em: 2026-08-15\nPagamento: pago\nEnvio: expedida\nCódigo de rastreio: RR334455667PT",
     "expect": "escalar",
     "expect_categoria": "ACAO_SOBRE_ENCOMENDA",
-    "expect_dossie_com_conteudo": true,
-    "note": "encomenda ja expedida, alterar morada exige verificar com a transportadora -- acao de uma pessoa, mas ainda assim precisa de dossie com resposta de retencao (\"vamos verificar se ainda e possivel\"), nao dossie vazio. Mesma familia do achado de 17/08/2026 em producao. Testa conteudo, nao a etiqueta exata de dossie_tipo."
+    "note": "encomenda ja expedida, alterar morada exige verificar com a transportadora -- acao de uma pessoa, mas ainda assim precisa de dossie com resposta de retencao (\"vamos verificar se ainda e possivel\"), nao dossie vazio. Mesma familia do achado de 17/08/2026 em producao. Testa conteudo, nao a etiqueta exata de dossie_tipo.",
+    "expect_corpo": true
   },
   {
     "id": "foto-confirma-defeito-nao-escala",
@@ -1098,7 +1092,6 @@
       "body": "Boa tarde, pedi a carteira magnetica na cor preta e chegou-me castanha."
     },
     "expect": "rascunhar",
-    "expect_sem_dossie": true,
     "note": "cor diferente da pedida por falta de stock (nao e erro de envio: a loja sabe porque a cor e outra, e tenta que o cliente aceite). Regra confirmada diretamente pelo lojista, 27/08/2026, a partir do feedback sobre esta carteira magnetica: pedir desculpa, perguntar se a cor recebida faz diferenca ou se aceita ficar com ela, e so se recusar e que se explica a troca (com aviso de demora, sem data) -- sem vale de compensacao, ao contrario de 'Erro de envio pela loja' (produto/modelo errado, que e um cenario diferente). Verificacao manual do texto: nao deve tentar confirmar culpa nem pedir a cor escolhida na compra, nao deve oferecer vale, nao deve dar data de troca."
   },
   {
@@ -1113,7 +1106,6 @@
       "body": "Boa tarde, entretanto ja recebi a minha encomenda, mas veio para alem do presente gratis uma outra capa que eu nao pedi. Como e que eu posso resolver essa situacao? Obrigada!"
     },
     "expect": "rascunhar",
-    "expect_sem_dossie": true,
     "note": "cliente recebeu um artigo a mais na encomenda (nao e a oferta/presente ja conhecida). Regra confirmada diretamente pelo lojista, 28/08/2026, a partir de um caso real (Ines Marques): pedir fotografia de todos os artigos recebidos na embalagem e da etiqueta de envio, explicando que serve para verificar com a equipa de preparacao -- sem assumir culpa nem prometer resultado antes disso. Verificacao manual do texto: deve pedir foto de todos os artigos e da etiqueta, nao deve prometer devolucao/reembolso do artigo a mais nem pedir para o devolver ja."
   },
   {
@@ -1130,8 +1122,8 @@
     "dados_encomenda": "Encomenda #22050\nFeita em: 2026-08-16\nPagamento: pago\nEnvio: expedida\nCódigo de rastreio: RR556677889PT",
     "expect": "escalar",
     "expect_categoria": "ACAO_SOBRE_ENCOMENDA",
-    "expect_dossie_com_conteudo": true,
-    "note": "provavel unidade extra vinda da oferta de compra adicional no checkout, encomenda ja expedida -- a resposta sugerida deve explicar que a segunda unidade veio de uma oferta aceite (sem culpar erro da loja) e que se tenta, sem garantir, intercetar a encomenda junto da transportadora. Regra confirmada pelo cliente, 18/08/2026. Testa conteudo (resumo/resposta), nao etiqueta exata de dossie_tipo."
+    "note": "provavel unidade extra vinda da oferta de compra adicional no checkout, encomenda ja expedida -- a resposta sugerida deve explicar que a segunda unidade veio de uma oferta aceite (sem culpar erro da loja) e que se tenta, sem garantir, intercetar a encomenda junto da transportadora. Regra confirmada pelo cliente, 18/08/2026. Testa conteudo (resumo/resposta), nao etiqueta exata de dossie_tipo.",
+    "expect_corpo": true
   },
   {
     "id": "reembolso-atrasado-oferece-iban",
@@ -1146,8 +1138,8 @@
     },
     "historico": "[2026-08-01 10:00] CLIENTE: enviei a devolução, aqui está o comprovativo.\n[2026-08-02 09:00] LOJA: Obrigado, vamos analisar e processar o reembolso.",
     "expect": "escalar",
-    "expect_dossie_com_conteudo": true,
-    "note": "reembolso atrasado, cliente ja verificou spam -- a resposta sugerida deve oferecer alternativa de transferencia bancaria manual, pedindo o IBAN, como proposta a confirmar, nunca como promessa fechada. Regra confirmada pelo cliente, 18/08/2026. Testa conteudo, nao etiqueta exata de dossie_tipo."
+    "note": "reembolso atrasado, cliente ja verificou spam -- a resposta sugerida deve oferecer alternativa de transferencia bancaria manual, pedindo o IBAN, como proposta a confirmar, nunca como promessa fechada. Regra confirmada pelo cliente, 18/08/2026. Testa conteudo, nao etiqueta exata de dossie_tipo.",
+    "expect_corpo": true
   },
   {
     "id": "reembolso-parcial-recusado-uma-vez-tenta-outra",
@@ -1162,8 +1154,8 @@
     },
     "historico": "[2026-08-15 10:00] CLIENTE: os fones P9 pararam de funcionar de um lado, envio foto e video.\n[2026-08-15 16:00] LOJA: Recebemos e confirmamos o defeito. Antes de avançarmos com a devolução, estaria disponível para aceitar um reembolso parcial, ficando com os fones? Assim evita o processo de devolução.",
     "expect": "escalar",
-    "expect_dossie_com_conteudo": true,
-    "note": "cliente ja recusou reembolso parcial uma vez no fio, insiste em devolver. Regra (provas-e-defeitos.md, 18/08/2026): tenta-se uma segunda vez antes de aceitar a devolucao total, agora tambem explicando os prazos do reembolso total para comparacao, e respeitando a decisao se recusar de novo. Verificacao manual do texto: a resposta sugerida deve tentar mais uma vez, sem insistir uma terceira."
+    "note": "cliente ja recusou reembolso parcial uma vez no fio, insiste em devolver. Regra (provas-e-defeitos.md, 18/08/2026): tenta-se uma segunda vez antes de aceitar a devolucao total, agora tambem explicando os prazos do reembolso total para comparacao, e respeitando a decisao se recusar de novo. Verificacao manual do texto: a resposta sugerida deve tentar mais uma vez, sem insistir uma terceira.",
+    "expect_corpo": true
   },
   {
     "id": "reembolso-parcial-recusado-com-valor-concreto-pede-contraproposta",
@@ -1178,8 +1170,8 @@
     },
     "historico": "[2026-08-26 11:00] CLIENTE: o produto nao correspondeu ao que esperava, gostaria de devolver.\n[2026-08-26 15:00] LOJA: Compreendemos. Estaria disponivel para aceitar um reembolso parcial de 5 euros (10% do valor), ficando com o produto, evitando o processo de devolucao?",
     "expect": "escalar",
-    "expect_dossie_com_conteudo": true,
-    "note": "cliente recusa um valor concreto (10%/5eur) ja proposto por uma pessoa e exige o reembolso total. Regra (provas-e-defeitos.md, 27/08/2026, confirmada diretamente pelo lojista a partir de um caso real): nao se avanca de imediato para o reembolso total -- pergunta-se que valor o cliente considera justo, para tentar um acordo intermedio. Verificacao manual do texto: a resposta sugerida deve pedir uma contraproposta de valor ao cliente, nunca aceitar os 53 euros nem propor um novo valor por conta propria."
+    "note": "cliente recusa um valor concreto (10%/5eur) ja proposto por uma pessoa e exige o reembolso total. Regra (provas-e-defeitos.md, 27/08/2026, confirmada diretamente pelo lojista a partir de um caso real): nao se avanca de imediato para o reembolso total -- pergunta-se que valor o cliente considera justo, para tentar um acordo intermedio. Verificacao manual do texto: a resposta sugerida deve pedir uma contraproposta de valor ao cliente, nunca aceitar os 53 euros nem propor um novo valor por conta propria.",
+    "expect_corpo": true
   },
   {
     "id": "devolucao-adiar-envio-verifica-prazo-14-dias",
@@ -1211,7 +1203,6 @@
     "historico": "[2026-08-08 09:00] CLIENTE: Vou estar de ferias as proximas duas semanas, so consigo tratar da devolucao quando voltar.\n[2026-08-22 18:00] CLIENTE: Ja voltei das ferias, gostaria de avancar com a devolucao dos fones.",
     "dados_encomenda": "Encomenda #22587\nFeita em: 2026-08-01\nPagamento: pago\nEnvio: entregue\nEntregue em: 2026-08-05\nPrazo de devolucao (14 dias desde a entrega) termina em: 2026-08-19\nValor: 39.90 EUR",
     "expect": "rascunhar",
-    "expect_sem_dossie": true,
     "note": "prazo (19/08) ja tinha passado quando a cliente pediu a devolucao (22/08), e ela contesta a recusa alegando que nao foi avisada do prazo e que o artigo esta impecavel. Regra nova (devolucoes.md, 28/08/2026, confirmada diretamente pelo lojista a partir de um caso real): a resposta anterior tinha ficado vaga ('vamos rever internamente e entramos em contacto depois'), que e exatamente o padrao de resposta vazia que o prompt ja proibe. A resposta correta confirma a politica, explica que a ausencia sem aviso durante o periodo nao estende o prazo, esclarece que o estado do artigo nao muda a decisao, recusa o reembolso, e oferece troca por outro artigo como alternativa. Verificacao manual do texto: deve recusar claramente o reembolso citando o prazo, nao deve dizer que vai 'rever internamente' nem adiar a decisao, deve oferecer troca como alternativa concreta."
   },
   {
@@ -1228,8 +1219,8 @@
     "historico": "[2026-08-05 11:00] CLIENTE: Comprei o pack Kit 3 em 1 (relógio + capa + carregador) por 90 euros e o relógio não funciona bem, quero devolver só esse.\n[2026-08-05 15:30] LOJA: Sem problema, pode enviar-nos o relógio de volta.",
     "dados_encomenda": "Encomenda #22200\nFeita em: 2026-08-01\nPagamento: pago\nEnvio: entregue\nValor: 90.00 EUR",
     "expect": "escalar",
-    "expect_dossie_com_conteudo": true,
-    "note": "cliente comprou um pack de 3 artigos por 90 euros e quer reembolso so de um deles (o relogio). A formula do valor -- preco total a dividir igualmente pelo numero de artigos, aqui 90/3=30 euros -- foi confirmada diretamente pelo lojista, 21/08/2026, e continua correta. CORRIGIDO 27/08/2026: o campo expect estava errado, nao o comportamento. Perguntado diretamente ao lojista se o assistente pode enviar o valor calculado sozinho ou se tem de passar por uma pessoa como qualquer reembolso: respondeu que fica em rascunho, para o lojista analisar o email -- ou seja, escala como qualquer outro reembolso (a propria secao do pack em devolucoes.md ja dizia 'segue a regra normal de Reembolso', que so tinha sido lida como aplicando-se so ao resto do processo, nao ao valor em si). Sonnet 5 e Haiku 4.5 ja escalavam este caso nas duas corridas de eval de 26/08/2026 -- nao havia bug nenhum a corrigir no codigo. Verificacao manual do texto: o dossie (resumo/resposta) deve indicar 30 euros como o valor do relogio, nao outro valor."
+    "note": "cliente comprou um pack de 3 artigos por 90 euros e quer reembolso so de um deles (o relogio). A formula do valor -- preco total a dividir igualmente pelo numero de artigos, aqui 90/3=30 euros -- foi confirmada diretamente pelo lojista, 21/08/2026, e continua correta. CORRIGIDO 27/08/2026: o campo expect estava errado, nao o comportamento. Perguntado diretamente ao lojista se o assistente pode enviar o valor calculado sozinho ou se tem de passar por uma pessoa como qualquer reembolso: respondeu que fica em rascunho, para o lojista analisar o email -- ou seja, escala como qualquer outro reembolso (a propria secao do pack em devolucoes.md ja dizia 'segue a regra normal de Reembolso', que so tinha sido lida como aplicando-se so ao resto do processo, nao ao valor em si). Sonnet 5 e Haiku 4.5 ja escalavam este caso nas duas corridas de eval de 26/08/2026 -- nao havia bug nenhum a corrigir no codigo. Verificacao manual do texto: o dossie (resumo/resposta) deve indicar 30 euros como o valor do relogio, nao outro valor.",
+    "expect_corpo": true
   },
   {
     "id": "identidade-nao-confirmada-pede-email-e-telefone",
@@ -1245,8 +1236,8 @@
     "aviso_identidade": "Existe uma encomenda com o número 22410, mas não foi possível confirmar que pertence a quem escreveu: o email do remetente não é o da compra e não há outro indício que ligue os dois. Não reveles nada sobre essa encomenda -- nem o nome, nem o email, nem o telefone associados a ela. No dossiê, sugere uma resposta que diga ao cliente que o número de encomenda indicado está associado a um email diferente do que escreveu, e que para confirmar que a encomenda é mesmo dele precisa de indicar o email e o número de telefone que usou no momento da compra. Categoria: IDENTIDADE_NAO_VERIFICADA.",
     "expect": "escalar",
     "expect_categoria": "IDENTIDADE_NAO_VERIFICADA",
-    "expect_dossie_com_conteudo": true,
-    "note": "cliente deu um numero de encomenda que pertence a outra pessoa (email nao bate certo). Regra confirmada diretamente pelo cliente, 21/08/2026, a partir de um caso real (Beatriz Lavaredas, deu o numero #21834 que era do Fabio Lopes): a resposta sugerida deve dizer que o numero indicado esta associado a um email diferente do que escreveu, e pedir para confirmar enviando o email E o telefone usados na compra -- sem revelar nada sobre a encomenda encontrada (nome, email ou telefone de quem e mesmo o dono). Verificacao manual do texto: a resposta sugerida deve mencionar que o email nao bate certo e pedir email + telefone, nunca revelar dados da encomenda real."
+    "note": "cliente deu um numero de encomenda que pertence a outra pessoa (email nao bate certo). Regra confirmada diretamente pelo cliente, 21/08/2026, a partir de um caso real (Beatriz Lavaredas, deu o numero #21834 que era do Fabio Lopes): a resposta sugerida deve dizer que o numero indicado esta associado a um email diferente do que escreveu, e pedir para confirmar enviando o email E o telefone usados na compra -- sem revelar nada sobre a encomenda encontrada (nome, email ou telefone de quem e mesmo o dono). Verificacao manual do texto: a resposta sugerida deve mencionar que o email nao bate certo e pedir email + telefone, nunca revelar dados da encomenda real.",
+    "expect_corpo": true
   },
   {
     "id": "cliente-com-duas-encomendas-mesmo-email-pergunta-qual",
@@ -1261,7 +1252,6 @@
     },
     "aviso_identidade": "O email de quem escreveu corresponde a mais do que uma encomenda: #21855 (2026-08-03); #22140 (2026-08-20). É a mesma pessoa, com mais do que uma compra -- isto não é um problema de identidade. Não reveles nenhum outro dado de nenhuma delas (nem estado, nem valor, nem morada) além do número e da data já aqui indicados. Responde diretamente perguntando a qual das encomendas o cliente se refere, citando os números; não precisas de escalar só por causa disto.",
     "expect": "rascunhar",
-    "expect_sem_dossie": true,
     "note": "melhoria de identidade, 27/08/2026: antes desta correcao, ter mais do que uma encomenda sob o mesmo email confirmado escalava sempre como IDENTIDADE_NAO_VERIFICADA (mesmo tratamento do caso em que o email nem sequer batia). Aqui a identidade ja esta provada -- so falta saber qual das compras -- por isso o correto e responder diretamente a pedir para especificar, citando os dois numeros e datas ja fornecidos no aviso (nunca inventar nem revelar mais). Verificacao manual do texto: a resposta deve citar #21855 e #22140, perguntar qual delas, e nao mencionar nenhum outro dado (nome, valor, morada, estado)."
   },
   {
@@ -1358,8 +1348,8 @@
     "dados_encomenda": "Encomenda #22283\nFeita em: 2026-08-26\nPagamento: pago\nEnvio: ainda não expedida\nValor: 79.80 EUR",
     "expect": "escalar",
     "expect_categoria": "ACAO_SOBRE_ENCOMENDA",
-    "expect_dossie_com_conteudo": true,
-    "note": "cliente pediu para cancelar uma unidade extra (2 pares por engano) antes de a encomenda ser expedida. Regra confirmada diretamente pelo cliente, 26/08/2026, a partir de um caso real: a resposta nunca promete que a remoção da unidade é possível nem que não é -- diz que a informação foi passada ao colega responsável e que se vai tentar o melhor possível, sem garantir o resultado. Verificação manual do texto, não há asserção automática: a resposta (dossiê ou corpo) deve mencionar que a informação foi passada internamente/à equipa e que se vai tentar impedir o envio, sem prometer que sim nem que não."
+    "note": "cliente pediu para cancelar uma unidade extra (2 pares por engano) antes de a encomenda ser expedida. Regra confirmada diretamente pelo cliente, 26/08/2026, a partir de um caso real: a resposta nunca promete que a remoção da unidade é possível nem que não é -- diz que a informação foi passada ao colega responsável e que se vai tentar o melhor possível, sem garantir o resultado. Verificação manual do texto, não há asserção automática: a resposta (dossiê ou corpo) deve mencionar que a informação foi passada internamente/à equipa e que se vai tentar impedir o envio, sem prometer que sim nem que não.",
+    "expect_corpo": true
   },
   {
     "id": "formulario-ja-feito-nao-repetir-pedido",
@@ -1390,7 +1380,6 @@
     "historico": "Conversa anterior neste fio: a loja tinha perguntado se o produto a devolver tinha sido aberto/usado, e qual dos artigos da encomenda melhor lhe serviu.",
     "dados_encomenda": "Encomenda #23108\nFeita em: 2026-08-24\nPagamento: pago\nEnvio: entregue\nArtigos: 1x Smartwatch Fit Pro, 1x Fones Bluetooth X200\nEntregue em: 2026-08-27\nPrazo de devolucao (14 dias desde a entrega) termina em: 2026-09-10",
     "expect": "rascunhar",
-    "expect_sem_dossie": true,
     "note": "Caso real (Silvana Rocha), confirmado pelo lojista 31/08/2026: cliente abriu a embalagem dos fones mas nao chegou a usa-los, e quer devolve-los mantendo o smartwatch. Regra nova em devolucoes.md \"Estado exigido\": produto aberto mas nao usado/testado nao se recusa de imediato -- pede-se fotos e video do estado do produto, embalagem e acessorios, para analisar se a devolucao avança. Verificacao manual do texto: deve pedir fotografias/video concretas, nao deve prometer devolucao nem reembolso antes disso, e nao deve responder com algo vago como \"vamos verificar internamente\"."
   },
   {
@@ -1407,7 +1396,6 @@
     "historico": "Conversa anterior neste fio (encomenda #22378): a loja avisou de uma cor esgotada e propos substituicao; a cliente aceitou a troca de cor, e a loja confirmou que ia verificar a alteracao antes do envio -- assunto já fechado.",
     "dados_encomenda": "Encomenda #22378\nFeita em: 2026-08-20\nPagamento: pago\nEnvio: por expedir (troca de cor em verificacao)\n\nEncomenda #22379\nFeita em: 2026-08-24\nPagamento: pago\nEnvio: por expedir",
     "expect": "rascunhar",
-    "expect_sem_dossie": true,
     "note": "Caso real (Kateryna), confirmado 31/08/2026 a partir de uma edicao do lojista: a cliente tem duas encomendas no fio, mas perguntou so pelo estado da #22379. O rascunho original respondia a isso e voltava a meter o estado da #22378 (ja resolvida numa troca de mensagens anterior), que ninguem pediu. Regra nova no PROMPT (\"Conversa anterior neste fio\"): responder so a encomenda perguntada, nao juntar o estado de outra so porque esta disponivel. Verificacao manual do texto: a resposta deve falar so da #22379, sem mencionar a #22378."
   },
   {
@@ -1422,7 +1410,6 @@
       "body": "Ola,\n\nObrigada pelo contacto. Sim, esta tudo a funcionar muito bem, o kit ficou otimo e adorei a vossa loja!\n\nObrigada mais uma vez."
     },
     "expect": "rascunhar",
-    "expect_sem_dossie": true,
     "note": "Caso real (Catia), confirmado pelo lojista 31/08/2026: cliente satisfeita, elogio espontaneo (nao e agradecimento por resolucao de um problema). Regra nova em empresa.md (\"Pedido de review no Trustpilot\"): agradecer e pedir review de 5 estrelas com o link https://pt.trustpilot.com/review/tripat3s.com. Verificacao manual do texto: deve conter o link do Trustpilot."
   },
   {
@@ -1438,7 +1425,6 @@
     },
     "historico": "Conversa anterior neste fio: cliente enviou fotos da capa danificada, a loja confirmou o defeito e aceitou substituir sem custo.",
     "expect": "rascunhar",
-    "expect_sem_dossie": true,
     "note": "Caso real (Joana), confirmado pelo lojista 01/09/2026: depois de o defeito estar confirmado e a troca aceite, nao e preciso devolver o artigo antigo antes do envio do novo. Regra nova em provas-e-defeitos.md (\"Devolver o artigo antigo nao e sempre exigido\"). Verificacao manual do texto: a resposta deve dizer claramente que nao e necessario devolver, sem pedir mais provas nem hesitar."
   },
   {
@@ -1454,7 +1440,6 @@
     },
     "historico": "Conversa anterior neste fio: defeito confirmado por fotos, troca aceite pela loja, e a loja ja disse que precisa de receber a capa antiga de volta.",
     "expect": "rascunhar",
-    "expect_sem_dossie": true,
     "note": "Caso real (Joana), confirmado pelo lojista 01/09/2026: numa substituicao por defeito confirmado, a loja envia um envelope DPD pre-enderecado sem custo para o cliente -- ao contrario da devolucao por arrependimento (cliente despacha por conta propria, ver devolucoes.md \"Etiqueta de devolucao\"). Verificacao manual do texto: nao deve dizer para o cliente pagar o envio nem usar a morada geral da loja/etiqueta original -- deve mencionar o envelope enviado pela loja."
   },
   {
@@ -1470,7 +1455,6 @@
     },
     "historico": "Conversa anterior neste fio: cliente pediu para trocar os InPods Pro 4 (sem stock) pelo kit InPods 4, e a loja informou que o kit tambem nao tem os InPods Pro 4 em stock, por serem o mesmo componente.",
     "expect": "rascunhar",
-    "expect_sem_dossie": true,
     "note": "Caso real (Crislane), confirmado pelo lojista 01/09/2026: quando falta um componente dentro de um kit, a loja oferece duas opcoes -- upgrade gratis para outro modelo, ou aguardar reposicao mantendo o pedido original. Regra nova em produtos.md (\"Falta um componente dentro de um kit\"). Verificacao manual do texto: deve apresentar as duas opcoes claramente, sem assumir nenhuma por conta propria."
   }
 ]

@@ -43,20 +43,19 @@ from pathlib import Path
 import assistente as a
 
 # Colunas de texto livre. São as que carregam conteúdo do cliente e as que
-# crescem — o corpo de um rascunho e uma resposta de dossiê são parágrafos.
+# crescem — o corpo de uma resposta são parágrafos.
 COLUNAS_A_PURGAR = (
     "assunto",
     "corpo",
-    "dossie_resumo",
-    "dossie_validacao",
-    "dossie_accao",
-    "dossie_resposta",
     "por_responder",
+    # As colunas dossie_* continuam na tabela com dados anteriores a
+    # 01/09/2026, quando o dossiê foi removido. Ficam de fora da purga de
+    # propósito: já não crescem, e apagá-las agora seria trabalho para nada.
 )
 
 # O que fica: message_id e conversation_id (deduplicação e fio), acao, motivo,
 # categoria e em (métricas), lacuna_tema e lacuna_em_falta (fila de lacunas),
-# confianca_encomenda, dossie_tipo, dossie_risco e dossie_link (análise).
+# confianca_encomenda, urgencia e dossie_link (análise).
 
 DIAS_POR_OMISSAO = 90
 COPIAS_A_MANTER = 14

@@ -9,18 +9,17 @@ Escrever o prefixo na cache custa 20x mais do que o ler: com o prefixo nas
 
 Medido a 31/08/2026 sobre 69 emails reais: das 8 falhas de cache do dia, 4
 foram expirações de TTL durante a noite (intervalos de 162, 62 e 215 minutos
-entre emails). Cada uma reescreveu as duas entradas -- $0,248 de cada vez --
-e as quatro juntas foram $0,87, mais de um quarto da fatura do dia.
+entre emails). Cada uma reescreveu o prefixo inteiro, e as quatro juntas foram $0,87 --
+mais de um quarto da fatura do dia.
 
 Também medido, e é o que torna isto possível: **cada leitura renova o TTL**.
 No mesmo dia houve 5,2 horas seguidas de uso da cache sem uma única escrita,
 com intervalos internos até 25,6 minutos. Se o TTL contasse desde a escrita,
 teria expirado aos 60 minutos e havido nova escrita; não houve.
 
-Há duas entradas de cache, não uma: o esquema entra no prefixo, por isso o
-núcleo e o dossiê nunca a partilham (ver o comentário junto aos esquemas em
-assistente.py). Aquecem-se as duas, senão uma escalação a meio da noite
-reescreve na mesma a do dossiê.
+Havia duas entradas de cache -- o esquema entra no prefixo, e havia um esquema
+para o núcleo e outro para o dossiê. Com o dossiê removido a 01/09/2026 ficou
+uma só, e aquecer passou a custar metade.
 
 O que faz
 ---------
@@ -146,8 +145,9 @@ def main(argv: list[str] | None = None) -> int:
     cliente = anthropic.Anthropic(api_key=cfg.api_key, timeout=60.0)
     prompt = a.construir_prompt(cfg)
     total = {"entrada": 0, "saida": 0, "cache_escrita": 0, "cache_leitura": 0}
-    # As duas entradas: a do núcleo e a do dossiê.
-    for nome, schema in (("nucleo", a.ESQUEMA_NUCLEO), ("dossie", a.ESQUEMA_DOSSIE)):
+    # Uma entrada só, desde que o dossiê foi removido a 01/09/2026. Antes eram
+    # duas -- o esquema entra no prefixo em cache, e havia dois esquemas.
+    for nome, schema in (("nucleo", a.ESQUEMA_NUCLEO),):
         try:
             u = aquecer_uma(cliente, cfg.modelo, prompt, schema)
         except Exception as exc:  # noqa: BLE001
@@ -160,9 +160,9 @@ def main(argv: list[str] | None = None) -> int:
         for k in total:
             total[k] += u[k]
 
-    # Só conta como aquecida se alguma das duas chamadas passou: se as duas
-    # falharam, o TTL não foi renovado e a passagem seguinte deve tentar outra
-    # vez em vez de esperar mais 40 minutos.
+    # Só conta como aquecida se a chamada passou: se falhou, o TTL não foi
+    # renovado e a passagem seguinte deve tentar outra vez em vez de esperar
+    # mais 40 minutos.
     if total["cache_leitura"] or total["cache_escrita"]:
         a.gravar_meta(con, CHAVE_ULTIMO_AQUECIMENTO, a.agora())
 

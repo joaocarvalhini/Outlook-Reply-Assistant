@@ -84,7 +84,7 @@ class Config:
     cat_humano: str
     aviso: str
     resolver_identidade: bool
-    pre_dossies: bool
+    pre_rascunhos: bool
     registo_compromissos: bool
     respostas_parciais: bool
     processar_imagens: bool
@@ -155,9 +155,10 @@ def carregar_config(dry_run_flag: bool | None) -> Config:
         # Resolução de identidade por níveis. Desligada dá o comportamento
         # anterior: só encontra a encomenda com número mais email exato.
         resolver_identidade=ligado("ENABLE_ORDER_IDENTITY_RESOLUTION", "true"),
-        # Dossiês para casos escalados. Não têm efeito nenhum na caixa: só
-        # acrescentam campos ao registo local, lidos pelo dossie.py.
-        pre_dossies=ligado("ENABLE_PRE_DRAFTS", "true"),
+        # Rascunho de retenção nos casos escalados: o texto que quem revê pode
+        # enviar enquanto trata do caso. Desligado, um caso escalado leva só a
+        # marca de que precisa de humano, sem texto nenhum preparado.
+        pre_rascunhos=ligado("ENABLE_PRE_DRAFTS", "true"),
         registo_compromissos=ligado("ENABLE_COMMITMENT_REGISTRY", "true"),
         # Respostas parciais: rascunhar a parte coberta de um email com vários
         # assuntos, em vez de escalar o email todo. Desligar volta ao
@@ -715,22 +716,6 @@ ESQUEMA_NUCLEO = {
     "additionalProperties": False,
 }
 
-# Só se pede numa segunda chamada, e só quando a primeira decidiu escalar: é o
-# caso em que vale a pena o custo extra, e a maioria dos emails nunca lá chega.
-ESQUEMA_DOSSIE = {
-    "type": "object",
-    "properties": {
-        "dossie_tipo": {"type": "string"},
-        "dossie_resumo": {"type": "string"},
-        "dossie_validacao": {"type": "string"},
-        "dossie_accao": {"type": "string"},
-        "dossie_risco": {"type": "string"},
-        "dossie_resposta": {"type": "string"},
-    },
-    "required": [],
-    "additionalProperties": False,
-}
-
 PROMPT = """\
 És o assistente de apoio ao cliente da {empresa}. Lês um email que chegou à caixa
 de apoio e decides uma de três coisas. Um colega humano revê tudo o que escreves
@@ -746,11 +731,35 @@ esta empresa e não podes consultar nada.
 base de conhecimento, ou a partir dos "Dados da encomenda" quando existirem no
 pedido. Escreves a resposta no campo "corpo".
 
-"escalar" — é um cliente, mas não podes responder: o tema não está na base de
+"escalar" — é um cliente, mas não podes resolver: o tema não está na base de
 conhecimento, está lá só em parte, os documentos contradizem-se, ou o pedido
 exige consultar ou alterar a encomenda, o pagamento ou a conta desta pessoa, a
 que não tens acesso. Escalas também quando o cliente invoca direitos legais,
-ameaça reclamação formal, ou o assunto é sensível. O "corpo" fica vazio.
+ameaça reclamação formal, ou o assunto é sensível.
+
+**Escalar não é ficar calado.** Escreves o "corpo" na mesma: é a resposta de
+retenção que a pessoa que revê vai enviar ao cliente enquanto trata do caso.
+Só fica vazio nas três situações do fundo desta secção.
+
+O que se pode dizer numa resposta de retenção:
+- confirmar que o pedido foi recebido e que está a ser tratado
+- o que a base de conhecimento manda perguntar nesta situação — se há um
+  reembolso em jogo e a base diz que a loja tenta primeiro crédito de loja, a
+  pergunta vai já na resposta ("Aceita o valor em crédito de loja, para usar
+  numa compra futura?"), em vez de ficar à espera que alguém a escreva
+- prazos e políticas que **já estão escritos** na base
+
+O que nunca se pode dizer:
+- uma data que ninguém confirmou
+- que a ação vai acontecer. Uma ação por decidir tem incerteza sobre o
+  resultado, não só sobre o momento: a fórmula é **"vamos verificar
+  internamente se conseguimos [a ação]"**, nunca "vamos verificar e
+  confirmamos [a ação]". A segunda promete o resultado, e quem revê fica preso
+  a ela.
+
+O "corpo" fica mesmo vazio só quando: falta conhecimento para dizer seja o que
+for, a identidade não está confirmada e não há um pedido de confirmação
+concreto a fazer, ou a encomenda não tem correspondência nenhuma.
 
 # Quando existe "Conversa anterior neste fio"
 São as mensagens já trocadas neste caso, da mais antiga para a mais nova, cada
@@ -848,8 +857,7 @@ e decide entre estas situações:
   Trata isso da mesma forma — como se não tivesse chegado prova nenhuma.
 
 Nunca inventes o que uma imagem mostra. Se não estás mesmo a ver o defeito
-descrito, não escreves que o confirmaste — nem no "corpo", nem em
-"dossie_validacao". A mesma prudência que já tens com qualquer facto que não
+descrito, não escreves que o confirmaste. A mesma prudência que já tens com qualquer facto que não
 tens à frente aplica-se aqui.
 
 # Emails com vários assuntos — responde ao que sabes
@@ -1059,88 +1067,6 @@ Forma fixa do email:
   contactar-nos", "Estimado", "Prezado", "Caro", "Exmo.", "Esperamos que esteja
   bem".
 
-# O dossiê, quando escalas um caso acionável
-Escalar não é despachar. Quando escalas um pedido concreto sobre uma encomenda
-— cancelar, reembolsar, trocar, garantia, alterar morada, disputa, exceção —
-preparas também o caso para quem vai decidir. O objetivo não é decidir por essa
-pessoa: é ela abrir o caso e perceber tudo em segundos, em vez de ir investigar.
-
-Prepará-lo é o normal, não a exceção: um pedido concreto sobre uma encomenda
-tem sempre pelo menos a resposta de retenção descrita em "dossie_resposta"
-abaixo, mesmo quando ainda não há nada a decidir e a execução cabe à equipa.
-"dossie_tipo" só fica "nenhum" nas três situações listadas ao fundo desta
-secção — fora delas, "nenhum" é sempre um erro.
-
-Preenches então:
-- "dossie_tipo": qual destes é.
-- "dossie_resumo": a situação em uma ou duas frases, escrita para um colega.
-- "dossie_validacao": o que confirmaste e o que impede, uma verificação por
-  linha, começada por "sim" ou "não". Só factos que tens à frente, vindos dos
-  dados da encomenda ou do fio. Exemplo:
-  "sim, encomenda encontrada e identidade confirmada
-   sim, ainda não foi expedida
-   não, o pagamento já foi capturado"
-- "dossie_accao": a ação que recomendas, numa frase. É recomendação, não ordem,
-  e quem executa é sempre uma pessoa.
-- "dossie_risco": "baixo" quando é reversível e o cliente tem claramente razão;
-  "medio" quando envolve dinheiro ou é discutível; "alto" quando há disputa
-  formal, ameaça de queixa, ou o valor é elevado.
-- "dossie_resposta": a resposta ao cliente já redigida, a aguardar aprovação.
-  Segue todas as regras de escrita da loja. Não prometas o que ainda não foi
-  aprovado: escreve o que é seguro dizer agora, como confirmar que o pedido foi
-  recebido e que a loja vai verificar.
-  "Seguro dizer agora" inclui perguntar o que a base de conhecimento diz para
-  perguntar nesta situação — por exemplo, se há um reembolso em jogo e a base
-  diz que a loja tenta primeiro crédito de loja, a resposta sugerida já traz
-  essa pergunta ("Aceita o valor em crédito de loja, para usar numa compra
-  futura?"), não fica à espera que quem revê a escreva do zero. A regra é a
-  mesma de "propor não é comprometer": perguntar o que a base manda perguntar
-  não é prometer nada, é dar a quem revê o máximo de trabalho já feito.
-  Uma ação ainda por decidir (cancelar, reembolsar, trocar, seja o que for)
-  tem sempre incerteza sobre o resultado, não só sobre o momento — a fórmula
-  é sempre "vamos verificar internamente **se conseguimos** [a ação]", nunca
-  "vamos verificar e confirmamos [a ação]". A segunda forma promete o
-  resultado como certo, só falta a confirmação — é dizer a mais, mesmo que
-  pareça óbvio que vai correr bem. Escreve só o que se sabe agora: que o
-  pedido chegou e vai ser analisado, nada sobre o desfecho. Não escrevas
-  "confirmamos o cancelamento", "confirmamos que vamos [X]", nem nada com
-  "confirmamos" a seguir a uma ação que ainda não aconteceu — só depois de
-  ela acontecer é que há algo para confirmar. (Corrigido a partir de um caso
-  real de produção, 18 de agosto de 2026.)
-
-As únicas três situações em que "dossie_tipo" fica "nenhum":
-- Escalaste por não saberes alguma coisa (LACUNA_DE_CONHECIMENTO): não há
-  nada a preparar.
-- A identidade não está confirmada (IDENTIDADE_NAO_VERIFICADA) e o aviso que
-  recebeste não te deu um pedido de confirmação concreto para sugerir: não
-  tens dados que possas usar em segurança. Quando o aviso disser
-  explicitamente para sugerires um pedido de confirmação (por exemplo, pedir
-  o email e o telefone usados na compra, porque o número indicado é de outra
-  pessoa), prepara esse dossiê normalmente — a resposta pede a confirmação,
-  não revela nada da encomenda. (Regra confirmada diretamente pelo cliente,
-  21 de agosto de 2026.)
-- Faltam mesmo os dados da encomenda (DADOS_ENCOMENDA_EM_FALTA, sem
-  nenhuma correspondência encontrada): não há nada de concreto para validar.
-
-Fora destas três, "nenhum" nunca é a resposta certa — nem quando a única
-ação possível cabe à equipa (cancelar, alterar morada, emitir vale, seja o
-que for): "quem executa é uma pessoa" já está dito em "dossie_accao" acima,
-não é motivo para deixar "dossie_resposta" vazia. Dois pedidos parecidos
-(por exemplo, dois clientes a pedir o cancelamento de uma unidade a mais)
-têm de receber o mesmo tratamento — um dossiê preparado, nunca um "nenhum"
-à sorte só porque um parecia mais simples de escrever do que o outro.
-
-Isto vale mesmo quando o pedido envolve dinheiro, uma unidade específica
-dentro de uma encomenda maior (não a encomenda toda), ou incerteza genuína
-sobre se a ação vai ser possível — nenhuma dessas coisas é motivo para
-"nenhum". É exatamente para essa incerteza que serve a fórmula "vamos
-verificar se conseguimos" descrita acima: escrevê-la num dossiê preparado
-não é comprometer-se com nada, e é sempre mais útil a quem revê do que
-deixar "dossie_tipo": "nenhum".
-
-Nunca escrevas no dossiê nada que não esteja nos dados que recebeste. Se não
-sabes o valor da encomenda, não o inventas: omites a linha.
-
 # O registo de compromissos
 Um compromisso é uma promessa concreta da loja: enviar uma substituição,
 processar um reembolso, fazer uma chamada, tratar de algo. Fica registado à
@@ -1184,10 +1110,10 @@ Email de Miguel Costa, com "Saudação a usar: Olá" e "Dados da encomenda: Enco
 {{"acao": "rascunhar", "categoria": "OUTRO", "motivo": "estado da encomenda consultado na Shopify e confirmado como sendo deste cliente", "corpo": "Olá, Miguel,\\n\\nObrigado pelo seu contacto.\\n\\nA sua encomenda #21910 já foi expedida e o pagamento está confirmado. O código de rastreio é RR123456789PT.\\n\\nContinuamos à disposição para qualquer esclarecimento.\\n\\nCom os melhores cumprimentos,\\n{assinatura}"}}
 
 Email de João Silva, com "Saudação a usar: Olá" e "Dados da encomenda: Encomenda #10482\\nFeita em: 2026-08-14\\nPagamento: pago\\nEnvio: ainda não expedida\\nValor: 49.90 EUR": "Podem cancelar a encomenda 10482? Comprei sem querer."
-{{"acao": "escalar", "categoria": "ACAO_SOBRE_ENCOMENDA", "motivo": "pede cancelamento; só uma pessoa pode executar", "corpo": "", "dossie_tipo": "cancelamento", "dossie_resumo": "Cliente pediu o cancelamento da encomenda #10482, feita ontem por engano. A encomenda ainda não saiu.", "dossie_validacao": "sim, encomenda encontrada e identidade confirmada pelo email da compra\\nsim, ainda não foi expedida, dá para cancelar\\nnão, o pagamento já foi capturado e terá de ser devolvido", "dossie_accao": "Cancelar a encomenda e devolver os 49,90 EUR pelo mesmo método de pagamento.", "dossie_risco": "baixo", "dossie_resposta": "Olá, João,\\n\\nObrigado pelo seu contacto.\\n\\nRecebemos o seu pedido de cancelamento da encomenda #10482. A encomenda ainda não foi expedida, pelo que vamos verificar internamente e confirmamos o cancelamento por email.\\n\\nFicamos a aguardar.\\n\\nCom os melhores cumprimentos,\\n{assinatura}"}}
+{{"acao": "escalar", "categoria": "ACAO_SOBRE_ENCOMENDA", "motivo": "pede cancelamento; só uma pessoa pode executar", "urgencia": "nao", "corpo": "Olá, João,\n\nObrigado pelo seu contacto.\n\nRecebemos o seu pedido de cancelamento da encomenda #10482. A encomenda ainda não foi expedida, pelo que vamos verificar internamente se conseguimos cancelá-la e confirmamos por email.\n\nFicamos a aguardar.\n\nCom os melhores cumprimentos,\n{assinatura}"}}
 
 Email: "Podem cancelar a encomenda 10293?"
-{{"acao": "escalar", "categoria": "ACAO_SOBRE_ENCOMENDA", "motivo": "pede cancelamento mas não vieram dados da encomenda", "corpo": "", "dossie_tipo": "nenhum"}}
+{{"acao": "escalar", "categoria": "ACAO_SOBRE_ENCOMENDA", "motivo": "pede cancelamento mas não vieram dados da encomenda", "urgencia": "nao", "corpo": ""}}
 
 Email sem "Dados da encomenda" no pedido: "Onde está a minha encomenda 30402?"
 {{"acao": "escalar", "categoria": "DADOS_ENCOMENDA_EM_FALTA", "motivo": "número de encomenda mencionado mas a consulta não devolveu dados desta pessoa", "corpo": ""}}
@@ -1431,10 +1357,7 @@ def gravar_compromisso(con: sqlite3.Connection, conversation_id: str, tipo: str,
 
 def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: str,
              categoria: str = "", lacuna_tema: str = "", lacuna_em_falta: str = "",
-             confianca_encomenda: str = "", dossie_tipo: str = "",
-             dossie_resumo: str = "", dossie_validacao: str = "",
-             dossie_accao: str = "", dossie_risco: str = "",
-             dossie_resposta: str = "", dossie_link: str = "",
+             confianca_encomenda: str = "", dossie_link: str = "",
              por_responder: str = "", rascunho_id: str = "",
              urgencia: str = "",
              modelo: str = "", uso: dict | None = None) -> None:
@@ -1454,18 +1377,16 @@ def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: 
         "INSERT OR REPLACE INTO processados "
         "(message_id, conversation_id, assunto, acao, motivo, corpo, em, "
         " categoria, lacuna_tema, lacuna_em_falta, confianca_encomenda, "
-        " dossie_tipo, dossie_resumo, dossie_validacao, dossie_accao, "
-        " dossie_risco, dossie_resposta, dossie_link, por_responder, rascunho_id, "
+        " dossie_link, por_responder, rascunho_id, "
         " modelo, tokens_entrada, tokens_saida, tokens_cache_escrita, "
         " tokens_cache_leitura, chamadas_modelo, custo_estimado, urgencia) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
-        "        ?, ?, ?, ?, ?, ?, ?, ?)",
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
+        "        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             msg["message_id"], msg["conversation_id"], msg["assunto"],
             acao, motivo, corpo, agora(),
             categoria, lacuna_tema, lacuna_em_falta, confianca_encomenda,
-            dossie_tipo, dossie_resumo, dossie_validacao, dossie_accao,
-            dossie_risco, dossie_resposta, dossie_link, por_responder, rascunho_id,
+            dossie_link, por_responder, rascunho_id,
             modelo, u.get("entrada", 0), u.get("saida", 0),
             u.get("cache_escrita", 0), u.get("cache_leitura", 0),
             u.get("chamadas", 0), custo_estimado(modelo, u) if modelo else 0.0,
@@ -2413,12 +2334,6 @@ def decidir(
         # modelo pode devolver "alto", "true" ou uma frase, e etiquetas() só
         # reconhece os valores que sabe.
         "urgencia": dados.get("urgencia", ""),
-        "dossie_tipo": "nenhum",
-        "dossie_resumo": "",
-        "dossie_validacao": "",
-        "dossie_accao": "",
-        "dossie_risco": "",
-        "dossie_resposta": "",
         "compromisso_tipo": _validar(dados.get("compromisso_tipo", ""),
                                      TIPOS_COMPROMISSO, "nenhum"),
         "compromisso_descricao": dados.get("compromisso_descricao", ""),
@@ -2426,43 +2341,6 @@ def decidir(
                                        ESTADOS_COMPROMISSO, "desconhecido"),
         "compromisso_data": dados.get("compromisso_data", ""),
     }
-
-    # O dossiê só se pede quando escalou: é o único caso em que serve, e é a
-    # maioria dos emails que nunca paga o custo da segunda chamada.
-    if resultado["acao"] == "escalar":
-        pedido_dossie = (
-            f"{pedido}\n\nJá decidiste escalar este caso, categoria "
-            f"{resultado['categoria']}, pelo motivo: {resultado['motivo']}\n"
-            "Segue a secção \"O dossiê\" das tuas instruções e prepara-o agora. "
-            "Preparar é o normal — só fica \"dossie_tipo\": \"nenhum\" nas três "
-            "exceções listadas ao fundo dessa secção (falta de conhecimento, "
-            "identidade por confirmar sem pedido de confirmação concreto a "
-            "sugerir, ou encomenda mesmo sem correspondência). "
-            "Fora delas, mesmo que a única coisa segura a dizer seja que o "
-            "pedido chegou e vai ser analisado, prepara o dossiê com essa "
-            "resposta de retenção."
-        )
-        try:
-            dossie = _chamar(ESQUEMA_DOSSIE, pedido_dossie)
-        except Exception as exc:
-            # A classificação já está feita e é o que mais importa. Perder o
-            # dossiê não deve fazer perder a decisão toda.
-            log("erro-dossie", erro=f"{type(exc).__name__}: {exc}")
-            dossie = {}
-        dossie_tipos = ("cancelamento", "reembolso", "troca", "garantia",
-                        "alteracao_de_morada", "disputa", "excecao", "nenhum", "")
-        resultado["dossie_tipo"] = _validar(
-            dossie.get("dossie_tipo", ""), dossie_tipos, "nenhum"
-        )
-        resultado["dossie_resumo"] = dossie.get("dossie_resumo", "")
-        resultado["dossie_validacao"] = dossie.get("dossie_validacao", "")
-        resultado["dossie_accao"] = dossie.get("dossie_accao", "")
-        resultado["dossie_risco"] = _validar(
-            dossie.get("dossie_risco", ""), ("baixo", "medio", "alto", ""), ""
-        )
-        resultado["dossie_resposta"] = sem_lixo_apos_assinatura(
-            dossie.get("dossie_resposta", ""), cfg.assinatura
-        )
 
     # Prefixado com "_" para se distinguir dos campos que vieram do modelo:
     # este é medição do que a chamada custou, não parte da decisão.
@@ -2682,38 +2560,14 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
             decisao["compromisso_data"],
         )
 
-    # O dossiê só se guarda quando há mesmo um caso preparado. Resumo e
-    # resposta vazios significam que o modelo não tinha nada de útil a
-    # preparar, e gravar campos meio preenchidos faria a fila de dossiês
-    # parecer maior do que é.
-    #
-    # Não se exige aqui "dossie_tipo" válido: visto em produção (18/08/2026)
-    # que o modelo às vezes escreve um dossiê completo e uma resposta sugerida
-    # já pronta a "vamos verificar se conseguimos", mas erra ou hesita só na
-    # etiqueta de "dossie_tipo" e devolve "nenhum" — sem isto, esse trabalho
-    # todo era deitado fora por causa de um campo, não por o dossiê não
-    # prestar. O conteúdo é que decide se há dossiê; a etiqueta é só arrumação.
-    tem_dossie = (
-        cfg.pre_dossies
-        and decisao["acao"] == "escalar"
-        and bool(decisao["dossie_resumo"].strip())
-        and bool(decisao["dossie_resposta"].strip())
-    )
-    dossie_tipo_final = decisao["dossie_tipo"]
-    if tem_dossie and dossie_tipo_final in ("", "nenhum"):
-        dossie_tipo_final = "excecao"
     extra = {
         "categoria": decisao["categoria"],
         "lacuna_tema": decisao["lacuna_tema"],
         "lacuna_em_falta": decisao["lacuna_em_falta"],
         "confianca_encomenda": confianca,
-        "dossie_tipo": dossie_tipo_final if tem_dossie else "",
-        "dossie_resumo": decisao["dossie_resumo"] if tem_dossie else "",
-        "dossie_validacao": decisao["dossie_validacao"] if tem_dossie else "",
-        "dossie_accao": decisao["dossie_accao"] if tem_dossie else "",
-        "dossie_risco": decisao["dossie_risco"] if tem_dossie else "",
-        "dossie_resposta": decisao["dossie_resposta"] if tem_dossie else "",
-        "dossie_link": link_admin(cfg, achado.encomenda) if tem_dossie else "",
+        # O link para o admin continua útil: é para onde quem revê tem de ir
+        # quando o caso exige mexer na encomenda.
+        "dossie_link": link_admin(cfg, achado.encomenda) if acao == "escalar" else "",
         "por_responder": decisao["por_responder"] if cfg.respostas_parciais else "",
         "urgencia": decisao.get("urgencia", ""),
         # Só os emails que chegaram ao modelo têm custo -- os saltados pela
@@ -2774,16 +2628,19 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
 
     if acao == "escalar":
         log("escalado", email=msg["message_id"][:40], categoria=extra["categoria"],
-            identidade=confianca, dossie=extra["dossie_tipo"] or "-", motivo=motivo)
+            identidade=confianca, urgente=extra["urgencia"] or "-", motivo=motivo)
         if extra["lacuna_tema"]:
             log("lacuna", tema=extra["lacuna_tema"], falta=extra["lacuna_em_falta"])
-        registar(con, msg, "escalar", motivo, "", **extra)
-        # Só cria rascunho quando há uma resposta sugerida pronta (dossiê
-        # acionável). O rascunho é só o email, sem nota nenhuma à volta — o
-        # cliente pediu para tirar a nota interna, quer só o texto que
-        # mandaria. Sem dossiê não há texto nenhum para sugerir, por isso não
-        # há rascunho: fica só a categoria a marcar que precisa de humano.
-        resposta_sugerida = extra["dossie_resposta"].strip()
+        # O corpo vai para o registo tal como nos rascunhados: é a resposta de
+        # retenção, e é o que a medição de deriva compara com o email que
+        # acabou por ser enviado. Antes ficava em "dossie_resposta" e a
+        # comparação não chegava aos escalados.
+        resposta_sugerida = corpo.strip() if cfg.pre_rascunhos else ""
+        registar(con, msg, "escalar", motivo, resposta_sugerida, **extra)
+        # O rascunho é só o email, sem nota nenhuma à volta -- o lojista pediu
+        # para tirar a nota interna, quer só o texto que mandaria. Quando não há
+        # nada seguro a dizer, o corpo vem vazio e não se cria rascunho: fica só
+        # a marca de que precisa de uma pessoa.
         if not cfg.dry_run:
             try:
                 # Além da marca de "precisa de humano", o tipo de caso e a

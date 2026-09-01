@@ -57,7 +57,7 @@ def main(argv: list[str] | None = None) -> int:
         condicao, valores = "em >= ?", [desde]
 
     linhas = con.execute(
-        f"SELECT acao, categoria, dossie_tipo, dossie_risco FROM processados "
+        f"SELECT acao, categoria, urgencia, corpo FROM processados "
         f"WHERE {condicao} ORDER BY em",
         valores,
     ).fetchall()
@@ -98,18 +98,20 @@ def main(argv: list[str] | None = None) -> int:
             len(escalados),
         )
 
-        acionaveis = [l for l in escalados if (l[2] or "nenhum") != "nenhum"]
-        if acionaveis:
-            _tabela(
-                f"Risco dos {len(acionaveis)} dossiê(s) preparado(s)",
-                Counter(r or "(sem risco)" for _, _, _, r in acionaveis),
-                len(acionaveis),
-            )
-        sem_dossie = len(escalados) - len(acionaveis)
-        if sem_dossie:
-            print(f"\n{sem_dossie} escalado(s) sem dossiê "
-                  "(falta de conhecimento, identidade por confirmar, ou "
-                  "encomenda sem correspondência)")
+        # A etiqueta "Urgente" só vale enquanto for rara: se disparar muito
+        # acima do que se via nos dados históricos (~2 por semana), deixou de
+        # querer dizer alguma coisa e o critério no prompt tem de apertar.
+        urgentes = [l for l in escalados
+                    if (l[2] or "").strip().lower() in ("sim", "alto", "alta")]
+        if urgentes:
+            print(f"\n{len(urgentes)} de {len(escalados)} escalado(s) marcados "
+                  f"URGENTE ({len(urgentes) / len(escalados) * 100:.0f}%)")
+
+        # Escalar não é ficar calado: quase todos devem trazer a resposta de
+        # retenção já escrita, para quem revê não começar do zero.
+        com_resposta = [l for l in escalados if (l[3] or "").strip()]
+        print(f"{len(com_resposta)} de {len(escalados)} escalado(s) já trazem "
+              f"resposta escrita ({len(com_resposta) / len(escalados) * 100:.0f}%)")
 
     if resultados_draft:
         estados = Counter(r[0] for r in resultados_draft)
@@ -158,7 +160,7 @@ def main(argv: list[str] | None = None) -> int:
               "emails anteriores não o têm.")
 
     print(f"\n{'─' * LARGURA}")
-    print("Para ver quais casos e não só quantos: dossie.py, lacunas.py")
+    print("Para ver quais casos e não só quantos: lacunas.py")
     print("Para saber se o rascunho está bom: medir_deriva.py\n")
     return 0
 

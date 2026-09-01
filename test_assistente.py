@@ -94,7 +94,7 @@ def cfg(**over: object) -> Config:
         "knowledge_dir": Path("knowledge"), "blocklist": Path("blocklist.txt"),
         "db": Path("t.db"), "max_body": 4000, "dry_run": True,
         "fio_mensagens": 8, "fio_chars": 400, "resolver_identidade": True,
-        "pre_dossies": True, "registo_compromissos": True,
+        "pre_rascunhos": True, "registo_compromissos": True,
         "respostas_parciais": True, "processar_imagens": True,
         "empresa": "A Loja", "assinatura": "Equipa",
         "cat_rascunho": "IA-Rascunhado", "cat_humano": "Precisa de humano",
@@ -1675,23 +1675,22 @@ class Processar(unittest.TestCase):
         "categoria": "OUTRO",
     }
     _RASCUNHAR_PARCIAL = {**_RASCUNHAR, "por_responder": "pediu também um desconto por fidelidade"}
-    _RASCUNHAR_CORPO_VAZIO = {"acao": "rascunhar", "motivo": "x", "corpo": "   ", "categoria": "JULGAMENTO_HUMANO"}
+    _RASCUNHAR_CORPO_VAZIO = {"acao": "rascunhar", "motivo": "x", "corpo": "   ",
+                              "categoria": "JULGAMENTO_HUMANO"}
+    # Escalar traz a resposta de retenção no próprio "corpo": desde que o
+    # dossiê foi removido, é uma chamada só e é este o texto que vira rascunho.
     _ESCALAR = {
         "acao": "escalar", "motivo": "pede cancelamento",
-        "corpo": "", "categoria": "ACAO_SOBRE_ENCOMENDA",
+        "corpo": "Boa tarde,\n\nVamos verificar se conseguimos cancelar.",
+        "categoria": "ACAO_SOBRE_ENCOMENDA",
     }
-    _ESCALAR_LACUNA = {
+    # Sem nada seguro a dizer: o corpo fica vazio e não se cria rascunho.
+    _ESCALAR_SEM_RESPOSTA = {
         "acao": "escalar", "motivo": "não está na base", "corpo": "",
         "categoria": "LACUNA_DE_CONHECIMENTO",
         "lacuna_tema": "prazo Madeira", "lacuna_em_falta": "se é diferente do continente",
     }
-    _DOSSIE_VAZIO: dict = {}
-    _DOSSIE_COMPLETO = {
-        "dossie_tipo": "cancelamento", "dossie_resumo": "Cliente pede cancelamento.",
-        "dossie_validacao": "sim, encomenda encontrada", "dossie_accao": "Cancelar.",
-        "dossie_risco": "baixo", "dossie_resposta": "Boa tarde,\n\nVamos verificar se conseguimos.",
-    }
-    _DOSSIE_SEM_TIPO = {k: v for k, v in _DOSSIE_COMPLETO.items() if k != "dossie_tipo"}
+    _ESCALAR_URGENTE = {**_ESCALAR, "urgencia": "sim", "categoria": "JULGAMENTO_HUMANO"}
 
     def setUp(self) -> None:
         pasta = TemporaryDirectory()
@@ -1706,9 +1705,8 @@ class Processar(unittest.TestCase):
         return processar(m, c, graph, shopify, self.con, cliente, "prompt", self.bloqueados), graph, shopify
 
     def _linha(self, message_id: str) -> dict:
-        cols = ("message_id", "acao", "motivo", "corpo", "categoria", "dossie_tipo",
-                "dossie_resumo", "dossie_resposta", "por_responder", "lacuna_tema",
-                "rascunho_id")
+        cols = ("message_id", "acao", "motivo", "corpo", "categoria",
+                "por_responder", "lacuna_tema", "rascunho_id", "urgencia")
         linha = self.con.execute(
             f"SELECT {', '.join(cols)} FROM processados WHERE message_id = ?", (message_id,)
         ).fetchone()
@@ -1968,36 +1966,55 @@ class Processar(unittest.TestCase):
         self.assertEqual(linha["categoria"], "OUTRO")
         self.assertEqual(linha["motivo"], "modelo escolheu rascunhar mas devolveu corpo vazio")
 
-    # --- Aplicação da decisão: escalar e o dossiê ------------------------
+    # --- Aplicação da decisão: escalar -----------------------------------
 
-    def test_escalar_sem_dossie_nao_cria_rascunho(self) -> None:
-        cliente = ClienteFalso([self._ESCALAR_LACUNA, self._DOSSIE_VAZIO])
+    def test_escalar_sem_resposta_nao_cria_rascunho(self) -> None:
+        """Sem nada seguro a dizer, o corpo vem vazio: fica só a marca."""
+        cliente = ClienteFalso(self._ESCALAR_SEM_RESPOSTA)
         m = msg()
         resultado, graph, _ = self._correr(m, cfg(dry_run=False), cliente)
         self.assertEqual(resultado, "escalado")
         self.assertNotIn("criar_rascunho", [c[0] for c in graph.chamadas])
-        # Além da marca de "precisa de humano", o tipo de caso traduzido para
-        # o lojista ler na lista. Sem urgência: este caso não é urgente.
         self.assertEqual([c[2] for c in graph.chamadas if c[0] == "marcar"],
                           ["Precisa de humano", "Falta regra"])
-        linha = self._linha(m["message_id"])
-        self.assertEqual(linha["dossie_tipo"], "")
-        self.assertEqual(linha["lacuna_tema"], "prazo Madeira")
+        self.assertEqual(self._linha(m["message_id"])["lacuna_tema"], "prazo Madeira")
 
-    def test_escalar_com_dossie_completo_cria_rascunho_sugerido(self) -> None:
-        cliente = ClienteFalso([self._ESCALAR, self._DOSSIE_COMPLETO])
+    def test_escalar_com_resposta_cria_rascunho(self) -> None:
+        cliente = ClienteFalso(self._ESCALAR)
         m = msg()
         resultado, graph, _ = self._correr(m, cfg(dry_run=False), cliente)
         self.assertEqual(resultado, "escalado")
         criados = [c for c in graph.chamadas if c[0] == "criar_rascunho"]
         self.assertEqual(len(criados), 1)
         self.assertIn("Vamos verificar se conseguimos", criados[0][2])
-        linha = self._linha(m["message_id"])
-        self.assertEqual(linha["dossie_tipo"], "cancelamento")
-        self.assertEqual(linha["rascunho_id"], "AAMk-fake")
+        self.assertEqual(self._linha(m["message_id"])["rascunho_id"], "AAMk-fake")
+
+    def test_escalar_faz_uma_so_chamada_ao_modelo(self) -> None:
+        """O dossiê era uma segunda chamada por cada caso escalado. Removido a
+        01/09/2026: a resposta de retenção passou a sair na primeira."""
+        cliente = ClienteFalso(self._ESCALAR)
+        self._correr(msg(), cfg(dry_run=False), cliente)
+        self.assertEqual(len(cliente.pedidos), 1)
+
+    def test_corpo_do_escalado_fica_gravado(self) -> None:
+        """Antes ficava em dossie_resposta e a medição de deriva, que compara
+        pelo corpo, nunca chegava aos casos escalados."""
+        cliente = ClienteFalso(self._ESCALAR)
+        m = msg()
+        self._correr(m, cfg(dry_run=False), cliente)
+        self.assertIn("Vamos verificar se conseguimos",
+                      self._linha(m["message_id"])["corpo"])
+
+    def test_urgente_acrescenta_a_etiqueta(self) -> None:
+        cliente = ClienteFalso(self._ESCALAR_URGENTE)
+        m = msg()
+        _, graph, _ = self._correr(m, cfg(dry_run=False), cliente)
+        self.assertEqual([c[2] for c in graph.chamadas if c[0] == "marcar"],
+                          ["Precisa de humano", "Decisão", "Urgente"])
+        self.assertEqual(self._linha(m["message_id"])["urgencia"], "sim")
 
     def test_erro_a_criar_rascunho_sugerido_nao_derruba_a_passagem(self) -> None:
-        cliente = ClienteFalso([self._ESCALAR, self._DOSSIE_COMPLETO])
+        cliente = ClienteFalso(self._ESCALAR)
         m = msg()
         graph = GraphFalso(criar_rascunho=RuntimeError("Graph 500: instável"))
         resultado, _, _ = self._correr(m, cfg(dry_run=False), cliente, graph=graph)
@@ -2007,42 +2024,30 @@ class Processar(unittest.TestCase):
         self.assertEqual(self._linha(m["message_id"])["rascunho_id"], "")
 
     def test_erro_a_marcar_precisa_de_humano_nao_derruba_a_passagem(self) -> None:
-        cliente = ClienteFalso([self._ESCALAR, self._DOSSIE_COMPLETO])
+        cliente = ClienteFalso(self._ESCALAR)
         m = msg()
         graph = GraphFalso(marcar=RuntimeError("Graph 500: instável"))
         resultado, _, _ = self._correr(m, cfg(dry_run=False), cliente, graph=graph)
         self.assertEqual(resultado, "escalado")
         self.assertEqual(self._linha(m["message_id"])["rascunho_id"], "AAMk-fake")
 
-    def test_dossie_sem_tipo_mas_com_conteudo_vira_excecao(self) -> None:
-        """Visto em produção, 18/08/2026: o modelo escreve um dossiê bom mas
-        hesita na etiqueta. O conteúdo é que decide se há dossiê, não a
-        etiqueta -- ver tem_dossie() em processar()."""
-        cliente = ClienteFalso([self._ESCALAR, self._DOSSIE_SEM_TIPO])
-        m = msg()
-        self._correr(m, cfg(dry_run=False), cliente)
-        self.assertEqual(self._linha(m["message_id"])["dossie_tipo"], "excecao")
-
     def test_escalar_em_dry_run_nao_escreve_na_caixa(self) -> None:
-        cliente = ClienteFalso([self._ESCALAR, self._DOSSIE_COMPLETO])
+        cliente = ClienteFalso(self._ESCALAR)
         m = msg()
         resultado, graph, _ = self._correr(m, cfg(dry_run=True), cliente)
         self.assertEqual(resultado, "escalado")
         nomes = [c[0] for c in graph.chamadas]
         self.assertNotIn("criar_rascunho", nomes)
         self.assertNotIn("marcar", nomes)
-        # Mas o dossiê fica gravado -- dry_run só afeta a caixa, não o registo.
-        self.assertEqual(self._linha(m["message_id"])["dossie_tipo"], "cancelamento")
+        # Mas fica gravado -- dry_run só afeta a caixa, não o registo.
+        self.assertEqual(self._linha(m["message_id"])["acao"], "escalar")
 
-    def test_pre_dossies_desligado_nunca_prepara_dossie(self) -> None:
-        cliente = ClienteFalso([self._ESCALAR, self._DOSSIE_COMPLETO])
+    def test_pre_rascunhos_desligado_nao_prepara_texto(self) -> None:
+        cliente = ClienteFalso(self._ESCALAR)
         m = msg()
-        self._correr(m, cfg(dry_run=False, pre_dossies=False), cliente)
-        # Só uma chamada: sem pre_dossies, tem_dossie nunca é True, mas
-        # decidir() já decidiu pedir o dossiê antes de processar() saber
-        # disso -- o que muda é processar() ignorar o resultado.
-        self.assertEqual(len(cliente.pedidos), 2)
-        self.assertEqual(self._linha(m["message_id"])["dossie_tipo"], "")
+        _, graph, _ = self._correr(m, cfg(dry_run=False, pre_rascunhos=False), cliente)
+        self.assertNotIn("criar_rascunho", [c[0] for c in graph.chamadas])
+        self.assertEqual(self._linha(m["message_id"])["corpo"], "")
 
     def test_saltar_do_modelo_e_registado(self) -> None:
         m = msg(corpo="Reserve já o seu stand na feira 2027")
