@@ -177,6 +177,28 @@ dossiê mantêm entradas separadas e um arranque a frio escreve o prompt duas ve
 >
 > O ensaio custou ~$0,008 e evitou um deploy que teria parado o atendimento.
 
+#### A curva entre os dois extremos
+
+Mapeada a **01/09/2026**, ao avaliar se cabia um campo de urgência no núcleo — para poder
+etiquetar os casos escalados no Outlook sem depender do dossiê. Mesma medição, prompt de
+sistema mínimo para isolar o esquema:
+
+| Propriedades | Tempo | |
+|---|---|---|
+| 11 — o núcleo de hoje | 5,71 s | |
+| **12 — com um campo a mais** | **10,69 s** | cabe, 5,6× de folga para o timeout |
+| 13 | 12,83 s | |
+| 14 | 20,16 s | |
+
+Dá para acrescentar um campo. Mas **duplica a latência da chamada**, e essa chamada acontece
+em *todos* os emails, não só nos que escalam. Não é bloqueante — a passagem tem
+`TimeoutStartSec=600` — mas acrescentar campos ao núcleo é uma decisão a tomar com estes
+números à frente, não por conveniência.
+
+> [!NOTE] Os tempos absolutos não são os de produção
+> A medição usa um prompt mínimo de propósito. Com as ~33K tokens de contexto real os tempos
+> seriam outros; o que estes números comparam bem é o efeito **do esquema**.
+
 ### O que sobra: as escritas por deploy
 
 Das 8 falhas de cache do dia, **4 foram expirações legítimas de TTL** (intervalos de 162, 62 e

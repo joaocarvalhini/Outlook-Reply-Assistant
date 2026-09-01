@@ -605,8 +605,8 @@ ESTADOS_COMPROMISSO = ("pendente", "concluido", "cancelado", "desconhecido")
 # presa sem erro nenhum, minutos a fio. Um esquema sem esses campos resolve em
 # 1-2 segundos. A correção é dividir em duas chamadas: uma pequena, sempre; uma
 # maior, só para o dossiê, só quando o caso escala. O núcleo já viu 10 e 12
-# propriedades funcionarem sem problema a semana toda; é só o total de ~19 que
-# falha.
+# propriedades funcionarem a semana toda; é só o total de ~19 que falha. (As 12
+# funcionam, mas não de graça — ver a curva medida ao fundo deste comentário.)
 #
 # Só "acao" fica com enum estrito nos dois esquemas. Os outros campos de
 # classificação eram "enum" e a soma disso também contribuiu para o esquema
@@ -624,9 +624,27 @@ ESTADOS_COMPROMISSO = ("pendente", "concluido", "cancelado", "desconhecido")
 #   19 propriedades (controlo)          184,03 s   400 "Schema is too complex"
 #
 # O cliente é criado com timeout=60.0, por isso as 17 propriedades estourariam
-# o timeout em *todas* as chamadas — falha total, não intermitente. O custo não
-# é linear (11→5 s, 17→68 s), portanto aparar um ou dois campos também não
-# salva. As duas entradas de cache são o preço de manter cada chamada nos ~5 s.
+# o timeout em *todas* as chamadas — falha total, não intermitente. As duas
+# entradas de cache são o preço de manter cada chamada nos ~5 s.
+#
+# A curva foi mapeada a 01/09/2026, quando se pôs a hipótese de acrescentar um
+# campo de urgência ao núcleo (para etiquetar os casos no Outlook). Mesma
+# medição, uma chamada real por configuração, prompt de sistema mínimo para
+# isolar o esquema:
+#
+#   11 propriedades    5,71 s    <- o núcleo de hoje
+#   12 propriedades   10,69 s    cabe, com folga de 5,6x para o timeout
+#   13 propriedades   12,83 s
+#   14 propriedades   20,16 s
+#
+# Ou seja: dá para acrescentar um campo, mas **duplica a latência da chamada**
+# (5,7 -> 10,7 s), e essa chamada acontece em todos os emails, não só nos que
+# escalam. Não é bloqueante — a passagem tem TimeoutStartSec=600 — mas é um
+# custo real, e não uma extensão gratuita. Acrescentar campos ao núcleo é uma
+# decisão a tomar com estes números à frente, não por conveniência.
+#
+# Os tempos absolutos seriam outros com as ~33K tokens de contexto real; o que
+# estes números comparam bem é o efeito do esquema, não a latência final.
 # Ver docs/06-engineering/cost-optimization.md.
 ESQUEMA_NUCLEO = {
     "type": "object",
