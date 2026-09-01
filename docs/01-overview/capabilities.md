@@ -69,7 +69,7 @@ Ver [[shopify|Integração Shopify]].
 | Escrever no estilo da loja | ✅ | Secção dedicada no prompt |
 | Responder sempre em português de Portugal | ✅ | Regra no prompt, testada com email em inglês |
 | Responder a parte de um email e assinalar o resto | ✅ | `por_responder` |
-| Preparar dossiê de caso escalado | ✅ | 6 campos; ver [[escalation\|Escalação]] |
+| Escrever a resposta de retenção ao escalar | ✅ | 94% dos escalados; ver [[escalation\|Escalação]] |
 | Registar compromissos assumidos | ✅ | Sobrevive à janela do fio |
 | Detetar lacunas de conhecimento acionáveis | ✅ | `lacuna_tema` + `lacuna_em_falta` |
 | Recusar responder ao que não sabe | ✅ | Ver [[guardrails\|Guardrails]] |
@@ -82,7 +82,7 @@ Ver [[shopify|Integração Shopify]].
 | Continuar se a Shopify falhar | ✅ | Escala por falta de dados |
 | Continuar se o fio não vier | ✅ | Escala por falta de contexto |
 | Continuar se os anexos falharem | ✅ | Decide sem imagens |
-| Continuar se o dossiê falhar | ✅ | Escala sem dossiê |
+| Etiquetar o caso no Outlook | ✅ | Tipo + urgência, para triagem sem abrir |
 | Saltar email apagado a meio da passagem | ✅ | Corrigido 26/08/2026 |
 | Não perder email em falha do modelo | ✅ | `cursor_seguro`, corrigido 27/08/2026 |
 | Retentar automaticamente | ✅ | Via timer — a passagem seguinte vê o mesmo |
@@ -95,7 +95,7 @@ Ver [[shopify|Integração Shopify]].
 | Capacidade | Estado | Ferramenta |
 |---|---|---|
 | Ver a distribuição de decisões | ✅ | `metricas.py` |
-| Ver a fila de casos preparados | ✅ | `dossie.py` |
+| Ver a fila de lacunas de conhecimento | ✅ | `lacunas.py` |
 | Ver as lacunas por frequência | ✅ | `lacunas.py` |
 | Reavaliar decisões passadas com o código de hoje | ✅ | `reprocessar.py` |
 | Comparar rascunho com resposta real | 🟡 | `medir_deriva.py` — referência nunca medida |

@@ -56,35 +56,39 @@ flowchart LR
     style IA fill:#e8d5f2
 ```
 
-## As duas chamadas
+## Uma chamada por email
 
 ```mermaid
 flowchart TD
-    A["Email + contexto"] --> B["<b>Chamada 1 — núcleo</b><br/>ESQUEMA_NUCLEO<br/>11 propriedades"]
+    A["Email + contexto"] --> B["<b>Uma chamada</b><br/>ESQUEMA_NUCLEO<br/>12 propriedades"]
     B --> C{"acao?"}
-    C -->|rascunhar| D["Fim — 1 chamada"]
-    C -->|saltar| D
-    C -->|escalar| E["<b>Chamada 2 — dossiê</b><br/>ESQUEMA_DOSSIE<br/>6 propriedades"]
-    E --> F["Fim — 2 chamadas"]
-    E -.->|"se falhar"| G["Mantém a classificação,<br/>escala sem dossiê"]
+    C -->|rascunhar| D["Rascunho no Outlook"]
+    C -->|escalar| E["Rascunho de retenção<br/>+ etiquetas"]
+    C -->|saltar| F["Fim"]
 
     style B fill:#e8d5f2
-    style E fill:#e8d5f2
-    style G fill:#ffe0b2
+    style D fill:#dcebe7
+    style E fill:#f5e9d8
 ```
 
-> [!IMPORTANT] Porque é que são duas chamadas e não uma
-> **Implemented** — comentário em `assistente.py`, acima de `ESQUEMA_NUCLEO`:
+> [!NOTE] Eram duas até 01/09/2026
+> Os casos escalados faziam uma segunda chamada para preparar um **dossiê**: resumo, validações,
+> ação recomendada, risco e resposta sugerida. Cinco desses sete campos nunca chegavam a ninguém —
+> ficavam no registo local, e o lojista trabalha no Outlook.
 >
-> *Um único esquema com todos os campos chegou a 19 propriedades e a API passou a responder
-> "Grammar compilation timed out" de forma consistente — descoberto a meio de uma corrida do
-> eval.py que ficava presa sem erro nenhum, minutos a fio. Um esquema sem esses campos resolve
-> em 1-2 segundos.*
+> Quando ele confirmou que não precisava do resumo, a segunda chamada saiu. A resposta de retenção
+> passou para o campo `corpo`, que já existia e estava a ser forçado a vazio nas escalações:
+> **escalar deixou de ser sinónimo de ficar calado**.
 >
-> Não é uma escolha estética. É um achado operacional.
+> Medido: prompt de 34 268 → 32 331 tokens, e uma entrada de cache em vez de duas. A qualidade foi
+> verificada com o subconjunto do banco de ensaio antes e depois — 21/23, zero clientes perdidos,
+> os mesmos números. Ver [[cost-optimization|Auditoria de custo]].
 
-A segunda chamada reutiliza integralmente o prefixo em cache, pelo que o custo marginal é o do
-texto novo, não o do prompt inteiro.
+> [!IMPORTANT] O limite de complexidade do esquema continua a mandar
+> **Implemented** — comentário em `assistente.py`, acima de `ESQUEMA_NUCLEO`. Um esquema com 19
+> propriedades é rejeitado pela API; com 17 demora 68 s, acima do `timeout=60.0`. O núcleo tem 12
+> e compila em ~10,7 s. **Acrescentar campos aqui é uma decisão a tomar com a curva medida à
+> frente**, não por conveniência.
 
 ### Os esquemas
 
@@ -99,7 +103,7 @@ ESQUEMA_NUCLEO = {
         "lacuna_tema": {...}, "lacuna_em_falta": {...},
         "compromisso_tipo": {...}, "compromisso_descricao": {...},
         "compromisso_estado": {...}, "compromisso_data": {...},
-        "por_responder": {...},
+        "por_responder": {...}, "urgencia": {...},
     },
     "required": ["acao", "motivo", "corpo", "categoria"],
     "additionalProperties": False,
@@ -215,7 +219,7 @@ flowchart TD
     A["JSON do modelo"] --> B["1. JSON Schema<br/><i>na API</i>"]
     B --> C["2. _validar()<br/>categoria/compromisso fora<br/>da lista → valor seguro"]
     C --> D["3. Rebaixamento<br/>rascunhar sem corpo<br/>→ escalar"]
-    D --> E["4. Gating do dossiê<br/>sem resumo+resposta<br/>→ não há dossiê"]
+    D --> E["4. Corte de lixo<br/>depois da assinatura"]
     E --> F["Decisão aplicada"]
 
     style B fill:#e8d5f2
@@ -224,22 +228,16 @@ flowchart TD
     style E fill:#d5e8f2
 ```
 
-O gating do dossiê valida por **conteúdo, não por etiqueta**:
+O rebaixamento é o mais importante dos quatro: um `rascunhar` com o corpo vazio não pode passar
+por resposta, por isso vira `escalar` com categoria `OUTRO` e um motivo que diz exatamente o que
+aconteceu. Nas escalações não há rebaixamento — um corpo vazio ali é legítimo, e quer dizer que
+não havia nada seguro a escrever ao cliente.
 
-```python
-tem_dossie = (
-    cfg.pre_dossies
-    and decisao["acao"] == "escalar"
-    and bool(decisao["dossie_resumo"].strip())
-    and bool(decisao["dossie_resposta"].strip())
-)
-```
-
-> [!TIP] Porque é que a etiqueta não conta
-> Visto em produção (18/08/2026): o modelo às vezes escreve um dossiê completo e correto mas
-> hesita na etiqueta e devolve `"nenhum"`. Exigir a etiqueta deitaria fora todo esse trabalho por
-> causa de um campo. Quando acontece, o código atribui `"excecao"` e mantém o conteúdo.
-> Decisão D7 em [[technical-decisions|Decisões técnicas]].
+> [!NOTE] Havia aqui um quinto passo até 01/09/2026
+> O *gating do dossiê* validava, por conteúdo e não por etiqueta, se a segunda chamada tinha
+> produzido algo aproveitável. Desapareceu com o dossiê. A lição que o motivou continua válida e
+> aplica-se noutros sítios: **validar pelo conteúdo, não pela etiqueta** — o modelo às vezes
+> escrevia um dossiê correto e hesitava só no campo que lhe dava nome.
 
 ## Qualidade medida
 

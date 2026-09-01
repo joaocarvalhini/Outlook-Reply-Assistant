@@ -129,13 +129,8 @@ erDiagram
         TEXT lacuna_tema
         TEXT lacuna_em_falta
         TEXT confianca_encomenda
-        TEXT dossie_tipo
-        TEXT dossie_resumo
-        TEXT dossie_validacao
-        TEXT dossie_accao
-        TEXT dossie_risco
-        TEXT dossie_resposta
         TEXT dossie_link
+        TEXT urgencia
         TEXT por_responder
         TEXT rascunho_id "id do Graph, para fechar o ciclo"
         TEXT resultado_estado "pendente|apagado|enviado-tal-e-qual|enviado-editado"
@@ -241,7 +236,7 @@ flowchart LR
 | Dado | Onde | Retenção | No git? |
 |---|---|---|---|
 | Cursor, decisões, compromissos | `assistente.db` (local) | Indefinida (classificação) | Não |
-| Corpo dos rascunhos e dossiês | `processados` | **90 dias**, depois purgado | Não |
+| Corpo das respostas | `processados` | **90 dias**, depois purgado | Não |
 | Logs de passagem | journal do systemd | Política do systemd | Não |
 | Base de conhecimento | `knowledge/*.md` | Versionada | **Sim** |
 | Casos de teste | `eval/casos.json` | Versionada | **Sim** |

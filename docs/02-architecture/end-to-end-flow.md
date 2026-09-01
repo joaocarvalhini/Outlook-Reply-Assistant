@@ -82,7 +82,7 @@ sequenceDiagram
             end
         else escalar
             A->>G: marcar("Precisa de humano")
-            opt dossiê com resposta sugerida
+            opt houve resposta de retenção
                 A->>G: createReply(resposta sugerida)
             end
         end
@@ -168,7 +168,7 @@ flowchart TD
     D -->|rascunhar<br/>sem corpo| X["<b>rebaixado a escalar</b><br/>categoria → OUTRO"]
     X --> E1
 
-    D -->|escalar| E1{"tem dossiê<br/>com conteúdo?"}
+    D -->|escalar| E1{"escreveu resposta<br/>de retenção?"}
     E1 -->|sim| E2["Precisa de humano<br/>+ createReply<br/>(só a resposta sugerida)"]
     E1 -->|não| E3["Precisa de humano<br/>sem rascunho"]
 
@@ -180,9 +180,9 @@ flowchart TD
 ```
 
 > [!NOTE] O rascunho de um caso escalado não leva nota nenhuma à volta
-> Quando há dossiê, o rascunho contém **apenas** a resposta sugerida ao cliente — sem resumo,
+> Quando há resposta, o rascunho contém **apenas** o texto para o cliente — sem resumo,
 > sem validação, sem link do admin. O cliente pediu explicitamente para tirar a nota interna.
-> A análise completa fica no registo, visível por `dossie.py`.
+> A triagem faz-se pelas etiquetas na lista de mensagens, não por texto dentro do rascunho.
 
 ### 7. Fecho da passagem
 

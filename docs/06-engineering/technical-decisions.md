@@ -40,7 +40,7 @@ rejeitadas.
 
 ## D2 — Monólito de 2761 linhas
 
-**Escolha:** todo o caminho de produção num ficheiro; as 12 ferramentas importam-no.
+**Escolha:** todo o caminho de produção num ficheiro; as 11 ferramentas importam-no.
 
 **Motivo** — **Inference**: manutenção por uma pessoa, navegabilidade num ficheiro.
 
@@ -125,18 +125,27 @@ Para 29K tokens numa janela de 1M, a escolha é clara. Deixa de o ser em
 
 ---
 
-## D7 — Dossiê validado por conteúdo, não por etiqueta
+## D7 — ~~Dossiê validado por conteúdo, não por etiqueta~~ · revertida a 01/09/2026
 
-**Escolha:** `tem_dossie` exige `dossie_resumo` **e** `dossie_resposta` preenchidos; ignora
-`dossie_tipo`.
+**A decisão original:** `tem_dossie` exigia `dossie_resumo` **e** `dossie_resposta` preenchidos, e
+ignorava `dossie_tipo`, porque o modelo às vezes escrevia um dossiê completo e hesitava só na
+etiqueta — sem isso, o trabalho todo era deitado fora por causa de um campo.
 
-**Motivo** — **Implemented**:
-> Visto em produção (18/08/2026) que o modelo às vezes escreve um dossiê completo e uma resposta
-> sugerida já pronta, mas erra ou hesita só na etiqueta de "dossie_tipo" e devolve "nenhum" — sem
-> isto, esse trabalho todo era deitado fora por causa de um campo.
+**Porque desapareceu:** o dossiê inteiro foi removido. Cinco dos seus sete campos nunca chegavam
+ao lojista, que trabalha no Outlook e não corre comandos. Quando ele confirmou que não precisava
+do resumo, a segunda chamada ao modelo saiu com ele.
 
 | | |
 |---|---|
+| **Ganho** | Prompt de 34 268 → 32 331 tokens; uma chamada em vez de duas nos escalados; uma entrada de cache em vez de duas |
+| **Custo** | A análise deixou de existir. Hoje não a lia ninguém, mas se um dia fizer falta é preciso reconstruí-la |
+| **Verificação** | Subconjunto do banco de ensaio antes e depois: 21/23, zero clientes perdidos, os mesmos números da linha de base |
+
+> [!TIP] A lição sobreviveu à decisão
+> **Validar pelo conteúdo, não pela etiqueta** continua a ser o princípio certo, e aplica-se
+> noutros sítios do código. O que caiu foi o sítio onde nasceu, não a ideia.
+
+---|---|
 | **Benefício** | O trabalho útil não se perde por um erro de arrumação |
 | **Trade-off** | `dossie_tipo` deixa de ser fiável para análise — mitigado atribuindo `"excecao"` |
 | **Alternativas** | Exigir a etiqueta (perde dossiês bons); ignorar o conteúdo (fila inflacionada) |

@@ -16,14 +16,12 @@ tags:
 ## O princípio
 
 > [!IMPORTANT] Escalar não é despachar
-> **Implemented** — `dossie.py`:
->
-> *"Cada caso aqui traz o que foi confirmado, o que impede, a ação recomendada e a resposta ao
-> cliente já redigida. O objetivo é quem decide perceber o caso em segundos, em vez de ir
-> investigar."*
+> Um caso escalado chega ao lojista com a resposta ao cliente já redigida e com etiquetas que
+> dizem o que há a fazer. O objetivo é ele perceber o caso em segundos, em vez de ir investigar.
 
-Uma escalação sem dossiê poupa zero trabalho. Uma escalação com dossiê poupa a maior parte.
-**O indicador de saúde não é a taxa de escalação — é a fração de escalações que vêm preparadas.**
+Uma escalação sem texto preparado poupa zero trabalho. Uma escalação com a resposta escrita poupa
+a maior parte. **O indicador de saúde não é a taxa de escalação — é a fração de escalações que
+vêm preparadas**, medida a 01/09/2026 em 94%.
 
 ## A taxonomia — 9 categorias
 
@@ -58,128 +56,96 @@ de precisar de uma pessoa."*
 
 ```mermaid
 flowchart TD
-    ESC["Modelo decidiu: escalar"] --> CAT["Categoria + motivo<br/><i>&lt;20 palavras, para o colega</i>"]
-    CAT --> CH2["<b>Chamada 2 ao modelo</b><br/>ESQUEMA_DOSSIE"]
-    CH2 --> DOSS{"tem_dossie?<br/><i>resumo E resposta<br/>preenchidos</i>"}
+    ESC["Modelo decidiu: escalar"] --> CAT["Categoria + motivo + urgência<br/><i>tudo na mesma chamada</i>"]
+    CAT --> CORPO{"Escreveu resposta<br/>de retenção?"}
 
-    DOSS -->|Não| SEM["Sem dossiê<br/><i>lacuna · identidade ·<br/>sem correspondência</i>"]
-    DOSS -->|Sim| TIPO{"dossie_tipo<br/>é '' ou 'nenhum'?"}
-    TIPO -->|Sim| FIX["→ 'excecao'<br/><b>salva o conteúdo</b>"]
-    TIPO -->|Não| MANT["mantém a etiqueta"]
-
-    FIX & MANT --> GRAVA["SQLite: dossiê completo<br/>+ link para o admin"]
+    CORPO -->|"não"| SEM["Nada seguro a dizer<br/><i>lacuna · identidade ·<br/>sem correspondência</i>"]
+    CORPO -->|"sim"| GRAVA["SQLite: decisão + corpo<br/>+ link para o admin"]
     SEM --> GRAVA2["SQLite: só motivo<br/>+ categoria"]
 
-    GRAVA --> MARCA["Graph: 'Precisa de humano'"]
-    GRAVA2 --> MARCA2["Graph: 'Precisa de humano'"]
-    MARCA --> RASC["Graph: createReply<br/><i>só a resposta sugerida,<br/>sem nota à volta</i>"]
-    MARCA2 --> NADA["sem rascunho"]
+    GRAVA --> MARCA["Graph: etiquetas<br/><i>humano · tipo · urgente</i>"]
+    GRAVA2 --> MARCA
+    MARCA --> RASC["Graph: createReply<br/><i>só a resposta, sem nota</i>"]
 
-    RASC & NADA --> H["👤 Operador abre o Outlook"]
+    RASC --> H["👤 Lojista abre o Outlook"]
     H --> DEC["Decide · edita · envia"]
     DEC --> SHOP["Executa no admin da Shopify<br/><i>o sistema nunca executa</i>"]
 
     style H fill:#ffe0b2
     style SHOP fill:#ffe0b2
-    style FIX fill:#e8f5e9
 ```
 
-## O dossiê — seis campos
+## A resposta de retenção
 
-| Campo | Conteúdo | Regra |
-|---|---|---|
-| `dossie_tipo` | cancelamento · reembolso · troca · garantia · alteração de morada · disputa · exceção | Só `"nenhum"` em 3 situações |
-| `dossie_resumo` | A situação em 1-2 frases | Escrito para um colega |
-| `dossie_validacao` | Uma verificação por linha, começada por "sim"/"não" | **Só factos que tem à frente** |
-| `dossie_accao` | A ação recomendada, numa frase | Recomendação, nunca ordem |
-| `dossie_risco` | baixo · medio · alto | medio = envolve dinheiro; alto = disputa formal |
-| `dossie_resposta` | A resposta ao cliente já redigida | Fórmula obrigatória (ver abaixo) |
+Escalar não é ficar calado. Um pedido concreto sobre uma encomenda leva **sempre** pelo menos o
+texto que o lojista pode enviar enquanto trata do caso — e isso sai na mesma chamada que decide.
 
-Exemplo de `dossie_validacao`, do próprio prompt:
+**Medido a 01/09/2026: 94% dos casos escalados trazem a resposta já escrita.**
 
-```
-sim, encomenda encontrada e identidade confirmada
-sim, ainda não foi expedida
-não, o pagamento já foi capturado
-```
+O que essa resposta pode dizer:
 
-`dossie.py` renderiza-as com ✓ e ✗ — *"o símbolo é para se ver de relance qual é qual"*.
+| Pode | Não pode |
+|---|---|
+| Confirmar que o pedido chegou e está a ser tratado | Uma data que ninguém confirmou |
+| Fazer a pergunta que a base manda fazer nesta situação | Prometer que a ação vai acontecer |
+| Citar prazos e políticas **já escritos** | Inventar valores, moradas ou contactos |
 
 ### A regra de linguagem mais afinada do sistema
 
-> [!IMPORTANT] "Verificar **se conseguimos**", nunca "verificar e confirmamos"
-> **Implemented** — no `PROMPT`:
+Uma ação por decidir tem incerteza sobre o **resultado**, não só sobre o momento:
+
+> *"Vamos verificar internamente **se conseguimos** cancelar."*
 >
-> *"Uma ação ainda por decidir tem sempre incerteza sobre o resultado, não só sobre o momento — a
-> fórmula é sempre 'vamos verificar internamente **se conseguimos** [a ação]', nunca 'vamos
-> verificar e confirmamos [a ação]'. A segunda forma promete o resultado como certo, só falta a
-> confirmação — é dizer a mais, mesmo que pareça óbvio que vai correr bem."*
+> nunca
 >
-> Corrigido a partir de um caso real de produção, 18 de agosto de 2026.
+> *"Vamos verificar e confirmamos o cancelamento."*
 
-### As três situações sem dossiê
+A segunda promete o resultado, e quem revê fica preso a ela. Nasceu de um caso real de 18/08/2026
+em que uma resposta prometeu o que ainda não estava decidido.
 
-1. **`LACUNA_DE_CONHECIMENTO`** — não há nada a preparar; preparar seria inventar.
-2. **`IDENTIDADE_NAO_VERIFICADA`** sem pedido concreto a sugerir — não há dados utilizáveis em
-   segurança.
-3. **`DADOS_ENCOMENDA_EM_FALTA`** sem qualquer correspondência — não há nada concreto para
-   validar.
+### As três situações sem resposta
 
-> [!WARNING] Fora destas três, `"nenhum"` é sempre um erro
-> O prompt é explícito, porque em produção o modelo devolvia `"nenhum"` com demasiada facilidade:
+O corpo fica mesmo vazio — e não se cria rascunho — quando:
+
+1. **Falta conhecimento** para dizer o que quer que seja
+2. **A identidade não está confirmada** e não há um pedido de confirmação concreto a fazer
+3. **A encomenda não tem correspondência** nenhuma
+
+Nesses casos o email leva só as etiquetas. É a fronteira de segurança: escrever a alguém cuja
+identidade não está provada é pior do que ficar calado.
+
+> [!NOTE] Havia aqui um dossiê até 01/09/2026
+> Os casos escalados faziam uma segunda chamada que preparava resumo, validações, ação recomendada
+> e risco, além da resposta. Cinco desses campos nunca chegavam ao lojista — ficavam no registo
+> local, e ele trabalha no Outlook. Quando confirmou que não precisava deles, a segunda chamada
+> saiu e a resposta passou para o campo `corpo`.
 >
-> *"Dois pedidos parecidos (por exemplo, dois clientes a pedir o cancelamento de uma unidade a
-> mais) têm de receber o mesmo tratamento — um dossiê preparado, nunca um 'nenhum' à sorte só
-> porque um parecia mais simples de escrever do que o outro."*
->
-> Nem "envolve dinheiro", nem "é uma unidade dentro de uma encomenda maior", nem "há incerteza
-> genuína" são motivo para `"nenhum"` — é precisamente para essa incerteza que serve a fórmula
-> "verificar se conseguimos".
+> O que substituiu a função de triagem do dossiê foram as **etiquetas no Outlook**, que dizem o
+> tipo de caso e se é urgente sem ser preciso abrir nada.
 
-## Validação por conteúdo, não por etiqueta
+## O que o lojista recebe
 
-```python
-tem_dossie = (
-    cfg.pre_dossies
-    and decisao["acao"] == "escalar"
-    and bool(decisao["dossie_resumo"].strip())
-    and bool(decisao["dossie_resposta"].strip())
-)
-dossie_tipo_final = decisao["dossie_tipo"]
-if tem_dossie and dossie_tipo_final in ("", "nenhum"):
-    dossie_tipo_final = "excecao"
-```
-
-> [!TIP] Porque é que o código não exige a etiqueta
-> Visto em produção (18/08/2026): o modelo às vezes escreve um dossiê completo e uma resposta
-> sugerida já pronta, mas **erra ou hesita só na etiqueta** e devolve `"nenhum"`. Sem esta
-> tolerância, esse trabalho todo era deitado fora por causa de um campo.
->
-> *"O conteúdo é que decide se há dossiê; a etiqueta é só arrumação."*
-
-## O que o operador recebe
-
-No Outlook, um rascunho com **apenas a resposta sugerida** — sem resumo, sem validação, sem link.
-
-> [!NOTE] A nota interna foi removida a pedido do cliente
-> *"O rascunho é só o email, sem nota nenhuma à volta — o cliente pediu para tirar a nota
-> interna, quer só o texto que mandaria."*
-
-A análise completa fica no registo, acessível por `dossie.py`:
-
-```bash
-python dossie.py --lista              # uma linha por caso
-python dossie.py --caso 42            # só este
-python dossie.py --tipo cancelamento
-python dossie.py --risco alto
-```
-
-E termina sempre com o lembrete:
+Na lista de mensagens, **etiquetas** que dizem o que há a fazer sem abrir nada:
 
 ```
-A ação é sempre executada por uma pessoa, no admin da Shopify.
-Esta aplicação não tem permissão de escrita e não a vai ter.
+Re: Encomenda #22241    [Precisa de humano] [Ação na encomenda] [Urgente]
+Re: Encomenda #22440    [Precisa de humano] [Já prometido]
+Re: Devolução           [Precisa de humano] [Decisão]
 ```
+
+E, ao abrir, um rascunho com **apenas a resposta ao cliente** — sem resumo, sem validação, sem
+link.
+
+> [!NOTE] A nota interna foi removida a pedido do lojista
+> *"O rascunho é só o email, sem nota nenhuma à volta — o lojista pediu para tirar a nota interna,
+> quer só o texto que mandaria."*
+>
+> Nota interna dentro do rascunho é nota interna que um dia sai para o cliente por engano.
+
+A etiqueta de urgência só aparece quando esperar piora o caso: ameaça de queixa formal, invocação
+de legislação, terceira insistência, ou valor elevado. **Nos dados históricos isso dava ~2 casos
+por semana** — e é a raridade que lhe dá peso. O `metricas.py` reporta a taxa, para se poder
+apertar o critério se ela subir.
 
 ## Registo de compromissos
 
@@ -207,15 +173,17 @@ Produção, primeiro dia (23 emails — **amostra pequena, indicativa**):
 | `rascunhar` | 3 | 13% |
 | `saltar` | 1 | 4% |
 
-Das 19 escalações, **18 traziam dossiê** (95%). As categorias dominantes foram
-`ACAO_SOBRE_ENCOMENDA` e `COMPROMISSO_ANTERIOR` — ambas na coluna "Não evitável".
+Das 19 escalações, **18 traziam resposta preparada** (95%). As categorias dominantes foram
+`ACAO_SOBRE_ENCOMENDA` e `COMPROMISSO_ANTERIOR` — ambas na coluna "Não evitável", e continuaram a
+sê-lo: a 01/09, sobre 216 escalações, eram 38% e 28%.
 
 > [!NOTE] 83% é alto, mas a amostra não é representativa
 > **Inference:** o primeiro dia coincidiu com um período de devoluções ativas. O banco de ensaio,
 > construído para cobrir o espectro, tem 41% de casos a escalar.
 >
-> O indicador saudável não é a taxa em si, mas **escalações com dossiê / escalações totais** —
-> em 95%. O valor estabilizado da taxa só se conhece no fim da semana de observação.
+> O indicador saudável não é a taxa em si, mas **escalações com resposta preparada / escalações
+> totais** — em 95% nesse dia, 94% uma semana depois sobre 216 casos. A taxa de escalação em si
+> manteve-se entre 66% e 77%, e a análise caso a caso de 01/09 mostrou que ~74% são estruturais.
 
 ### O que fecharia escalações
 
@@ -240,5 +208,5 @@ flowchart LR
 - [[knowledge-base|Base de conhecimento]] — o ciclo que fecha `LACUNA_DE_CONHECIMENTO`
 - [[identity-resolution|Resolução de identidade]] — a categoria que não deve fechar
 - [[evaluation|Banco de ensaio]] — recall e precisão medem esta decisão
-- [[operations|Ferramentas de operação]] — `dossie.py` e `lacunas.py`
+- [[operations|Ferramentas de operação]] — `lacunas.py` e `metricas.py`
 - [[shopify|Shopify]] — os limites que causam algumas categorias

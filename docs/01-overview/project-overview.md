@@ -20,7 +20,7 @@ minutos, lê os emails novos de uma caixa de apoio, e para cada um decide uma de
 | Ação | O que faz | Quem age a seguir |
 |---|---|---|
 | `rascunhar` | Escreve a resposta e deixa-a como rascunho no Outlook | Pessoa revê e envia |
-| `escalar` | Marca o email e prepara um dossiê do caso | Pessoa decide e executa |
+| `escalar` | Etiqueta o email e escreve a resposta de retenção | Pessoa decide e executa |
 | `saltar` | Ignora — não é correspondência de cliente | Ninguém |
 
 Não é conversacional. Não tem memória de sessão. Cada email é uma decisão independente,
@@ -73,13 +73,13 @@ CI/CD, sem processo permanente, sem framework de agentes. Ver [[technical-decisi
 
 | Componente | Linhas | Nota |
 |---|---|---|
-| `assistente.py` | 2 854 | Todo o caminho de produção |
-| `test_assistente.py` | 2 490 | 259 testes |
-| 12 ferramentas satélite | ~2 265 | Fora do caminho crítico; só o `manutencao.py` escreve |
+| `assistente.py` | 2 841 | Todo o caminho de produção |
+| `test_assistente.py` | 2 708 | 275 testes |
+| 11 ferramentas satélite | ~2 265 | Fora do caminho crítico; só o `manutencao.py` escreve |
 | `knowledge/*.md` | 805 | A base de conhecimento |
 | `eval/casos.json` | 96 casos | Banco de ensaio |
 
-O prompt de sistema (instruções + base de conhecimento) tem **28 929 tokens**, medidos com
+O prompt de sistema (instruções + base de conhecimento) tem **32 331 tokens**, medidos com
 `count_tokens`. Ver [[ai-architecture|Arquitetura de IA]].
 
 ## O que o distingue
@@ -107,8 +107,8 @@ Outlook-Reply-Assistant/
 ├── shopify-app/            ← configuração da app Shopify (scopes)
 ├── docs/                   ← esta knowledge base
 ├── entregas/               ← documentos para o cliente (PDF)
-├── test_assistente.py      ← 259 testes
-└── {eval,metricas,lacunas,dossie,medir_deriva,reprocessar,
+├── test_assistente.py      ← 275 testes
+└── {eval,metricas,lacunas,medir_deriva,reprocessar,
      exportar,casos_antigos,verificar,verificar_kb,manutencao,aquecer}.py
                             ← ferramentas de operação
 ```

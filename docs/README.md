@@ -70,7 +70,7 @@ Três percursos, consoante o que precisas de perceber.
 
 ### 06 — Engenharia
 - [[technical-decisions|Decisões técnicas]] — o que foi escolhido, porquê, e o que se perdeu
-- [[operations|Ferramentas de operação]] — os 12 satélites de diagnóstico e manutenção
+- [[operations|Ferramentas de operação]] — os 11 satélites de diagnóstico e manutenção
 - [[limitations|Limitações]] — o que o sistema não consegue fazer hoje
 - [[technical-debt|Dívida técnica e findings]] — o que está mal e quanto custa
 - [[cost-optimization|Auditoria de custo]] — onde vai o dinheiro da API, e o que já foi cortado

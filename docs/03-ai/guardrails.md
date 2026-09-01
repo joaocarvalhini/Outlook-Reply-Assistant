@@ -65,7 +65,7 @@ flowchart TB
 |---|---|---|---|
 | 13 | Categoria fora da lista → `"OUTRO"` | `_validar()` | Métricas corrompidas em silêncio |
 | 14 | `rascunhar` sem corpo → rebaixado a `escalar` | `processar()` | Um rascunho vazio a passar por resposta |
-| 15 | Dossiê sem conteúdo → descartado | `tem_dossie` | Fila de dossiês maior do que é |
+| 15 | Corpo vazio no escalado → sem rascunho | `processar()` | Um rascunho em branco a passar por resposta |
 | 16 | Corte de lixo após assinatura | `sem_lixo_apos_assinatura()` | Um *glitch* de geração chegar ao cliente |
 | 17 | HTML construído em código, texto escapado | `para_html()` | Injeção de HTML no rascunho |
 | 18 | Data-limite calculada em Python | `resumir_encomenda()` | Aritmética errada do modelo |
@@ -102,7 +102,7 @@ Sete dos 22 existem porque algo correu mal em produção:
 | 6 | Nunca inventar o que a imagem mostra | Desenho preventivo com a funcionalidade de visão |
 | 9 | "Verificar se conseguimos" | 18/08/2026 — resposta prometia o resultado como certo |
 | 14 | Rebaixamento de corpo vazio | Modelo escolhia `rascunhar` e devolvia corpo vazio |
-| 15 | Dossiê por conteúdo | 18/08/2026 — dossiês bons rejeitados por causa da etiqueta |
+| 15 | Sem corpo, sem rascunho | 18/08/2026 — validar pelo conteúdo, não pela etiqueta |
 | 16 | Corte após assinatura | 18/08/2026 — `"tripat3sascamentoaao_confirmar"` |
 | 18 | Data em Python | 21/08/2026 — errou o cálculo com a data à mão |
 
@@ -116,7 +116,7 @@ Sete dos 22 existem porque algo correu mal em produção:
 |---|---|---|
 | Prompt | [[evaluation\|eval.py]] — 96 casos | Boa; casos dedicados para #2, #3, #4, #5, #6 |
 | Esquema | A API | Implícita |
-| Código | `test_assistente.py` — 259 testes | Boa para #13, #14, #15, #16, #17, #18, #19 — a classe `Processar` fechou #14 e #15 a 27/08/2026 (Finding H-2) |
+| Código | `test_assistente.py` — 275 testes | Boa para #13, #14, #15, #16, #17, #18, #19 — a classe `Processar` fechou #14 e #15 a 27/08/2026 (Finding H-2) |
 | Infraestrutura | `verificar.py` | Testa ativamente #21 e a restrição de caixa |
 
 Ver [[qa|QA e testes]].

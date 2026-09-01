@@ -26,7 +26,6 @@ flowchart TB
         D3["Estes dados podem ser revelados?<br/><i>Correspondencia.pode_revelar</i>"]
         D4["Qual é a data-limite de devolução?<br/><i>resumir_encomenda() · +14 dias</i>"]
         D5["Que anexos o modelo pode ver?<br/><i>selecionar_anexos_de_imagem()</i>"]
-        D6["Há mesmo um dossiê preparado?<br/><i>tem_dossie · conteúdo, não etiqueta</i>"]
         D7["A categoria devolvida é válida?<br/><i>_validar() contra lista fixa</i>"]
         D8["Cria-se rascunho? Que categorias?<br/><i>processar()</i>"]
     end
@@ -83,7 +82,7 @@ falhava nelas:
 |---|---|---|---|
 | Titularidade da encomenda | Nunca | O erro mais caro possível — expõe dados entre clientes | Desenho preventivo |
 | Data-limite de devolução | Sim | Errou o cálculo **mesmo com a data de entrega à mão** | 21/08/2026 |
-| Validade do dossiê | Sim (etiqueta) | Escrevia dossiês bons e hesitava na etiqueta | 18/08/2026 |
+| Urgência do caso | Sim | Vira etiqueta no Outlook; o código só valida o valor | 01/09/2026 |
 
 **Implemented** — o comentário que documenta a segunda, em `assistente.py` acima de
 `PRAZO_DEVOLUCAO_DIAS`:
@@ -194,10 +193,9 @@ flowchart TD
     Q -->|não| Z4["rascunhado"]
     Q -->|sim| Z5["rascunhado-parcial"]
     N -->|escalar| R
-    P --> R["<b>Chamada 2</b><br/>dossiê"]
     R --> S{"resumo E resposta<br/>preenchidos?"}
-    S -->|sim| Z6["escalado<br/><i>com dossiê + rascunho</i>"]
-    S -->|não| Z7["escalado<br/><i>sem dossiê</i>"]
+    S -->|sim| Z6["escalado<br/><i>com resposta + etiquetas</i>"]
+    S -->|não| Z7["escalado<br/><i>só etiquetas</i>"]
 
     style C fill:#d5f2e0
     style G fill:#d5f2e0

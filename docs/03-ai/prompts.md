@@ -103,7 +103,7 @@ flowchart TD
 E a proibição que fecha a porta:
 
 > Nunca inventes o que uma imagem mostra. Se não estás mesmo a ver o defeito descrito, não
-> escreves que o confirmaste — nem no "corpo", nem em "dossie_validacao".
+> escreves que o confirmaste.
 
 ### Emails com vários assuntos
 
@@ -192,9 +192,11 @@ Regras notáveis:
 | Sem emojis, negrito, asteriscos, cabeçalhos | |
 | Proibidos: "Atenciosamente", "Não hesite em contactar-nos", "Estimado", "Prezado", "Caro", "Exmo." | Lista negra explícita |
 
-### O dossiê
+### A resposta de retenção
 
-Seis campos, com regras de conteúdo. Ver [[escalation|Escalação]] para o detalhe.
+Escalar não é ficar calado: um pedido concreto sobre uma encomenda leva sempre o texto que o
+lojista pode enviar enquanto trata do caso. Sai no campo `corpo`, na mesma chamada que decide.
+Ver [[escalation|Escalação]] para o detalhe do que pode e não pode dizer.
 
 A regra de linguagem mais afinada do prompt inteiro:
 
@@ -205,6 +207,19 @@ A regra de linguagem mais afinada do prompt inteiro:
 > óbvio que vai correr bem."*
 >
 > Corrigido a partir de um caso real de produção, 18 de agosto de 2026.
+
+### A urgência
+
+Um campo que vira etiqueta no Outlook, com dois valores. O prompt é explícito sobre o critério
+— ameaça de queixa formal, invocação de legislação, terceira insistência, disputa aberta, valor
+acima de ~150 € — e sobre **porque** tem de ser raro:
+
+> *"Isto só funciona se for raro. Nos dados históricos desta loja, algo assim aparece cerca de
+> duas vezes por semana. Se marcares urgente um caso em cada três, a etiqueta deixa de querer
+> dizer alguma coisa e quem revê passa a ignorá-la — que é pior do que não existir."*
+
+Dizer ao modelo a consequência de errar, e não só a regra, é o padrão que mais funcionou neste
+prompt.
 
 ### Compromissos
 
@@ -227,25 +242,28 @@ Testado por um caso dedicado no [[evaluation|banco de ensaio]]. Ver [[security|S
 ## Os exemplos de few-shot
 
 Entre as instruções e a base há ~12 pares email→JSON. Cobrem: resposta simples pela base,
-pedido de prova de defeito, resposta com dados da Shopify, cancelamento com dossiê, cancelamento
+pedido de prova de defeito, resposta com dados da Shopify, cancelamento com resposta de retenção, cancelamento
 sem dados, lacuna de conhecimento, angariação comercial, e o caso "não deu número".
 
 > [!TIP] Os exemplos codificam as fronteiras, não os casos comuns
 > Quase todos os exemplos ilustram uma **distinção difícil** — cancelamento com dados vs. sem
 > dados, cliente sem número vs. número que falhou. É onde o julgamento erra, não onde é óbvio.
 
-## O prompt do dossiê (2ª chamada)
+## Havia uma segunda chamada, até 01/09/2026
 
-Construído em `decidir()`, reutiliza o pedido inteiro e acrescenta:
-
-```
-Já decidiste escalar este caso, categoria {categoria}, pelo motivo: {motivo}
-Segue a secção "O dossiê" das tuas instruções e prepara-o agora.
-Preparar é o normal — só fica "dossie_tipo": "nenhum" nas três exceções…
-```
-
-Repetir a instrução "preparar é o normal" foi necessário: em produção o modelo devolvia
+Os casos escalados faziam uma segunda chamada ao modelo que preparava um dossiê — resumo,
+validações, ação recomendada, risco e resposta. O prompt dessa chamada reutilizava o pedido
+inteiro e repetia a instrução *"preparar é o normal"*, porque em produção o modelo devolvia
 `"nenhum"` com demasiada facilidade.
+
+Saiu quando o lojista confirmou que não usava o resumo: cinco dos sete campos nunca chegavam a
+ninguém. A resposta passou para o `corpo` da primeira chamada, e a função de triagem que o dossiê
+servia passou para as etiquetas no Outlook.
+
+> [!TIP] O que fica da experiência
+> A instrução repetida *"preparar é o normal, não a exceção"* teve de ser dita duas vezes para o
+> modelo a seguir. Essa lição sobreviveu à remoção: a secção do `corpo` diz agora, com o mesmo
+> ênfase, que **escalar não é ficar calado**.
 
 ## Manutenção do prompt
 
@@ -263,4 +281,4 @@ Repetir a instrução "preparar é o normal" foi necessário: em produção o mo
 - [[decision-making|Tomada de decisão]] — as regras de decisão que o prompt codifica
 - [[knowledge-base|Base de conhecimento]] — o que é interpolado no fim
 - [[guardrails|Guardrails]] — as defesas, incluindo as do prompt
-- [[escalation|Escalação]] — as regras do dossiê
+- [[escalation|Escalação]] — as regras da resposta de retenção e das etiquetas

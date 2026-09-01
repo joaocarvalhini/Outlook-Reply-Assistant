@@ -12,7 +12,7 @@ tags:
 > **Pergunta que este documento responde:** que ferramentas existem para operar e diagnosticar o
 > sistema, e quais custam dinheiro?
 
-Doze satélites que importam `assistente.py`. Nove só leem; `manutencao.py` (backup e purga), o
+Onze satélites que importam `assistente.py`. Nove só leem; `manutencao.py` (backup e purga), o
 modo `medir_deriva.py --fechar-ciclo` (grava o resultado da verificação) e o `aquecer.py`
 (marca quando aqueceu) escrevem no registo local — nenhum escreve na caixa nem em qualquer
 serviço externo. Nenhum corre no caminho de produção; `manutencao.py` corre via cron e o
@@ -25,7 +25,6 @@ flowchart TB
     subgraph G["GRÁTIS — sem chamadas ao modelo"]
         G1["<b>metricas.py</b><br/>distribuição de decisões"]
         G2["<b>lacunas.py</b><br/>fila de lacunas"]
-        G3["<b>dossie.py</b><br/>fila de casos preparados"]
         G4["<b>casos_antigos.py</b><br/>pares reais para ler"]
         G5["<b>exportar.py</b><br/>casos anonimizados"]
         G6["<b>eval.py --triagem</b><br/>só regras determinísticas"]
@@ -63,7 +62,8 @@ python metricas.py --dias 7
 python metricas.py --tudo
 ```
 
-Distribuição de ações, categorias dos escalados, risco dos dossiês preparados, e — desde
+Distribuição de ações, categorias dos escalados, taxa de "Urgente", quantos escalados
+trazem resposta escrita, e — desde
 30/08/2026 — o **custo real**: por email, por rascunho, por escalação, e a taxa de acerto da
 cache. Barras em texto.
 
@@ -77,22 +77,6 @@ cache. Barras em texto.
 
 Responde à pergunta que motivou a arquitetura: **a percentagem de escalação está a descer, e em
 que categorias ainda há trabalho?**
-
-### `dossie.py` — a fila de casos preparados
-
-```bash
-python dossie.py --lista              # uma linha por caso
-python dossie.py --caso 42
-python dossie.py --tipo cancelamento
-python dossie.py --risco alto
-```
-
-Mostra resumo, validações marcadas ✓/✗, ação recomendada, link para o admin e a resposta
-sugerida.
-
-> [!TIP] Não é o canal principal
-> A resposta sugerida **já vai sozinha para o rascunho no Outlook**. Esta ferramenta mostra a
-> análise toda, para consulta e depuração — o lojista não precisa de a correr.
 
 ### `lacunas.py` — o que falta saber
 
@@ -140,7 +124,7 @@ Trata de duas responsabilidades distintas do `assistente.db`:
 | | O que faz | Porquê |
 |---|---|---|
 | **Cópia de segurança** | API de backup do SQLite, rotação das últimas 14, em `backups/` | Perder a base não é perder histórico — é perder **o cursor**. Uma reinstalação sem cursor começa em "agora" e salta em silêncio o que chegou entretanto |
-| **Purga** | Esvazia o texto livre com mais de 90 dias: assunto, corpo, dossiês, `por_responder` | É correspondência de clientes. Sem janela declarada, acumula-se para sempre — problema de RGPD, não de disco |
+| **Purga** | Esvazia o texto livre com mais de 90 dias: assunto, corpo, `por_responder` | É correspondência de clientes. Sem janela declarada, acumula-se para sempre — problema de RGPD, não de disco |
 
 > [!NOTE] Usa a API de backup, não um `cp`
 > Um `cp` pode apanhar a base a meio de uma escrita. O timer corre de dois em dois minutos e
@@ -334,7 +318,7 @@ python eval.py                                 # ~1,20 €
 ```bash
 python metricas.py --dias 7        # a distribuição mudou?
 python lacunas.py                  # o que fechar a seguir?
-python dossie.py --lista           # que casos estão à espera?
+python metricas.py --dias 7        # a taxa de "Urgente" continua rara?
 ```
 
 ### Manutenção (automática, via cron)
@@ -347,7 +331,6 @@ ls -la backups/                    # as cópias estão a ser feitas?
 ### Investigar uma resposta má
 
 ```bash
-python dossie.py --caso <n>                    # ver a análise completa
 python reprocessar.py --acao escalar -n 5 --detalhe   # o código de hoje resolve?
 ```
 
@@ -356,5 +339,5 @@ python reprocessar.py --acao escalar -n 5 --detalhe   # o código de hoje resolv
 - [[qa|QA e testes]] — a estratégia que estas ferramentas servem
 - [[evaluation|Banco de ensaio]] — `eval.py` em detalhe
 - [[knowledge-base|Base de conhecimento]] — o ciclo que `lacunas.py` alimenta
-- [[escalation|Escalação]] — o que `dossie.py` mostra
+- [[escalation|Escalação]] — as etiquetas e a resposta de retenção
 - [[deployment|Deployment]] — observação em produção

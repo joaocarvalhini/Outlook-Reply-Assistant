@@ -167,12 +167,12 @@ escrevê-lo lá não é a correção possível"*.
 | Pedido do cliente | O que o sistema faz |
 |---|---|
 | "Onde está a minha encomenda?" | Responde, com os dados |
-| "Cancelem a encomenda" | **Escala** com dossiê preparado |
-| "Alterem a morada" | **Escala** com dossiê preparado |
-| "Reembolsem-me" | **Escala** com dossiê preparado |
+| "Cancelem a encomenda" | **Escala** com a resposta já escrita |
+| "Alterem a morada" | **Escala** com a resposta já escrita |
+| "Reembolsem-me" | **Escala** com a resposta já escrita |
 
 > [!IMPORTANT] Não é uma funcionalidade em falta
-> `dossie.py` afirma-o explicitamente: *"Não executa nada e nunca executará: a recomendação é
+> O repositório afirma-o explicitamente: *"Não executa nada e nunca executará: a recomendação é
 > uma recomendação. Quem cancela uma encomenda ou emite um reembolso é uma pessoa, no admin da
 > Shopify, e a aplicação não tem sequer permissão de escrita para o fazer."*
 

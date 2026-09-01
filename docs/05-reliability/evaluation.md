@@ -73,19 +73,19 @@ Um caso pode exigir muito mais do que a ação correta.
 |---|---|
 | `expect` | A ação: `rascunhar`, `escalar`, `saltar` |
 | `expect_categoria` | A categoria de escalação exata |
-| `expect_dossie` | Um `dossie_tipo` específico |
-| `expect_sem_dossie` | Que **não** se prepare dossiê (fronteira de segurança) |
-| `expect_dossie_com_conteudo` | Que resumo e resposta venham preenchidos, seja qual for a etiqueta |
+| `expect_sem_corpo` | Que **não** se escreva resposta (fronteira de segurança) |
+| `expect_corpo` | Que um caso escalado traga a resposta de retenção escrita |
 | `expect_parcial` | Que `por_responder` seja assinalado |
 | `expect_sem_parcial` | Que **não** seja — o email foi respondido todo |
 | `expect_compromisso` | O tipo de compromisso registado |
 | `expect_sem_data_de_compromisso` | Que não invente uma data |
 | `imagens` | Fixtures de imagem anexadas ao caso |
 
-> [!TIP] `expect_dossie_com_conteudo` reflete uma decisão de arquitetura
-> Testa o que **importa de verdade** — resumo e resposta com conteúdo — sem prender o resultado a
-> uma etiqueta exata que o próprio código já sabe não ser garantia de nada. Espelha o
-> `tem_dossie` de `processar()`. Ver [[ai-architecture|Arquitetura de IA]].
+> [!TIP] As duas asserções do corpo são a mesma fronteira, vista dos dois lados
+> `expect_corpo` diz que escalar não é ficar calado; `expect_sem_corpo` diz que há casos em que
+> escrever seria pior do que ficar. Substituíram as três asserções do dossiê a 01/09/2026, quando
+> o dossiê saiu — 9 casos migraram para a primeira, 2 para a segunda, e 16 desapareceram por
+> serem asserções vazias em casos `rascunhar`, onde nunca houve dossiê.
 
 ## Casos portáteis
 
@@ -108,7 +108,7 @@ Muitos vêm de produção real e **trazem-no escrito na nota**:
 |---|---|
 | `formulario-devolucao-formspree-nao-e-descartado` | Bug de 22/08 — todas as submissões descartadas desde sempre |
 | `duas-encomendas-mencionadas-pergunta-qual` | Bug de 22/08 — `.search()` em vez de `.finditer()` |
-| `devolucao-adiar-envio-verifica-prazo-14-dias` | Erro de cálculo de data, 21/08 |
+| `devolucao-adiar-envio-verifica-prazo-14-dias` | Erro de cálculo de data, 21/08 — expectativa invertida a 01/09 |
 | `cancelar-unidade-extra-antes-de-expedir-nunca-promete` | Regra de linguagem do cliente, 26/08 |
 | `queixa-de-qualidade-pede-prova-antes-de-devolucao` | Caso real de produção, 17/08 |
 
@@ -130,8 +130,8 @@ E alguns casos documentam **deliberadamente não testar** algo:
 
 | | n | % |
 |---|---|---|
-| `rascunhar` | 51 | 53% |
-| `escalar` | 35 | 36% |
+| `rascunhar` | 52 | 54% |
+| `escalar` | 34 | 35% |
 | `saltar` | 10 | 10% |
 | **Total** | **96** | |
 
@@ -179,6 +179,34 @@ python eval.py --caixa apoio@outraloja.pt     # sobrepõe MAILBOX
 
 O caso do pack é o Finding H-3: a regra existe e está escrita, mas ambos os modelos falham a
 aplicá-la. Ver [[technical-debt|Dívida técnica]].
+
+### 1 de setembro de 2026 — depois de remover o dossiê
+
+O mesmo subconjunto, corrido para verificar que passar de duas chamadas para uma não degradava o
+texto:
+
+| | 26/08 | 01/09 |
+|---|---|---|
+| Casos corretos | 21/23 | **21/23** |
+| **Clientes perdidos** | **0** | **0** |
+| Recall de escalação | 91% | **91%** |
+| Precisão de escalação | 91% | **91%** |
+
+Números idênticos. Mas os agregados podem esconder trocas, por isso as duas falhas foram lidas
+uma a uma:
+
+- **O caso do pack** falhou outra vez — é o H-3, conhecido e documentado, e já falhava na linha
+  de base.
+- **O caso do prazo de devolução** falhou por a *expectativa* estar desatualizada, não o modelo:
+  esperava `escalar`, mas a regra "Quando o prazo já passou" entrou em `devolucoes.md` a 28/08 e
+  diz explicitamente que recusar com a alternativa de troca é *"a resposta normal, não uma
+  escalação"*. A resposta gerada confirmava o prazo, recusava o reembolso e oferecia a troca como
+  pergunta — exatamente o que a regra manda. O caso foi corrigido para `rascunhar`.
+
+> [!TIP] Um agregado igual não prova ausência de regressão
+> As duas falhas podiam ter sido outras duas, com o mesmo total. Ler quais falharam foi o que
+> permitiu concluir que a mudança não degradou nada — e apanhar, de caminho, um caso de ensaio
+> que estava a testar uma política revogada há quatro dias.
 
 ## Limitações do banco de ensaio
 

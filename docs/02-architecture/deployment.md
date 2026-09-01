@@ -107,7 +107,7 @@ servidor, e diz qual dos dois casos é este:
 | | Custo | Porquê |
 |---|---|---|
 | Prompt inalterado (docs, testes, satélites) | **grátis** | O prefixo em cache não muda |
-| Prompt alterado (`PROMPT` ou `knowledge/*.md`) | **~0,13 $** | Reescreve ~31K tokens **duas vezes** — o núcleo e o dossiê têm entradas de cache separadas |
+| Prompt alterado (`PROMPT` ou `knowledge/*.md`) | **~0,07 $** | Reescreve as ~32K tokens do prefixo. Era o dobro até 01/09/2026, quando havia duas entradas de cache |
 
 > [!TIP] Agrupa as alterações à base de conhecimento num só deploy
 > O custo é por *deploy*, não por alteração: três regras novas publicadas juntas pagam uma vez;
@@ -173,7 +173,7 @@ cd /opt/assistente && sudo -u assistente .venv/bin/python assistente.py
 | `lacuna` | Lacuna de conhecimento registada |
 | `cursor-inicial` | Primeira execução de sempre |
 | `cursor-recuado` | Uma mensagem falhou; o cursor recuou para a voltar a ver |
-| `erro-*` | Falha isolada e absorvida (shopify, historico, anexos, dossie, modelo) |
+| `erro-*` | Falha isolada e absorvida (shopify, historico, anexos, modelo) |
 
 > [!NOTE] Alertas via `OnFailure=`
 > `tripat3s-assistente.service` dispara `tripat3s-assistente-alerta.service` sempre que falha —

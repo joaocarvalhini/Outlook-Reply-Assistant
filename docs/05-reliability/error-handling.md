@@ -48,7 +48,6 @@ flowchart TD
 | Fio indisponível | `log("erro-historico")`, segue | Modelo escala por falta de contexto |
 | Shopify indisponível | `log("erro-shopify")`, confiança `nenhuma` | Modelo escala por falta de dados |
 | Data de entrega indisponível | `log("erro-data-entrega")`, omite a linha | Prompt já instrui a não adivinhar |
-| Dossiê falha (2ª chamada) | `log("erro-dossie")`, mantém a classificação | Escala sem dossiê |
 | Mensagem apagada a meio (404) | Salta só essa, regista o motivo | Passagem continua |
 | **Modelo falha (1ª chamada)** | `log("erro-modelo")`, não regista, **cursor recua** | Retentado na passagem seguinte |
 | `criar_rascunho()` ou `marcar()` falham | `log("erro-rascunho"/"erro-marcar")`, segue | Corrigido 27/08/2026 — decisão fica registada na mesma; ver abaixo |
@@ -277,7 +276,7 @@ journalctl -u tripat3s-assistente | grep -E "erro-|Failed|cursor-recuado"
 
 | Evento | Significa |
 |---|---|
-| `erro-anexos` · `erro-historico` · `erro-shopify` · `erro-data-entrega` · `erro-dossie` | Falha isolada e absorvida |
+| `erro-anexos` · `erro-historico` · `erro-shopify` · `erro-data-entrega` | Falha isolada e absorvida |
 | `erro-modelo` | A decisão falhou; será retentada |
 | `erro-graph` | A passagem inteira falhou |
 | `cursor-recuado` | Houve uma falha; o cursor recuou para não perder a mensagem |

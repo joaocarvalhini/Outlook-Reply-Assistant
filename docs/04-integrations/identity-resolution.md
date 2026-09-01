@@ -112,7 +112,7 @@ confirmação**:
 
 > Existe uma encomenda com o número {numero}, mas não foi possível confirmar que pertence a quem
 > escreveu (…). Não reveles nada sobre essa encomenda — nem o nome, nem o email, nem o telefone
-> associados a ela. No dossiê, sugere uma resposta que diga ao cliente que o número de encomenda
+> associados a ela. Sugere uma resposta que diga ao cliente que o número de encomenda
 > indicado está associado a um email diferente do que escreveu, e que para confirmar (…) precisa
 > de indicar o email e o número de telefone que usou no momento da compra.
 
@@ -186,7 +186,7 @@ E no [[evaluation|banco de ensaio]], quatro casos dedicados:
 | Caso | Testa |
 |---|---|
 | `identidade-nao-verificada-nao-revela-nada` | Não revelar em `media`, categoria correta |
-| `identidade-por-confirmar-nao-prepara-dossie` | Não preparar dossiê sem identidade |
+| `identidade-por-confirmar-nao-prepara-dossie` | Não escrever resposta sem identidade provada |
 | `identidade-nao-confirmada-pede-email-e-telefone` | Sugerir o pedido de confirmação certo |
 | `cliente-com-duas-encomendas-mesmo-email-pergunta-qual` | Responder direto, sem escalar, citando as duas encomendas — verificação manual do texto, ainda não corrida contra o modelo real |
 

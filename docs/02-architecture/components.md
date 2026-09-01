@@ -78,7 +78,7 @@ graph TB
 | `carregar_config()` | Lê `.env`, valida obrigatórios, aplica omissões | Sai com erro se faltar um segredo |
 
 Sete campos controlam funcionalidades e podem ser desligados sem *deploy*: 5 `ENABLE_*`
-(`resolver_identidade`, `pre_dossies`, `registo_compromissos`, `respostas_parciais`,
+(`resolver_identidade`, `pre_rascunhos`, `registo_compromissos`, `respostas_parciais`,
 `processar_imagens`) mais `DRY_RUN` e `DRAFT_PREFIX`.
 
 ## Normalização de texto
@@ -204,7 +204,7 @@ Seis valores distintos — `saltado` e `escalado` cobrem vários pontos de retor
 | `falhado` | A chamada ao modelo levantou |
 | `rascunhado` | Rascunho completo criado |
 | `rascunhado-parcial` | Rascunho criado, mas com `por_responder` preenchido |
-| `escalado` | Marcado para humano, com ou sem dossiê |
+| `escalado` | Etiquetado para humano, com ou sem resposta preparada |
 
 ## Related
 

@@ -77,9 +77,8 @@ exportar.py          exporta emails reais anonimizados + conta a distribuição
 reprocessar.py       repassa decisões antigas pelo código de hoje, sem escrever
 medir_deriva.py       compara rascunhos regenerados com o que o lojista respondeu
 lacunas.py           a fila de lacunas de conhecimento e o peso de cada causa
-dossie.py            casos escalados que já vêm preparados para quem decide
 casos_antigos.py       pares pergunta-resposta do histórico, sem passar pelo modelo
-metricas.py           taxa de escalação, categorias e risco dos dossiês
+metricas.py           taxa de escalação, categorias, custo e taxa de "Urgente"
 test_assistente.py   111 testes, biblioteca padrão, sem rede
 eval.py              banco de ensaio: mede o que o assistente decide
 eval/casos.json      casos com resultado esperado
@@ -334,7 +333,7 @@ Perder o `assistente.db` não é perder histórico: é perder o sítio onde o
 assistente ia. Uma reinstalação sem cursor começa em "agora" e **salta em
 silêncio** tudo o que chegou entretanto.
 
-**A purga** esvazia o texto livre com mais de 90 dias (assunto, corpo, dossiês)
+**A purga** esvazia o texto livre com mais de 90 dias (assunto, corpo)
 e mantém a classificação, que é o que o `metricas.py` e o `lacunas.py` leem.
 Não apaga linhas nenhumas de propósito: a chave `message_id` é o que impede o
 assistente de responder duas vezes ao mesmo email.
@@ -391,54 +390,47 @@ não para afinar contra o número.
 
 ### Escalar não é despachar
 
-```bash
-python dossie.py                    # casos à espera de decisão
-python dossie.py --lista            # uma linha por caso, para escolher rápido
-python dossie.py --caso 42          # só o caso #42, sem percorrer os outros
-python dossie.py --risco alto       # só os que precisam de atenção primeiro
-python dossie.py --tipo cancelamento
-```
-
 Um terço dos escalados nunca vai desaparecer: cancelar uma encomenda, decidir
 uma garantia ou responder a uma disputa são decisões que a loja deve mesmo
 tomar. Baixar a percentagem tem um chão. Tornar cada escalação barata para
 quem decide não tem.
 
-Quando o pedido é acionável, a escalação passa a trazer um dossiê: o que foi
-confirmado, o que impede, a ação recomendada, o link direto para a encomenda no
-admin, e a resposta ao cliente já redigida à espera de aprovação.
+Por isso escalar **não é ficar calado**. Um pedido concreto sobre uma encomenda
+leva sempre a resposta de retenção já escrita — o texto que o lojista pode
+enviar enquanto trata do caso. Medido a 01/09/2026: **94% dos casos escalados
+trazem a resposta pronta**.
+
+O rascunho é só o email, sem nada à volta. Sem resumo, sem validação, sem
+categoria — decisão explícita do lojista: nota interna dentro do rascunho é
+nota interna que um dia sai para o cliente por engano.
+
+A triagem faz-se pelas **etiquetas no Outlook**, que dizem o que há a fazer sem
+ser preciso abrir nada:
 
 ```
-CANCELAMENTO   ·   risco baixo
-
-  Cliente pede o cancelamento da encomenda #10482, feita hoje por engano.
-  A encomenda ainda não foi expedida.
-
-  Validação
-    ✓ encomenda encontrada e identidade confirmada pelo email da compra
-    ✓ ainda não foi expedida, dá para cancelar
-    ✗ o pagamento já foi capturado e terá de ser devolvido
-
-  Ação recomendada (exige aprovação de uma pessoa)
-    Cancelar a encomenda e devolver os 49,90 EUR pelo mesmo método.
+Re: Encomenda #22241    [Precisa de humano] [Ação na encomenda] [Urgente]
+Re: Encomenda #22440    [Precisa de humano] [Já prometido]
+Re: Devolução           [Precisa de humano] [Decisão]
 ```
 
-Não se prepara dossiê em dois casos, ambos deliberados: quando a escalação é
-por falta de conhecimento, porque não há nada a preparar quando o assistente
-não sabe a resposta; e quando a identidade não está confirmada, porque preparar
-o caso obrigaria a usar dados de uma encomenda que pode não ser de quem
-escreveu.
+A etiqueta de urgência só aparece quando esperar piora o caso — ameaça de
+queixa, invocação de legislação, terceira insistência, valor elevado. Nos dados
+históricos isso dava cerca de dois casos por semana, e é a raridade que lhe dá
+peso.
 
-O dossiê fica gravado no registo local (lê-se com `dossie.py`, útil para
-consulta e para as métricas) e, quando existe uma resposta sugerida, essa
-resposta **também** é escrita diretamente como rascunho no Outlook — decisão
-explícita do cliente: não quer que o lojista precise de correr nenhum comando
-para ver um caso escalado, e quer que o rascunho seja só o email, sem nada
-à volta. Sem resumo, sem validação, sem categoria — só o texto que se enviaria,
-pronto a rever e ajustar.
+O corpo fica vazio, e não se cria rascunho, em três situações deliberadas:
+falta de conhecimento, porque não há nada a preparar quando o assistente não
+sabe a resposta; identidade por confirmar, porque escrever obrigaria a usar
+dados de uma encomenda que pode não ser de quem escreveu; e encomenda sem
+correspondência nenhuma.
 
-Quando não há dossiê (falta de conhecimento, identidade por confirmar), não há
-rascunho nenhum — só a categoria marcada no email, como sempre foi.
+> Até 01/09/2026 os casos escalados faziam uma **segunda chamada ao modelo**
+> para preparar um dossiê — resumo, validações, ação recomendada e risco, além
+> da resposta. Cinco desses campos nunca chegavam ao lojista: ficavam no registo
+> local, e ele trabalha no Outlook. Quando confirmou que não precisava deles, a
+> segunda chamada saiu e a resposta passou para o campo que já existia.
+> O prompt encolheu de 34 268 para 32 331 tokens e a cache passou a ter uma
+> entrada em vez de duas.
 
 ### Um assunto descoberto não deita fora o resto
 
@@ -533,9 +525,10 @@ python metricas.py --dias 7     # só a última semana
 python metricas.py --tudo       # desde sempre
 ```
 
-`dossie.py` e `lacunas.py` mostram casos individuais; `metricas.py` mostra a
+`lacunas.py` mostra casos individuais; `metricas.py` mostra a
 proporção entre rascunhar, escalar e saltar, a categoria de cada escalação e o
-risco dos dossiês preparados. Não faz chamadas à API nem à caixa — lê só o que
+taxa de "Urgente" e quantos escalados trazem resposta escrita. Não faz chamadas à
+API nem à caixa — lê só o que
 já está no registo local, por isso corre em qualquer altura sem custo.
 
 É o número que decide se a arquitetura está a cumprir o objetivo: a taxa de
