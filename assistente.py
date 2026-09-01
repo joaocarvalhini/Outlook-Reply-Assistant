@@ -1204,6 +1204,10 @@ COLUNAS_NOVAS = (
     # semana), a etiqueta deixou de querer dizer alguma coisa e o prompt tem de
     # ser apertado -- ver a secção "A urgência".
     ("urgencia", "TEXT"),
+    # Quando uma divergência entre o rascunho e o email enviado já foi olhada e
+    # tratada. Sem isto, o aprender.py mostra as mesmas em todas as corridas,
+    # muito depois de já terem virado regra, e a lista útil fica enterrada.
+    ("revisto_em", "TEXT"),
 )
 
 

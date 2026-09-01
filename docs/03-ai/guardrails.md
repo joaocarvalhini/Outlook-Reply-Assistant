@@ -116,7 +116,7 @@ Sete dos 22 existem porque algo correu mal em produção:
 |---|---|---|
 | Prompt | [[evaluation\|eval.py]] — 98 casos | Boa; casos dedicados para #2, #3, #4, #5, #6 |
 | Esquema | A API | Implícita |
-| Código | `test_assistente.py` — 275 testes | Boa para #13, #14, #15, #16, #17, #18, #19 — a classe `Processar` fechou #14 e #15 a 27/08/2026 (Finding H-2) |
+| Código | `test_assistente.py` — 291 testes | Boa para #13, #14, #15, #16, #17, #18, #19 — a classe `Processar` fechou #14 e #15 a 27/08/2026 (Finding H-2) |
 | Infraestrutura | `verificar.py` | Testa ativamente #21 e a restrição de caixa |
 
 Ver [[qa|QA e testes]].

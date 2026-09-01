@@ -12,7 +12,7 @@ tags:
 > **Pergunta que este documento responde:** que ferramentas existem para operar e diagnosticar o
 > sistema, e quais custam dinheiro?
 
-Onze satélites que importam `assistente.py`. Nove só leem; `manutencao.py` (backup e purga), o
+Doze satélites que importam `assistente.py`. Nove só leem; `manutencao.py` (backup e purga), o
 modo `medir_deriva.py --fechar-ciclo` (grava o resultado da verificação) e o `aquecer.py`
 (marca quando aqueceu) escrevem no registo local — nenhum escreve na caixa nem em qualquer
 serviço externo. Nenhum corre no caminho de produção; `manutencao.py` corre via cron e o
@@ -25,6 +25,7 @@ flowchart TB
     subgraph G["GRÁTIS — sem chamadas ao modelo"]
         G1["<b>metricas.py</b><br/>distribuição de decisões"]
         G2["<b>lacunas.py</b><br/>fila de lacunas"]
+        G3["<b>aprender.py</b><br/>edições por rever"]
         G4["<b>casos_antigos.py</b><br/>pares reais para ler"]
         G5["<b>exportar.py</b><br/>casos anonimizados"]
         G6["<b>eval.py --triagem</b><br/>só regras determinísticas"]
@@ -40,6 +41,7 @@ flowchart TB
         P2["<b>reprocessar.py</b><br/>decisões passadas"]
         P3["<b>medir_deriva.py</b><br/>vs. resposta real (sem --fechar-ciclo)"]
         P4["<b>verificar_kb.py</b><br/>1 chamada, a base inteira"]
+        P5["<b>aprender.py --classificar</b><br/>1 chamada, lacuna ou saliência"]
     end
     style G fill:#d5f2e0
     style Q fill:#e8f5e9
@@ -94,6 +96,53 @@ como `coberta?` as que já parecem estar na base.
 > O que ele produz aqui é a pergunta, não a resposta."*
 >
 > Ver [[knowledge-base|Base de conhecimento]].
+
+### `aprender.py` — o que aprender com as edições do lojista
+
+```bash
+python aprender.py                  # divergências por rever, agrupadas
+python aprender.py --marcar <id>    # marca uma como tratada
+python aprender.py --classificar    # +1 chamada: falta regra ou é saliência?
+python aprender.py --perguntar 5    # +1 chamada: compõe a mensagem ao lojista
+```
+
+Cada vez que o lojista edita um rascunho antes de o enviar, escreveu um requisito. Esta
+ferramenta transforma isso numa lista de perguntas a fazer-lhe — e **não** em regras.
+
+Faz três coisas que o `medir_deriva.py --comparar-gravado` não faz:
+
+| | |
+|---|---|
+| **Lembra-se** | A coluna `revisto_em` tira da lista o que já foi tratado. Sem isso, os mesmos casos apareciam em todas as corridas |
+| **Agrupa** | Pelo texto que o lojista acrescentou, não pelo email — o mesmo padrão em clientes diferentes junta-se. Visto 1× é ruído; visto 3× é regra por escrever |
+| **Distingue dois problemas opostos** | Com `--classificar`: o que ele escreveu **já está na base**? Se sim é saliência (corrige-se com *menos* texto); se não é lacuna (corrige-se com mais) |
+
+O `--perguntar` compõe a mensagem a enviar-lhe: para cada padrão, o que o cliente perguntou, o
+que o assistente escreveu, o que ele enviou, e a pergunta. **Pergunta o porquê, nunca propõe a
+resposta** — sugerir a regra enviesa-o a concordar, e uma regra escrita a partir de uma
+concordância educada é pior do que nenhuma regra.
+
+> [!NOTE] Compor a pergunta é seguro; escrever a resposta não seria
+> O pior resultado de uma pergunta mal composta é uma pergunta que se corrige antes de enviar.
+> É por isso que esta chamada ao modelo existe e a de escrever regras não.
+
+> [!WARNING] O envio continua a ser humano, e não por escolha
+> A aplicação não tem `Mail.Send` — nunca pediu essa permissão, e é ela que garante que nada sai
+> sem revisão. Um caminho automático de volta, em que o lojista responde por email e o sistema
+> escreve a regra sozinho, seria pior do que trabalhoso: **a caixa de suporte é pública**, o
+> cabeçalho `From` falsifica-se, e qualquer pessoa passaria a poder injetar regras de negócio que
+> o assistente afirmaria a clientes como facto da loja.
+
+> [!IMPORTANT] Não escreve regras, de propósito
+> Uma edição não é uma regra. A 01/09/2026, três casos provaram-no no mesmo dia: um parecia erro
+> de regra e era um mal-entendido do cliente; outro foi mal lido à primeira; um terceiro não tinha
+> lacuna nenhuma — a regra existia e não foi aplicada. O salto de "edição" para "regra" exige ler
+> o contexto e perguntar ao lojista.
+
+> [!WARNING] O `--classificar` compara com a base de hoje
+> Uma edição que virou regra na semana passada aparece como "saliência", porque a regra existe
+> agora — mas não existia na altura. Na primeira corrida real deu 5 de 6 grupos assim, quase todos
+> por esse motivo. **Marcar o que já foi tratado é o que torna a ferramenta útil.**
 
 ### `aquecer.py` — mantém a cache do prompt quente
 
