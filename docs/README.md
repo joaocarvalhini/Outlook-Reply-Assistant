@@ -80,6 +80,10 @@ Três percursos, consoante o que precisas de perceber.
 - [[improvements|Melhorias recomendadas]] — priorizadas P0 a P3
 - [[future-architecture|Arquitetura futura]] — o que teria de mudar, e quando
 
+### Para reuniões com o cliente
+- [[automation-overview|Automação de atendimento — visão geral]] — guião de reunião, sem jargão:
+  o que faz, porque escala, e o que já vale hoje
+
 ---
 
 ## O grafo
