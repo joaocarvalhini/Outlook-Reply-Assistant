@@ -55,8 +55,17 @@ def main() -> int:
     if not url:
         return 0
 
+    # O Discord recusa um corpo em texto cru: exige JSON com um campo
+    # "content". Deteta-se pelo URL para manter compatibilidade com qualquer
+    # outro recetor que aceite texto. A mesma lógica está em
+    # assistente.enviar_webhook() -- duplicada de propósito, porque este
+    # ficheiro corre quando o assistente FALHA e não pode depender dele.
+    discord = "discord.com/api/webhooks" in url or "discordapp.com/api/webhooks" in url
     try:
-        httpx.post(url, content=mensagem[:2000].encode("utf-8"), timeout=10.0)
+        if discord:
+            httpx.post(url, json={"content": mensagem[:2000]}, timeout=10.0)
+        else:
+            httpx.post(url, content=mensagem[:2000].encode("utf-8"), timeout=10.0)
     except Exception as exc:
         # Se a rede estiver em baixo, é normal isto falhar também -- o
         # registo no journal (acima) já ficou feito, e é isso que garante

@@ -1,0 +1,24 @@
+[Unit]
+Description=Perguntas semanais ao lojista, à segunda de manhã (tripat3s)
+Requires=tripat3s-assistente-perguntas.service
+
+[Timer]
+# Segunda-feira às 9h. Semanal e não diário de propósito: as divergências
+# aparecem a um ritmo de duas ou três por dia, e uma mensagem por dia com uma
+# pergunta é uma mensagem que se ignora. Juntar a semana dá-lhe um bloco que
+# vale a pena sentar-se a responder.
+#
+# OnCalendar e não OnUnitActiveSec: aqui a hora do dia importa -- a mensagem
+# tem de chegar quando ele começa a trabalhar, não a meio da noite.
+OnCalendar=Mon *-*-* 09:00:00
+
+# Se o servidor estiver desligado à hora certa, corre quando arrancar. Sem
+# isto, uma reinicialização à segunda de manhã fazia perder a semana inteira.
+Persistent=true
+
+RandomizedDelaySec=5min
+
+Unit=tripat3s-assistente-perguntas.service
+
+[Install]
+WantedBy=timers.target

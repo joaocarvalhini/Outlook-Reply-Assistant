@@ -104,6 +104,7 @@ python aprender.py                  # divergências por rever, agrupadas
 python aprender.py --marcar <id>    # marca uma como tratada
 python aprender.py --classificar    # +1 chamada: falta regra ou é saliência?
 python aprender.py --perguntar 5    # +1 chamada: compõe a mensagem ao lojista
+python aprender.py --perguntar 5 --enviar   # e manda-a pelo webhook
 ```
 
 Cada vez que o lojista edita um rascunho antes de o enviar, escreveu um requisito. Esta
@@ -126,12 +127,25 @@ concordância educada é pior do que nenhuma regra.
 > O pior resultado de uma pergunta mal composta é uma pergunta que se corrige antes de enviar.
 > É por isso que esta chamada ao modelo existe e a de escrever regras não.
 
-> [!WARNING] O envio continua a ser humano, e não por escolha
-> A aplicação não tem `Mail.Send` — nunca pediu essa permissão, e é ela que garante que nada sai
-> sem revisão. Um caminho automático de volta, em que o lojista responde por email e o sistema
-> escreve a regra sozinho, seria pior do que trabalhoso: **a caixa de suporte é pública**, o
-> cabeçalho `From` falsifica-se, e qualquer pessoa passaria a poder injetar regras de negócio que
-> o assistente afirmaria a clientes como facto da loja.
+Com `PERGUNTAS_WEBHOOK_URL` no `.env`, o `tripat3s-assistente-perguntas.timer` faz isto sozinho
+à **segunda-feira de manhã**: junta os cinco padrões mais vistos, compõe a mensagem, e manda-a
+para o Discord (ou qualquer outro webhook). Semanal e não diário de propósito — uma mensagem por
+dia com uma pergunta é uma mensagem que se ignora.
+
+> [!NOTE] O Discord recusa texto cru
+> Exige JSON com um campo `content`, e corta a 2000 caracteres por mensagem. O código deteta o
+> destino pelo URL e parte a mensagem em blocos, cortando entre parágrafos — um corte cego a 2000
+> parte uma frase e a mensagem seguinte começa a meio de uma palavra.
+>
+> O `deploy/alertar.py` tinha o mesmo problema e foi corrigido junto. A lógica está duplicada nos
+> dois ficheiros **de propósito**: o `alertar.py` corre quando o assistente falha, e não pode
+> depender do módulo que falhou.
+
+> [!WARNING] O que é enviado é a pergunta, nunca a resposta
+> A aplicação continua sem `Mail.Send`, e o caminho de volta continua a ser humano. O lojista
+> responde a uma pessoa, que decide se aquilo é uma regra. Automatizar isso seria pior do que
+> trabalhoso: **a caixa de suporte é pública**, o `From` falsifica-se, e qualquer pessoa passaria
+> a poder injetar regras de negócio que o assistente afirmaria a clientes como facto da loja.
 
 > [!IMPORTANT] Não escreve regras, de propósito
 > Uma edição não é uma regra. A 01/09/2026, três casos provaram-no no mesmo dia: um parecia erro

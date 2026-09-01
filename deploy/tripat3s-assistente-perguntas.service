@@ -1,0 +1,37 @@
+[Unit]
+Description=Envia ao lojista as perguntas sobre respostas que ele editou (tripat3s)
+Documentation=https://github.com/joaocarvalhini/Outlook-Reply-Assistant
+After=network-online.target
+Wants=network-online.target
+# Sem OnFailure: falhar a enviar as perguntas não afeta nenhum cliente, e a
+# mensagem fica impressa no journal para seguir à mão. Acordar alguém por
+# causa disso seria ruído.
+
+[Service]
+Type=oneshot
+
+User=assistente
+Group=assistente
+WorkingDirectory=/opt/assistente
+# Cinco padrões: o suficiente para valer a pena responder, pouco para ele não
+# adiar. Uma mensagem com quinze perguntas não se responde nunca.
+ExecStart=/opt/assistente/.venv/bin/python /opt/assistente/aprender.py --perguntar 5 --enviar
+
+# Vai ao Graph buscar o email original de cada caso, mais uma chamada ao
+# modelo. Cinco minutos é folga larga.
+TimeoutStartSec=300
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+ReadWritePaths=/opt/assistente
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

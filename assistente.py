@@ -200,6 +200,56 @@ def saudacao() -> str:
     return "Olá"
 
 
+LIMITE_DISCORD = 2000
+
+
+def partir_mensagem(texto: str, limite: int = LIMITE_DISCORD) -> list[str]:
+    """Parte um texto em pedaços que cabem numa mensagem.
+
+    Corta em linhas em branco primeiro, depois em linhas, e só parte uma linha
+    a meio se ela sozinha não couber. Sem isto, um corte cego a 2000 caracteres
+    parte uma frase a meio e a mensagem seguinte começa em "…encomenda".
+    """
+    if len(texto) <= limite:
+        return [texto] if texto else []
+    pedacos: list[str] = []
+    atual = ""
+    for bloco in texto.split("\n\n"):
+        for linha in ([bloco] if len(bloco) <= limite else bloco.splitlines()):
+            while len(linha) > limite:
+                if atual:
+                    pedacos.append(atual)
+                    atual = ""
+                pedacos.append(linha[:limite])
+                linha = linha[limite:]
+            junto = f"{atual}\n\n{linha}" if atual else linha
+            if len(junto) > limite:
+                pedacos.append(atual)
+                atual = linha
+            else:
+                atual = junto
+    if atual:
+        pedacos.append(atual)
+    return pedacos
+
+
+def enviar_webhook(url: str, mensagem: str) -> None:
+    """Manda a mensagem para um webhook, partida se for preciso.
+
+    O Discord exige JSON com um campo "content" e recusa um corpo em texto
+    cru -- que era o que o alertar.py mandava. Detetar o destino pelo URL
+    mantém compatibilidade com qualquer outro recetor que aceite texto.
+    """
+    if not url:
+        return
+    discord = "discord.com/api/webhooks" in url or "discordapp.com/api/webhooks" in url
+    for pedaco in partir_mensagem(mensagem):
+        if discord:
+            httpx.post(url, json={"content": pedaco}, timeout=10.0)
+        else:
+            httpx.post(url, content=pedaco.encode("utf-8"), timeout=10.0)
+
+
 def log(evento: str, **campos: object) -> None:
     extra = " ".join(f"{k}={v}" for k, v in campos.items())
     print(f"{agora()} | {evento} | {extra}".rstrip(" |"), flush=True)

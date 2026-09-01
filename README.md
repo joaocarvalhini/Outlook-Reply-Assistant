@@ -219,6 +219,8 @@ clientes de uma loja online usa Gmail.
 | `ENABLE_COMMITMENT_REGISTRY` | `true` | Registar e lembrar promessas feitas ao cliente |
 | `ENABLE_PARTIAL_ANSWERS` | `true` | Responder à parte coberta de um email com vários assuntos |
 | `DRY_RUN` | `true` | `true` não escreve nada na caixa |
+| `ALERTA_WEBHOOK_URL` | vazio | Para onde vão os alertas de falha (Discord, ntfy, …) |
+| `PERGUNTAS_WEBHOOK_URL` | vazio | Para onde vão as perguntas semanais ao lojista |
 | `COMPANY_NAME` | `a loja` | Aparece no prompt |
 | `SIGNATURE` | `tripat3s` | Assinatura do rascunho |
 | `DRAFTED_CATEGORY` | `IA-Rascunhado` | Categoria aplicada ao original |

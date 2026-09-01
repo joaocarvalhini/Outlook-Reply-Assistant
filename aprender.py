@@ -6,6 +6,7 @@
     python aprender.py --marcar <id>    marca uma como tratada
     python aprender.py --classificar    + 1 chamada: falta regra ou é saliência?
     python aprender.py --perguntar 5    compõe a mensagem a enviar ao lojista
+    python aprender.py --perguntar 5 --enviar   e manda-a pelo webhook
 
 Porque existe
 -------------
@@ -62,6 +63,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sqlite3
 import sys
@@ -318,6 +320,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--perguntar", type=int, metavar="N", default=0,
                    help="compõe a mensagem a enviar ao lojista, com os N "
                         "padrões mais vistos (sugestão: 5)")
+    p.add_argument("--enviar", action="store_true",
+                   help="além de compor, manda pelo PERGUNTAS_WEBHOOK_URL")
     p.add_argument("--classificar", action="store_true",
                    help="+1 chamada ao modelo: falta regra ou é saliência?")
     args = p.parse_args(argv)
@@ -364,9 +368,27 @@ def main(argv: list[str] | None = None) -> int:
                     pass
             escolhidos.append(caso)
 
-        print(compor_pergunta(cliente, cfg, escolhidos))
+        mensagem = compor_pergunta(cliente, cfg, escolhidos)
+        print(mensagem)
         print("\n" + "─" * 72)
-        print("Rever antes de enviar. Depois de ele responder, marcar os casos:")
+
+        if args.enviar:
+            url = os.environ.get("PERGUNTAS_WEBHOOK_URL", "").strip()
+            if not url:
+                print("PERGUNTAS_WEBHOOK_URL não está no .env — nada enviado.")
+                print("A mensagem acima continua boa para copiar à mão.")
+                return 1
+            try:
+                a.enviar_webhook(url, mensagem)
+                a.log("perguntas-enviadas", padroes=len(escolhidos))
+            except Exception as exc:  # noqa: BLE001
+                # Falhar a enviar não deve perder a mensagem: ela já foi
+                # impressa acima e pode seguir à mão.
+                print(f"Falhou o envio ({type(exc).__name__}: {exc}). "
+                      "A mensagem acima continua boa para copiar.")
+                return 1
+
+        print("Depois de ele responder, marcar os casos:")
         for grupo in grupos[:args.perguntar]:
             for caso in grupo:
                 print(f"  python aprender.py --marcar {caso['message_id']}")

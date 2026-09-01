@@ -78,6 +78,7 @@ from assistente import (
     ja_processado,
     ler_meta,
     para_html,
+    partir_mensagem,
     para_texto,
     processar,
     registar,
@@ -2543,6 +2544,38 @@ class MarcarVarias(unittest.TestCase):
         m = {"id": "1", "categorias": []}
         stub.marcar(m, "Decisão", "")
         self.assertEqual(stub.pedidos[0]["categories"], ["Decisão"])
+
+
+class Webhook(unittest.TestCase):
+    """O Discord recusa texto cru e corta a 2000 caracteres."""
+
+    def test_texto_curto_fica_inteiro(self) -> None:
+        self.assertEqual(partir_mensagem("Olá"), ["Olá"])
+
+    def test_texto_vazio_nao_gera_pedacos(self) -> None:
+        self.assertEqual(partir_mensagem(""), [])
+
+    def test_corta_entre_paragrafos_e_nao_a_meio_de_um(self) -> None:
+        """Um corte cego a 2000 parte uma frase e a mensagem seguinte começa
+        em '…encomenda'."""
+        blocos = ["A" * 900, "B" * 900, "C" * 900]
+        pedacos = partir_mensagem("\n\n".join(blocos), limite=2000)
+        self.assertEqual(len(pedacos), 2)
+        for pedaco in pedacos:
+            self.assertLessEqual(len(pedaco), 2000)
+        # Nenhum bloco ficou partido ao meio.
+        for bloco in blocos:
+            self.assertTrue(any(bloco in p for p in pedacos))
+
+    def test_linha_maior_que_o_limite_e_partida(self) -> None:
+        """Sem isto, uma linha gigante ficava por enviar."""
+        pedacos = partir_mensagem("X" * 5000, limite=2000)
+        self.assertEqual([len(p) for p in pedacos], [2000, 2000, 1000])
+
+    def test_nada_se_perde_no_corte(self) -> None:
+        texto = "\n\n".join(f"parágrafo {i} " + "z" * 300 for i in range(20))
+        self.assertEqual("".join(partir_mensagem(texto, limite=2000)).replace("\n", ""),
+                         texto.replace("\n", ""))
 
 
 class Aprender(unittest.TestCase):
