@@ -2,7 +2,7 @@
 
 Fonte: prática da loja, confirmada em mais de mil respostas reais a clientes
 entre julho de 2025 e agosto de 2026.
-Última verificação: 14 de agosto de 2026
+Última verificação: 2 de setembro de 2026
 
 ## Pedir a prova é a resposta
 
@@ -31,6 +31,23 @@ troca sem custo é sempre a primeira oferta") ou avançar para devolução por
 arrependimento — e só nesse segundo caso é que passam a fazer sentido as
 instruções de "Como iniciar uma devolução" (formulário, morada, portes,
 prazos). Não adiantar essas instruções antes de a prova ser vista.
+
+## Capa transparente MagSafe com riscos aparentes — normalmente é a película
+
+Quando o cliente diz que a capa transparente MagSafe chegou riscada, o primeiro
+passo é o do costume: pedir uma fotografia (ver "Pedir a prova é a resposta").
+
+Estas capas vêm com três películas plásticas de proteção, que podem ter marcas
+ou riscos de fábrica e têm de ser removidas antes de usar:
+
+1. Uma no exterior da capa
+2. Uma no interior da capa
+3. Uma no interior do círculo MagSafe
+
+Depois de vista a fotografia, a resposta explica que os riscos costumam estar
+apenas nas películas, e não na capa em si, e pede ao cliente para remover as
+três. Depois de removidas, a capa fica lisa e sem esses riscos. (Confirmado
+diretamente pelo lojista, 2 de setembro de 2026.)
 
 ## Antes de decidir seja o que for
 

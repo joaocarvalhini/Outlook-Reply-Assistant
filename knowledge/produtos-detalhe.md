@@ -2,7 +2,7 @@
 
 Fonte: respostas confirmadas pela loja (14 de agosto de 2026) e conhecimento
 técnico escrito pelo próprio lojista no histórico de apoio ao cliente.
-Última verificação: 17 de agosto de 2026
+Última verificação: 2 de setembro de 2026
 
 ## Smartwatch
 
@@ -23,6 +23,10 @@ técnico escrito pelo próprio lojista no histórico de apoio ao cliente.
   o problema persistir depois disso é que se avança para pedir prova (foto ou
   vídeo) e testar com outro telemóvel. (Confirmado por um caso real de
   produção, 18 de agosto de 2026.)
+- Configuração de pagamentos NFC no HK 11 Mini: não se explicam os passos.
+  A resposta é encaminhar o cliente para o manual de instruções do produto,
+  onde essa informação está disponível. (Confirmado diretamente pelo
+  lojista, 2 de setembro de 2026.)
 
 ## InPods e fones
 
@@ -43,6 +47,15 @@ técnico escrito pelo próprio lojista no histórico de apoio ao cliente.
   carregar 3 a 4 horas seguidas, experimentar outro cabo e outro carregador, e
   ligar a um segundo dispositivo além do habitual. Pode ser apenas descarga
   total de um dos auriculares.
+- É normal um auricular descarregar completamente se ficar fora da caixa de
+  carregamento, mesmo que a caixa mostre uma percentagem — a bateria só
+  carrega dentro dela, e fora dela consome-se normalmente. Não é avaria.
+  (Confirmado diretamente pelo lojista, 2 de setembro de 2026.)
+- No P9, a intensidade do cancelamento de ruído tem níveis ajustáveis; o nível
+  mínimo é o mais baixo disponível, não é "desligado" — continua a aplicar-se
+  a regra acima de que o cancelamento de ruído nunca se desliga por completo.
+  Vem sempre ativo de fábrica, no nível de fábrica. (Confirmado diretamente
+  pelo lojista, 2 de setembro de 2026.)
 
 ## Powerbanks e carregamento MagSafe
 
