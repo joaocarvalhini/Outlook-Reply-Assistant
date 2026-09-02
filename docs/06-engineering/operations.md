@@ -137,6 +137,17 @@ de manhã. Uma semana depois já não, e uma pergunta sobre um caso esquecido ou
 tem uma resposta inventada — que é pior, porque vira regra. O risco de habituação paga-se com o
 silêncio nas noites vazias e com o limite de três casos.
 
+> [!CAUTION] `Persistent=true` dispara no momento em que se instala o temporizador
+> Aconteceu a 02/09/2026. O temporizador ainda era semanal (`OnCalendar=Mon 09:00`) e foi
+> instalado numa quarta-feira: o systemd viu a segunda-feira passada por correr e disparou o
+> serviço de imediato. Um `systemctl restart` a seguir repetiu, por causa do ficheiro de estado
+> em `/var/lib/systemd/timers/`. Resultado: três mensagens ao lojista em onze minutos, com
+> perguntas repetidas entre elas, e três chamadas ao modelo em vez de uma.
+>
+> O temporizador diário não tem `Persistent` e por isso não faz recuperação. Antes de pôr
+> `Persistent=true` num temporizador que **escreve para fora** — mensagens, emails, webhooks —
+> contar que o primeiro `enable --now` conta como corrida perdida se a hora marcada já passou.
+
 > [!IMPORTANT] O `--enviar` marca os casos, o `--perguntar` sozinho não
 > A correr todas as noites sem ninguém a ver, não marcar significaria reenviar os mesmos casos
 > indefinidamente. Perde-se a pergunta se ele não responder, e isso é aceitável: se o padrão
