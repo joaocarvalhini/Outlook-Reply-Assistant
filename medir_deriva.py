@@ -131,11 +131,18 @@ def buscar_email(graph: a.Graph, message_id: str) -> dict | None:
         f"{graph.base}/messages",
         params={
             "$filter": f"internetMessageId eq '{message_id}'",
-            "$select": a.CAMPOS_LISTA,
+            # webLink fica fora de CAMPOS_LISTA de propósito: são centenas de
+            # caracteres por email e só as ferramentas de diagnóstico precisam
+            # dele. O caminho quente lista 25 de cada vez, a cada dois minutos.
+            "$select": a.CAMPOS_LISTA + ",webLink",
         },
     )
     valores = dados.get("value", [])
-    return graph._converter(valores[0]) if valores else None
+    if not valores:
+        return None
+    msg = graph._converter(valores[0])
+    msg["link"] = str(valores[0].get("webLink") or "")
+    return msg
 
 
 def semelhanca(a_: str, b_: str) -> float:

@@ -29,6 +29,7 @@ from aprender import (
     agrupar,
     classificar,
     mesmo_padrao,
+    rodape_links,
     texto_acrescentado,
 )
 from aquecer import (
@@ -2696,6 +2697,36 @@ class Aprender(unittest.TestCase):
         conteudo = cliente.pedidos[0]["messages"][0]["content"]
         self.assertIn("REGRA-DE-TESTE", conteudo)
         self.assertIn("ACRESCENTO-DE-TESTE", conteudo)
+
+
+class RodapeLinks(unittest.TestCase):
+    """Os links vão pelo código, não pelo modelo -- um webLink do Outlook tem
+    centenas de caracteres e um link partido manda o lojista procurar o email
+    à mão, que é o trabalho que isto lhe devia poupar."""
+
+    def test_numeracao_acompanha_a_ordem_dos_casos(self) -> None:
+        rodape = rodape_links([
+            {"link": "https://outlook.office.com/a"},
+            {"link": "https://outlook.office.com/b"},
+        ])
+        self.assertIn("1. https://outlook.office.com/a", rodape)
+        self.assertIn("2. https://outlook.office.com/b", rodape)
+
+    def test_caso_sem_link_nao_desalinha_a_numeracao(self) -> None:
+        """O email pode ter sido apagado da caixa. Nesse caso salta-se a
+        linha, mas o número tem de continuar a ser o do caso na mensagem."""
+        rodape = rodape_links([
+            {"link": "https://outlook.office.com/a"},
+            {"link": ""},
+            {"link": "https://outlook.office.com/c"},
+        ])
+        self.assertIn("1. https://outlook.office.com/a", rodape)
+        self.assertIn("3. https://outlook.office.com/c", rodape)
+        self.assertNotIn("2.", rodape)
+
+    def test_sem_links_nenhuns_nao_deixa_cabecalho_orfao(self) -> None:
+        self.assertEqual(rodape_links([{"link": ""}]), "")
+        self.assertEqual(rodape_links([]), "")
 
 
 class SuiteDeTestes(unittest.TestCase):

@@ -103,8 +103,8 @@ como `coberta?` as que já parecem estar na base.
 python aprender.py                  # divergências por rever, agrupadas
 python aprender.py --marcar <id>    # marca uma como tratada
 python aprender.py --classificar    # +1 chamada: falta regra ou é saliência?
-python aprender.py --perguntar 5    # +1 chamada: compõe a mensagem ao lojista
-python aprender.py --perguntar 5 --enviar   # e manda-a pelo webhook
+python aprender.py --perguntar 3    # +1 chamada: compõe a mensagem ao lojista
+python aprender.py --perguntar 3 --enviar   # manda-a e marca os casos
 ```
 
 Cada vez que o lojista edita um rascunho antes de o enviar, escreveu um requisito. Esta
@@ -128,9 +128,26 @@ concordância educada é pior do que nenhuma regra.
 > É por isso que esta chamada ao modelo existe e a de escrever regras não.
 
 Com `PERGUNTAS_WEBHOOK_URL` no `.env`, o `tripat3s-assistente-perguntas.timer` faz isto sozinho
-à **segunda-feira de manhã**: junta os cinco padrões mais vistos, compõe a mensagem, e manda-a
-para o Discord (ou qualquer outro webhook). Semanal e não diário de propósito — uma mensagem por
-dia com uma pergunta é uma mensagem que se ignora.
+**todos os dias às 19h de Lisboa**: junta os três padrões mais vistos, compõe a mensagem, manda-a
+para o Discord (ou qualquer outro webhook) e marca os casos. Nas noites sem divergências não sai
+mensagem nenhuma — sai antes da chamada ao modelo.
+
+Diário e não semanal por causa da memória dele: ao fim do dia ainda se lembra do email que editou
+de manhã. Uma semana depois já não, e uma pergunta sobre um caso esquecido ou não tem resposta ou
+tem uma resposta inventada — que é pior, porque vira regra. O risco de habituação paga-se com o
+silêncio nas noites vazias e com o limite de três casos.
+
+> [!IMPORTANT] O `--enviar` marca os casos, o `--perguntar` sozinho não
+> A correr todas as noites sem ninguém a ver, não marcar significaria reenviar os mesmos casos
+> indefinidamente. Perde-se a pergunta se ele não responder, e isso é aceitável: se o padrão
+> importar, ele volta a editar da mesma maneira e a pergunta refaz-se sozinha. Um padrão que
+> nunca reaparece não valia a pergunta. Se o envio falhar, não se marca nada.
+
+Cada caso leva no fim o link para o email no Outlook, acrescentado **pelo código e não pelo
+modelo**: um `webLink` tem centenas de caracteres, um modelo a copiá-lo engana-se, e um link
+partido manda-o procurar o email à mão — o trabalho que isto lhe devia poupar. O `webLink` fica
+fora do `CAMPOS_LISTA` de propósito, porque o caminho quente lista 25 emails de dois em dois
+minutos e não precisa dele.
 
 > [!NOTE] O Discord recusa texto cru
 > Exige JSON com um campo `content`, e corta a 2000 caracteres por mensagem. O código deteta o

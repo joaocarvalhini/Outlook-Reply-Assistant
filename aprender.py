@@ -5,8 +5,8 @@
     python aprender.py --tudo           inclui as já revistas
     python aprender.py --marcar <id>    marca uma como tratada
     python aprender.py --classificar    + 1 chamada: falta regra ou é saliência?
-    python aprender.py --perguntar 5    compõe a mensagem a enviar ao lojista
-    python aprender.py --perguntar 5 --enviar   e manda-a pelo webhook
+    python aprender.py --perguntar 3    compõe a mensagem a enviar ao lojista
+    python aprender.py --perguntar 3 --enviar   manda-a e marca os casos
 
 Porque existe
 -------------
@@ -264,6 +264,17 @@ def compor_pergunta(cliente: object, cfg: "a.Config", casos: list[dict]) -> str:
     return json.loads(texto).get("mensagem", "")
 
 
+def rodape_links(casos: list[dict]) -> str:
+    """Os links para os emails, acrescentados pelo código e não pelo modelo.
+
+    Um webLink do Outlook tem centenas de caracteres. Um modelo a copiá-lo
+    engana-se, e um link partido é pior do que link nenhum: manda o lojista
+    procurar o email à mão, que é exatamente o trabalho que isto lhe poupa.
+    """
+    linhas = [f"{i}. {c['link']}" for i, c in enumerate(casos, 1) if c.get("link")]
+    return "\n\nAbrir os emails:\n" + "\n".join(linhas) if linhas else ""
+
+
 def marcar_revisto(con: sqlite3.Connection, message_id: str) -> bool:
     cur = con.execute(
         f"UPDATE processados SET {CHAVE_REVISTO} = ? WHERE message_id = ?",
@@ -349,6 +360,11 @@ def main(argv: list[str] | None = None) -> int:
     grupos = agrupar(casos)
 
     if args.perguntar:
+        # A correr todos os dias, o caso normal é não haver nada. Sair aqui
+        # poupa a chamada ao modelo e, sobretudo, não manda uma mensagem vazia.
+        if not grupos:
+            print("Nada por perguntar.")
+            return 0
         graph = a.Graph(cfg)
         cliente = anthropic.Anthropic(api_key=cfg.api_key, timeout=60.0)
         escolhidos = []
@@ -361,7 +377,9 @@ def main(argv: list[str] | None = None) -> int:
             # trabalho que isto existe para lhe poupar.
             msg = buscar_email(graph, caso["message_id"])
             caso["pergunta"] = ""
+            caso["link"] = ""
             if msg is not None:
+                caso["link"] = msg.get("link", "")
                 try:
                     caso["pergunta"] = graph.detalhe(msg, cfg.max_body)["corpo"]
                 except Exception:
@@ -369,6 +387,10 @@ def main(argv: list[str] | None = None) -> int:
             escolhidos.append(caso)
 
         mensagem = compor_pergunta(cliente, cfg, escolhidos)
+        if not mensagem.strip():
+            print("O modelo não devolveu mensagem nenhuma. Nada enviado.")
+            return 1
+        mensagem += rodape_links(escolhidos)
         print(mensagem)
         print("\n" + "─" * 72)
 
@@ -380,13 +402,32 @@ def main(argv: list[str] | None = None) -> int:
                 return 1
             try:
                 a.enviar_webhook(url, mensagem)
-                a.log("perguntas-enviadas", padroes=len(escolhidos))
             except Exception as exc:  # noqa: BLE001
                 # Falhar a enviar não deve perder a mensagem: ela já foi
-                # impressa acima e pode seguir à mão.
+                # impressa acima e pode seguir à mão. E não se marca nada --
+                # o que não chegou tem de voltar a ser perguntado amanhã.
                 print(f"Falhou o envio ({type(exc).__name__}: {exc}). "
                       "A mensagem acima continua boa para copiar.")
                 return 1
+
+            # Marcar só depois de a mensagem sair, e sempre. A correr todas as
+            # noites sem ninguém a ver, não marcar significa reenviar os mesmos
+            # casos indefinidamente -- e uma mensagem que se repete deixa de
+            # se ler, que é o contrário do que isto existe para fazer.
+            #
+            # O custo é perder a pergunta se ele não responder. É aceitável e
+            # até saudável: se o padrão importar, ele volta a editar da mesma
+            # maneira, aparece nova divergência e a pergunta refaz-se sozinha.
+            # Um padrão que nunca reaparece não valia a pergunta.
+            marcados = sum(
+                marcar_revisto(con, caso["message_id"])
+                for grupo in grupos[:args.perguntar]
+                for caso in grupo
+            )
+            a.log("perguntas-enviadas",
+                  padroes=len(escolhidos), marcados=marcados)
+            print(f"Enviado. {marcados} caso(s) marcado(s) como revisto(s).")
+            return 0
 
         print("Depois de ele responder, marcar os casos:")
         for grupo in grupos[:args.perguntar]:

@@ -1,20 +1,26 @@
 [Unit]
-Description=Perguntas semanais ao lojista, à segunda de manhã (tripat3s)
+Description=Perguntas diárias ao lojista, ao fim do dia (tripat3s)
 Requires=tripat3s-assistente-perguntas.service
 
 [Timer]
-# Segunda-feira às 9h. Semanal e não diário de propósito: as divergências
-# aparecem a um ritmo de duas ou três por dia, e uma mensagem por dia com uma
-# pergunta é uma mensagem que se ignora. Juntar a semana dá-lhe um bloco que
-# vale a pena sentar-se a responder.
+# Todos os dias ao fim do dia, e só quando há alguma coisa a perguntar.
 #
-# OnCalendar e não OnUnitActiveSec: aqui a hora do dia importa -- a mensagem
-# tem de chegar quando ele começa a trabalhar, não a meio da noite.
-OnCalendar=Mon *-*-* 09:00:00
+# Diário e não semanal por causa da memória dele: ao fim do dia ainda se
+# lembra do email que editou de manhã. À segunda seguinte já não, e uma
+# pergunta sobre um caso de que já não se lembra ou não tem resposta ou tem
+# uma resposta inventada -- que é pior, porque vira regra.
+#
+# O preço é o risco de habituação, e paga-se de duas maneiras: nas noites sem
+# divergências não sai mensagem nenhuma, e o máximo é de três casos.
+#
+# OnCalendar e não OnUnitActiveSec: aqui a hora do dia importa. Com fuso
+# explícito, senão em UTC isto cai uma hora antes no verão.
+OnCalendar=*-*-* 19:00 Europe/Lisbon
 
-# Se o servidor estiver desligado à hora certa, corre quando arrancar. Sem
-# isto, uma reinicialização à segunda de manhã fazia perder a semana inteira.
-Persistent=true
+# Sem Persistent: se o servidor estiver em baixo às 19h, o dia seguinte
+# apanha tudo à mesma -- as divergências ficam à espera na base de dados.
+# Com Persistent, uma reinicialização às 3h da manhã mandava-lhe a mensagem
+# às 3h da manhã.
 
 RandomizedDelaySec=5min
 

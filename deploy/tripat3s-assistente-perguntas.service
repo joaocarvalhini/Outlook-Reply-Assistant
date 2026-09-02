@@ -1,5 +1,5 @@
 [Unit]
-Description=Envia ao lojista as perguntas sobre respostas que ele editou (tripat3s)
+Description=Envia ao lojista, ao fim do dia, as perguntas sobre respostas que ele editou (tripat3s)
 Documentation=https://github.com/joaocarvalhini/Outlook-Reply-Assistant
 After=network-online.target
 Wants=network-online.target
@@ -13,9 +13,12 @@ Type=oneshot
 User=assistente
 Group=assistente
 WorkingDirectory=/opt/assistente
-# Cinco padrões: o suficiente para valer a pena responder, pouco para ele não
-# adiar. Uma mensagem com quinze perguntas não se responde nunca.
-ExecStart=/opt/assistente/.venv/bin/python /opt/assistente/aprender.py --perguntar 5 --enviar
+# Três padrões: a correr todos os dias, a mensagem tem de se ler de pé. Cinco
+# eram para a cadência semanal, quando havia uma semana de casos acumulados.
+#
+# O --enviar marca os casos como revistos assim que a mensagem sai. Sem isso,
+# a correr sozinho todas as noites, reenviava os mesmos casos indefinidamente.
+ExecStart=/opt/assistente/.venv/bin/python /opt/assistente/aprender.py --perguntar 3 --enviar
 
 # Vai ao Graph buscar o email original de cada caso, mais uma chamada ao
 # modelo. Cinco minutos é folga larga.
