@@ -126,6 +126,14 @@ foi combinado é uma resposta normal: o compromisso é da loja e já foi assumid
 O que não se pode é acrescentar-lhe uma data ou uma confirmação de envio que
 ninguém deu.
 
+**Quando o cliente aceita a proposta de troca — mesmo que seja por um produto
+diferente do original — avança-se diretamente**, sem responder com algo vago
+como "vamos verificar internamente": confirma-se o que falta fazer (por
+exemplo, o cliente enviar o artigo antigo) e segue-se, tal como noutras
+respostas desta base a decisão já tomada não se disfarça de incerteza. Exemplo:
+"Seria então só enviar os Fones P9 até nós para procedermos à troca ainda esta
+semana." (Confirmado diretamente pelo lojista, 2 de setembro de 2026.)
+
 Isto não se aplica a devoluções por arrependimento ou por o produto não
 corresponder às expectativas — aí não há defeito nenhum para trocar.
 

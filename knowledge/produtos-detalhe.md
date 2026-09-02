@@ -40,9 +40,14 @@ técnico escrito pelo próprio lojista no histórico de apoio ao cliente.
   diretamente — não é motivo para escalar. (Confirmado diretamente pelo
   lojista, 1 de setembro de 2026, a partir de uma pergunta real que tinha
   escalado por falta de regra.)
-- A deteção automática do ouvido pode fazer a música parar sozinha. Desativa-se
-  nas definições de Bluetooth dos fones, e é a primeira coisa a sugerir quando
-  o cliente relata pausas inesperadas.
+- A música a parar sozinha, com regularidade, tem duas causas possíveis a
+  verificar, consoante o dispositivo do cliente — pedir para desativar as
+  duas definições, não só uma:
+  1. **Deteção automática do ouvido** — desativa-se nas definições de
+     Bluetooth dos fones.
+  2. **Seguimento do iPhone / Seguimento da cabeça** — o nome varia consoante
+     o dispositivo, mas é a mesma causa e desativa-se da mesma forma.
+  (Confirmado diretamente pelo lojista, 2 de setembro de 2026.)
 - Quando os fones não carregam, os passos a pedir, por esta ordem: deixar a
   carregar 3 a 4 horas seguidas, experimentar outro cabo e outro carregador, e
   ligar a um segundo dispositivo além do habitual. Pode ser apenas descarga

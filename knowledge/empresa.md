@@ -1,7 +1,7 @@
 # A empresa
 
 Fonte: /pages/termos-e-condicoes, /pages/informacoes-de-contacto, /pages/quem-somos
-Última verificação: 6 de agosto de 2026
+Última verificação: 2 de setembro de 2026
 
 ## Identificação
 
@@ -45,8 +45,17 @@ Fonte: /pages/termos-e-condicoes, /pages/informacoes-de-contacto, /pages/quem-so
 - Quando o cliente escreve um elogio ou agradecimento espontâneo — não em
   resposta a um problema que a loja acabou de resolver, mas satisfação geral
   com o produto ou com a loja — a resposta agradece e pede, de forma simpática
-  e breve, uma review de 5 estrelas no Trustpilot:
-  https://pt.trustpilot.com/review/tripat3s.com
+  e breve, uma review de 5 estrelas no Trustpilot, **incluindo sempre o
+  link**: https://pt.trustpilot.com/review/tripat3s.com
+  - O assistente tem estado a pedir a review sem incluir o link — o cliente
+    fica sem saber onde a deixar. O link tem de vir sempre junto ao pedido,
+    não só a intenção de pedir. (Confirmado diretamente pelo lojista, 2 de
+    setembro de 2026, a partir de casos reais em que o lojista teve de
+    acrescentar o link à mão.)
+  - A resposta fala no **plural** — a tripat3s é uma equipa, não uma pessoa.
+    Evitar "Fico feliz por..." e preferir "Ficamos felizes por..." ou
+    equivalente. (Confirmado diretamente pelo lojista, 2 de setembro de
+    2026.)
 - Não pedir isto quando o elogio vem a fechar um caso de problema/reclamação
   resolvido (o cliente agradecer por o assunto ter sido tratado): nesse caso
   fecha-se a resposta normalmente, sem o pedido de review. O pedido é para

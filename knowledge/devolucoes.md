@@ -2,10 +2,16 @@
 
 Fonte: /pages/politica-de-reembolsos-e-devolucoes, /pages/perguntas-faq,
 /pages/termos-e-condicoes
-Última verificação: 17 de agosto de 2026
+Última verificação: 2 de setembro de 2026
 
 ## Prazo para devolver
 
+- **Não se refere o prazo de devolução por iniciativa própria** — só quando o
+  cliente pergunta diretamente por ele. Isto não se aplica às secções abaixo
+  em que o prazo é o motivo central da resposta (por exemplo, uma devolução
+  recusada por já ter passado o prazo): aí citá-lo é a própria explicação da
+  decisão, não uma menção espontânea. (Confirmado diretamente pelo lojista, 2
+  de setembro de 2026.)
 - O cliente tem 14 dias a contar da data de receção da encomenda para solicitar
   uma devolução.
 - O cliente tem direito a rescindir o contrato no prazo de 14 dias.
@@ -232,6 +238,10 @@ primeiro (secção acima) — não isto.
 
 ## Para onde enviar a devolução
 
+**Não se dá a morada de forma inicial ou proativa** — mesmo já dentro do
+processo de devolução. Só se envia quando o cliente pergunta diretamente qual
+é a morada. (Confirmado diretamente pelo lojista, 2 de setembro de 2026.)
+
 A morada da loja é:
 
     tripat3s
@@ -261,6 +271,14 @@ real de produção, 18 de agosto de 2026.)
 - A loja **não emite nem disponibiliza etiqueta de devolução pré-paga**. O
   cliente despacha por conta própria, na transportadora que preferir (CTT ou
   outra) — não é a loja a gerar a etiqueta.
+- Quando o cliente pede especificamente uma etiqueta digital, a resposta
+  explica que a transportadora da loja **não trabalha com etiquetas
+  digitais**, e que o envio deve ser feito diretamente para a morada que
+  consta no envelope original da DPD (só quando o cliente pergunta qual é a
+  morada — ver nota acima). Acrescenta-se que a loja se responsabiliza pelos
+  portes até 3,99 € (ver "Portes de devolução" abaixo) e recomenda-se o envio
+  por correio registado, para haver acompanhamento. (Confirmado diretamente
+  pelo lojista, 2 de setembro de 2026.)
   - Isto é sobre devolução por arrependimento. Numa substituição por
     **defeito confirmado**, a loja envia um envelope DPD pré-endereçado sem
     custo — ver "Devolver o artigo antigo não é sempre exigido" em
