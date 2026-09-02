@@ -69,15 +69,25 @@ print(h.hexdigest()[:12])
 " 2>/dev/null
 }
 
-local_impressao="$(impressao "$PYTHON" || true)"
-remota_impressao="$(ssh "$SERVIDOR" "cd '$DESTINO' 2>/dev/null && sudo -u '$UTILIZADOR_REMOTO' .venv/bin/python -c \"
+# A mesma verificação, mas no servidor -- reaproveitada depois do envio (ver
+# 4/4) para confirmar que o conteúdo chegou de facto, e não só que o `tar`
+# saiu com código zero. Encontrado a 02/09/2026: um envio imprimiu "Enviado"
+# sem o ficheiro ter mudado no servidor -- o `set -e`/`pipefail` não apanhou
+# a falha, e só se notou porque um segundo deploy, com o mesmo conteúdo,
+# voltou a reportar "ALTERADO" em vez de "inalterado".
+impressao_remota() {
+  ssh "$SERVIDOR" "cd '$DESTINO' 2>/dev/null && sudo -u '$UTILIZADOR_REMOTO' .venv/bin/python -c \"
 import hashlib, pathlib
 import assistente
 h = hashlib.sha256(assistente.PROMPT.encode())
 for f in sorted(pathlib.Path('knowledge').glob('*.md')):
     h.update(f.read_bytes().replace(b'\r\n', b'\n'))
 print(h.hexdigest()[:12])
-\"" 2>/dev/null || true)"
+\"" 2>/dev/null
+}
+
+local_impressao="$(impressao "$PYTHON" || true)"
+remota_impressao="$(impressao_remota || true)"
 
 if [ -z "$local_impressao" ] || [ -z "$remota_impressao" ]; then
   echo "Não consegui comparar o prompt (local='$local_impressao' remoto='$remota_impressao')."
@@ -102,6 +112,21 @@ git archive HEAD | ssh "$SERVIDOR" "
   chown -R '$UTILIZADOR_REMOTO:$UTILIZADOR_REMOTO' '$DESTINO'
 "
 
+# Confirma que o conteúdo chegou de facto -- "o tar saiu sem erro" não é o
+# mesmo que "o servidor tem o ficheiro certo" (ver nota em impressao_remota).
+# Só faz sentido quando o prompt/base mudou: se já estava inalterado antes do
+# envio, o local e o remoto batem por definição e esta verificação não diz nada.
+if [ -n "$local_impressao" ] && [ "$local_impressao" != "$remota_impressao" ]; then
+  impressao_pos_envio="$(impressao_remota || true)"
+  if [ "$impressao_pos_envio" != "$local_impressao" ]; then
+    echo
+    echo "ERRO: o envio terminou sem erro, mas o servidor continua com" >&2
+    echo "'$impressao_pos_envio', não com '$local_impressao'. Corre o deploy outra vez." >&2
+    exit 1
+  fi
+fi
+
 echo
-echo "Enviado. O .env e o assistente.db não fazem parte do git archive e ficaram intocados."
-echo "Se requirements.txt mudou, falta correr o pip install no venv do servidor."
+echo "Enviado e confirmado no servidor. O .env e o assistente.db não fazem parte do"
+echo "git archive e ficaram intocados. Se requirements.txt mudou, falta correr o"
+echo "pip install no venv do servidor."
