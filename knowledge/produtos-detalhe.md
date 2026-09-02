@@ -56,6 +56,10 @@ técnico escrito pelo próprio lojista no histórico de apoio ao cliente.
   a regra acima de que o cancelamento de ruído nunca se desliga por completo.
   Vem sempre ativo de fábrica, no nível de fábrica. (Confirmado diretamente
   pelo lojista, 2 de setembro de 2026.)
+- A haste do P9 fica no mínimo por definição — **não sobe mais do que isso**.
+  Se o cliente perguntar porque não sobe totalmente, ou achar que está presa
+  ou mal encaixada, a resposta é que é assim que o modelo funciona, não é
+  defeito. (Confirmado diretamente pelo lojista, 2 de setembro de 2026.)
 
 ## Powerbanks e carregamento MagSafe
 
