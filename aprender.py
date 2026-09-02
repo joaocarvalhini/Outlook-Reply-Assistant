@@ -94,26 +94,56 @@ LIMIAR_REESCRITA = 60.0
 
 CHAVE_REVISTO = "revisto_em"
 
+# O modelo devolve os campos, não a mensagem montada. Pedir a formatação por
+# instrução era frágil -- num dia cumpria, no outro não, e um registo visual
+# que oscila de dia para dia lê-se pior do que um registo feio mas constante.
+# Assim a formatação é código, e o modelo só decide o que dizer.
 ESQUEMA_MENSAGEM = {
     "type": "object",
-    "properties": {"mensagem": {"type": "string"}},
-    "required": ["mensagem"],
+    "properties": {
+        "abertura": {"type": "string"},
+        "casos": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "titulo": {"type": "string"},
+                    "cliente": {"type": "string"},
+                    "assistente": {"type": "string"},
+                    "enviaste": {"type": "string"},
+                    "pergunta": {"type": "string"},
+                },
+                "required": ["titulo", "cliente", "assistente",
+                             "enviaste", "pergunta"],
+                "additionalProperties": False,
+            },
+        },
+        "fecho": {"type": "string"},
+    },
+    "required": ["abertura", "casos", "fecho"],
     "additionalProperties": False,
 }
+
+REGUA = "─" * 30
 
 INSTRUCAO_PERGUNTAR = """Vais escrever uma mensagem curta para o dono de uma loja online, a perguntar-lhe porque alterou algumas respostas que um assistente automático tinha preparado para clientes dele.
 
 O objetivo é aprender a regra que está por trás de cada alteração, para o assistente deixar de a repetir. Escreve em português de Portugal, tratando-o por tu, como quem trabalha com ele todos os dias e não como um formulário. (Dizia "segunda pessoa formal" e o modelo tratava-o por tu à mesma; o que interessa numa mensagem diária é o registo ser sempre o mesmo, e o informal é o que corresponde à relação real.)
 
-Regras da mensagem:
+Não escreves a mensagem montada: devolves os campos, e o código trata da formatação. Um caso do que te é dado corresponde a um caso que devolves, pela mesma ordem, sem juntar nem saltar nenhum.
 
-- Uma abertura de uma frase a dizer o que é. Nada de agradecimentos longos.
-- Um bloco por caso, numerado. Em cada um: o que o cliente perguntou, em meia frase; o que o assistente tinha escrito, resumido; e o que ele enviou em vez disso, também resumido. Depois a pergunta.
-- **Pergunta o PORQUÊ, nunca proponhas a resposta.** Sugerir a regra enviesa-o a concordar, e uma regra escrita a partir de uma concordância educada é pior do que nenhuma regra.
-- Se um caso se repetiu, di-lo — é o que o faz perceber que vale a pena responder.
-- Fecha a dizer que, se algum tiver sido uma decisão pontual e não uma regra, basta ele dizer isso.
-- Sem jargão. Ele não sabe o que é um prompt, um modelo ou uma escalação.
-- No máximo, uma página."""
+Os campos:
+
+- `abertura` — uma frase a dizer o que é isto. Nada de agradecimentos longos.
+- Por caso:
+  - `titulo` — três a seis palavras a identificar o caso (o número da encomenda, ou o assunto). Não é uma frase.
+  - `cliente` — o que o cliente perguntou, em meia linha.
+  - `assistente` — o que o assistente tinha escrito, em meia linha.
+  - `enviaste` — o que ele enviou em vez disso, em meia linha.
+  - `pergunta` — **o PORQUÊ, nunca a resposta.** Sugerir a regra enviesa-o a concordar, e uma regra escrita a partir de uma concordância educada é pior do que nenhuma regra. Se o caso se parece com outro da mesma mensagem, di-lo aqui — é o que o faz perceber que vale a pena responder.
+- `fecho` — uma frase a dizer que, se algum tiver sido decisão pontual e não regra, basta ele dizer isso.
+
+Os três campos do meio são para ele reconhecer o caso sem abrir o email, não para contar a história toda: uma linha cada, no máximo duas. Sem jargão — ele não sabe o que é um prompt, um modelo ou uma escalação."""
 
 
 ESQUEMA_CLASSIFICACAO = {
@@ -261,30 +291,60 @@ def compor_pergunta(cliente: object, cfg: "a.Config", casos: list[dict]) -> str:
     texto = next(
         (b.text for b in resposta.content if getattr(b, "type", "") == "text"), "{}"
     )
-    return json.loads(texto).get("mensagem", "")
+    return formatar_mensagem(json.loads(texto), casos)
 
 
-def rodape_links(casos: list[dict]) -> str:
-    """Os links para os emails, acrescentados pelo código e não pelo modelo.
+def formatar_mensagem(dados: dict, casos: list[dict]) -> str:
+    """Monta a mensagem a partir dos campos que o modelo devolveu.
 
-    Um webLink do Outlook tem centenas de caracteres. Um modelo a copiá-lo
-    engana-se, e um link partido é pior do que link nenhum: manda o lojista
-    procurar o email à mão, que é exatamente o trabalho que isto lhe poupa.
+    A formatação é código e não instrução para que seja sempre a mesma. E os
+    links são colados aqui, nunca escritos pelo modelo: um webLink do Outlook
+    tem cerca de 320 caracteres, um modelo a copiá-lo engana-se, e um link
+    partido manda o lojista procurar o email à mão -- o trabalho que isto lhe
+    devia poupar.
 
-    O link vai mascarado atrás do assunto porque um webLink do Outlook tem
-    cerca de 320 caracteres: três em cru somavam mais do que as perguntas
-    todas e empurravam a mensagem para lá dos 2000 do Discord, partindo-a em
-    duas -- a segunda só com a cauda dos links.
+    Cada caso é um parágrafo fechado. Com três casos a mensagem passa dos 2000
+    do Discord na mesma (só os links são ~960), mas o `partir_mensagem` corta
+    entre parágrafos: parte-se entre casos, nunca a meio de um.
     """
-    linhas = []
-    for i, caso in enumerate(casos, 1):
-        if not caso.get("link"):
-            continue
-        # Parênteses retos no assunto partiam a sintaxe do link mascarado.
-        rotulo = (caso.get("assunto") or "").translate(
-            {ord("["): None, ord("]"): None}).strip()[:60]
-        linhas.append(f"{i}. [{rotulo or 'abrir o email'}]({caso['link']})")
-    return "\n\nAbrir os emails:\n" + "\n".join(linhas) if linhas else ""
+    blocos = dados.get("casos") or []
+    if not blocos:
+        return ""
+
+    partes = [dados.get("abertura", "").strip()]
+    for i, (bloco, caso) in enumerate(zip(blocos, casos), 1):
+        vezes = caso.get("vezes", 1)
+        cabecalho = f"**{i}** | {_limpo(bloco.get('titulo'))}"
+        if vezes > 1:
+            cabecalho += f" | visto {vezes}×"
+        linhas = [
+            REGUA,
+            cabecalho,
+            "",
+            f"**O cliente** — {_limpo(bloco.get('cliente'))}",
+            f"**O assistente** — {_limpo(bloco.get('assistente'))}",
+            f"**Tu enviaste** — {_limpo(bloco.get('enviaste'))}",
+            "",
+            f"**Porquê?** {_limpo(bloco.get('pergunta'))}",
+        ]
+        if caso.get("link"):
+            linhas.append(f"[abrir o email]({caso['link']})")
+        partes.append("\n".join(linhas))
+
+    fecho = dados.get("fecho", "").strip()
+    if fecho:
+        partes.append(f"{REGUA}\n*{fecho}*")
+    return "\n\n".join(p for p in partes if p)
+
+
+def _limpo(texto: object) -> str:
+    """Tira quebras de linha e parênteses retos.
+
+    As quebras partiam o alinhamento de um campo que devia ocupar uma linha;
+    os parênteses retos fechavam a sintaxe de um link mascarado a meio.
+    """
+    return " ".join(str(texto or "").split()).translate(
+        {ord("["): None, ord("]"): None})
 
 
 def marcar_revisto(con: sqlite3.Connection, message_id: str) -> bool:
@@ -402,7 +462,6 @@ def main(argv: list[str] | None = None) -> int:
         if not mensagem.strip():
             print("O modelo não devolveu mensagem nenhuma. Nada enviado.")
             return 1
-        mensagem += rodape_links(escolhidos)
         print(mensagem)
         print("\n" + "─" * 72)
 

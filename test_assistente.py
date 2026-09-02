@@ -26,12 +26,21 @@ from aprender import (
     LIMIAR_DIVERGENCIA,
     compor_pergunta,
     LIMIAR_REESCRITA,
+    REGUA,
     agrupar,
     classificar,
+    formatar_mensagem,
     mesmo_padrao,
-    rodape_links,
     texto_acrescentado,
 )
+
+# O que o modelo devolve ao --perguntar: os campos, não a mensagem montada.
+RESPOSTA_PERGUNTA = {
+    "abertura": "ok",
+    "casos": [{"titulo": "t", "cliente": "c", "assistente": "a",
+               "enviaste": "e", "pergunta": "p"}],
+    "fecho": "f",
+}
 from aquecer import (
     CHAVE_ULTIMO_AQUECIMENTO,
     MINUTOS_ATE_AQUECER,
@@ -2643,7 +2652,7 @@ class Aprender(unittest.TestCase):
         self.assertEqual(agrupar([]), [])
 
     def test_perguntar_sem_casos_nao_chama_o_modelo(self) -> None:
-        cliente = ClienteFalso({"mensagem": ""})
+        cliente = ClienteFalso({"abertura": "", "casos": [], "fecho": ""})
         self.assertEqual(compor_pergunta(cliente, cfg(), []), "")
         self.assertEqual(cliente.pedidos, [])
 
@@ -2651,7 +2660,7 @@ class Aprender(unittest.TestCase):
         """Sem os três — o que o cliente perguntou, o que a IA escreveu, o que
         ele enviou — o lojista tem de abrir cada caso para perceber do que se
         trata, que é o trabalho que isto existe para lhe poupar."""
-        cliente = ClienteFalso({"mensagem": "ok"})
+        cliente = ClienteFalso(RESPOSTA_PERGUNTA)
         compor_pergunta(cliente, cfg(), [{
             "assunto": "Re: Encomenda", "vezes": 2,
             "pergunta": "PERGUNTA-DO-CLIENTE",
@@ -2663,7 +2672,7 @@ class Aprender(unittest.TestCase):
             self.assertIn(esperado, conteudo)
 
     def test_pergunta_diz_quantas_vezes_se_repetiu(self) -> None:
-        cliente = ClienteFalso({"mensagem": "ok"})
+        cliente = ClienteFalso(RESPOSTA_PERGUNTA)
         compor_pergunta(cliente, cfg(), [{
             "assunto": "x", "vezes": 3, "pergunta": "p",
             "escrito": "e", "enviado": "n",
@@ -2672,7 +2681,7 @@ class Aprender(unittest.TestCase):
 
     def test_pergunta_aguenta_falta_do_email_original(self) -> None:
         """O Graph pode não devolver o email — a mensagem sai na mesma."""
-        cliente = ClienteFalso({"mensagem": "ok"})
+        cliente = ClienteFalso(RESPOSTA_PERGUNTA)
         compor_pergunta(cliente, cfg(), [{
             "assunto": "x", "vezes": 1, "escrito": "e", "enviado": "n",
         }])
@@ -2699,48 +2708,79 @@ class Aprender(unittest.TestCase):
         self.assertIn("ACRESCENTO-DE-TESTE", conteudo)
 
 
-class RodapeLinks(unittest.TestCase):
-    """Os links vão pelo código, não pelo modelo -- um webLink do Outlook tem
-    centenas de caracteres e um link partido manda o lojista procurar o email
-    à mão, que é o trabalho que isto lhe devia poupar."""
+class FormatarMensagem(unittest.TestCase):
+    """A formatação é código e não instrução ao modelo, para ser sempre a
+    mesma. Um registo visual que oscila de dia para dia lê-se pior do que um
+    registo feio mas constante."""
 
-    def test_numeracao_acompanha_a_ordem_dos_casos(self) -> None:
-        rodape = rodape_links([
-            {"link": "https://outlook.example/a", "assunto": "Encomenda #1"},
-            {"link": "https://outlook.example/b", "assunto": "Encomenda #2"},
+    @staticmethod
+    def _dados(n: int = 1) -> dict:
+        return {
+            "abertura": "Três respostas que alteraste.",
+            "casos": [{
+                "titulo": f"Encomenda #{i}",
+                "cliente": f"perguntou {i}",
+                "assistente": f"escreveu {i}",
+                "enviaste": f"enviaste {i}",
+                "pergunta": f"porquê {i}?",
+            } for i in range(1, n + 1)],
+            "fecho": "Se foi pontual, basta dizeres.",
+        }
+
+    def test_cada_caso_e_um_paragrafo_fechado(self) -> None:
+        """O partir_mensagem corta entre parágrafos. Com três casos a mensagem
+        passa dos 2000 do Discord na mesma (só os links são ~960), mas assim
+        parte-se entre casos e nunca a meio de um."""
+        saida = formatar_mensagem(self._dados(3), [{"vezes": 1}] * 3)
+        blocos = saida.split("\n\n")
+        for i in (1, 2, 3):
+            um_so = [b for b in blocos if b.startswith(f"{REGUA}\n**{i}** |")]
+            self.assertEqual(len(um_so), 1, f"caso {i} não é um bloco fechado")
+
+    def test_repeticao_so_aparece_quando_ha_repeticao(self) -> None:
+        uma = formatar_mensagem(self._dados(1), [{"vezes": 1}])
+        duas = formatar_mensagem(self._dados(1), [{"vezes": 2}])
+        self.assertNotIn("visto", uma)
+        self.assertIn("visto 2×", duas)
+
+    def test_link_vai_pelo_codigo_e_so_quando_existe(self) -> None:
+        com = formatar_mensagem(
+            self._dados(1), [{"vezes": 1, "link": "https://outlook.example/a"}])
+        self.assertIn("[abrir o email](https://outlook.example/a)", com)
+        self.assertNotIn("abrir o email",
+                         formatar_mensagem(self._dados(1), [{"vezes": 1}]))
+
+    def test_quebra_de_linha_num_campo_nao_desalinha(self) -> None:
+        dados = self._dados(1)
+        dados["casos"][0]["cliente"] = "perguntou\nem duas linhas"
+        saida = formatar_mensagem(dados, [{"vezes": 1}])
+        self.assertIn("**O cliente** — perguntou em duas linhas", saida)
+
+    def test_parentese_reto_num_campo_nao_parte_o_link(self) -> None:
+        """"Re: [URGENTE] fone" fechava a sintaxe do link mascarado a meio."""
+        dados = self._dados(1)
+        dados["casos"][0]["titulo"] = "Re: [URGENTE] fone"
+        saida = formatar_mensagem(
+            dados, [{"vezes": 1, "link": "https://outlook.example/a"}])
+        self.assertIn("**1** | Re: URGENTE fone", saida)
+        self.assertEqual(saida.count("["), 1)
+
+    def test_modelo_a_devolver_menos_casos_do_que_os_dados_nao_rebenta(self) -> None:
+        """Se ele saltar um caso, sai a mensagem com os que devolveu -- e não
+        um par trocado entre o texto de um caso e o link de outro."""
+        saida = formatar_mensagem(self._dados(2), [
+            {"vezes": 1, "link": "https://outlook.example/a"},
+            {"vezes": 1, "link": "https://outlook.example/b"},
+            {"vezes": 1, "link": "https://outlook.example/c"},
         ])
-        self.assertIn("1. [Encomenda #1](https://outlook.example/a)", rodape)
-        self.assertIn("2. [Encomenda #2](https://outlook.example/b)", rodape)
+        self.assertIn("https://outlook.example/a", saida)
+        self.assertIn("https://outlook.example/b", saida)
+        self.assertNotIn("https://outlook.example/c", saida)
 
-    def test_caso_sem_link_nao_desalinha_a_numeracao(self) -> None:
-        """O email pode ter sido apagado da caixa. Nesse caso salta-se a
-        linha, mas o número tem de continuar a ser o do caso na mensagem."""
-        rodape = rodape_links([
-            {"link": "https://outlook.example/a", "assunto": "A"},
-            {"link": "", "assunto": "B"},
-            {"link": "https://outlook.example/c", "assunto": "C"},
-        ])
-        self.assertIn("1. [A](https://outlook.example/a)", rodape)
-        self.assertIn("3. [C](https://outlook.example/c)", rodape)
-        self.assertNotIn("2. [", rodape)
-
-    def test_parentese_reto_no_assunto_nao_parte_o_link(self) -> None:
-        """"Re: [URGENTE] encomenda" fechava o rótulo a meio e o resto do
-        assunto saía como texto solto, com o URL em cru a seguir."""
-        rodape = rodape_links([
-            {"link": "https://outlook.example/a", "assunto": "Re: [URGENTE] fone"},
-        ])
-        self.assertEqual(rodape.count("["), 1)
-        self.assertEqual(rodape.count("]"), 1)
-        self.assertIn("1. [Re: URGENTE fone](https://outlook.example/a)", rodape)
-
-    def test_assunto_vazio_ainda_da_um_rotulo_clicavel(self) -> None:
-        rodape = rodape_links([{"link": "https://outlook.example/a", "assunto": ""}])
-        self.assertIn("1. [abrir o email](https://outlook.example/a)", rodape)
-
-    def test_sem_links_nenhuns_nao_deixa_cabecalho_orfao(self) -> None:
-        self.assertEqual(rodape_links([{"link": "", "assunto": "A"}]), "")
-        self.assertEqual(rodape_links([]), "")
+    def test_sem_casos_nao_ha_mensagem(self) -> None:
+        self.assertEqual(formatar_mensagem({"abertura": "olá", "casos": [],
+                                            "fecho": "adeus"}, []), "")
+        self.assertEqual(formatar_mensagem({}, []), "")
 
 
 class SuiteDeTestes(unittest.TestCase):
