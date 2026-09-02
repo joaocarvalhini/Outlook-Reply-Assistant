@@ -2706,26 +2706,40 @@ class RodapeLinks(unittest.TestCase):
 
     def test_numeracao_acompanha_a_ordem_dos_casos(self) -> None:
         rodape = rodape_links([
-            {"link": "https://outlook.office.com/a"},
-            {"link": "https://outlook.office.com/b"},
+            {"link": "https://outlook.example/a", "assunto": "Encomenda #1"},
+            {"link": "https://outlook.example/b", "assunto": "Encomenda #2"},
         ])
-        self.assertIn("1. https://outlook.office.com/a", rodape)
-        self.assertIn("2. https://outlook.office.com/b", rodape)
+        self.assertIn("1. [Encomenda #1](https://outlook.example/a)", rodape)
+        self.assertIn("2. [Encomenda #2](https://outlook.example/b)", rodape)
 
     def test_caso_sem_link_nao_desalinha_a_numeracao(self) -> None:
         """O email pode ter sido apagado da caixa. Nesse caso salta-se a
         linha, mas o número tem de continuar a ser o do caso na mensagem."""
         rodape = rodape_links([
-            {"link": "https://outlook.office.com/a"},
-            {"link": ""},
-            {"link": "https://outlook.office.com/c"},
+            {"link": "https://outlook.example/a", "assunto": "A"},
+            {"link": "", "assunto": "B"},
+            {"link": "https://outlook.example/c", "assunto": "C"},
         ])
-        self.assertIn("1. https://outlook.office.com/a", rodape)
-        self.assertIn("3. https://outlook.office.com/c", rodape)
-        self.assertNotIn("2.", rodape)
+        self.assertIn("1. [A](https://outlook.example/a)", rodape)
+        self.assertIn("3. [C](https://outlook.example/c)", rodape)
+        self.assertNotIn("2. [", rodape)
+
+    def test_parentese_reto_no_assunto_nao_parte_o_link(self) -> None:
+        """"Re: [URGENTE] encomenda" fechava o rótulo a meio e o resto do
+        assunto saía como texto solto, com o URL em cru a seguir."""
+        rodape = rodape_links([
+            {"link": "https://outlook.example/a", "assunto": "Re: [URGENTE] fone"},
+        ])
+        self.assertEqual(rodape.count("["), 1)
+        self.assertEqual(rodape.count("]"), 1)
+        self.assertIn("1. [Re: URGENTE fone](https://outlook.example/a)", rodape)
+
+    def test_assunto_vazio_ainda_da_um_rotulo_clicavel(self) -> None:
+        rodape = rodape_links([{"link": "https://outlook.example/a", "assunto": ""}])
+        self.assertIn("1. [abrir o email](https://outlook.example/a)", rodape)
 
     def test_sem_links_nenhuns_nao_deixa_cabecalho_orfao(self) -> None:
-        self.assertEqual(rodape_links([{"link": ""}]), "")
+        self.assertEqual(rodape_links([{"link": "", "assunto": "A"}]), "")
         self.assertEqual(rodape_links([]), "")
 
 

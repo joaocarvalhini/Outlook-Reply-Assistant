@@ -270,8 +270,20 @@ def rodape_links(casos: list[dict]) -> str:
     Um webLink do Outlook tem centenas de caracteres. Um modelo a copiá-lo
     engana-se, e um link partido é pior do que link nenhum: manda o lojista
     procurar o email à mão, que é exatamente o trabalho que isto lhe poupa.
+
+    O link vai mascarado atrás do assunto porque um webLink do Outlook tem
+    cerca de 320 caracteres: três em cru somavam mais do que as perguntas
+    todas e empurravam a mensagem para lá dos 2000 do Discord, partindo-a em
+    duas -- a segunda só com a cauda dos links.
     """
-    linhas = [f"{i}. {c['link']}" for i, c in enumerate(casos, 1) if c.get("link")]
+    linhas = []
+    for i, caso in enumerate(casos, 1):
+        if not caso.get("link"):
+            continue
+        # Parênteses retos no assunto partiam a sintaxe do link mascarado.
+        rotulo = (caso.get("assunto") or "").translate(
+            {ord("["): None, ord("]"): None}).strip()[:60]
+        linhas.append(f"{i}. [{rotulo or 'abrir o email'}]({caso['link']})")
     return "\n\nAbrir os emails:\n" + "\n".join(linhas) if linhas else ""
 
 
