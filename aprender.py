@@ -103,7 +103,7 @@ ESQUEMA_MENSAGEM = {
 
 INSTRUCAO_PERGUNTAR = """Vais escrever uma mensagem curta para o dono de uma loja online, a perguntar-lhe porque alterou algumas respostas que um assistente automático tinha preparado para clientes dele.
 
-O objetivo é aprender a regra que está por trás de cada alteração, para o assistente deixar de a repetir. Escreve em português de Portugal, na segunda pessoa formal, como quem trabalha com ele e não como um formulário.
+O objetivo é aprender a regra que está por trás de cada alteração, para o assistente deixar de a repetir. Escreve em português de Portugal, tratando-o por tu, como quem trabalha com ele todos os dias e não como um formulário. (Dizia "segunda pessoa formal" e o modelo tratava-o por tu à mesma; o que interessa numa mensagem diária é o registo ser sempre o mesmo, e o informal é o que corresponde à relação real.)
 
 Regras da mensagem:
 
