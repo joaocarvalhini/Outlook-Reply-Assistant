@@ -154,11 +154,23 @@ silêncio nas noites vazias e com o limite de três casos.
 > importar, ele volta a editar da mesma maneira e a pergunta refaz-se sozinha. Um padrão que
 > nunca reaparece não valia a pergunta. Se o envio falhar, não se marca nada.
 
-Cada caso leva no fim o link para o email no Outlook, acrescentado **pelo código e não pelo
-modelo**: um `webLink` tem centenas de caracteres, um modelo a copiá-lo engana-se, e um link
+### A formatação é código, não instrução
+
+O modelo devolve **os campos** — `abertura`, `casos[]` com `titulo`/`cliente`/`assistente`/
+`enviaste`/`pergunta`, e `fecho` — e o `formatar_mensagem()` monta a régua, o cabeçalho numerado
+e os rótulos. Pedir a formatação por instrução era frágil: num dia cumpria, no outro não, e um
+registo visual que oscila de dia para dia lê-se pior do que um registo constante.
+
+Cada caso leva colado o link para o email no Outlook, acrescentado **pelo código e não pelo
+modelo**: um `webLink` tem cerca de 320 caracteres, um modelo a copiá-lo engana-se, e um link
 partido manda-o procurar o email à mão — o trabalho que isto lhe devia poupar. O `webLink` fica
 fora do `CAMPOS_LISTA` de propósito, porque o caminho quente lista 25 emails de dois em dois
 minutos e não precisa dele.
+
+> [!NOTE] Mascarar o link muda a leitura, não a contagem
+> Com três casos os links sozinhos são ~960 caracteres, e a mensagem passa dos 2000 do Discord
+> de qualquer maneira. O que evita um corte feio é cada caso ser um **parágrafo fechado**: o
+> `partir_mensagem()` corta entre parágrafos, portanto parte-se entre casos e nunca a meio de um.
 
 > [!NOTE] O Discord recusa texto cru
 > Exige JSON com um campo `content`, e corta a 2000 caracteres por mensagem. O código deteta o
