@@ -209,6 +209,18 @@ class Triagem(unittest.TestCase):
         )
         self.assertIsNone(motivo)
 
+    def test_formulario_contacto_shopify_em_ingles_passa(self) -> None:
+        """4 casos reais entre 29/08 e 01/09/2026 ficaram bloqueados como
+        dominio-bloqueado:shopify.com por o assunto vir em inglês -- o
+        padrão só reconhecia "Nova mensagem de cliente". Este teste é
+        literalmente um dos assuntos reais encontrados na base de produção."""
+        motivo = triar(
+            msg(de="mailer@shopify.com",
+                assunto="New customer message on August 29, 2026 at 1:35 pm"),
+            cfg(), BLOQUEADOS,
+        )
+        self.assertIsNone(motivo)
+
     def test_mailer_shopify_com_outro_assunto_continua_bloqueado(self) -> None:
         """A exceção é só para o formulário de contacto, não para mailer@ em geral."""
         motivo = triar(
@@ -408,6 +420,27 @@ class FormularioContactoShopify(unittest.TestCase):
         m = dict(original)
         self.assertFalse(desembrulhar_formulario_contacto(m))
         self.assertEqual(m, original)
+
+    def test_versao_inglesa_do_formulario_tambem_se_reconhece(self) -> None:
+        """4 casos reais entre 29/08 e 01/09/2026 (assunto "New customer
+        message on...") foram descartados como dominio-bloqueado:shopify.com
+        antes sequer de chegar aqui -- o assunto só reconhecia português (ver
+        _PADRAO_FORMULARIO_CONTACTO). O formato exato do corpo em inglês não
+        foi confirmado contra um caso real (os filtros do Graph nesta caixa
+        não devolveram um exemplo); isto é a tentativa razoável, calcada no
+        formato português conhecido, com "Email"/"Message" em vez de
+        "E-mail"/"Corpo"."""
+        m = msg(
+            de="mailer@shopify.com", nome="tripat3s (Shopify)",
+            corpo="You received a new message from your online store's "
+                  "contact form.\n\nName:\n\nJohn Doe\n\nEmail:\n\n"
+                  "john@example.com\n\nMessage:\n\nHi, still waiting on my "
+                  "order.\n\nWebsite:\n\n",
+        )
+        self.assertTrue(desembrulhar_formulario_contacto(m))
+        self.assertEqual(m["de"], "john@example.com")
+        self.assertIn("still waiting", m["corpo"])
+        self.assertNotIn("Website", m["corpo"])
 
 
 class FormularioDevolucaoFormspree(unittest.TestCase):

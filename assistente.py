@@ -406,7 +406,17 @@ DOMINIOS_BASE = (
 # vivo na caixa: 3 casos reais num só dia, incluindo um cliente a queixar-se
 # de já não ter tido resposta). O replyTo do Shopify já aponta para o email
 # real do cliente, por isso um rascunho normal chega à pessoa certa.
-_PADRAO_FORMULARIO_CONTACTO = re.compile(r"^nova mensagem de cliente\b", re.I)
+#
+# O assunto vem às vezes em inglês ("New customer message on..."), não só em
+# português -- 4 casos reais descartados como "dominio-bloqueado:shopify.com"
+# entre 29/08 e 01/09/2026, todos por o assunto não bater com o padrão só em
+# português. É o que o lojista via como "às vezes o assistente não responde
+# ao formulário do site". Ficou por confirmar o formato exato do CORPO destas
+# mensagens em inglês (os filtros do Graph nesta caixa não devolveram um
+# exemplo real) -- ver a nota em desembrulhar_formulario_contacto().
+_PADRAO_FORMULARIO_CONTACTO = re.compile(
+    r"^(nova mensagem de cliente|new customer message)\b", re.I
+)
 
 
 def eh_formulario_contacto(msg: dict) -> bool:
@@ -606,15 +616,21 @@ def desembrulhar_formulario_contacto(msg: dict) -> bool:
     corpo em mãos, e devolve-se False se o formato não bater certo. Nunca se
     finge que se percebeu algo que pode não ser isto: passar um
     "mailer@shopify.com" sem corrigir seria pior do que tê-lo bloqueado.
+
+    Aceita "E-mail:"/"Corpo:" (visto em produção) e "Email:"/"Message:" (a
+    tentativa razoável para a versão inglesa do mesmo formulário -- ainda por
+    confirmar contra um caso real, ver a nota em _PADRAO_FORMULARIO_CONTACTO).
+    Se nenhum dos dois bater, devolve-se False como sempre: continua a ser
+    preferível descartar a inventar um corpo que pode estar errado.
     """
     corpo = msg["corpo"]
-    if "formulário de contacto" not in corpo.lower():
+    if "formulário de contacto" not in corpo.lower() and "contact form" not in corpo.lower():
         return False
-    m_email = re.search(r"E-mail:\s*([^\s@]+@[^\s@]+\.[^\s@]+)", corpo, re.I)
+    m_email = re.search(r"E-?mail:\s*([^\s@]+@[^\s@]+\.[^\s@]+)", corpo, re.I)
     # O formulário tem um campo "Website" opcional a seguir ao corpo (visto
     # sempre vazio nos casos reais) — corta-se aqui para não ficar pendurado
     # no fim do texto que vai para o modelo.
-    m_corpo = re.search(r"Corpo:\s*(.+?)(?:\n\s*Website:|\Z)", corpo, re.I | re.S)
+    m_corpo = re.search(r"(?:Corpo|Message):\s*(.+?)(?:\n\s*Website:|\Z)", corpo, re.I | re.S)
     if not m_email or not m_corpo or not m_corpo.group(1).strip():
         return False
     m_nome = re.search(r"Name:\s*(.+)", corpo, re.I)
