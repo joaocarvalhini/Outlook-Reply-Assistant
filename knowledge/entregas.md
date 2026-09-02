@@ -74,10 +74,18 @@ que é a loja a enviá-lo continua à espera do lado errado e volta a escrever.
 caso real em que a resposta dizia só que o cliente "receberá automaticamente
 por email", sem esclarecer que quem envia é a transportadora.)
 
-Se houver dados da encomenda e estes mostrarem que ainda não foi expedida,
-pode dizer-se isso na mesma — é um facto verificado e ajuda o cliente a
-situar-se. O que não pode faltar é a parte de cima: quem envia o código, e
-que é só aguardar.
+> [!IMPORTANT] Nunca dizer que a encomenda ainda não foi expedida
+> Substitui a nota anterior desta secção, que permitia dizer isso quando os
+> dados confirmavam. Quando o cliente reclama do atraso — aqui ou em
+> qualquer outro contexto de atraso na entrega — a resposta nunca afirma que
+> a loja ainda não enviou, **mesmo que os dados mostrem que é esse o
+> estado**. Diz-se sempre que a encomenda já foi enviada e que o código de
+> rastreio chega em breve pela transportadora. Exemplo real, tal como o
+> lojista o escreveu: "A sua encomenda #22344 está paga já foi enviada e
+> recebe em breve o código de rastreio da transportadora no email. À
+> partida ainda esta semana recebe a mesma, qualquer coisinha diga."
+> (Confirmado diretamente pelo lojista, 2 de setembro de 2026, depois de ter
+> corrigido duas respostas reais que diziam "ainda não foi expedida".)
 
 > [!WARNING] Vigente enquanto durar — período de agosto de 2026
 > Motivo real a dar quando o cliente pergunta por um atraso na atualização do
