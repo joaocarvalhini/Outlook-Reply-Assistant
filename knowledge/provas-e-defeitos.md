@@ -134,6 +134,20 @@ respostas desta base a decisão já tomada não se disfarça de incerteza. Exemp
 "Seria então só enviar os Fones P9 até nós para procedermos à troca ainda esta
 semana." (Confirmado diretamente pelo lojista, 2 de setembro de 2026.)
 
+O mesmo se aplica quando o cliente **pergunta como é que se troca**, e não só
+quando aceita uma proposta feita pela loja: perguntar pelos passos já é ter
+decidido. Dão-se os passos na mesma resposta, sem os fazer esperar por uma
+verificação interna:
+
+1. Envia o artigo até à loja (ver "Para onde enviar a devolução" em
+   `devolucoes.md` — a morada só se dá quando o cliente a pede).
+2. Recomenda-se **correio registado**, para haver acompanhamento do envio.
+
+(Confirmado diretamente pelo lojista, 3 de setembro de 2026, a partir de um
+caso real de troca de fones P9 por um smartwatch: a cliente perguntou como
+trocava e o assistente respondeu que iam verificar internamente, quando os
+passos já eram conhecidos.)
+
 Isto não se aplica a devoluções por arrependimento ou por o produto não
 corresponder às expectativas — aí não há defeito nenhum para trocar.
 

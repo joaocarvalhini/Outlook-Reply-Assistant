@@ -52,9 +52,11 @@ echo
 echo "== 3/4 · impacto na cache da Anthropic =="
 # Só o PROMPT e a knowledge/ entram no prefixo em cache. Um deploy que mexa em
 # docs, testes ou ferramentas satélite não invalida nada e é gratuito; um que
-# mexa no prompt obriga a reescrever as ~31K do prefixo -- duas vezes, porque o
-# núcleo e o dossiê têm entradas separadas (medido a 31/08/2026, ver
-# docs/06-engineering/cost-optimization.md). Vale ~0,13 $ de cada vez.
+# mexa no prompt obriga a reescrever o prefixo inteiro. Eram duas entradas
+# (núcleo e dossiê) até 01/09/2026, quando a segunda chamada foi removida;
+# hoje é uma só, de ~36K tokens. A 2x o preço de entrada do Sonnet 5 ($3,00
+# por milhão desde 01/09, o lançamento a $2,00 acabou a 31/08), dá ~0,21 $ de
+# cada vez. Ver docs/06-engineering/cost-optimization.md.
 #
 # O \r\n é normalizado: o checkout no Windows tem CRLF e o servidor recebe LF
 # via git archive, e sem isto a impressão digital nunca batia certo.
@@ -96,7 +98,7 @@ elif [ "$local_impressao" = "$remota_impressao" ]; then
   echo "Prompt inalterado ($local_impressao) -- a cache continua quente, este deploy é grátis."
 else
   echo "Prompt ALTERADO ($remota_impressao -> $local_impressao)."
-  echo "A cache vai ser reescrita nas próximas passagens: ~0,13 \$ (duas entradas de ~31K)."
+  echo "A cache vai ser reescrita nas próximas passagens: ~0,21 \$ (uma entrada de ~36K)."
   echo
   echo "Se tiveres mais alterações à base de conhecimento para hoje, agrupa-as num"
   echo "só deploy em vez de uma de cada vez -- cada deploy separado paga isto outra"
