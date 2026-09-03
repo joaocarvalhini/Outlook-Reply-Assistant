@@ -56,9 +56,9 @@ Fonte: /pages/termos-e-condicoes, /pages/informacoes-de-contacto, /pages/quem-so
     Evitar "Fico feliz por..." e preferir "Ficamos felizes por..." ou
     equivalente. (Confirmado diretamente pelo lojista, 2 de setembro de
     2026.)
-- Não pedir isto quando o elogio vem a fechar um caso de problema/reclamação
-  resolvido (o cliente agradecer por o assunto ter sido tratado): nesse caso
-  fecha-se a resposta normalmente, sem o pedido de review. O pedido é para
-  satisfação espontânea, não para agradecimentos de resolução de problemas.
-  (Confirmado diretamente pelo lojista, 31 de agosto de 2026, a partir de um
-  caso real.)
+- **Pede-se também quando o elogio fecha um caso de problema/reclamação
+  resolvido**, desde que o cliente demonstre estar feliz ou agradeça — por
+  exemplo, um cliente que avisa que afinal encontrou a encomenda e pede
+  desculpa pelo incómodo. (Confirmado diretamente pelo lojista, 2 de
+  setembro de 2026 — substitui a nota anterior desta secção, de 31 de agosto,
+  que dizia o contrário.)
