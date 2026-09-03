@@ -1265,6 +1265,12 @@ COLUNAS_NOVAS = (
     ("tokens_cache_leitura", "INTEGER"),
     ("chamadas_modelo", "INTEGER"),
     ("custo_estimado", "REAL"),
+    # Tempo gasto dentro da(s) chamada(s) ao modelo, em milissegundos. Só a
+    # chamada, não a recolha de contexto que a antecede. Era a lacuna de
+    # observabilidade mais óbvia: sabia-se o que cada email custava em
+    # dinheiro mas não em tempo, e num sistema que corre de dois em dois
+    # minutos com lotes de 25 isso decide se o lote cabe na janela.
+    ("latencia_ms", "INTEGER"),
     # Guardado para se poder verificar que a etiqueta continua rara. Se a taxa
     # de "urgente" subir muito acima do que se via nos dados históricos (~2 por
     # semana), a etiqueta deixou de querer dizer alguma coisa e o prompt tem de
@@ -1458,9 +1464,10 @@ def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: 
         " categoria, lacuna_tema, lacuna_em_falta, confianca_encomenda, "
         " dossie_link, por_responder, rascunho_id, "
         " modelo, tokens_entrada, tokens_saida, tokens_cache_escrita, "
-        " tokens_cache_leitura, chamadas_modelo, custo_estimado, urgencia) "
+        " tokens_cache_leitura, chamadas_modelo, custo_estimado, urgencia, "
+        " latencia_ms) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "
-        "        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             msg["message_id"], msg["conversation_id"], msg["assunto"],
             acao, motivo, corpo, agora(),
@@ -1469,7 +1476,7 @@ def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: 
             modelo, u.get("entrada", 0), u.get("saida", 0),
             u.get("cache_escrita", 0), u.get("cache_leitura", 0),
             u.get("chamadas", 0), custo_estimado(modelo, u) if modelo else 0.0,
-            urgencia,
+            urgencia, u.get("latencia_ms", 0),
         ),
     )
     if msg["recebido"] > cursor_atual(con):
@@ -2329,7 +2336,8 @@ def decidir(
     # email. Sem isto não há forma de provar que uma alteração de cache ou de
     # modelo fez o que se esperava -- a fatura da Anthropic é mensal e
     # agregada, e não se consegue atribuir a nada.
-    uso = {"entrada": 0, "saida": 0, "cache_escrita": 0, "cache_leitura": 0, "chamadas": 0}
+    uso = {"entrada": 0, "saida": 0, "cache_escrita": 0, "cache_leitura": 0,
+           "chamadas": 0, "latencia_ms": 0}
 
     def _chamar(schema: dict, conteudo: str) -> dict:
         # Imagens vão sempre nas duas chamadas (núcleo e dossiê): são prova do
@@ -2348,6 +2356,13 @@ def decidir(
             ]
         else:
             conteudo_msg = conteudo
+        # Cronometra-se só a chamada, não a recolha de contexto que a
+        # antecede: o que interessa saber é quanto do tempo de uma passagem é
+        # o modelo, para se poder decidir se o esquema ou o max_tokens estão a
+        # custar tempo. A curva de complexidade do esquema (ver a nota acima
+        # de ESQUEMA_NUCLEO) foi medida à mão numa experiência isolada --
+        # isto é o mesmo número, mas contínuo e em produção.
+        t0 = time.monotonic()
         resposta = cliente.messages.create(  # type: ignore[attr-defined]
             model=cfg.modelo,
             # 1024 chegava para a maioria dos casos, mas um dossiê completo
@@ -2379,6 +2394,7 @@ def decidir(
         )
         # getattr com omissão: os dublês dos testes não constroem um objeto
         # usage, e não vale a pena obrigá-los a isso só para contar tokens.
+        uso["latencia_ms"] += round((time.monotonic() - t0) * 1000)
         u = getattr(resposta, "usage", None)
         uso["chamadas"] += 1
         uso["entrada"] += int(getattr(u, "input_tokens", 0) or 0)

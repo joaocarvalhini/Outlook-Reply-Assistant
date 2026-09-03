@@ -69,7 +69,8 @@ def main(argv: list[str] | None = None) -> int:
     ).fetchall()
     custos = con.execute(
         f"SELECT acao, custo_estimado, tokens_entrada, tokens_saida, "
-        f"       tokens_cache_escrita, tokens_cache_leitura, chamadas_modelo "
+        f"       tokens_cache_escrita, tokens_cache_leitura, chamadas_modelo, "
+        f"       latencia_ms "
         f"FROM processados WHERE {condicao} AND COALESCE(chamadas_modelo, 0) > 0",
         valores,
     ).fetchall()
@@ -146,6 +147,16 @@ def main(argv: list[str] | None = None) -> int:
         if escrita + leitura:
             print(f"  cache                     {100*leitura/(escrita+leitura):.0f}% lida "
                   f"({leitura:,} tokens) · {escrita:,} tokens reescritos".replace(",", " "))
+
+        # Latência: mediana e p95, não média. Uma média esconde exatamente o
+        # que interessa aqui -- o lote é de 25 emails processados em série e é
+        # a cauda que decide se ele cabe na janela de dois minutos entre
+        # passagens. Registada a partir de 03/09/2026.
+        lat = sorted(c[7] for c in custos if c[7])
+        if lat:
+            p95 = lat[min(int(len(lat) * 0.95), len(lat) - 1)]
+            print(f"  latência por email        {lat[len(lat)//2]/1000:.1f}s mediana · "
+                  f"{p95/1000:.1f}s p95  ({len(lat)} com registo)")
 
         # Custo por resultado útil, não por token: um rascunho poupa uma
         # resposta inteira ao lojista; uma escalação poupa-lhe a investigação.

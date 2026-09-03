@@ -2327,6 +2327,30 @@ class RegistoDeCusto(unittest.TestCase):
         self.assertEqual((entrada, saida, esc, leit, chamadas), (0, 0, 0, 0, 0))
         self.assertEqual(custo, 0.0)
 
+    def _latencia(self, message_id: str) -> int | None:
+        return self.con.execute(
+            "SELECT latencia_ms FROM processados WHERE message_id = ?", (message_id,)
+        ).fetchone()[0]
+
+    def test_latencia_da_chamada_fica_gravada(self) -> None:
+        """Era a lacuna de observabilidade mais óbvia: sabia-se o que cada
+        email custava em dinheiro, não em tempo."""
+        m = msg()
+        registar(self.con, m, "rascunhar", "sabia responder", "Olá,",
+                 modelo="claude-sonnet-5",
+                 uso={"entrada": 500, "saida": 300, "cache_escrita": 0,
+                      "cache_leitura": 29_000, "chamadas": 1, "latencia_ms": 5340})
+        self.assertEqual(self._latencia(m["message_id"]), 5340)
+
+    def test_uso_sem_latencia_grava_zero_e_nao_rebenta(self) -> None:
+        """Os registos anteriores a 03/09/2026 não têm o campo, e há
+        chamadores (medir_deriva, reprocessar) que constroem o `uso` à mão."""
+        m = msg()
+        registar(self.con, m, "rascunhar", "x", "Olá,", modelo="claude-sonnet-5",
+                 uso={"entrada": 1, "saida": 1, "cache_escrita": 0,
+                      "cache_leitura": 0, "chamadas": 1})
+        self.assertEqual(self._latencia(m["message_id"]), 0)
+
     def test_uso_reportado_pela_api_fica_gravado(self) -> None:
         m = msg()
         registar(self.con, m, "rascunhar", "sabia responder", "Olá,", modelo="claude-sonnet-5",
