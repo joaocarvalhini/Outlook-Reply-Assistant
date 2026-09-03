@@ -2261,8 +2261,14 @@ def nota_anexos_ignorados(ignorados: list[dict]) -> str:
 # os preços mudarem, este número fica desatualizado em silêncio -- confirmar
 # na página de preços da Anthropic antes de tirar conclusões de um valor
 # absoluto. As comparações relativas (antes vs. depois) continuam válidas.
+#
+# O Sonnet 5 esteve a 2,00/10,00 em preço de lançamento até 31/08/2026 e
+# passou a 3,00/15,00 a 01/09. A tabela ficou com o preço antigo durante três
+# dias e o registo subestimou o custo real em 50% nesse período, exatamente
+# como o parágrafo acima avisava que aconteceria. Corrigido a 03/09/2026, com
+# as linhas afetadas recalculadas a partir dos tokens gravados.
 PRECOS = {
-    "claude-sonnet-5": (2.00, 10.00),
+    "claude-sonnet-5": (3.00, 15.00),
     "claude-haiku-4-5": (1.00, 5.00),
     "claude-opus-5": (5.00, 25.00),
 }

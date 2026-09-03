@@ -2285,8 +2285,8 @@ class CustoEstimado(unittest.TestCase):
             "entrada": 1_000_000, "saida": 1_000_000,
             "cache_escrita": 1_000_000, "cache_leitura": 1_000_000,
         })
-        # 2 (entrada) + 10 (saída) + 4 (escrita 2x) + 0,20 (leitura 0,1x)
-        self.assertAlmostEqual(c, 16.20, places=4)
+        # 3 (entrada) + 15 (saída) + 6 (escrita 2x) + 0,30 (leitura 0,1x)
+        self.assertAlmostEqual(c, 24.30, places=4)
 
     def test_modelo_desconhecido_devolve_zero_em_vez_de_inventar(self) -> None:
         self.assertEqual(custo_estimado("modelo-que-nao-existe", {"entrada": 999}), 0.0)
