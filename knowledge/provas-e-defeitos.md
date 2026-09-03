@@ -151,10 +151,9 @@ caso real.)
 > A nota anterior dizia que a loja envia um envelope DPD novo e
 > pré-endereçado. Não é assim: o envelope da DPD em que o cliente **já
 > recebeu a encomenda original** tem a morada da loja impressa e serve para
-> a devolução — não é preciso a loja enviar nada de novo. (A partir de um
-> caso real, o cliente Tiago, 2 de setembro de 2026 — ao contrário das
-> outras notas desta base, esta não vem de uma frase direta do lojista, mas
-> da explicação do próprio cliente sobre o envelope, não contestada.)
+> a devolução — não é preciso a loja enviar nada de novo. (Confirmado
+> diretamente pelo lojista, 3 de setembro de 2026, a partir de um caso real
+> com o cliente Tiago.)
 
 Quando o cliente tem mesmo de enviar algo de volta (por exemplo, para
 completar um processo de garantia formal), diz-se-lhe para reutilizar o
@@ -162,6 +161,13 @@ envelope da DPD em que recebeu a encomenda original — a morada da loja já lá
 está impressa. Isto é diferente de uma devolução por arrependimento, em que
 o cliente despacha por conta própria, sem uma morada já pronta à espera (ver
 "Etiqueta de devolução" em `devolucoes.md`).
+
+Se o cliente disser que já não tem ou não encontra o envelope original, dá-se
+a morada da loja diretamente (ver "Para onde enviar a devolução" em
+`devolucoes.md`) — não se insiste em procurar o envelope. Foi exatamente o
+que aconteceu no caso real: o cliente respondeu "não encontro esse papel",
+e só nesse momento a loja deu a morada por escrito. (Confirmado diretamente
+pelo lojista, 3 de setembro de 2026, a partir do mesmo caso.)
 
 Se o cliente recusa a troca e prefere reembolso total, isso não muda nada no
 que podes escrever: continua a ser uma pergunta, não um compromisso. "Aceita
