@@ -83,6 +83,7 @@
     --accent:   #A8331D;
     --measured: #1F5C46;
     --warn:     #8A6A1C;
+    --code-bg:  #EFEFE8;
 
     --f-display: "Newsreader", Georgia, "Times New Roman", serif;
     --f-text:    "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -328,6 +329,33 @@
   }
   .foot b { color: var(--ink-2); font-weight: 600; }
 
+  /* ── código ───────────────────────────────────────────────────── */
+  pre {
+    font-family: var(--f-data);
+    font-size: 14.5px;
+    line-height: 1.62;
+    background: var(--code-bg);
+    color: var(--ink);
+    margin: 0;
+    padding: 22px 26px;
+    overflow-x: auto;
+    tab-size: 4;
+  }
+  pre .c  { color: #6E7681; }            /* comentário */
+  pre .k  { color: #9A2B18; }            /* palavra-chave */
+  pre .s  { color: #1F5C46; }            /* string */
+  pre .f  { color: #15171B; font-weight: 500; }
+  pre .d  { color: #8C9098; }            /* decorador / docstring */
+
+  /* ── distribuição ─────────────────────────────────────────────── */
+  .dist { display: grid; grid-template-columns: auto 1fr auto; gap: 10px 16px; align-items: center; }
+  .dist .lbl { font-size: 15px; color: var(--ink-2); white-space: nowrap; }
+  .dist .barra { height: 26px; }
+  .dist .qtd {
+    font-family: var(--f-data); font-size: 16px; font-weight: 500;
+    color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+
   @media print {
     html, body { margin: 0; padding: 0; background: var(--paper); }
     .deck { display: block; padding: 0; gap: 0; margin: 0; font-size: 0; }
@@ -510,10 +538,66 @@
   </div>
 </section>
 
-<!-- ═══════════════ 4 · O CUSTO ═══════════════ -->
+<!-- ═══════════════ 3B · O CÓDIGO ═══════════════ -->
 <section class="page">
   <div class="rail">
     <span class="rail-num">04</span>
+    <span class="rail-mark">A fronteira</span>
+    <span class="rail-num">—</span>
+  </div>
+  <div class="body stack">
+    <p class="eyebrow plain">Onde a decisão vive</p>
+    <h2>O guardrail é um<br><span style="font-family:var(--f-data);font-size:38px;letter-spacing:-.03em">@property</span>, não<br>uma instrução.</h2>
+
+    <p style="max-width:58ch">Resolver a encomenda de quem escreve produz quatro níveis de confiança. Só dois libertam os dados para o prompt. O nível intermédio foi <strong>deliberadamente excluído</strong>.</p>
+
+<pre style="margin-top:24px"><span class="k">class</span> <span class="f">Correspondencia</span>:
+    <span class="d">"""O resultado de procurar a encomenda de quem escreveu.
+
+    A confiança é decidida aqui, no código, e não pelo modelo: o
+    modelo recebe só o resultado. "Adivinhar" uma encomenda é o
+    erro mais caro possível deste sistema, porque expõe dados de
+    um cliente a outro.
+    """</span>
+    encomenda: <span class="f">dict</span> | <span class="k">None</span>
+    confianca: <span class="f">str</span>   <span class="c"># "exata" | "alta" | "media" | "nenhuma"</span>
+
+    <span class="k">@property</span>
+    <span class="k">def</span> <span class="f">pode_revelar</span>(self) -&gt; <span class="f">bool</span>:
+        <span class="d">"""Só se revela ao cliente com identidade provada.
+
+        "media" não chega de propósito: é o nível em que há
+        indícios mas não prova, e é exatamente aí que um engano
+        mostra a encomenda de outra pessoa.
+        """</span>
+        <span class="k">return</span> self.encomenda <span class="k">is not</span> <span class="k">None</span> \
+            <span class="k">and</span> self.confianca <span class="k">in</span> (<span class="s">"exata"</span>, <span class="s">"alta"</span>)</pre>
+
+    <div class="grow"></div>
+
+    <div class="row" style="gap:0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)">
+      <div style="flex:1;padding:24px 28px 24px 0;border-right:1px solid var(--hair)">
+        <h3>Não é uma regra de prompt</h3>
+        <p class="small" style="margin:0;color:var(--ink-3)">Não há instrução que o modelo possa desobedecer, porque ele nunca vê os dados</p>
+      </div>
+      <div style="flex:1;padding:24px 28px;border-right:1px solid var(--hair)">
+        <h3>O rascunho vazio é rebaixado</h3>
+        <p class="small" style="margin:0;color:var(--ink-3)">Se o modelo escolhe “rascunhar” e devolve corpo vazio, o código converte em escalação</p>
+      </div>
+      <div style="flex:1;padding:24px 0 24px 28px">
+        <h3>Os prazos são somados em Python</h3>
+        <p class="small" style="margin:0;color:var(--ink-3)">Depois de o modelo ter errado uma soma de 14 dias com a data à frente</p>
+      </div>
+    </div>
+
+    <p class="foot" style="margin-top:22px">Cada uma destas três foi para código <b>depois</b> de o modelo demonstrar executá-la mal em produção — não por desconfiança de princípio.</p>
+  </div>
+</section>
+
+<!-- ═══════════════ 4 · O CUSTO ═══════════════ -->
+<section class="page">
+  <div class="rail">
+    <span class="rail-num">05</span>
     <span class="rail-mark">Custo</span>
     <span class="rail-num">—</span>
   </div>
@@ -570,7 +654,7 @@
 <!-- ═══════════════ 5 · A OTIMIZAÇÃO REJEITADA ═══════════════ -->
 <section class="page">
   <div class="rail">
-    <span class="rail-num">05</span>
+    <span class="rail-num">06</span>
     <span class="rail-mark">A decisão</span>
     <span class="rail-num">—</span>
   </div>
@@ -636,7 +720,7 @@
 <!-- ═══════════════ 6 · REGRAS NÃO-LINEARES ═══════════════ -->
 <section class="page">
   <div class="rail">
-    <span class="rail-num">06</span>
+    <span class="rail-num">07</span>
     <span class="rail-mark">Conhecimento</span>
     <span class="rail-num">—</span>
   </div>
@@ -690,7 +774,7 @@
 <!-- ═══════════════ 7 · SEGURANÇA CONTRA AUTOMAÇÃO ═══════════════ -->
 <section class="page">
   <div class="rail">
-    <span class="rail-num">07</span>
+    <span class="rail-num">08</span>
     <span class="rail-mark">Escalação</span>
     <span class="rail-num">—</span>
   </div>
@@ -710,7 +794,7 @@
       </tbody>
     </table>
 
-    <div class="row" style="gap:34px;margin-top:30px;align-items:flex-start">
+    <div class="row" style="gap:34px;margin-top:26px;align-items:flex-start">
       <div style="flex:1">
         <span class="prov medido">Medido</span>
         <p class="small" style="margin:14px 0 0">Testei a hipótese mais promissora — “as perguntas de reembolso podiam ser respondidas com dados que a plataforma já tem”. Fui buscar as encomendas envolvidas.</p>
@@ -721,17 +805,20 @@
       </div>
     </div>
 
+    <p class="eyebrow plain" style="margin:28px 0 12px">E li os motivos das seis categorias mais pequenas, um a um</p>
+    <p class="small" style="margin:0;max-width:62ch">Não estavam todos certos. <strong>3 diziam explicitamente que uma mensagem da loja tinha chegado cortada</strong> — não era julgamento, era um defeito meu: o histórico do fio vinha truncado a 255 caracteres. Corrigido. Outros <strong>5 eram lacunas da base</strong>, que se fecham a perguntar ao lojista, e dois fecharam-se esta semana. Os restantes — identidade por confirmar, stock sem permissão de leitura, encomenda sem correspondência — escalam por desenho.</p>
+
     <div class="grow"></div>
 
     <hr class="rule">
-    <p class="pull" style="margin:26px 0 0;max-width:30ch">Baixar aquela percentagem exigia dar ao agente escrita na plataforma — <em>o que apaga o guardrail que torna o sistema tolerável.</em></p>
+    <p class="pull" style="margin:24px 0 0;max-width:32ch">Baixar aquela percentagem exigia dar ao agente escrita na plataforma — <em>o que apaga o guardrail que torna o sistema tolerável.</em></p>
   </div>
 </section>
 
 <!-- ═══════════════ 8 · GUARDRAILS ═══════════════ -->
 <section class="page">
   <div class="rail">
-    <span class="rail-num">08</span>
+    <span class="rail-num">09</span>
     <span class="rail-mark">Guardrails</span>
     <span class="rail-num">—</span>
   </div>
@@ -796,7 +883,7 @@
 <!-- ═══════════════ 9 · O QUE CORREU MAL ═══════════════ -->
 <section class="page">
   <div class="rail">
-    <span class="rail-num">09</span>
+    <span class="rail-num">10</span>
     <span class="rail-mark">Incidentes</span>
     <span class="rail-num">—</span>
   </div>
@@ -839,10 +926,66 @@
   </div>
 </section>
 
+<!-- ═══════════════ 9B · AS DUAS MEDIÇÕES ═══════════════ -->
+<section class="page">
+  <div class="rail">
+    <span class="rail-num">11</span>
+    <span class="rail-mark">Medição</span>
+    <span class="rail-num">—</span>
+  </div>
+  <div class="body stack">
+    <p class="eyebrow plain">Quando dois instrumentos discordam</p>
+    <h2>Uma diz 97% de<br>rejeição. A outra diz<br>75% de aceitação.</h2>
+
+    <p style="max-width:58ch">Meço a qualidade de duas maneiras. Durante algum tempo julguei que uma delas estava avariada.</p>
+
+    <div class="row" style="gap:0;margin-top:26px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)">
+      <div style="flex:1;padding:26px 30px 26px 0;border-right:1px solid var(--hair)">
+        <p class="eyebrow plain" style="margin-bottom:14px">Pelo id do rascunho</p>
+        <div class="num lg accent">97%</div>
+        <p class="cap" style="max-width:24ch">consta como “apagado” — 184 de 190</p>
+      </div>
+      <div style="flex:1;padding:26px 0 26px 30px">
+        <p class="eyebrow plain" style="margin-bottom:14px">Pelo texto enviado</p>
+        <div class="num lg" style="color:var(--measured)">75%</div>
+        <p class="cap" style="max-width:24ch">saiu idêntico ao gerado — 122 de 162</p>
+      </div>
+    </div>
+
+    <p class="small" style="margin:24px 0 0;max-width:60ch">Ambas estão certas. <strong>“Apagado” significa que o objeto do rascunho já não existe</strong>, não que tenha sido rejeitado: quem responde copia o texto, envia a partir da sua própria janela, e o rascunho desaparece. A medição por id conta objetos; a medição por texto conta trabalho aproveitado. Só a segunda responde à pergunta que interessa.</p>
+
+    <p class="eyebrow plain" style="margin:30px 0 16px">A distribuição que a mediana escondia</p>
+    <div class="dist">
+      <span class="lbl">exatamente 100%</span>
+      <svg viewBox="0 0 500 26" preserveAspectRatio="none" class="barra"><rect width="500" height="26" fill="#1F5C46"/></svg>
+      <span class="qtd">122</span>
+
+      <span class="lbl">90 a 99%</span>
+      <svg viewBox="0 0 500 26" preserveAspectRatio="none" class="barra"><rect width="37" height="26" fill="#C9BDB6"/></svg>
+      <span class="qtd">9</span>
+
+      <span class="lbl">50 a 89%</span>
+      <svg viewBox="0 0 500 26" preserveAspectRatio="none" class="barra"><rect width="70" height="26" fill="#C9BDB6"/></svg>
+      <span class="qtd">17</span>
+
+      <span class="lbl">abaixo de 50%</span>
+      <svg viewBox="0 0 500 26" preserveAspectRatio="none" class="barra"><rect width="57" height="26" fill="#A8331D"/></svg>
+      <span class="qtd">14</span>
+    </div>
+
+    <div class="grow"></div>
+
+    <div class="panel edge">
+      <p class="pull" style="font-size:32px">A mediana é 100% e a média é 91%. Nenhuma das duas descreve isto: <em>três quartos saem intactos, e um em cada oito é reescrito de raiz.</em></p>
+      <p class="small" style="margin:16px 0 0;color:var(--ink-3)">Publicar só a mediana seria escolher o número a dedo. Os 14 de baixo são onde está o trabalho por fazer — cada um vira regra nova ou caso de ensaio.</p>
+    </div>
+  </div>
+</section>
+
 <!-- ═══════════════ 10 · RESULTADOS ═══════════════ -->
 <section class="page">
   <div class="rail">
-    <span class="rail-num">10</span>
+    <span class="rail-num">12</span>
     <span class="rail-mark">Resultados</span>
     <span class="rail-num">—</span>
   </div>
@@ -881,11 +1024,11 @@
       </div>
     </div>
 
-    <p class="eyebrow plain" style="margin:38px 0 18px">Qualidade — o rascunho contra o que a pessoa realmente enviou</p>
+    <p class="eyebrow plain" style="margin:38px 0 18px">Qualidade — o rascunho contra o que a pessoa realmente enviou (ver página anterior)</p>
     <div class="row" style="gap:52px;align-items:flex-start">
-      <div style="flex:1"><div class="num lg">160</div><p class="cap">casos comparáveis</p></div>
-      <div style="flex:1"><div class="num lg">100%</div><p class="cap">semelhança mediana, em 160 casos</p></div>
-      <div style="flex:1.4"><div class="num lg">31</div><p class="cap" style="max-width:30ch">divergiram mais de 10% — cada uma virou regra nova ou caso de ensaio</p></div>
+      <div style="flex:1"><div class="num lg">162</div><p class="cap">casos comparáveis</p></div>
+      <div style="flex:1"><div class="num lg" style="color:var(--measured)">122</div><p class="cap">saíram idênticos ao gerado</p></div>
+      <div style="flex:1.4"><div class="num lg accent">14</div><p class="cap" style="max-width:30ch">foram reescritos de raiz — cada um vira regra nova ou caso de ensaio</p></div>
     </div>
 
     <div class="grow"></div>
@@ -894,6 +1037,7 @@
       <p class="eyebrow" style="margin-bottom:14px">A ressalva faz parte do resultado</p>
       <p class="small" style="margin:0 0 12px"><strong>Não existe linha de base limpa de custo.</strong> A telemetria é mais recente do que o sistema, e cobre 228 dos 427 emails — comparar “antes e depois” não é honesto.</p>
       <p class="small" style="margin:0 0 12px"><strong>A poupança do aquecedor de cache não tem amostra.</strong> Uma noite: 8 arranques a frio passaram a 0. Uma noite não é uma medição.</p>
+      <p class="small" style="margin:0 0 12px"><strong>Não há um único número de latência neste documento.</strong> O registo media o custo em dinheiro e não em tempo — instrumentei-o no dia em que escrevi isto, e por isso ainda não há dados. Num sistema que corre de dois em dois minutos com lotes de 25 em série, é a lacuna mais difícil de justificar.</p>
       <p class="small" style="margin:0"><strong>Nada verifica contradições na base de conhecimento de forma contínua</strong>, e a saliência continua por resolver — regras corretas que o modelo por vezes não aplica.</p>
     </div>
   </div>
@@ -902,7 +1046,7 @@
 <!-- ═══════════════ 11 · FECHO ═══════════════ -->
 <section class="page">
   <div class="rail">
-    <span class="rail-num">11</span>
+    <span class="rail-num">13</span>
     <span class="rail-mark">Fecho</span>
     <span class="rail-num">—</span>
   </div>

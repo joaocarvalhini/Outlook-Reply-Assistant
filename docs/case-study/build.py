@@ -29,7 +29,7 @@ CHROMES = [
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
 ]
 
-PAGINAS_ESPERADAS = 11
+PAGINAS_ESPERADAS = 13
 
 
 def achar_chrome() -> str:
