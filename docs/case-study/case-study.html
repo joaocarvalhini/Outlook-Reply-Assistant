@@ -159,7 +159,7 @@
 
   /* ── tipografia ───────────────────────────────────────────────── */
   .eyebrow {
-    font-size: 12.5px;
+    font-size: 13\.5px;
     font-weight: 600;
     letter-spacing: .18em;
     text-transform: uppercase;
@@ -189,25 +189,25 @@
   h3 {
     font-family: var(--f-text);
     font-weight: 600;
-    font-size: 19px;
+    font-size: 21px;
     line-height: 1.3;
     letter-spacing: -.005em;
     margin: 0 0 10px;
   }
   p {
-    font-size: 20px;
+    font-size: 23px;
     line-height: 1.56;
     color: var(--ink-2);
     margin: 0 0 18px;
     max-width: 62ch;
   }
   p.lead {
-    font-size: 25px;
+    font-size: 28px;
     line-height: 1.45;
     color: var(--ink);
     max-width: 30ch;
   }
-  p.small { font-size: 17px; line-height: 1.5; }
+  p.small { font-size: 19\.5px; line-height: 1.5; }
   strong { color: var(--ink); font-weight: 600; }
   em { font-style: italic; }
 
@@ -251,7 +251,7 @@
   .num.accent { color: var(--accent); }
 
   .cap {
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1.35;
     color: var(--ink-3);
     margin-top: 10px;
@@ -298,7 +298,7 @@
     border-bottom: 1px solid var(--rule);
   }
   td {
-    font-size: 18px;
+    font-size: 20px;
     color: var(--ink-2);
     padding: 24px 0;
     border-bottom: 1px solid var(--hair);
@@ -322,7 +322,7 @@
   .row { display: flex; }
 
   .foot {
-    font-size: 13px;
+    font-size: 15px;
     color: var(--ink-3);
     line-height: 1.45;
     max-width: 68ch;
@@ -332,7 +332,7 @@
   /* ── código ───────────────────────────────────────────────────── */
   pre {
     font-family: var(--f-data);
-    font-size: 14.5px;
+    font-size: 15\.5px;
     line-height: 1.62;
     background: var(--code-bg);
     color: var(--ink);
@@ -349,7 +349,7 @@
 
   /* ── distribuição ─────────────────────────────────────────────── */
   .dist { display: grid; grid-template-columns: auto 1fr auto; gap: 10px 16px; align-items: center; }
-  .dist .lbl { font-size: 15px; color: var(--ink-2); white-space: nowrap; }
+  .dist .lbl { font-size: 17px; color: var(--ink-2); white-space: nowrap; }
   .dist .barra { height: 26px; }
   .dist .qtd {
     font-family: var(--f-data); font-size: 16px; font-weight: 500;
@@ -434,9 +434,7 @@
     <p class="eyebrow plain">Contexto</p>
     <h2>Um LLM resolve isto<br>num playground.<br>Em produção, não.</h2>
 
-    <p>Uma loja online recebe correspondência o dia inteiro: estado de encomendas, devoluções, defeitos, trocas, reembolsos, queixas. Cada resposta exige três coisas ao mesmo tempo — conhecer a política da loja, ter os dados daquela encomenda à frente, e escrever num tom consistente.</p>
-
-    <p>A resposta imediata é ligar um modelo à caixa de correio. Funciona: o modelo escreve emails de apoio ao cliente perfeitamente credíveis.</p>
+    <p>Uma loja online recebe correspondência o dia inteiro: estado de encomendas, devoluções, defeitos, trocas, reembolsos, queixas. Ligar um modelo à caixa funciona — ele escreve emails de apoio perfeitamente credíveis.</p>
 
     <p>O problema é que a maior parte destas mensagens <strong>não deve</strong> ser respondida automaticamente. Reembolsos movem dinheiro. Alterar uma encomenda exige escrita em sistemas que não devem estar ao alcance de um modelo. E responder com confiança a uma política que não se conhece é pior do que não responder — um cliente com uma promessa errada é um problema maior do que um cliente que espera.</p>
 
@@ -647,7 +645,8 @@
     </div>
 
     <hr class="rule" style="margin:24px 0 18px">
-    <p class="small" style="margin:0;max-width:60ch"><strong>O problema nunca foi o prompt ser grande.</strong> Era o número de vezes que era reescrito.</p>
+    <p class="small" style="margin:0 0 10px;max-width:60ch"><strong>O problema nunca foi o prompt ser grande.</strong> Era o número de vezes que era reescrito.</p>
+    <p class="foot" style="margin:0">Estes dois valores são de <b>31 de agosto</b>, quando o prefixo tinha duas entradas de cache. Hoje tem uma — ver a página seguinte.</p>
   </div>
 </section>
 
@@ -806,7 +805,7 @@
     </div>
 
     <p class="eyebrow plain" style="margin:28px 0 12px">E li os motivos das seis categorias mais pequenas, um a um</p>
-    <p class="small" style="margin:0;max-width:62ch">Não estavam todos certos. <strong>3 diziam explicitamente que uma mensagem da loja tinha chegado cortada</strong> — não era julgamento, era um defeito meu: o histórico do fio vinha truncado a 255 caracteres. Corrigido. Outros <strong>5 eram lacunas da base</strong>, que se fecham a perguntar ao lojista, e dois fecharam-se esta semana. Os restantes — identidade por confirmar, stock sem permissão de leitura, encomenda sem correspondência — escalam por desenho.</p>
+    <p class="small" style="margin:0;max-width:62ch">Não estavam todos certos. <strong>3 diziam que uma mensagem da loja tinha chegado cortada</strong> — não era julgamento, era um defeito meu: o histórico vinha truncado a 255 caracteres. Corrigido. Outros <strong>5 eram lacunas da base</strong>, e duas fecharam-se esta semana. Os restantes escalam por desenho.</p>
 
     <div class="grow"></div>
 
@@ -903,8 +902,8 @@
           <td style="padding-left:30px;font-size:17px">Exceções explícitas que confirmam o conteúdo antes de descartar</td>
         </tr>
         <tr>
-          <td style="font-size:17px"><strong>Uma paragem total sem alerta nenhum</strong><br><span style="font-size:15px;color:var(--ink-3)">a conta ficou sem saldo; o sistema saía com código de sucesso</span></td>
-          <td style="padding-left:30px;font-size:17px">Contagem de passagens consecutivas sem decisão produzida</td>
+          <td style="font-size:18px"><strong>Uma paragem total sem alerta nenhum</strong><br><span style="font-size:16px;color:var(--ink-3)">a conta ficou sem saldo; o sistema saía com código de sucesso, indistinguível de um dia sem emails</span></td>
+          <td style="padding-left:30px;font-size:18px">Contagem de passagens seguidas sem decisão — <strong>deteta em ~6 minutos</strong> o que antes podia correr horas</td>
         </tr>
         <tr>
           <td style="font-size:17px"><strong>O deploy disse “Enviado” sem enviar</strong><br><span style="font-size:15px;color:var(--ink-3)">o código de saída não apanhou a falha</span></td>
@@ -919,10 +918,11 @@
 
     <div class="grow"></div>
 
-    <div class="panel">
-      <p class="small" style="margin:0;font-size:19px;line-height:1.5"><strong>O padrão comum:</strong> nenhum foi encontrado a ler código. Foram todos encontrados a comparar o que o sistema produziu com o que realmente aconteceu a seguir.</p>
+    <div class="panel edge">
+      <p class="eyebrow" style="margin-bottom:12px">O raio de dano de todos eles foi atraso, não perda</p>
+      <p class="small" style="margin:0"><strong>O cursor da caixa só avança dentro do registo de uma decisão.</strong> Uma chamada que falha não grava nada, e o email volta a ser lido na passagem seguinte. Nenhuma das avarias acima perdeu um email — atrasou-o. É a propriedade que torna estes incidentes recuperáveis em vez de custosos.</p>
     </div>
-    <p class="foot" style="margin-top:20px">O sinal de maturidade não é ter guardrails — é a proveniência deles. Cada um tem data e caso de origem registados no repositório.</p>
+    <p class="foot" style="margin-top:20px"><b>O padrão comum:</b> nenhum foi encontrado a ler código. Foram todos encontrados a comparar o que o sistema produziu com o que aconteceu a seguir. O sinal de maturidade não é ter guardrails — é a proveniência deles.</p>
   </div>
 </section>
 
@@ -1024,7 +1024,7 @@
       </div>
     </div>
 
-    <p class="eyebrow plain" style="margin:38px 0 18px">Qualidade — o rascunho contra o que a pessoa realmente enviou (ver página anterior)</p>
+    <p class="eyebrow plain" style="margin:38px 0 18px">Qualidade — o gerado contra o enviado</p>
     <div class="row" style="gap:52px;align-items:flex-start">
       <div style="flex:1"><div class="num lg">162</div><p class="cap">casos comparáveis</p></div>
       <div style="flex:1"><div class="num lg" style="color:var(--measured)">122</div><p class="cap">saíram idênticos ao gerado</p></div>
@@ -1035,10 +1035,10 @@
 
     <div class="panel edge" style="padding:26px 30px">
       <p class="eyebrow" style="margin-bottom:14px">A ressalva faz parte do resultado</p>
-      <p class="small" style="margin:0 0 12px"><strong>Não existe linha de base limpa de custo.</strong> A telemetria é mais recente do que o sistema, e cobre 228 dos 427 emails — comparar “antes e depois” não é honesto.</p>
-      <p class="small" style="margin:0 0 12px"><strong>A poupança do aquecedor de cache não tem amostra.</strong> Uma noite: 8 arranques a frio passaram a 0. Uma noite não é uma medição.</p>
-      <p class="small" style="margin:0 0 12px"><strong>Não há um único número de latência neste documento.</strong> O registo media o custo em dinheiro e não em tempo — instrumentei-o no dia em que escrevi isto, e por isso ainda não há dados. Num sistema que corre de dois em dois minutos com lotes de 25 em série, é a lacuna mais difícil de justificar.</p>
-      <p class="small" style="margin:0"><strong>Nada verifica contradições na base de conhecimento de forma contínua</strong>, e a saliência continua por resolver — regras corretas que o modelo por vezes não aplica.</p>
+      <p class="small" style="margin:0 0 11px"><strong>São 427 emails, uma caixa, quatro semanas.</strong> Escala de loja pequena. O que generaliza é o método, não os valores absolutos — com dez vezes o volume, a aritmética da cache muda de sinal.</p>
+      <p class="small" style="margin:0 0 11px"><strong>Não há linha de base limpa de custo.</strong> A telemetria é posterior ao sistema e cobre 228 dos 427 emails; comparar “antes e depois” não seria honesto. Pela mesma razão, os 8→0 arranques a frio são <em>uma</em> noite.</p>
+      <p class="small" style="margin:0 0 11px"><strong>Não há um único número de latência aqui.</strong> Media-se o custo em dinheiro e não em tempo. Instrumentei-o no dia em que escrevi isto — é a lacuna mais difícil de justificar.</p>
+      <p class="small" style="margin:0"><strong>Nada verifica contradições na base</strong>, e a saliência continua por resolver: regras corretas que o modelo por vezes não aplica.</p>
     </div>
   </div>
 </section>
@@ -1089,6 +1089,7 @@
       <div style="flex:1">
         <p class="eyebrow plain" style="margin-bottom:12px">Deliberadamente ausentes</p>
         <p class="small" style="margin:0;color:var(--ink-3)">Sem framework web, ORM, fila de mensagens, contentores ou framework de agentes — é um sistema que <strong style="color:var(--ink-2)">uma pessoa sozinha</strong> tem de conseguir manter.</p>
+        <p class="foot" style="margin:10px 0 0">Onde isto parte: o processamento é sequencial e o SQLite é local, por isso uma segunda caixa ou um pico acima de 25 emails por passagem obrigam a repensá-lo. Ainda não aconteceu.</p>
       </div>
     </div>
     <p class="foot" style="margin-top:20px">Loja, domínios, endereços, identificadores de encomenda e nomes de pessoas foram omitidos em todo o documento.</p>
