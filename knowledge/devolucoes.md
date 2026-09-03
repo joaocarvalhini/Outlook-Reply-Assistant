@@ -280,9 +280,9 @@ real de produção, 18 de agosto de 2026.)
   por correio registado, para haver acompanhamento. (Confirmado diretamente
   pelo lojista, 2 de setembro de 2026.)
   - Isto é sobre devolução por arrependimento. Numa substituição por
-    **defeito confirmado**, a loja envia um envelope DPD pré-endereçado sem
-    custo — ver "Devolver o artigo antigo não é sempre exigido" em
-    `provas-e-defeitos.md`.
+    **defeito confirmado**, o cliente reutiliza o envelope da DPD em que
+    recebeu a encomenda original — ver "Devolver o artigo antigo não é
+    sempre exigido" em `provas-e-defeitos.md`.
 - Não é possível entregar a devolução diretamente ao estafeta da DPD no
   momento de uma entrega — tem de ser um envio separado, para ficar
   devidamente registado.
