@@ -309,6 +309,9 @@
   tr.out td { color: var(--accent); }
   tr.out td.d { color: var(--accent); font-weight: 700; }
 
+  table.compacta td { padding: 13px 0; font-size: 17px; }
+  table.compacta td.d { font-size: 18px; }
+
   .flow-lbl {
     font-family: var(--f-data);
     font-size: 12px;
@@ -390,7 +393,7 @@
   <div class="rail">
     <span class="rail-num">01</span>
     <span class="rail-mark">Case study</span>
-    <span class="rail-num" style="opacity:.55">/13</span>
+    <span class="rail-num" style="opacity:.55">/14</span>
   </div>
   <div class="body stack">
     <p class="eyebrow">Agente LLM em produção · Apoio ao cliente</p>
@@ -428,7 +431,7 @@
   <div class="rail">
     <span class="rail-num">02</span>
     <span class="rail-mark">O problema</span>
-    <span class="rail-num" style="opacity:.55">/13</span>
+    <span class="rail-num" style="opacity:.55">/14</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">Contexto</p>
@@ -452,7 +455,7 @@
   <div class="rail">
     <span class="rail-num">03</span>
     <span class="rail-mark">Arquitetura</span>
-    <span class="rail-num" style="opacity:.55">/13</span>
+    <span class="rail-num" style="opacity:.55">/14</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">Como funciona</p>
@@ -541,7 +544,7 @@
   <div class="rail">
     <span class="rail-num">04</span>
     <span class="rail-mark">A fronteira</span>
-    <span class="rail-num" style="opacity:.55">/13</span>
+    <span class="rail-num" style="opacity:.55">/14</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">Onde a decisão vive</p>
@@ -597,7 +600,7 @@
   <div class="rail">
     <span class="rail-num">05</span>
     <span class="rail-mark">Custo</span>
-    <span class="rail-num" style="opacity:.55">/13</span>
+    <span class="rail-num" style="opacity:.55">/14</span>
   </div>
   <div class="body stack">
     <p class="eyebrow">Inversão 1</p>
@@ -655,7 +658,7 @@
   <div class="rail">
     <span class="rail-num">06</span>
     <span class="rail-mark">A decisão</span>
-    <span class="rail-num" style="opacity:.55">/13</span>
+    <span class="rail-num" style="opacity:.55">/14</span>
   </div>
   <div class="body stack">
     <p class="eyebrow">Inversão 2</p>
@@ -721,7 +724,7 @@
   <div class="rail">
     <span class="rail-num">07</span>
     <span class="rail-mark">Conhecimento</span>
-    <span class="rail-num" style="opacity:.55">/13</span>
+    <span class="rail-num" style="opacity:.55">/14</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">O problema que não era de IA</p>
@@ -775,7 +778,7 @@
   <div class="rail">
     <span class="rail-num">08</span>
     <span class="rail-mark">Escalação</span>
-    <span class="rail-num" style="opacity:.55">/13</span>
+    <span class="rail-num" style="opacity:.55">/14</span>
   </div>
   <div class="body stack">
     <p class="eyebrow">Inversão 3</p>
@@ -819,7 +822,7 @@
   <div class="rail">
     <span class="rail-num">09</span>
     <span class="rail-mark">Guardrails</span>
-    <span class="rail-num" style="opacity:.55">/13</span>
+    <span class="rail-num" style="opacity:.55">/14</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">Defesa em profundidade</p>
@@ -884,7 +887,7 @@
   <div class="rail">
     <span class="rail-num">10</span>
     <span class="rail-mark">Incidentes</span>
-    <span class="rail-num" style="opacity:.55">/13</span>
+    <span class="rail-num" style="opacity:.55">/14</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">Produção, e o que mudou por causa dela</p>
@@ -931,7 +934,7 @@
   <div class="rail">
     <span class="rail-num">11</span>
     <span class="rail-mark">Medição</span>
-    <span class="rail-num" style="opacity:.55">/13</span>
+    <span class="rail-num" style="opacity:.55">/14</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">Quando dois instrumentos discordam</p>
@@ -982,12 +985,73 @@
   </div>
 </section>
 
-<!-- ═══════════════ 10 · RESULTADOS ═══════════════ -->
+<!-- ═══════════════ 11B · ANTES E DEPOIS ═══════════════ -->
 <section class="page">
   <div class="rail">
     <span class="rail-num">12</span>
+    <span class="rail-mark">A troca</span>
+    <span class="rail-num" style="opacity:.55">/14</span>
+  </div>
+  <div class="body stack">
+    <p class="eyebrow">O que isto custou</p>
+    <h2>O custo caiu 63%.<br>A capacidade subiu.<br>Não foi de graça.</h2>
+
+    <p style="max-width:60ch">Dois dias antes das alterações contra dois dias depois. Mesmo sistema, mesma caixa, mesmo tipo de correspondência.</p>
+
+    <table class="compacta" style="margin-top:20px">
+      <thead><tr><th style="width:44%"></th><th class="r">30–31 ago</th><th class="r">2–3 set</th><th class="r" style="width:16%"></th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Tokens pagos por email</td>
+          <td class="d r">19 998</td><td class="d r">7 443</td>
+          <td class="d r" style="color:var(--measured);font-weight:700">−63%</td>
+        </tr>
+        <tr>
+          <td>Custo por email<br><span style="font-size:15px;color:var(--ink-3)">a fatura desceu menos porque o preço do modelo subiu 50% pelo meio</span></td>
+          <td class="d r">$0,0475</td><td class="d r">$0,0270</td>
+          <td class="d r" style="color:var(--measured);font-weight:700">−43%</td>
+        </tr>
+        <tr>
+          <td>Chamadas ao modelo por email</td>
+          <td class="d r">1,73</td><td class="d r">1,00</td>
+          <td class="d r" style="color:var(--measured);font-weight:700">−42%</td>
+        </tr>
+        <tr>
+          <td>Emails resolvidos com rascunho</td>
+          <td class="d r">23%</td><td class="d r">40%</td>
+          <td class="d r" style="color:var(--measured);font-weight:700">+17 p.p.</td>
+        </tr>
+        <tr class="out">
+          <td>Rascunhos enviados sem uma palavra mudada</td>
+          <td class="d r">79%</td><td class="d r">74%</td>
+          <td class="d r">−5 p.p.</td>
+        </tr>
+        <tr class="out">
+          <td>Rascunhos reescritos de raiz</td>
+          <td class="d r">6%</td><td class="d r">10%</td>
+          <td class="d r">+4 p.p.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="small" style="margin:22px 0 0;max-width:62ch">As duas últimas linhas são o preço. E a explicação mais provável está na quarta: o sistema passou a <strong>escrever rascunhos em casos que antes escalava</strong>. Atacar casos mais difíceis faz descer a percentagem que sai intacta. Cinco pontos de aproveitamento por dezassete pontos de casos resolvidos parece-me boa troca, mas é uma troca.</p>
+
+    <div class="grow"></div>
+
+    <div class="panel edge" style="padding:20px 30px">
+      <p class="eyebrow" style="margin-bottom:10px">O que não posso afirmar</p>
+      <p class="small" style="margin:0 0 11px"><strong>Isto não prova causalidade.</strong> Na mesma janela entraram três alterações: a remoção da segunda chamada, a correção do histórico do fio (vinha truncado a 255 caracteres, e o modelo lia a conversa por uma frincha) e cinco regras novas na base. Qualquer uma delas explica parte do movimento.</p>
+      <p class="small" style="margin:0">Sei <em>o quê</em> com números de produção. <em>Porquê</em>, só por atribuição. Para o separar era preciso ter mudado uma coisa de cada vez, e não foi o que fiz.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ 10 · RESULTADOS ═══════════════ -->
+<section class="page">
+  <div class="rail">
+    <span class="rail-num">13</span>
     <span class="rail-mark">Resultados</span>
-    <span class="rail-num" style="opacity:.55">/13</span>
+    <span class="rail-num" style="opacity:.55">/14</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">Verificado a 3 de setembro de 2026</p>
@@ -1047,9 +1111,9 @@
 <!-- ═══════════════ 11 · FECHO ═══════════════ -->
 <section class="page">
   <div class="rail">
-    <span class="rail-num">13</span>
+    <span class="rail-num">14</span>
     <span class="rail-mark">Fecho</span>
-    <span class="rail-num" style="opacity:.55">/13</span>
+    <span class="rail-num" style="opacity:.55">/14</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">O que aprendi</p>
