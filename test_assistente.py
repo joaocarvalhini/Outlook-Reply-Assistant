@@ -1025,6 +1025,38 @@ class HistoricoDoFio(unittest.TestCase):
         )
         self.assertIn("LOJA:", saida)
 
+    def test_anexo_no_fio_e_assinalado(self) -> None:
+        """A 03/09/2026 a loja mandou o código da encomenda num print. O
+        cliente respondeu a seguir e o assistente ofereceu-se para "verificar
+        internamente" uma coisa enviada uma mensagem antes. A imagem não vai
+        para o modelo, mas a existência dela tem de ir."""
+        saida = resumir_historico(
+            [{"de": CAIXA, "em": "2026-09-03 15:36",
+              "texto": "Segue o código da encomenda.", "tem_anexos": True}],
+            CAIXA,
+        )
+        self.assertIn("Segue o código da encomenda.", saida)
+        self.assertIn("levava um anexo", saida)
+
+    def test_mensagem_so_com_anexo_nao_desaparece_do_fio(self) -> None:
+        """O caso pior: um print sem texto nenhum. Sem a marca, a linha
+        desaparecia do histórico e o modelo respondia como se nada tivesse
+        sido enviado."""
+        saida = resumir_historico(
+            [{"de": CAIXA, "em": "2026-09-03 15:36", "texto": "", "tem_anexos": True}],
+            CAIXA,
+        )
+        self.assertIn("LOJA:", saida)
+        self.assertIn("levava um anexo", saida)
+
+    def test_mensagem_sem_texto_e_sem_anexo_continua_a_ser_omitida(self) -> None:
+        self.assertEqual(
+            resumir_historico(
+                [{"de": CAIXA, "em": "2026-09-03 15:36", "texto": ""}], CAIXA
+            ),
+            "",
+        )
+
     def test_nome_distinto_do_exchange_conta_como_loja(self) -> None:
         """Achado num fio real: a resposta da loja aparecia como CLIENTE.
 
@@ -2923,6 +2955,19 @@ class GraphHistorico(unittest.TestCase):
         del sem_corpo["body"]
         _, saida = self._correr([sem_corpo])
         self.assertEqual(saida[0]["texto"], "")
+
+    def test_pede_e_devolve_se_a_mensagem_tinha_anexo(self) -> None:
+        """Sem isto, um print da loja no fio era invisível e o assistente
+        prometia ir buscar o que já tinha sido enviado (visto a 03/09/2026)."""
+        com = self._msg("segue o print")
+        com["hasAttachments"] = True
+        stub, saida = self._correr([com])
+        self.assertIn("hasAttachments", stub.params["$select"])
+        self.assertTrue(saida[0]["tem_anexos"])
+
+    def test_sem_o_campo_hasattachments_assume_que_nao_havia(self) -> None:
+        _, saida = self._correr([self._msg("texto simples")])
+        self.assertFalse(saida[0]["tem_anexos"])
 
     def test_exclui_a_propria_mensagem(self) -> None:
         _, saida = self._correr([

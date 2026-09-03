@@ -846,6 +846,13 @@ Duas coisas que tens de respeitar:
 - O histórico dá-te o contexto do caso, não te dá factos novos sobre políticas.
   Se o cliente pergunta algo que a base de conhecimento não cobre, escalas na
   mesma, por muito claro que o fio esteja.
+- **Uma linha marcada com "[levava um anexo, que não consigo ver]" quer dizer
+  que foi enviada uma imagem ou ficheiro nessa mensagem.** Não sabes o que
+  estava lá dentro, mas sabes que alguma coisa foi enviada. Se a LOJA mandou
+  um anexo e o cliente volta a pedir a mesma informação, o mais provável é
+  que já lha tenham dado: não te ofereças para ir procurar de novo o que
+  acabou de ser enviado. Ou remetes para o que já foi mandado, ou escalas —
+  nunca prometes repetir um trabalho que talvez já esteja feito.
 - **Uma recusa pode ser um mal-entendido.** Antes de tratar um "não" como
   decisão tomada, compara o argumento dele com o que lhe foi mesmo oferecido.
   Se o motivo da recusa não bate certo com a proposta, ele percebeu-a mal: a
@@ -1856,8 +1863,14 @@ def resumir_historico(anteriores: list[dict], caixa: str) -> str:
     for m in anteriores:
         quem = "LOJA" if e_da_loja(m["de"], caixa) else "CLIENTE"
         texto = " ".join(m["texto"].split())
-        if texto:
-            linhas.append(f"[{m['em']}] {quem}: {texto}")
+        # O anexo em si não vai para o modelo, mas a sua existência vai: sem
+        # isto, uma mensagem que era só um print aparecia no fio como texto
+        # vazio ou uma linha solta, e o modelo respondia como se nada tivesse
+        # sido enviado. Marca-se mesmo quando não há texto nenhum, porque é
+        # aí que o silêncio engana mais.
+        marca = " [levava um anexo, que não consigo ver]" if m.get("tem_anexos") else ""
+        if texto or marca:
+            linhas.append(f"[{m['em']}] {quem}: {texto}{marca}")
     return "\n".join(linhas)
 
 
@@ -2045,7 +2058,7 @@ class Graph:
             f"{self.base}/messages",
             params={
                 "$filter": f"conversationId eq '{msg['conversation_id']}'",
-                "$select": "internetMessageId,from,receivedDateTime,body",
+                "$select": "internetMessageId,from,receivedDateTime,body,hasAttachments",
                 "$top": str(max(quantas * 2, 10)),
             },
         )
@@ -2065,6 +2078,14 @@ class Graph:
                 "texto": cortar_citacao(
                     para_texto(str((m.get("body") or {}).get("content", "")))
                 )[:max_chars],
+                # Só se diz QUE havia anexo, não se lê o anexo. As imagens do
+                # fio anterior não vão para o modelo (custam tokens e são
+                # quase sempre irrelevantes), mas ignorá-las por completo
+                # levou a um erro real: a 03/09/2026 a loja mandou o código
+                # da encomenda num print, o cliente respondeu a seguir, e o
+                # assistente ofereceu-se para "verificar internamente" uma
+                # coisa que já tinha sido enviada uma mensagem antes.
+                "tem_anexos": bool(m.get("hasAttachments")),
             }
             for m in anteriores[-quantas:]
         ]

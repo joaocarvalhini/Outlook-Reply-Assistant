@@ -1486,5 +1486,20 @@
     },
     "expect": "rascunhar",
     "note": "Pergunta real que escalou por falta de regra (vista pelo lacunas.py). Confirmado pelo lojista 01/09/2026: os P9 vem na embalagem da propria loja, nao na caixa branca da Apple. Regra em produtos-detalhe.md. Verificacao manual do texto: deve dizer diretamente que vem na embalagem da loja, sem escalar e sem rodeios."
+  },
+  {
+    "id": "loja-ja-mandou-print-nao-promete-procurar-de-novo",
+    "email": {
+      "from": "pmmda2004@example.com",
+      "from_name": "Pedro",
+      "subject": "Re: Encomenda Inpods Pro 4",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Podem tentar localizar a encomenda pelo meu numero de telemovel? 9xxxxxxxx"
+    },
+    "historico": "[2026-09-03 15:31] LOJA: Continuamos a verificar internamente a obtencao do codigo de rastreio junto da transportadora.\n[2026-09-03 15:34] CLIENTE: Voces como remetentes estao ha 3 dias a ver do codigo de rastreio?\n[2026-09-03 15:36] LOJA: Nao estamos ha 3 dias apenas a verificar. Segue o codigo da sua encomenda. [levava um anexo, que não consigo ver]",
+    "expect": "escalar",
+    "note": "Caso real de 03/09/2026. A loja mandou o codigo da encomenda num print uma mensagem antes; o assistente ofereceu-se para 'verificar internamente se conseguimos localizar a sua encomenda atraves do numero de telemovel', prometendo repetir trabalho ja feito. As imagens do fio anterior nao vao para o modelo, mas a marca de que existiram passou a ir (ver resumir_historico). Verificacao manual do texto: NAO deve prometer procurar de novo -- ou remete para o que ja foi enviado, ou escala."
   }
 ]
