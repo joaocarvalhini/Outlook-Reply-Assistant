@@ -241,7 +241,7 @@
     font-family: var(--f-data);
     font-weight: 500;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -.03em;
+    letter-spacing: -.055em;
     color: var(--ink);
     line-height: .92;
   }
@@ -348,7 +348,7 @@
   pre .d  { color: #8C9098; }            /* decorador / docstring */
 
   /* ── distribuição ─────────────────────────────────────────────── */
-  .dist { display: grid; grid-template-columns: auto 1fr auto; gap: 10px 16px; align-items: center; }
+  .dist { display: grid; grid-template-columns: auto 1fr auto; gap: 8px 16px; align-items: center; }
   .dist .lbl { font-size: 17px; color: var(--ink-2); white-space: nowrap; }
   .dist .barra { height: 26px; }
   .dist .qtd {
@@ -440,9 +440,9 @@
 
     <div class="grow"></div>
 
-    <div class="panel edge">
-      <p class="eyebrow" style="margin-bottom:14px">A pergunta de desenho</p>
-      <p class="pull">A pergunta nunca foi como automatizar o apoio ao cliente. Foi <em>o que é seguro automatizar, e como é que o sistema sabe a diferença.</em></p>
+    <div class="panel edge" style="padding:34px 38px">
+      <p class="eyebrow" style="margin-bottom:18px">A pergunta de desenho</p>
+      <p class="pull" style="font-size:44px;max-width:26ch">A pergunta nunca foi como automatizar o apoio ao cliente. Foi <em>o que é seguro automatizar, e como é que o sistema sabe a diferença.</em></p>
     </div>
   </div>
 </section>
@@ -703,7 +703,7 @@
       </div>
       <div style="flex:1;padding:26px 30px;border-right:1px solid var(--hair)">
         <span class="prov plain" style="color:var(--ink-3)">Custo não linear</span>
-        <p class="small" style="margin:14px 0 0;max-width:26ch">11 props → 5 s, 17 → 68 s. Aparar um campo ou dois também não salvava.</p>
+        <p class="small" style="margin:14px 0 0;max-width:26ch">11 propriedades dão 5 s; 17 dão 68 s. Aparar um campo ou dois também não salvava.</p>
       </div>
       <div style="flex:1;padding:26px 0 26px 30px">
         <span class="prov medido">Custo do teste</span>
@@ -887,7 +887,7 @@
     <span class="rail-num" style="opacity:.55">/13</span>
   </div>
   <div class="body stack">
-    <p class="eyebrow plain">Produção → alteração de engenharia</p>
+    <p class="eyebrow plain">Produção, e o que mudou por causa dela</p>
     <h2>Sete dos vinte e dois<br>existem porque algo<br>correu mal.</h2>
 
     <table style="margin-top:20px">
@@ -939,22 +939,22 @@
 
     <p style="max-width:58ch">Meço a qualidade de duas maneiras. Durante algum tempo julguei que uma delas estava avariada.</p>
 
-    <div class="row" style="gap:0;margin-top:26px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)">
-      <div style="flex:1;padding:26px 30px 26px 0;border-right:1px solid var(--hair)">
-        <p class="eyebrow plain" style="margin-bottom:14px">Pelo id do rascunho</p>
+    <div class="row" style="gap:0;margin-top:20px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)">
+      <div style="flex:1;padding:20px 30px 20px 0;border-right:1px solid var(--hair)">
+        <p class="eyebrow plain" style="margin-bottom:12px">Pelo id do rascunho</p>
         <div class="num lg accent">97%</div>
         <p class="cap" style="max-width:24ch">consta como “apagado” (184 de 190)</p>
       </div>
-      <div style="flex:1;padding:26px 0 26px 30px">
-        <p class="eyebrow plain" style="margin-bottom:14px">Pelo texto enviado</p>
+      <div style="flex:1;padding:20px 0 20px 30px">
+        <p class="eyebrow plain" style="margin-bottom:12px">Pelo texto enviado</p>
         <div class="num lg" style="color:var(--measured)">75%</div>
         <p class="cap" style="max-width:24ch">saiu idêntico ao gerado (122 de 162)</p>
       </div>
     </div>
 
-    <p class="small" style="margin:24px 0 0;max-width:60ch">Ambas estão certas. <strong>“Apagado” significa que o objeto do rascunho já não existe</strong>, não que tenha sido rejeitado: quem responde copia o texto, envia a partir da sua própria janela, e o rascunho desaparece. A medição por id conta objetos; a medição por texto conta trabalho aproveitado. Só a segunda responde à pergunta que interessa.</p>
+    <p class="small" style="margin:18px 0 0;max-width:60ch">Ambas estão certas. <strong>“Apagado” significa que o objeto do rascunho já não existe</strong>, não que tenha sido rejeitado: quem responde copia o texto, envia a partir da sua própria janela, e o rascunho desaparece. A medição por id conta objetos; a medição por texto conta trabalho aproveitado. Só a segunda responde à pergunta que interessa.</p>
 
-    <p class="eyebrow plain" style="margin:30px 0 16px">A distribuição que a mediana escondia</p>
+    <p class="eyebrow plain" style="margin:22px 0 12px">A distribuição que a mediana escondia</p>
     <div class="dist">
       <span class="lbl">exatamente 100%</span>
       <svg viewBox="0 0 500 26" preserveAspectRatio="none" class="barra"><rect width="500" height="26" fill="#1F5C46"/></svg>
@@ -975,8 +975,8 @@
 
     <div class="grow"></div>
 
-    <div class="panel edge">
-      <p class="pull" style="font-size:32px">A mediana é 100% e a média é 91%. Nenhuma das duas descreve isto: <em>três quartos saem intactos, e um em cada oito é reescrito de raiz.</em></p>
+    <div class="panel edge" style="padding:20px 30px">
+      <p class="pull" style="font-size:30px">A mediana é 100% e a média é 91%. Nenhuma das duas descreve isto: <em>três quartos saem intactos, e um em cada oito é reescrito de raiz.</em></p>
       <p class="small" style="margin:16px 0 0;color:var(--ink-3)">Publicar só a mediana seria escolher o número a dedo. Os 14 de baixo são onde está o trabalho por fazer. Cada um vira regra nova ou caso de ensaio.</p>
     </div>
   </div>
@@ -1036,7 +1036,7 @@
     <div class="panel edge" style="padding:26px 30px">
       <p class="eyebrow" style="margin-bottom:14px">A ressalva faz parte do resultado</p>
       <p class="small" style="margin:0 0 11px"><strong>São 427 emails, uma caixa, quatro semanas.</strong> Escala de loja pequena. O que generaliza é o método, não os valores absolutos. Com dez vezes o volume, a aritmética da cache muda de sinal.</p>
-      <p class="small" style="margin:0 0 11px"><strong>Não há linha de base limpa de custo.</strong> A telemetria é posterior ao sistema e cobre 228 dos 427 emails; comparar “antes e depois” não seria honesto. Pela mesma razão, os 8→0 arranques a frio são <em>uma</em> noite.</p>
+      <p class="small" style="margin:0 0 11px"><strong>Não há linha de base limpa de custo.</strong> A telemetria é posterior ao sistema e cobre 228 dos 427 emails; comparar “antes e depois” não seria honesto. Pela mesma razão, os 8 arranques a frio que passaram a 0 são <em>uma</em> noite.</p>
       <p class="small" style="margin:0 0 11px"><strong>Não há um único número de latência aqui.</strong> Media-se o custo em dinheiro e não em tempo. Instrumentei-o no dia em que escrevi isto. É a lacuna que me custa mais justificar.</p>
       <p class="small" style="margin:0"><strong>Nada verifica contradições na base</strong>, e a saliência continua por resolver: regras corretas que o modelo por vezes não aplica.</p>
     </div>
@@ -1055,30 +1055,24 @@
 
     <div style="display:flex;flex-direction:column;gap:0;margin-top:6px">
       <div style="padding:22px 0;border-top:1px solid var(--rule)">
-        <h3 style="font-size:22px">Instrumentar antes de otimizar não é um slogan.</h3>
-        <p class="small" style="margin:0;max-width:60ch">As duas maiores otimizações foram invisíveis até haver colunas de custo no registo.</p>
+        <h3 style="font-size:25px">Uma média pode esconder uma assimetria de preço.</h3>
+        <p class="small" style="margin:0;max-width:62ch">89% de acerto parecia resolvido, e os 11% restantes custavam mais do que todos os acertos juntos. Só se vê depois de instrumentar: as duas maiores otimizações foram invisíveis até haver colunas de custo no registo.</p>
       </div>
       <div style="padding:22px 0;border-top:1px solid var(--hair)">
-        <h3 style="font-size:22px">Uma média pode esconder uma assimetria de preço.</h3>
-        <p class="small" style="margin:0;max-width:60ch">89% parecia resolvido. Os 11% restantes custavam mais do que todos os acertos juntos.</p>
-      </div>
-      <div style="padding:22px 0;border-top:1px solid var(--hair)">
-        <h3 style="font-size:22px">Uma hipótese rejeitada por medição é um resultado.</h3>
-        <p class="small" style="margin:0;max-width:60ch">Medir custa quase sempre menos do que reverter um deploy.</p>
-      </div>
-      <div style="padding:22px 0;border-top:1px solid var(--hair)">
-        <h3 style="font-size:22px">Knowledge engineering é engenharia por direito próprio.</h3>
-        <p class="small" style="margin:0;max-width:60ch">Condicionais, exceções, regras com prazo de validade, e saliência.</p>
+        <h3 style="font-size:25px">Uma hipótese rejeitada por medição é um resultado.</h3>
+        <p class="small" style="margin:0;max-width:62ch">Medir custou $0,008. Reverter aquele deploy teria custado o atendimento de um dia.</p>
       </div>
       <div style="padding:22px 0;border-top:1px solid var(--hair);border-bottom:1px solid var(--rule)">
-        <h3 style="font-size:22px">Nem toda a automação por fazer é dívida.</h3>
-        <p class="small" style="margin:0;max-width:60ch">Ler os motivos de escalação um a um mostrou que quase todos estavam certos.</p>
+        <h3 style="font-size:25px">Nem toda a automação por fazer é dívida.</h3>
+        <p class="small" style="margin:0;max-width:62ch">Ler os motivos de escalação um a um mostrou que a maior parte estava certa. E escrever as regras da loja, com as suas exceções e prazos de validade, é engenharia por direito próprio.</p>
       </div>
     </div>
 
-    <div class="grow" style="display:flex;align-items:center">
-      <p class="pull" style="font-size:44px;max-width:26ch">A métrica certa não era quantos casos automatizei. Era <em>quantos consegui automatizar com segurança.</em></p>
-    </div>
+    <!-- O espaçador vai antes da citação, não à volta dela: um `.grow` com o
+         texto dentro encolhia abaixo da altura do conteúdo e a citação
+         passava por cima do bloco da stack. Assim o que encolhe é o vazio. -->
+    <div class="grow"></div>
+    <p class="pull" style="font-size:40px;max-width:28ch;flex:0 0 auto;margin:0 0 26px">A métrica certa não era quantos casos automatizei. Era <em>quantos consegui automatizar com segurança.</em></p>
 
     <hr class="rule">
     <div class="row" style="gap:40px;padding-top:22px">
