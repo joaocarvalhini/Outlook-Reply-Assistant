@@ -390,7 +390,7 @@
   <div class="rail">
     <span class="rail-num">01</span>
     <span class="rail-mark">Case study</span>
-    <span class="rail-num">—</span>
+    <span class="rail-num" style="opacity:.55">/13</span>
   </div>
   <div class="body stack">
     <p class="eyebrow">Agente LLM em produção · Apoio ao cliente</p>
@@ -412,7 +412,7 @@
       </div>
       <div>
         <div class="num lg">67<span style="font-size:26px">%</span></div>
-        <p class="cap">escalados — quase todos com razão</p>
+        <p class="cap">escalados, quase todos com razão</p>
       </div>
       <div>
         <div class="num lg">$0,008</div>
@@ -428,15 +428,15 @@
   <div class="rail">
     <span class="rail-num">02</span>
     <span class="rail-mark">O problema</span>
-    <span class="rail-num">—</span>
+    <span class="rail-num" style="opacity:.55">/13</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">Contexto</p>
     <h2>Um LLM resolve isto<br>num playground.<br>Em produção, não.</h2>
 
-    <p>Uma loja online recebe correspondência o dia inteiro: estado de encomendas, devoluções, defeitos, trocas, reembolsos, queixas. Ligar um modelo à caixa funciona — ele escreve emails de apoio perfeitamente credíveis.</p>
+    <p>Uma loja online recebe correspondência o dia inteiro: estado de encomendas, devoluções, defeitos, trocas, reembolsos, queixas. Ligar um modelo à caixa funciona: ele escreve emails de apoio perfeitamente credíveis.</p>
 
-    <p>O problema é que a maior parte destas mensagens <strong>não deve</strong> ser respondida automaticamente. Reembolsos movem dinheiro. Alterar uma encomenda exige escrita em sistemas que não devem estar ao alcance de um modelo. E responder com confiança a uma política que não se conhece é pior do que não responder — um cliente com uma promessa errada é um problema maior do que um cliente que espera.</p>
+    <p>O problema é que a maior parte destas mensagens <strong>não deve</strong> ser respondida automaticamente. Reembolsos movem dinheiro. Alterar uma encomenda exige escrita em sistemas que não devem estar ao alcance de um modelo. E responder com confiança a uma política que não se conhece é pior do que não responder. Um cliente com uma promessa errada dá muito mais trabalho do que um cliente que espera.</p>
 
     <div class="grow"></div>
 
@@ -452,7 +452,7 @@
   <div class="rail">
     <span class="rail-num">03</span>
     <span class="rail-mark">Arquitetura</span>
-    <span class="rail-num">—</span>
+    <span class="rail-num" style="opacity:.55">/13</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">Como funciona</p>
@@ -526,13 +526,13 @@
         <rect x="604" y="558" width="160" height="44" fill="#FAFAF7" stroke="#DEDED6"/>
         <text x="684" y="585" text-anchor="middle" font-size="15">descarte</text>
 
-        <text x="430" y="626" text-anchor="middle" font-size="15" font-weight="600" fill="#15171B">Revisão humana — envia, edita ou apaga</text>
+        <text x="430" y="626" text-anchor="middle" font-size="15" font-weight="600" fill="#15171B">Revisão humana: envia, edita ou apaga</text>
       </g>
     </svg>
 
     <div class="grow"></div>
     <hr class="rule">
-    <p class="small" style="margin:20px 0 0;max-width:64ch">Provar identidade, somar prazos, descartar ruído e validar a decisão vivem em código. Cada uma foi para lá <strong>porque o modelo demonstrou executá-la mal em produção</strong> — a fronteira foi movida com evidência, não desenhada à partida.</p>
+    <p class="small" style="margin:20px 0 0;max-width:64ch">Provar identidade, somar prazos, descartar ruído e validar a decisão vivem em código. Cada uma foi para lá <strong>porque o modelo mostrou, em produção, que a executava mal</strong>. A fronteira foi movida com evidência. Não a desenhei à partida.</p>
   </div>
 </section>
 
@@ -541,7 +541,7 @@
   <div class="rail">
     <span class="rail-num">04</span>
     <span class="rail-mark">A fronteira</span>
-    <span class="rail-num">—</span>
+    <span class="rail-num" style="opacity:.55">/13</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">Onde a decisão vive</p>
@@ -588,7 +588,7 @@
       </div>
     </div>
 
-    <p class="foot" style="margin-top:22px">Cada uma destas três foi para código <b>depois</b> de o modelo demonstrar executá-la mal em produção — não por desconfiança de princípio.</p>
+    <p class="foot" style="margin-top:22px">Cada uma destas três foi para código <b>depois</b> de o modelo demonstrar executá-la mal em produção. Não foi desconfiança de princípio.</p>
   </div>
 </section>
 
@@ -597,12 +597,12 @@
   <div class="rail">
     <span class="rail-num">05</span>
     <span class="rail-mark">Custo</span>
-    <span class="rail-num">—</span>
+    <span class="rail-num" style="opacity:.55">/13</span>
   </div>
   <div class="body stack">
     <p class="eyebrow">Inversão 1</p>
     <h2>A taxa de cache<br>parecia ótima.</h2>
-    <p style="max-width:56ch">O registo não guardava tokens nenhuns. A única fonte era a fatura mensal — agregada, impossível de atribuir a um email. Antes de otimizar o que quer que fosse, instrumentei: sete colunas novas no registo.</p>
+    <p style="max-width:56ch">O registo não guardava tokens nenhuns. A única fonte era a fatura mensal, agregada e impossível de atribuir a um email. Antes de otimizar o que quer que fosse, instrumentei: sete colunas novas no registo.</p>
 
     <p class="eyebrow plain" style="margin:34px 0 16px">Decomposição do custo de um dia</p>
     <svg viewBox="0 0 900 96" width="100%" style="max-height:96px" aria-label="Escrita de cache 52%, leitura 22%, saída 16%, entrada nova 10%">
@@ -627,7 +627,7 @@
     <div class="grow"></div>
 
     <div class="panel edge" style="margin-bottom:22px">
-      <p class="pull" style="font-size:34px">89% de acerto de cache parecia resolvido. Mas escrever custa um múltiplo do que custa ler — <em>os 11% de falhas custavam 2,4× mais do que todos os acertos somados.</em></p>
+      <p class="pull" style="font-size:34px">89% de acerto de cache parecia resolvido. Mas escrever custa um múltiplo do que custa ler, e por isso <em>os 11% de falhas custavam 2,4× mais do que todos os acertos somados.</em></p>
     </div>
 
     <div class="row" style="gap:56px;align-items:flex-end">
@@ -646,7 +646,7 @@
 
     <hr class="rule" style="margin:24px 0 18px">
     <p class="small" style="margin:0 0 10px;max-width:60ch"><strong>O problema nunca foi o prompt ser grande.</strong> Era o número de vezes que era reescrito.</p>
-    <p class="foot" style="margin:0">Estes dois valores são de <b>31 de agosto</b>, quando o prefixo tinha duas entradas de cache. Hoje tem uma — ver a página seguinte.</p>
+    <p class="foot" style="margin:0">Estes dois valores são de <b>31 de agosto</b>, quando o prefixo tinha duas entradas de cache. Hoje tem uma. Ver a página seguinte.</p>
   </div>
 </section>
 
@@ -655,16 +655,16 @@
   <div class="rail">
     <span class="rail-num">06</span>
     <span class="rail-mark">A decisão</span>
-    <span class="rail-num">—</span>
+    <span class="rail-num" style="opacity:.55">/13</span>
   </div>
   <div class="body stack">
     <p class="eyebrow">Inversão 2</p>
     <h2>Unificar parecia<br>obviamente melhor.</h2>
 
-    <p style="max-width:58ch;margin-bottom:6px">A investigação revelou algo que eu não sabia: <strong>havia duas entradas de cache, não uma.</strong> O esquema de saída faz parte do prefixo, por isso as duas chamadas nunca a partilhavam — um arranque a frio numa escalação reescrevia o prompt inteiro duas vezes.</p>
+    <p style="max-width:58ch;margin-bottom:6px">A investigação revelou algo que eu não sabia: <strong>havia duas entradas de cache, não uma.</strong> O esquema de saída faz parte do prefixo, por isso as duas chamadas nunca a partilhavam. Num arranque a frio, uma escalação reescrevia o prompt inteiro duas vezes.</p>
     <p style="max-width:58ch">A hipótese era evidente: um esquema só, uma entrada só, metade da escrita desaparecia.</p>
 
-    <p class="eyebrow plain" style="margin:28px 0 14px">O teste — uma chamada real por configuração</p>
+    <p class="eyebrow plain" style="margin:28px 0 14px">O teste: uma chamada real por configuração</p>
 
     <svg viewBox="0 0 900 300" width="100%" style="max-height:304px" aria-label="11 propriedades 5,34 s; 17 propriedades 67,89 s; 19 propriedades 184 s e rejeitado">
       <!-- linha do timeout -->
@@ -699,7 +699,7 @@
     <div class="row" style="gap:0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)">
       <div style="flex:1;padding:26px 30px 26px 0;border-right:1px solid var(--hair)">
         <span class="prov rejeitado">Decisão · rejeitada</span>
-        <p class="small" style="margin:14px 0 0;max-width:26ch">Teria estourado o timeout em <strong>todas</strong> as chamadas — falha total, não intermitente.</p>
+        <p class="small" style="margin:14px 0 0;max-width:26ch">Teria estourado o timeout em <strong>todas</strong> as chamadas. Falha total, não intermitente.</p>
       </div>
       <div style="flex:1;padding:26px 30px;border-right:1px solid var(--hair)">
         <span class="prov plain" style="color:var(--ink-3)">Custo não linear</span>
@@ -712,7 +712,7 @@
     </div>
 
     <p class="pull" style="margin-top:28px;font-size:34px;max-width:30ch">Uma otimização rejeitada depois de um teste <em>é um bom resultado de engenharia.</em></p>
-    <p class="foot" style="margin-top:18px">Epílogo: as duas entradas de cache <b>deixaram de existir a 1 de setembro</b> — não por unificar os esquemas, mas por remover a segunda chamada por completo. O mesmo problema, resolvido pela via que a medição não tinha proibido.</p>
+    <p class="foot" style="margin-top:18px">Epílogo: as duas entradas de cache <b>deixaram de existir a 1 de setembro</b>. Não por unificar os esquemas, mas por remover a segunda chamada por completo. O mesmo problema, resolvido pela via que a medição não tinha proibido.</p>
   </div>
 </section>
 
@@ -721,13 +721,13 @@
   <div class="rail">
     <span class="rail-num">07</span>
     <span class="rail-mark">Conhecimento</span>
-    <span class="rail-num">—</span>
+    <span class="rail-num" style="opacity:.55">/13</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">O problema que não era de IA</p>
     <h2>Uma pergunta simples<br>não é uma regra simples.</h2>
 
-    <p style="max-width:56ch">A base de conhecimento tem 1 088 linhas em 7 ficheiros e é a única fonte que o modelo pode citar. Escrevê-la foi a parte do projeto que mais tempo consumiu — e a que menos se parece com programação.</p>
+    <p style="max-width:56ch">A base de conhecimento tem 1 088 linhas em 7 ficheiros e é a única fonte que o modelo pode citar. Escrevê-la foi a parte do projeto que mais tempo me consumiu, e a que menos se parece com programação.</p>
 
     <div class="panel" style="margin:26px 0 4px;padding:30px">
       <p class="eyebrow plain" style="margin-bottom:18px">Pergunta do cliente</p>
@@ -759,12 +759,12 @@
         </g>
       </svg>
     </div>
-    <p class="small" style="max-width:58ch;margin-top:18px">Duas regras verdadeiras sobre o mesmo assunto, que se contradizem lidas fora de contexto. Tiveram de ficar explicitamente ligadas uma à outra — cada uma a apontar para a outra — para o modelo não aplicar a errada com confiança.</p>
+    <p class="small" style="max-width:58ch;margin-top:18px">Duas regras verdadeiras sobre o mesmo assunto, que se contradizem lidas fora de contexto. Tiveram de ficar explicitamente ligadas uma à outra, cada uma a apontar para a outra, para o modelo não aplicar a errada com confiança.</p>
 
     <div class="grow"></div>
 
     <div class="panel edge">
-      <p class="pull" style="font-size:33px">Uma base ambígua não produz respostas erradas. <em>Produz escalações a mais</em> — porque o agente é instruído a escalar na dúvida.</p>
+      <p class="pull" style="font-size:33px">Uma base ambígua não produz respostas erradas. <em>Produz escalações a mais</em>, porque o agente é instruído a escalar na dúvida.</p>
       <p class="small" style="margin:16px 0 0;color:var(--ink-3)">O custo da ambiguidade aparece na fatura e na carga de trabalho, não na qualidade.</p>
     </div>
   </div>
@@ -775,7 +775,7 @@
   <div class="rail">
     <span class="rail-num">08</span>
     <span class="rail-mark">Escalação</span>
-    <span class="rail-num">—</span>
+    <span class="rail-num" style="opacity:.55">/13</span>
   </div>
   <div class="body stack">
     <p class="eyebrow">Inversão 3</p>
@@ -796,7 +796,7 @@
     <div class="row" style="gap:34px;margin-top:26px;align-items:flex-start">
       <div style="flex:1">
         <span class="prov medido">Medido</span>
-        <p class="small" style="margin:14px 0 0">Testei a hipótese mais promissora — “as perguntas de reembolso podiam ser respondidas com dados que a plataforma já tem”. Fui buscar as encomendas envolvidas.</p>
+        <p class="small" style="margin:14px 0 0">Testei a hipótese mais promissora: “as perguntas de reembolso podiam ser respondidas com dados que a plataforma já tem”. Fui buscar as encomendas envolvidas.</p>
       </div>
       <div style="flex:0 0 auto;text-align:right">
         <div class="num xl accent">2<span style="color:var(--ink-3);font-size:40px">/9</span></div>
@@ -805,12 +805,12 @@
     </div>
 
     <p class="eyebrow plain" style="margin:28px 0 12px">E li os motivos das seis categorias mais pequenas, um a um</p>
-    <p class="small" style="margin:0;max-width:62ch">Não estavam todos certos. <strong>3 diziam que uma mensagem da loja tinha chegado cortada</strong> — não era julgamento, era um defeito meu: o histórico vinha truncado a 255 caracteres. Corrigido. Outros <strong>5 eram lacunas da base</strong>, e duas fecharam-se esta semana. Os restantes escalam por desenho.</p>
+    <p class="small" style="margin:0;max-width:62ch">Não estavam todos certos. <strong>3 diziam que uma mensagem da loja tinha chegado cortada</strong>. Não era julgamento, era um defeito meu: o histórico vinha truncado a 255 caracteres. Corrigido. Outros <strong>5 eram lacunas da base</strong>, e duas fecharam-se esta semana. Os restantes escalam por desenho.</p>
 
     <div class="grow"></div>
 
     <hr class="rule">
-    <p class="pull" style="margin:24px 0 0;max-width:32ch">Baixar aquela percentagem exigia dar ao agente escrita na plataforma — <em>o que apaga o guardrail que torna o sistema tolerável.</em></p>
+    <p class="pull" style="margin:24px 0 0;max-width:32ch">Baixar aquela percentagem exigia dar ao agente escrita na plataforma, <em>o que apaga o guardrail que torna o sistema tolerável.</em></p>
   </div>
 </section>
 
@@ -819,7 +819,7 @@
   <div class="rail">
     <span class="rail-num">09</span>
     <span class="rail-mark">Guardrails</span>
-    <span class="rail-num">—</span>
+    <span class="rail-num" style="opacity:.55">/13</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">Defesa em profundidade</p>
@@ -884,7 +884,7 @@
   <div class="rail">
     <span class="rail-num">10</span>
     <span class="rail-mark">Incidentes</span>
-    <span class="rail-num">—</span>
+    <span class="rail-num" style="opacity:.55">/13</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">Produção → alteração de engenharia</p>
@@ -903,7 +903,7 @@
         </tr>
         <tr>
           <td style="font-size:18px"><strong>Uma paragem total sem alerta nenhum</strong><br><span style="font-size:16px;color:var(--ink-3)">a conta ficou sem saldo; o sistema saía com código de sucesso, indistinguível de um dia sem emails</span></td>
-          <td style="padding-left:30px;font-size:18px">Contagem de passagens seguidas sem decisão — <strong>deteta em ~6 minutos</strong> o que antes podia correr horas</td>
+          <td style="padding-left:30px;font-size:18px">Contagem de passagens seguidas sem decisão. <strong>Deteta em ~6 minutos</strong> o que antes podia correr horas</td>
         </tr>
         <tr>
           <td style="font-size:17px"><strong>O deploy disse “Enviado” sem enviar</strong><br><span style="font-size:15px;color:var(--ink-3)">o código de saída não apanhou a falha</span></td>
@@ -911,7 +911,7 @@
         </tr>
         <tr>
           <td style="font-size:17px"><strong>Publicar uma regra custa dinheiro</strong><br><span style="font-size:15px;color:var(--ink-3)">a base faz parte do prefixo em cache; cada publicação invalida-o</span></td>
-          <td style="padding-left:30px;font-size:17px">O deploy compara uma impressão digital do prompt e avisa se aquela publicação é gratuita — informativo, nunca bloqueante</td>
+          <td style="padding-left:30px;font-size:17px">O deploy compara uma impressão digital do prompt e avisa se aquela publicação é gratuita. Informativo, nunca bloqueante</td>
         </tr>
       </tbody>
     </table>
@@ -920,9 +920,9 @@
 
     <div class="panel edge">
       <p class="eyebrow" style="margin-bottom:12px">O raio de dano de todos eles foi atraso, não perda</p>
-      <p class="small" style="margin:0"><strong>O cursor da caixa só avança dentro do registo de uma decisão.</strong> Uma chamada que falha não grava nada, e o email volta a ser lido na passagem seguinte. Nenhuma das avarias acima perdeu um email — atrasou-o. É a propriedade que torna estes incidentes recuperáveis em vez de custosos.</p>
+      <p class="small" style="margin:0"><strong>O cursor da caixa só avança dentro do registo de uma decisão.</strong> Uma chamada que falha não grava nada, e o email volta a ser lido na passagem seguinte. Nenhuma das avarias acima perdeu um email. Atrasou-o. É a propriedade que torna estes incidentes recuperáveis em vez de custosos.</p>
     </div>
-    <p class="foot" style="margin-top:20px"><b>O padrão comum:</b> nenhum foi encontrado a ler código. Foram todos encontrados a comparar o que o sistema produziu com o que aconteceu a seguir. O sinal de maturidade não é ter guardrails — é a proveniência deles.</p>
+    <p class="foot" style="margin-top:20px"><b>O padrão comum:</b> nenhum foi encontrado a ler código. Foram todos encontrados a comparar o que o sistema produziu com o que aconteceu a seguir. O sinal de maturidade não é ter guardrails, é a proveniência deles.</p>
   </div>
 </section>
 
@@ -931,7 +931,7 @@
   <div class="rail">
     <span class="rail-num">11</span>
     <span class="rail-mark">Medição</span>
-    <span class="rail-num">—</span>
+    <span class="rail-num" style="opacity:.55">/13</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">Quando dois instrumentos discordam</p>
@@ -943,12 +943,12 @@
       <div style="flex:1;padding:26px 30px 26px 0;border-right:1px solid var(--hair)">
         <p class="eyebrow plain" style="margin-bottom:14px">Pelo id do rascunho</p>
         <div class="num lg accent">97%</div>
-        <p class="cap" style="max-width:24ch">consta como “apagado” — 184 de 190</p>
+        <p class="cap" style="max-width:24ch">consta como “apagado” (184 de 190)</p>
       </div>
       <div style="flex:1;padding:26px 0 26px 30px">
         <p class="eyebrow plain" style="margin-bottom:14px">Pelo texto enviado</p>
         <div class="num lg" style="color:var(--measured)">75%</div>
-        <p class="cap" style="max-width:24ch">saiu idêntico ao gerado — 122 de 162</p>
+        <p class="cap" style="max-width:24ch">saiu idêntico ao gerado (122 de 162)</p>
       </div>
     </div>
 
@@ -977,7 +977,7 @@
 
     <div class="panel edge">
       <p class="pull" style="font-size:32px">A mediana é 100% e a média é 91%. Nenhuma das duas descreve isto: <em>três quartos saem intactos, e um em cada oito é reescrito de raiz.</em></p>
-      <p class="small" style="margin:16px 0 0;color:var(--ink-3)">Publicar só a mediana seria escolher o número a dedo. Os 14 de baixo são onde está o trabalho por fazer — cada um vira regra nova ou caso de ensaio.</p>
+      <p class="small" style="margin:16px 0 0;color:var(--ink-3)">Publicar só a mediana seria escolher o número a dedo. Os 14 de baixo são onde está o trabalho por fazer. Cada um vira regra nova ou caso de ensaio.</p>
     </div>
   </div>
 </section>
@@ -987,7 +987,7 @@
   <div class="rail">
     <span class="rail-num">12</span>
     <span class="rail-mark">Resultados</span>
-    <span class="rail-num">—</span>
+    <span class="rail-num" style="opacity:.55">/13</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">Verificado a 3 de setembro de 2026</p>
@@ -1024,20 +1024,20 @@
       </div>
     </div>
 
-    <p class="eyebrow plain" style="margin:38px 0 18px">Qualidade — o gerado contra o enviado</p>
+    <p class="eyebrow plain" style="margin:38px 0 18px">Qualidade: o gerado contra o enviado</p>
     <div class="row" style="gap:52px;align-items:flex-start">
       <div style="flex:1"><div class="num lg">162</div><p class="cap">casos comparáveis</p></div>
       <div style="flex:1"><div class="num lg" style="color:var(--measured)">122</div><p class="cap">saíram idênticos ao gerado</p></div>
-      <div style="flex:1.4"><div class="num lg accent">14</div><p class="cap" style="max-width:30ch">foram reescritos de raiz — cada um vira regra nova ou caso de ensaio</p></div>
+      <div style="flex:1.4"><div class="num lg accent">14</div><p class="cap" style="max-width:30ch">foram reescritos de raiz. Cada um vira regra nova ou caso de ensaio</p></div>
     </div>
 
     <div class="grow"></div>
 
     <div class="panel edge" style="padding:26px 30px">
       <p class="eyebrow" style="margin-bottom:14px">A ressalva faz parte do resultado</p>
-      <p class="small" style="margin:0 0 11px"><strong>São 427 emails, uma caixa, quatro semanas.</strong> Escala de loja pequena. O que generaliza é o método, não os valores absolutos — com dez vezes o volume, a aritmética da cache muda de sinal.</p>
+      <p class="small" style="margin:0 0 11px"><strong>São 427 emails, uma caixa, quatro semanas.</strong> Escala de loja pequena. O que generaliza é o método, não os valores absolutos. Com dez vezes o volume, a aritmética da cache muda de sinal.</p>
       <p class="small" style="margin:0 0 11px"><strong>Não há linha de base limpa de custo.</strong> A telemetria é posterior ao sistema e cobre 228 dos 427 emails; comparar “antes e depois” não seria honesto. Pela mesma razão, os 8→0 arranques a frio são <em>uma</em> noite.</p>
-      <p class="small" style="margin:0 0 11px"><strong>Não há um único número de latência aqui.</strong> Media-se o custo em dinheiro e não em tempo. Instrumentei-o no dia em que escrevi isto — é a lacuna mais difícil de justificar.</p>
+      <p class="small" style="margin:0 0 11px"><strong>Não há um único número de latência aqui.</strong> Media-se o custo em dinheiro e não em tempo. Instrumentei-o no dia em que escrevi isto. É a lacuna que me custa mais justificar.</p>
       <p class="small" style="margin:0"><strong>Nada verifica contradições na base</strong>, e a saliência continua por resolver: regras corretas que o modelo por vezes não aplica.</p>
     </div>
   </div>
@@ -1048,7 +1048,7 @@
   <div class="rail">
     <span class="rail-num">13</span>
     <span class="rail-mark">Fecho</span>
-    <span class="rail-num">—</span>
+    <span class="rail-num" style="opacity:.55">/13</span>
   </div>
   <div class="body stack">
     <p class="eyebrow plain">O que aprendi</p>
@@ -1088,7 +1088,7 @@
       </div>
       <div style="flex:1">
         <p class="eyebrow plain" style="margin-bottom:12px">Deliberadamente ausentes</p>
-        <p class="small" style="margin:0;color:var(--ink-3)">Sem framework web, ORM, fila de mensagens, contentores ou framework de agentes — é um sistema que <strong style="color:var(--ink-2)">uma pessoa sozinha</strong> tem de conseguir manter.</p>
+        <p class="small" style="margin:0;color:var(--ink-3)">Sem framework web, ORM, fila de mensagens, contentores ou framework de agentes. É um sistema que <strong style="color:var(--ink-2)">uma pessoa sozinha</strong> tem de conseguir manter.</p>
         <p class="foot" style="margin:10px 0 0">Onde isto parte: o processamento é sequencial e o SQLite é local, por isso uma segunda caixa ou um pico acima de 25 emails por passagem obrigam a repensá-lo. Ainda não aconteceu.</p>
       </div>
     </div>
