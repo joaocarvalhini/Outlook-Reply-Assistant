@@ -1,5 +1,5 @@
 ---
-title: Case study — como regenerar
+title: Case study e carrossel — como regenerar
 type: reference
 status: implemented
 tags:
@@ -7,28 +7,45 @@ tags:
   - build
 ---
 
-# Case study — como regenerar
+# Case study e carrossel — como regenerar
 
-> **Pergunta que este documento responde:** como se altera e volta a gerar o PDF do case study?
+> **Pergunta que este documento responde:** como se altera e volta a gerar os PDFs?
 
-## Ficheiros
+## Dois documentos, um desenho
+
+São dois entregáveis diferentes com a mesma identidade, e a razão está em
+`post-linkedin.md`: a LinkedIn serve cada página do PDF a 1080px de largura, e
+num telemóvel isso é reduzido ~2,8×. O corpo de 15px do documento longo dá 5px
+no feed. O carrossel existe para ser lido lá, o documento longo para ser lido
+em ecrã inteiro.
 
 | Ficheiro | O que é |
 |---|---|
-| `case-study.html` | **A fonte.** É aqui que se edita o conteúdo e o desenho |
+| `case-study.html` | **Fonte do documento longo.** 15 páginas, corpo a 15px |
+| `carrossel.html` | **Fonte do carrossel do feed.** 10 slides, corpo a 34px |
 | `fonts.css` | As três famílias em base64. Gerado, não se edita à mão |
 | `build-fonts.py` | Descarrega as fontes do Google e escreve o `fonts.css` |
-| `build.py` | Gera o `case-study.pdf` e as imagens em `png/` |
-| `case-study-print.html` | Intermediário, criado pelo `build.py`. Não editar |
-| `case-study.pdf` | O entregável para o LinkedIn — 11 páginas, 1080×1350 |
-| `png/` | Uma imagem por página a 144 dpi, para publicar como carrossel |
-| `post-linkedin.md` | O texto que acompanha a publicação |
+| `build.py` | Gera os PDFs e as imagens |
+| `*-print.html` | Intermediários, criados pelo `build.py`. Não editar |
+| `case-study.pdf` | 15 páginas, 1080×1350. Vai para os Destaques do perfil |
+| `carrossel.pdf` | 10 slides, 1080×1350. É este que vai ao feed |
+| `png/`, `png-carrossel/` | Uma imagem por página a 144 dpi |
+| `post-linkedin.md` | O texto, a ordem de publicação e as regras do feed |
+
+> [!IMPORTANT] O carrossel tem um piso tipográfico
+> Corpo ≥ 32px, rótulos ≥ 26px, nada abaixo de 26px em sítio nenhum. Abaixo
+> disso não se lê no telemóvel, e o sinal que a plataforma mede é justamente
+> o tempo que a pessoa passa em cada slide. O `carrossel.html` explica a
+> aritmética no cabeçalho.
 
 ## Regenerar
 
 ```bash
 python docs/case-study/build.py
 ```
+
+Sem argumentos gera os dois. `build.py carrossel` ou `build.py case-study`
+gera só um.
 
 Precisa do Chrome instalado. O `pypdf` e o `pymupdf` são opcionais — sem eles o
 PDF sai na mesma, mas salta-se a verificação e as imagens.
@@ -40,8 +57,10 @@ os pesos usados:
 python docs/case-study/build-fonts.py
 ```
 
-Depois é preciso voltar a colar o conteúdo do `fonts.css` no primeiro bloco
-`<style>` do `case-study.html`.
+O `carrossel.html` tem um marcador `<!--FONTES-->` e o `build.py` cola lá o
+`fonts.css` sozinho. O `case-study.html` tem as fontes coladas lá dentro por
+razões históricas: nesse é preciso voltar a colá-las à mão no primeiro bloco
+`<style>`.
 
 ## Três coisas que partem isto
 
@@ -64,6 +83,12 @@ sobra tem a cor do papel, por isso não se vê.
 **3 · A quebra é *antes* de cada página, não depois.** Com `break-after` na
 última página sobrava sempre uma folha em branco no fim. Usa-se
 `.page + .page { break-before: page }`.
+
+**4 · Os ~35px que sobram no fundo da folha têm a cor do fundo do documento.**
+No case study nunca se vê, porque todas as páginas são cor de papel. No
+carrossel, os slides escuros ficavam com uma tira branca no fundo. Resolve-se
+com `box-shadow: 0 46px 0 0 var(--ink)` na página escura: a sombra pinta a
+tira e não é cortada pelo `overflow: hidden` da própria página.
 
 ## Se o PDF sair com o número de páginas errado
 
@@ -88,8 +113,8 @@ O `build.py` falha com um erro explícito. As causas prováveis, por ordem:
   const body = p.querySelector('.body');
   const antesP = p.getAttribute('style') || '', antesB = body.getAttribute('style') || '';
   p.style.height = '1315px';
-  body.style.paddingBottom = '20px';
-  body.style.fontSize = '14px';
+  body.style.paddingBottom = '20px';   // 46px no carrossel
+  body.style.fontSize = '14px';        // o carrossel não mexe no font-size
   void p.offsetHeight; // força o reflow antes de medir
   const excesso = body.scrollHeight - body.clientHeight;
   p.setAttribute('style', antesP);

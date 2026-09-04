@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
-"""Gera o PDF do case study a partir do case-study.html.
+"""Gera os PDFs a partir do HTML.
 
-    python build.py
+    python build.py                 gera os dois
+    python build.py case-study      só o documento longo, 15 páginas
+    python build.py carrossel       só o carrossel do feed, 10 páginas
 
-O `case-study.html` é um fragmento (sem <!doctype>, <html> ou <body>) porque
-é essa a forma que a plataforma de Artifacts espera. Para o Chrome o
-fragmento também serve, mas embrulha-se num documento completo à mesma --
-custa nada e tira ambiguidade do modo de renderização.
+Os HTML são fragmentos (sem <!doctype>, <html> ou <body>) porque é essa a
+forma que a plataforma de Artifacts espera. Para o Chrome o fragmento também
+serve, mas embrulha-se num documento completo à mesma -- custa nada e tira
+ambiguidade do modo de renderização.
+
+Um ficheiro com o marcador <!--FONTES--> recebe o fonts.css inline neste
+passo; o case-study.html tem as fontes coladas lá dentro por razões
+históricas e passa intocado. Ver build-fonts.py.
 
 Requer o Chrome instalado e o `pypdf` (só para a verificação final).
-As fontes têm de estar já embutidas: ver build-fonts.py.
 """
 from __future__ import annotations
 
@@ -18,9 +23,13 @@ import sys
 from pathlib import Path
 
 AQUI = Path(__file__).parent
-FONTE = AQUI / "case-study.html"
-INTERMEDIO = AQUI / "case-study-print.html"
-PDF = AQUI / "case-study.pdf"
+FONTES_CSS = AQUI / "fonts.css"
+
+# nome -> (páginas esperadas, pasta das imagens)
+DOCUMENTOS = {
+    "case-study": (15, "png"),
+    "carrossel": (10, "png-carrossel"),
+}
 
 CHROMES = [
     r"C:\Program Files\Google\Chrome\Application\chrome.exe",
@@ -28,8 +37,6 @@ CHROMES = [
     "/usr/bin/google-chrome",
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
 ]
-
-PAGINAS_ESPERADAS = 15
 
 
 def achar_chrome() -> str:
@@ -40,10 +47,13 @@ def achar_chrome() -> str:
     raise SystemExit(1)
 
 
-def embrulhar() -> None:
-    frag = FONTE.read_text(encoding="utf-8")
+def embrulhar(fonte: Path, intermedio: Path) -> None:
+    frag = fonte.read_text(encoding="utf-8")
+    if "<!--FONTES-->" in frag:
+        # Sem isto o Chrome headless cai nas fontes do sistema em silêncio.
+        frag = frag.replace("<!--FONTES-->", FONTES_CSS.read_text(encoding="utf-8"))
     cabeca, _, corpo = frag.partition('<div class="deck">')
-    INTERMEDIO.write_text(
+    intermedio.write_text(
         '<!doctype html>\n<html lang="pt-PT">\n<head>\n<meta charset="utf-8">\n'
         f"{cabeca}</head>\n<body>\n"
         f'<div class="deck">{corpo}\n</body>\n</html>\n',
@@ -51,16 +61,16 @@ def embrulhar() -> None:
     )
 
 
-def render(chrome: str) -> None:
+def render(chrome: str, intermedio: Path, pdf: Path) -> None:
     subprocess.run(
         [chrome, "--headless=new", "--disable-gpu", "--no-pdf-header-footer",
          "--virtual-time-budget=20000",
-         f"--print-to-pdf={PDF}", INTERMEDIO.as_uri()],
+         f"--print-to-pdf={pdf}", intermedio.as_uri()],
         check=True, capture_output=True, timeout=300,
     )
 
 
-def verificar() -> int:
+def verificar(pdf: Path, esperadas: int) -> int:
     """As fontes embutidas saem como Type3 (o Chrome converte-as em
     procedimentos vetoriais). Uma contagem baixa de Type3 significa que o
     documento caiu nas fontes de recurso do sistema e a tipografia perdeu-se."""
@@ -70,7 +80,7 @@ def verificar() -> int:
         print("pypdf não instalado -- salta a verificação.")
         return 0
 
-    r = PdfReader(PDF)
+    r = PdfReader(pdf)
     t3 = sistema = 0
     for p in r.pages:
         recursos = p.get("/Resources")
@@ -81,12 +91,12 @@ def verificar() -> int:
             else:
                 sistema += 1
 
-    print(f"{PDF.name}: {len(r.pages)} páginas, {PDF.stat().st_size // 1024} KB")
+    print(f"{pdf.name}: {len(r.pages)} páginas, {pdf.stat().st_size // 1024} KB")
     print(f"  fontes embutidas (Type3): {t3} · fontes do sistema: {sistema}")
 
     erros = 0
-    if len(r.pages) != PAGINAS_ESPERADAS:
-        print(f"  ERRO: esperavam-se {PAGINAS_ESPERADAS} páginas.")
+    if len(r.pages) != esperadas:
+        print(f"  ERRO: esperavam-se {esperadas} páginas.")
         erros += 1
     if t3 < sistema:
         print("  ERRO: a maioria do texto não está a usar as fontes embutidas.")
@@ -94,7 +104,7 @@ def verificar() -> int:
     return erros
 
 
-def exportar_png(dpi: int = 144) -> None:
+def exportar_png(pdf: Path, pasta: str, dpi: int = 144) -> None:
     """Uma imagem por página, para quem quer publicar como carrossel de
     imagens em vez de documento PDF."""
     try:
@@ -102,20 +112,39 @@ def exportar_png(dpi: int = 144) -> None:
     except ImportError:
         print("pymupdf não instalado -- salta as imagens.")
         return
-    destino = AQUI / "png"
+    destino = AQUI / pasta
     destino.mkdir(exist_ok=True)
-    doc = pymupdf.open(PDF)
+    doc = pymupdf.open(pdf)
     for i, pagina in enumerate(doc, 1):
         pagina.get_pixmap(dpi=dpi).save(destino / f"pagina-{i:02d}.png")
-    print(f"  png/: {len(doc)} imagens a {dpi} dpi")
+    print(f"  {pasta}/: {len(doc)} imagens a {dpi} dpi")
+
+
+def gerar(chrome: str, nome: str) -> int:
+    esperadas, pasta = DOCUMENTOS[nome]
+    fonte = AQUI / f"{nome}.html"
+    intermedio = AQUI / f"{nome}-print.html"
+    pdf = AQUI / f"{nome}.pdf"
+
+    embrulhar(fonte, intermedio)
+    render(chrome, intermedio, pdf)
+    erros = verificar(pdf, esperadas)
+    exportar_png(pdf, pasta)
+    return erros
 
 
 def main() -> int:
+    pedidos = sys.argv[1:] or list(DOCUMENTOS)
+    for nome in pedidos:
+        if nome not in DOCUMENTOS:
+            print(f"Documento desconhecido: {nome}. "
+                  f"Conhecidos: {', '.join(DOCUMENTOS)}.", file=sys.stderr)
+            return 1
+
     chrome = achar_chrome()
-    embrulhar()
-    render(chrome)
-    erros = verificar()
-    exportar_png()
+    erros = 0
+    for nome in pedidos:
+        erros += gerar(chrome, nome)
     return erros
 
 

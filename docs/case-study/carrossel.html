@@ -1,0 +1,627 @@
+<title>A Otimização Rejeitada · carrossel</title>
+<style>
+<!--FONTES-->
+
+/* ═══════════════════════════════════════════════════════════════════
+   Carrossel para o feed do LinkedIn. Dez slides, o mesmo desenho do
+   case-study.html, mas com uma diferença que é a razão de este ficheiro
+   existir: a LinkedIn rasteriza cada página do PDF e serve-a a 1080px de
+   largura. Num telemóvel o cartão do post tem cerca de 390px, ou seja o
+   slide é reduzido ~2,8x. O corpo de texto do documento longo tem 15px,
+   o que dá 5px no feed. Ilegível.
+
+   Daqui sai a única regra rígida deste ficheiro:
+
+       PISO TIPOGRÁFICO
+       corpo .............. >= 32px   (>= 11px no telemóvel)
+       rótulos e legendas .. >= 26px   (>= 9px, e só em maiúsculas)
+       nada abaixo de 26px, em nenhum sítio, nem dentro de SVG
+
+   Quem acrescentar um slide: mede antes de publicar. Um número bonito a
+   180px ao lado de uma legenda a 18px não é um slide, é um slide com
+   metade do sentido cortado.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --paper: #FAFAF7;
+  --panel: #F1F1EA;
+  --ink: #15171B;
+  --ink-2: #494E56;
+  --ink-3: #8C9098;
+  --rule: #DEDED6;
+  --hair: #EAEAE3;
+  --accent: #A8331D;
+  --measured: #1F5C46;
+
+  --f-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --f-text: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --f-data: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --pw: 1080px;
+  --ph: 1350px;
+  --mx: 84px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #E6E6E0;
+  color: var(--ink);
+  font-family: var(--f-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.deck {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 24px 12px 64px;
+}
+
+.page {
+  position: relative;
+  width: var(--pw);
+  height: var(--ph);
+  background: var(--paper);
+  overflow: hidden;
+}
+
+/* A capa e o fecho são escuros de propósito: no feed, o primeiro slide
+   compete com dezenas de cartões brancos e é o único momento em que a
+   pessoa decide se faz swipe ou se continua a rolar. */
+.page.escura {
+  background: var(--ink);
+  color: var(--paper);
+}
+.page.escura .eyebrow { color: #E4906F; }
+.page.escura p { color: #BFC3C9; }
+.page.escura .idx,
+.page.escura .rodape { color: #6E747D; }
+.page.escura .regua { background: #33373D; }
+
+.body {
+  height: 100%;
+  padding: 82px var(--mx) 74px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ── tipografia ─────────────────────────────────────────────────── */
+
+.eyebrow {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 34px;
+  flex: 0 0 auto;
+}
+.eyebrow.plain { color: var(--ink-3); }
+
+h1 {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 104px;
+  line-height: 1.0;
+  letter-spacing: -.024em;
+  margin: 0;
+  text-wrap: balance;
+  flex: 0 0 auto;
+}
+
+h2 {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 64px;
+  line-height: 1.07;
+  letter-spacing: -.02em;
+  margin: 0 0 36px;
+  text-wrap: balance;
+  flex: 0 0 auto;
+}
+
+h3 {
+  font-family: var(--f-text);
+  font-weight: 600;
+  font-size: 34px;
+  line-height: 1.25;
+  margin: 0 0 12px;
+  flex: 0 0 auto;
+}
+
+p {
+  font-size: 34px;
+  line-height: 1.48;
+  color: var(--ink-2);
+  margin: 0 0 26px;
+  flex: 0 0 auto;
+}
+p.destaque { color: var(--ink); font-weight: 500; }
+p:last-of-type { margin-bottom: 0; }
+
+.pull {
+  font-family: var(--f-display);
+  font-size: 50px;
+  line-height: 1.22;
+  letter-spacing: -.014em;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+  flex: 0 0 auto;
+}
+.pull em { font-style: italic; color: var(--accent); }
+.page.escura .pull { color: var(--paper); }
+.page.escura .pull em { color: #E4906F; }
+
+.regua {
+  height: 1px;
+  background: var(--rule);
+  margin: 0 0 34px;
+  flex: 0 0 auto;
+}
+
+.grow { flex: 1 1 auto; min-height: 0; }   /* espaçador vazio, sempre */
+
+/* ── números ────────────────────────────────────────────────────── */
+
+.num {
+  font-family: var(--f-data);
+  font-weight: 500;
+  letter-spacing: -.04em;
+  line-height: .92;
+  color: var(--ink);
+  display: block;
+}
+.num.xl { font-size: 168px; }
+.num.lg { font-size: 108px; }
+.num.md { font-size: 74px; }
+.num.accent { color: var(--accent); }
+.num.medida { color: var(--measured); }
+.page.escura .num { color: var(--paper); }
+
+.rot {
+  font-size: 28px;
+  line-height: 1.35;
+  color: var(--ink-3);
+  margin-top: 12px;
+}
+
+.trio {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  flex: 0 0 auto;
+}
+
+.par {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  flex: 0 0 auto;
+}
+
+.cartao {
+  background: var(--panel);
+  padding: 34px 34px 30px;
+}
+
+/* ── tabelas e linhas de dados ──────────────────────────────────── */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  flex: 0 0 auto;
+}
+td {
+  font-size: 32px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--hair);
+  color: var(--ink);
+  vertical-align: baseline;
+}
+tr:last-child td { border-bottom: 0; }
+td.n {
+  font-family: var(--f-data);
+  font-weight: 500;
+  text-align: right;
+  width: 130px;
+  white-space: nowrap;
+}
+/* Quando o número é a primeira coluna encosta ao texto seguinte. */
+td.n:first-child { padding-right: 30px; }
+td.obs {
+  font-size: 28px;
+  color: var(--ink-3);
+  padding-left: 36px;
+}
+
+/* Antes e depois: rótulo, valor velho, valor novo, delta. */
+.linha {
+  display: grid;
+  grid-template-columns: 1fr 172px 150px 162px;
+  align-items: baseline;
+  gap: 24px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--hair);
+  flex: 0 0 auto;
+}
+.linha .lbl { font-size: 30px; color: var(--ink); }
+.linha .v {
+  font-family: var(--f-data);
+  font-size: 34px;
+  font-weight: 500;
+  text-align: right;
+  white-space: nowrap;
+}
+.linha .v.velho { color: var(--ink-3); }
+.linha .v.delta { font-size: 30px; }
+.linha .v.bom { color: var(--measured); }
+.linha .v.mau { color: var(--accent); }
+.cab {
+  display: grid;
+  grid-template-columns: 1fr 172px 150px 162px;
+  gap: 24px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--rule);
+  flex: 0 0 auto;
+}
+.cab span {
+  font-size: 26px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-align: right;
+}
+.cab span:first-child { text-align: left; }
+
+/* Barras do teste de latência. Larguras fixas em px: 67,89 s ocupa 640px,
+   e as outras duas medidas saem daí. 5,34 s dá 50px e o timeout de 60 s
+   cai aos 566px, que é onde fica a linha tracejada. */
+.grafico { position: relative; padding-top: 44px; flex: 0 0 auto; }
+.limite {
+  position: absolute;
+  left: 566px;
+  top: 40px;
+  bottom: 0;
+  border-left: 2px dashed var(--accent);
+}
+.limite-rot {
+  position: absolute;
+  left: 578px;
+  top: 0;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.barra { display: flex; align-items: center; gap: 24px; margin-bottom: 26px; flex: 0 0 auto; }
+.barra .leg { font-size: 28px; color: var(--ink-3); white-space: nowrap; }
+.barra .b { height: 46px; background: var(--ink); }
+.barra .b.estoura { background: var(--accent); }
+.barra .cap {
+  font-family: var(--f-data);
+  font-size: 32px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.barra .cap.estoura { color: var(--accent); }
+.barra-rot { font-size: 28px; color: var(--ink-3); margin-bottom: 10px; }
+
+.chip {
+  display: inline-block;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  background: var(--panel);
+  color: var(--ink-2);
+  /* Filho direto de um flex em coluna: sem isto esticava a largura toda. */
+  align-self: flex-start;
+}
+.chip.medido { background: #E3EDE8; color: var(--measured); }
+.chip.rejeitada { background: #F5E4E0; color: var(--accent); }
+
+/* ── rodapé ─────────────────────────────────────────────────────── */
+
+.fim {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex: 0 0 auto;
+  padding-top: 30px;
+}
+.idx {
+  font-family: var(--f-data);
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--ink-3);
+  letter-spacing: .04em;
+}
+.rodape {
+  font-size: 26px;
+  color: var(--ink-3);
+  text-align: right;
+}
+
+@media print {
+  body { background: var(--paper); }
+  .deck { display: block; padding: 0; gap: 0; margin: 0; font-size: 0; }
+  .page {
+    /* Mesma armadilha do case-study.html: a folha tem 1350px mas a área
+       utilizável do Chrome fica-se pelos ~1320. Ver docs/case-study/README.md. */
+    height: 1315px;
+    margin: 0;
+  }
+  .body { padding-bottom: 46px; }
+  .page + .page { break-before: page; page-break-before: always; }
+  /* A folha tem 1350px e a página 1315: sobram ~35px no fundo, pintados
+     pelo fundo do documento. Nas páginas de papel isso não se vê, nas
+     escuras aparecia uma tira branca. A sombra pinta essa tira, e não é
+     cortada pelo `overflow:hidden` da própria página. */
+  .page.escura { box-shadow: 0 46px 0 0 var(--ink); }
+}
+@page { size: 1080px 1350px; margin: 0; }
+</style>
+
+<div class="deck">
+
+<!-- ══ 01 · capa ═══════════════════════════════════════════════════ -->
+<section class="page escura">
+  <div class="body">
+    <p class="eyebrow">Agente LLM em produção · Apoio ao cliente</p>
+    <h1>A melhor otimização foi a que decidi <em style="font-style:italic">não fazer</em>.</h1>
+    <div class="grow"></div>
+    <p style="font-size:36px;max-width:44ch">Construí um agente que lê a caixa de apoio ao cliente de uma loja online e escreve rascunhos. Achei que a parte difícil ia ser a escrita.</p>
+    <p class="destaque" style="color:#E4906F;font-size:36px;margin-bottom:0">Foi o custo.</p>
+    <div class="grow"></div>
+    <div class="fim">
+      <span class="idx">01 / 10</span>
+      <span class="rodape">453 emails · 4 semanas · 3 set 2026</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 02 · isto é produção ════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow plain">O sistema</p>
+    <h2>Isto correu numa caixa a sério, não num playground.</h2>
+    <div class="regua"></div>
+    <div class="trio">
+      <div>
+        <span class="num lg">453</span>
+        <p class="rot">emails processados<br>em produção</p>
+      </div>
+      <div>
+        <span class="num lg medida">0</span>
+        <p class="rot">enviados sem<br>revisão humana</p>
+      </div>
+      <div>
+        <span class="num lg accent">66%</span>
+        <p class="rot">escalados para<br>uma pessoa</p>
+      </div>
+    </div>
+    <div class="grow"></div>
+    <p>Corre de dois em dois minutos. Para cada email escolhe entre rascunhar, escalar ou descartar. Tudo o que pode ser decidido em código é decidido antes de o modelo ver o caso: provar identidade, somar prazos, filtrar ruído.</p>
+    <p class="destaque">O modelo escreve. Uma pessoa envia. Sempre.</p>
+    <div class="grow"></div>
+    <div class="fim">
+      <span class="idx">02 / 10</span>
+      <span class="rodape">Loja, domínios e nomes omitidos</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 03 · a cache ════════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">Inversão 1 · Custo</p>
+    <h2>89% de acerto de cache parecia resolvido.</h2>
+    <p>O registo não guardava tokens nenhuns. A única fonte era a fatura mensal, agregada e impossível de atribuir a um email. Antes de otimizar seja o que for, instrumentei.</p>
+    <div class="regua"></div>
+    <div class="par">
+      <div class="cartao">
+        <span class="num md medida">$0,0107</span>
+        <p class="rot">ler o prefixo<br>que está em cache</p>
+      </div>
+      <div class="cartao">
+        <span class="num md accent">$0,2147</span>
+        <p class="rot">reescrevê-lo num<br>arranque a frio</p>
+      </div>
+    </div>
+    <div class="grow"></div>
+    <p class="pull">Escrever custa vinte vezes o que custa ler. Por isso <em>os 11% de falhas custavam 2,4× mais do que todos os acertos somados.</em></p>
+    <div class="grow"></div>
+    <p class="destaque">O problema nunca foi o prompt ser grande. Era o número de vezes que era reescrito.</p>
+    <div class="fim">
+      <span class="idx">03 / 10</span>
+      <span class="rodape">Medido · 3 set 2026</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 04 · a hipótese óbvia ═══════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow plain">A otimização óbvia</p>
+    <h2>Havia duas entradas de cache, não uma.</h2>
+    <p>O esquema de saída faz parte do prefixo em cache. Como as duas chamadas usavam esquemas diferentes, nunca partilhavam nada. Num arranque a frio, uma escalação reescrevia o prompt inteiro duas vezes.</p>
+    <div class="regua"></div>
+    <p class="destaque" style="font-size:36px">A hipótese era evidente: um esquema só, uma entrada só, e metade da escrita desaparecia.</p>
+    <div class="grow"></div>
+    <p class="pull">Podia ter feito o deploy nessa tarde. Toda a gente teria concordado que era uma melhoria.</p>
+    <div class="grow"></div>
+    <span class="chip">Antes de o fazer, testei</span>
+    <div class="fim">
+      <span class="idx">04 / 10</span>
+      <span class="rodape">Uma chamada real por configuração</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 05 · o teste ════════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">Medido · o teste custou $0,008</p>
+    <h2>Teria falhado em todas as chamadas.</h2>
+    <p class="barra-rot">Tempo de resposta, por número de propriedades no esquema de saída</p>
+    <div class="grafico">
+      <div class="limite"></div>
+      <span class="limite-rot">timeout · 60 s</span>
+      <div class="barra">
+        <div class="b" style="width:50px"></div>
+        <span class="cap">5,3 s</span>
+        <span class="leg">11 propriedades · o esquema de hoje</span>
+      </div>
+      <div class="barra" style="margin-bottom:0">
+        <div class="b estoura" style="width:640px"></div>
+        <span class="cap estoura">67,9 s</span>
+      </div>
+    </div>
+    <p class="barra-rot" style="margin-top:16px">17 propriedades · o esquema unificado que testei</p>
+    <div class="regua" style="margin-top:34px"></div>
+    <p>Não é uma degradação, é uma paragem. Acima do timeout falha sempre, não falha às vezes. E o custo não é linear, por isso aparar um campo ou dois também não salvava.</p>
+    <div class="grow"></div>
+    <p class="pull">Uma otimização rejeitada depois de um teste <em>é um bom resultado de engenharia.</em></p>
+    <div class="grow"></div>
+    <div class="fim">
+      <span class="idx">05 / 10</span>
+      <span class="rodape"><span class="chip rejeitada">Decisão rejeitada</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 06 · escalação ══════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">Inversão 2 · Escalação</p>
+    <h2>66% escalavam. Quis baixar o número.</h2>
+    <p>A leitura fácil é “há aqui muito por automatizar”. Passei um dia a ler os motivos, um a um.</p>
+    <table>
+      <tr><td>Ação sobre encomenda</td><td class="n">103</td><td class="obs">exige escrita na plataforma</td></tr>
+      <tr><td>Compromisso anterior</td><td class="n">95</td><td class="obs">estado que ninguém regista</td></tr>
+      <tr><td>Julgamento humano</td><td class="n">52</td><td class="obs">garantia, litígio, exceção</td></tr>
+      <tr><td>Outras seis categorias</td><td class="n">47</td><td class="obs">contexto, identidade, lacuna</td></tr>
+    </table>
+    <div class="grow"></div>
+    <p class="destaque">Testei a hipótese mais promissora, a dos reembolsos: <strong style="color:var(--accent);white-space:nowrap">2 de 9</strong> já estavam registados. Nos outros 7 estava mesmo por processar.</p>
+    <div class="grow"></div>
+    <p class="pull" style="font-size:46px">Baixar aquela percentagem exigia dar ao agente escrita na loja, <em>que é exatamente o guardrail que torna isto tolerável.</em></p>
+    <div class="fim">
+      <span class="idx">06 / 10</span>
+      <span class="rodape">Quase todos escalavam com razão</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 07 · guardrails ═════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow plain">Guardrails · 22 documentados, em quatro níveis</p>
+    <h2>Um guardrail de prompt contorna-se. Um de infraestrutura não.</h2>
+    <div class="regua"></div>
+    <div class="par">
+      <div>
+        <h3 style="font-family:var(--f-data);font-size:32px">Sem Mail.Send</h3>
+        <p class="rot" style="font-size:30px;color:var(--ink-2)">A aplicação nunca pediu a permissão de envio ao Microsoft Graph. Não é uma regra no código que alguém possa contornar. É uma permissão que não existe.</p>
+      </div>
+      <div>
+        <h3 style="font-family:var(--f-data);font-size:32px">Só leitura na loja</h3>
+        <p class="rot" style="font-size:30px;color:var(--ink-2)">O agente lê encomendas e não escreve nenhuma. Nada do que ele decida pode mover dinheiro ou alterar um envio.</p>
+      </div>
+    </div>
+    <div class="grow"></div>
+    <p class="pull">Mesmo que todos os outros falhem em simultâneo, o pior resultado possível é <em>um rascunho errado que uma pessoa lê e apaga.</em></p>
+    <div class="grow"></div>
+    <p class="destaque">Nenhum email sai. Nenhuma encomenda muda.</p>
+    <div class="fim">
+      <span class="idx">07 / 10</span>
+      <span class="rodape">Sete dos 22 nasceram de um incidente</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 08 · o ciclo ════════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">Como a base de conhecimento cresce</p>
+    <h2>Cada edição do lojista é um requisito por escrever.</h2>
+    <p>Quando ele muda um rascunho antes de o enviar, está a corrigir uma regra que eu não escrevi.</p>
+    <div class="regua"></div>
+    <table>
+      <tr><td class="n" style="width:90px;color:var(--ink-3)">01</td><td>Compara o gerado com o que foi mesmo enviado</td></tr>
+      <tr><td class="n" style="width:90px;color:var(--ink-3)">02</td><td>Agrupa pelo padrão, não pelo email</td></tr>
+      <tr><td class="n" style="width:90px;color:var(--ink-3)">03</td><td>Às 19h manda-lhe as três que mais importam</td></tr>
+      <tr><td class="n" style="width:90px;color:var(--ink-3)">04</td><td>Ele responde. Uma pessoa escreve a regra</td></tr>
+    </table>
+    <div class="grow"></div>
+    <p class="pull" style="font-size:46px;text-wrap:normal">Pergunta o <em>porquê</em>, nunca propõe a resposta. Uma concordância educada dá uma regra pior do que nenhuma regra.</p>
+    <div class="grow"></div>
+    <p>Na ronda de 3 de setembro: uma pergunta não gerou regra, outra alargou um gatilho, e a terceira revelou um defeito meu.</p>
+    <div class="fim">
+      <span class="idx">08 / 10</span>
+      <span class="rodape">Nem toda a divergência é conhecimento em falta</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 09 · a troca ════════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">Antes e depois · dois dias contra dois dias</p>
+    <h2>O custo caiu 63%. Não foi de graça.</h2>
+    <div class="cab">
+      <span>&nbsp;</span><span>30–31 ago</span><span>2–3 set</span><span>&nbsp;</span>
+    </div>
+    <div class="linha">
+      <span class="lbl">Tokens pagos por email</span>
+      <span class="v velho">19 998</span><span class="v">7 443</span><span class="v delta bom">−63%</span>
+    </div>
+    <div class="linha">
+      <span class="lbl">Chamadas ao modelo por email</span>
+      <span class="v velho">1,73</span><span class="v">1,00</span><span class="v delta bom">−42%</span>
+    </div>
+    <div class="linha">
+      <span class="lbl">Emails resolvidos com rascunho</span>
+      <span class="v velho">23%</span><span class="v">40%</span><span class="v delta bom">+17 p.p.</span>
+    </div>
+    <div class="linha">
+      <span class="lbl">Rascunhos enviados sem mudar uma palavra</span>
+      <span class="v velho">79%</span><span class="v">74%</span><span class="v delta mau">−5 p.p.</span>
+    </div>
+    <div class="grow"></div>
+    <p class="destaque">A última linha é o preço. O sistema passou a escrever rascunhos em casos que antes escalava, e atacar casos mais difíceis faz descer a percentagem que sai intacta.</p>
+    <p>Cinco pontos por dezassete parece-me boa troca. Mas é uma troca, e prefiro escrevê-la do que arredondá-la.</p>
+    <div class="grow"></div>
+    <p class="rot" style="font-size:28px">Não prova causalidade: entraram três alterações na mesma janela.</p>
+    <div class="fim">
+      <span class="idx">09 / 10</span>
+      <span class="rodape"><span class="chip medido">Medido</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 10 · fecho ══════════════════════════════════════════════════ -->
+<section class="page escura">
+  <div class="body">
+    <p class="eyebrow">O que fica</p>
+    <div class="grow"></div>
+    <p class="pull" style="font-size:60px">A métrica certa não era quantos casos automatizei. <em>Era quantos consegui automatizar com segurança.</em></p>
+    <div class="grow"></div>
+    <div class="regua"></div>
+    <p style="font-size:36px">Uma média pode esconder uma assimetria de preço, e só se vê depois de instrumentar. Uma hipótese rejeitada por medição é um resultado. E nem toda a automação por fazer é dívida.</p>
+    <p class="destaque" style="color:#E4906F;font-size:36px">Qual foi a otimização que mediste e decidiste não fazer?</p>
+    <div class="fim">
+      <span class="idx">10 / 10</span>
+      <span class="rodape">Case study completo: 15 páginas, nos Destaques</span>
+    </div>
+  </div>
+</section>
+
+</div>
