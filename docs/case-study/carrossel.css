@@ -1,0 +1,365 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Carrossel para o feed do LinkedIn. Dez slides, o mesmo desenho do
+   case-study.html, mas com uma diferença que é a razão de este ficheiro
+   existir: a LinkedIn rasteriza cada página do PDF e serve-a a 1080px de
+   largura. Num telemóvel o cartão do post tem cerca de 390px, ou seja o
+   slide é reduzido ~2,8x. O corpo de texto do documento longo tem 15px,
+   o que dá 5px no feed. Ilegível.
+
+   Daqui sai a única regra rígida deste ficheiro:
+
+       PISO TIPOGRÁFICO
+       corpo .............. >= 32px   (>= 11px no telemóvel)
+       rótulos e legendas .. >= 26px   (>= 9px, e só em maiúsculas)
+       nada abaixo de 26px, em nenhum sítio, nem dentro de SVG
+
+   Quem acrescentar um slide: mede antes de publicar. Um número bonito a
+   180px ao lado de uma legenda a 18px não é um slide, é um slide com
+   metade do sentido cortado.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --paper: #FAFAF7;
+  --panel: #F1F1EA;
+  --ink: #15171B;
+  --ink-2: #494E56;
+  --ink-3: #8C9098;
+  --rule: #DEDED6;
+  --hair: #EAEAE3;
+  --accent: #A8331D;
+  --measured: #1F5C46;
+
+  --f-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --f-text: "Archivo", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --f-data: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  --pw: 1080px;
+  --ph: 1350px;
+  --mx: 84px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #E6E6E0;
+  color: var(--ink);
+  font-family: var(--f-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.deck {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 24px 12px 64px;
+}
+
+.page {
+  position: relative;
+  width: var(--pw);
+  height: var(--ph);
+  background: var(--paper);
+  overflow: hidden;
+}
+
+/* A capa e o fecho são escuros de propósito: no feed, o primeiro slide
+   compete com dezenas de cartões brancos e é o único momento em que a
+   pessoa decide se faz swipe ou se continua a rolar. */
+.page.escura {
+  background: var(--ink);
+  color: var(--paper);
+}
+.page.escura .eyebrow { color: #E4906F; }
+.page.escura p { color: #BFC3C9; }
+.page.escura .idx,
+.page.escura .rodape { color: #6E747D; }
+.page.escura .regua { background: #33373D; }
+
+.body {
+  height: 100%;
+  padding: 82px var(--mx) 74px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ── tipografia ─────────────────────────────────────────────────── */
+
+.eyebrow {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 34px;
+  flex: 0 0 auto;
+}
+.eyebrow.plain { color: var(--ink-3); }
+
+h1 {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 104px;
+  line-height: 1.0;
+  letter-spacing: -.024em;
+  margin: 0;
+  text-wrap: balance;
+  flex: 0 0 auto;
+}
+
+h2 {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: 64px;
+  line-height: 1.07;
+  letter-spacing: -.02em;
+  margin: 0 0 36px;
+  text-wrap: balance;
+  flex: 0 0 auto;
+}
+
+h3 {
+  font-family: var(--f-text);
+  font-weight: 600;
+  font-size: 34px;
+  line-height: 1.25;
+  margin: 0 0 12px;
+  flex: 0 0 auto;
+}
+
+p {
+  font-size: 34px;
+  line-height: 1.48;
+  color: var(--ink-2);
+  margin: 0 0 26px;
+  flex: 0 0 auto;
+}
+p.destaque { color: var(--ink); font-weight: 500; }
+p:last-of-type { margin-bottom: 0; }
+
+.pull {
+  font-family: var(--f-display);
+  font-size: 50px;
+  line-height: 1.22;
+  letter-spacing: -.014em;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+  flex: 0 0 auto;
+}
+.pull em { font-style: italic; color: var(--accent); }
+.page.escura .pull { color: var(--paper); }
+.page.escura .pull em { color: #E4906F; }
+
+.regua {
+  height: 1px;
+  background: var(--rule);
+  margin: 0 0 34px;
+  flex: 0 0 auto;
+}
+
+.grow { flex: 1 1 auto; min-height: 0; }   /* espaçador vazio, sempre */
+
+/* ── números ────────────────────────────────────────────────────── */
+
+.num {
+  font-family: var(--f-data);
+  font-weight: 500;
+  letter-spacing: -.04em;
+  line-height: .92;
+  color: var(--ink);
+  display: block;
+}
+.num.xl { font-size: 168px; }
+.num.lg { font-size: 108px; }
+.num.md { font-size: 74px; }
+.num.accent { color: var(--accent); }
+.num.medida { color: var(--measured); }
+.page.escura .num { color: var(--paper); }
+
+.rot {
+  font-size: 28px;
+  line-height: 1.35;
+  color: var(--ink-3);
+  margin-top: 12px;
+}
+
+.trio {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 40px;
+  flex: 0 0 auto;
+}
+
+.par {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  flex: 0 0 auto;
+}
+
+.cartao {
+  background: var(--panel);
+  padding: 34px 34px 30px;
+}
+
+/* ── tabelas e linhas de dados ──────────────────────────────────── */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  flex: 0 0 auto;
+}
+td {
+  font-size: 32px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--hair);
+  color: var(--ink);
+  vertical-align: baseline;
+}
+tr:last-child td { border-bottom: 0; }
+td.n {
+  font-family: var(--f-data);
+  font-weight: 500;
+  text-align: right;
+  width: 130px;
+  white-space: nowrap;
+}
+/* Quando o número é a primeira coluna encosta ao texto seguinte. */
+td.n:first-child { padding-right: 30px; }
+td.obs {
+  font-size: 28px;
+  color: var(--ink-3);
+  padding-left: 36px;
+}
+
+/* Antes e depois: rótulo, valor velho, valor novo, delta. */
+.linha {
+  display: grid;
+  grid-template-columns: 1fr 172px 150px 162px;
+  align-items: baseline;
+  gap: 24px;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--hair);
+  flex: 0 0 auto;
+}
+.linha .lbl { font-size: 30px; color: var(--ink); }
+.linha .v {
+  font-family: var(--f-data);
+  font-size: 34px;
+  font-weight: 500;
+  text-align: right;
+  white-space: nowrap;
+}
+.linha .v.velho { color: var(--ink-3); }
+.linha .v.delta { font-size: 30px; }
+.linha .v.bom { color: var(--measured); }
+.linha .v.mau { color: var(--accent); }
+.cab {
+  display: grid;
+  grid-template-columns: 1fr 172px 150px 162px;
+  gap: 24px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--rule);
+  flex: 0 0 auto;
+}
+.cab span {
+  font-size: 26px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-align: right;
+}
+.cab span:first-child { text-align: left; }
+
+/* Barras do teste de latência. Larguras fixas em px: 67,89 s ocupa 640px,
+   e as outras duas medidas saem daí. 5,34 s dá 50px e o timeout de 60 s
+   cai aos 566px, que é onde fica a linha tracejada. */
+.grafico { position: relative; padding-top: 44px; flex: 0 0 auto; }
+.limite {
+  position: absolute;
+  left: 566px;
+  top: 40px;
+  bottom: 0;
+  border-left: 2px dashed var(--accent);
+}
+.limite-rot {
+  position: absolute;
+  left: 578px;
+  top: 0;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.barra { display: flex; align-items: center; gap: 24px; margin-bottom: 26px; flex: 0 0 auto; }
+.barra .leg { font-size: 28px; color: var(--ink-3); white-space: nowrap; }
+.barra .b { height: 46px; background: var(--ink); }
+.barra .b.estoura { background: var(--accent); }
+.barra .cap {
+  font-family: var(--f-data);
+  font-size: 32px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.barra .cap.estoura { color: var(--accent); }
+.barra-rot { font-size: 28px; color: var(--ink-3); margin-bottom: 10px; }
+
+.chip {
+  display: inline-block;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  background: var(--panel);
+  color: var(--ink-2);
+  /* Filho direto de um flex em coluna: sem isto esticava a largura toda. */
+  align-self: flex-start;
+}
+.chip.medido { background: #E3EDE8; color: var(--measured); }
+.chip.rejeitada { background: #F5E4E0; color: var(--accent); }
+
+/* ── rodapé ─────────────────────────────────────────────────────── */
+
+.fim {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex: 0 0 auto;
+  padding-top: 30px;
+}
+.idx {
+  font-family: var(--f-data);
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--ink-3);
+  letter-spacing: .04em;
+}
+.rodape {
+  font-size: 26px;
+  color: var(--ink-3);
+  text-align: right;
+}
+
+@media print {
+  body { background: var(--paper); }
+  .deck { display: block; padding: 0; gap: 0; margin: 0; font-size: 0; }
+  .page {
+    /* Mesma armadilha do case-study.html: a folha tem 1350px mas a área
+       utilizável do Chrome fica-se pelos ~1320. Ver docs/case-study/README.md. */
+    height: 1315px;
+    margin: 0;
+  }
+  .body { padding-bottom: 46px; }
+  .page + .page { break-before: page; page-break-before: always; }
+  /* A folha tem 1350px e a página 1315: sobram ~35px no fundo, pintados
+     pelo fundo do documento. Nas páginas de papel isso não se vê, nas
+     escuras aparecia uma tira branca. A sombra pinta essa tira, e não é
+     cortada pelo `overflow:hidden` da própria página. */
+  .page.escura { box-shadow: 0 46px 0 0 var(--ink); }
+}
+@page { size: 1080px 1350px; margin: 0; }

@@ -1,34 +1,39 @@
 #!/usr/bin/env python3
 """Gera os PDFs a partir do HTML.
 
-    python build.py                 gera os dois
+    python build.py                 gera todos
     python build.py case-study      só o documento longo, 15 páginas
-    python build.py carrossel       só o carrossel do feed, 10 páginas
+    python build.py carrossel       só o carrossel do feed, 10 slides
+    python build.py carrossel-en    o mesmo carrossel, em inglês
 
 Os HTML são fragmentos (sem <!doctype>, <html> ou <body>) porque é essa a
 forma que a plataforma de Artifacts espera. Para o Chrome o fragmento também
 serve, mas embrulha-se num documento completo à mesma -- custa nada e tira
 ambiguidade do modo de renderização.
 
-Um ficheiro com o marcador <!--FONTES--> recebe o fonts.css inline neste
-passo; o case-study.html tem as fontes coladas lá dentro por razões
-históricas e passa intocado. Ver build-fonts.py.
+Um marcador <!--INCLUIR: ficheiro.css--> é substituído pelo conteúdo desse
+ficheiro neste passo. É assim que as fontes e a folha de estilos partilhada
+entram nos dois carrosséis sem ficarem duplicadas. O case-study.html tem as
+fontes coladas lá dentro por razões históricas e passa intocado.
+Ver build-fonts.py.
 
 Requer o Chrome instalado e o `pypdf` (só para a verificação final).
 """
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 AQUI = Path(__file__).parent
-FONTES_CSS = AQUI / "fonts.css"
+INCLUIR = re.compile(r"<!--INCLUIR:\s*([\w.\-]+)\s*-->")
 
-# nome -> (páginas esperadas, pasta das imagens)
+# nome -> (páginas esperadas, pasta das imagens, idioma)
 DOCUMENTOS = {
-    "case-study": (15, "png"),
-    "carrossel": (10, "png-carrossel"),
+    "case-study": (15, "png", "pt-PT"),
+    "carrossel": (10, "png-carrossel", "pt-PT"),
+    "carrossel-en": (10, "png-carrossel-en", "en"),
 }
 
 CHROMES = [
@@ -47,14 +52,15 @@ def achar_chrome() -> str:
     raise SystemExit(1)
 
 
-def embrulhar(fonte: Path, intermedio: Path) -> None:
-    frag = fonte.read_text(encoding="utf-8")
-    if "<!--FONTES-->" in frag:
-        # Sem isto o Chrome headless cai nas fontes do sistema em silêncio.
-        frag = frag.replace("<!--FONTES-->", FONTES_CSS.read_text(encoding="utf-8"))
+def embrulhar(fonte: Path, intermedio: Path, idioma: str) -> None:
+    # Sem as fontes embutidas o Chrome headless cai nas do sistema, em silêncio.
+    frag = INCLUIR.sub(
+        lambda m: (AQUI / m.group(1)).read_text(encoding="utf-8"),
+        fonte.read_text(encoding="utf-8"),
+    )
     cabeca, _, corpo = frag.partition('<div class="deck">')
     intermedio.write_text(
-        '<!doctype html>\n<html lang="pt-PT">\n<head>\n<meta charset="utf-8">\n'
+        f'<!doctype html>\n<html lang="{idioma}">\n<head>\n<meta charset="utf-8">\n'
         f"{cabeca}</head>\n<body>\n"
         f'<div class="deck">{corpo}\n</body>\n</html>\n',
         encoding="utf-8",
@@ -121,12 +127,12 @@ def exportar_png(pdf: Path, pasta: str, dpi: int = 144) -> None:
 
 
 def gerar(chrome: str, nome: str) -> int:
-    esperadas, pasta = DOCUMENTOS[nome]
+    esperadas, pasta, idioma = DOCUMENTOS[nome]
     fonte = AQUI / f"{nome}.html"
     intermedio = AQUI / f"{nome}-print.html"
     pdf = AQUI / f"{nome}.pdf"
 
-    embrulhar(fonte, intermedio)
+    embrulhar(fonte, intermedio, idioma)
     render(chrome, intermedio, pdf)
     erros = verificar(pdf, esperadas)
     exportar_png(pdf, pasta)

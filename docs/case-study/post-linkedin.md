@@ -15,8 +15,13 @@ tags:
 
 | Ficheiro | Onde vai | Porquê |
 |---|---|---|
-| `carrossel.pdf` (10 slides) | **Post de documento no feed** | É o que é legível no telemóvel |
+| `carrossel.pdf` ou `carrossel-en.pdf` | **Post de documento no feed** | É o que é legível no telemóvel |
 | `case-study.pdf` (15 páginas) | **Destaques do perfil** | É para quem clica no perfil depois |
+
+O carrossel existe em português e em inglês. Escolhe-se **um**, não se publicam
+os dois: dois posts com o mesmo conteúdo competem um com o outro na mesma rede
+e partem o sinal da primeira hora ao meio. A escolha e o raciocínio estão em
+[Que idioma escolher](#que-idioma-escolher), no fim.
 
 A razão de existirem dois está no cabeçalho do `carrossel.html`: a LinkedIn
 rasteriza cada página do PDF e serve-a a 1080px, e num telemóvel o cartão do
@@ -148,3 +153,83 @@ aritmética, triagem e validação vivem todas em código determinístico.
 **"Onde está a versão completa?"**
 São 15 páginas, com os incidentes de produção e o que cada um mudou. Está nos
 Destaques do meu perfil.
+
+---
+
+## Versão inglesa do post
+
+Para acompanhar o `carrossel-en.pdf`.
+
+> The best optimization I made this month was one I decided not to ship. 👇
+>
+> I built an agent that reads an online store's customer support inbox and
+> writes reply drafts. It sends nothing: the application never requested send
+> permission.
+>
+> I thought the hard part would be the quality of the writing. It was the cost.
+>
+> After instrumenting it, the breakdown was counterintuitive: cache **writes**
+> were 52% of the bill. An 89% hit rate looked great, but writing costs a
+> multiple of what reading costs, so the 11% of misses cost 2.4× more than
+> every hit combined.
+>
+> That led me to something I did not know: there were two cache entries, not
+> one. Unifying them would cut half the writes. Obvious.
+>
+> Before doing it, I tested. It cost $0.008 and showed the change took each
+> call from 5.3s to 67.9s, past the timeout. It would have failed on **every**
+> call. It would have stopped support entirely.
+>
+> Second lesson from the same project: 66% of emails escalated to a person, and
+> I wanted that number down. I read the reasons one by one: almost all of them
+> were right. Getting it down meant giving the agent write permissions that
+> would make it unsafe.
+>
+> The right metric was never how many cases I automated. It was how many I
+> could automate safely.
+>
+> Ten slides attached, with the numbers and the mistakes.
+>
+> #AIEngineering #LLM #SystemDesign #Python
+
+### Comment answers, in English
+
+**"Why not use an agent framework?"**
+Because one person has to maintain this. Four runtime dependencies and zero
+test dependencies. Every absence (web framework, ORM, message queue,
+containers) is justified in the repository.
+
+**"Why doesn't the model send the emails?"**
+The application never requested send permission from Microsoft Graph. It is not
+a rule in the code that someone can work around: it is a permission that does
+not exist. The worst outcome of any failure is a wrong draft that a person
+reads and deletes.
+
+**"Isn't 66% escalation bad?"**
+That question took me a full day. I read the reasons one by one: they ask for
+writes to systems the agent does not have, and should not have, access to, or
+they ask about state that only exists in someone's head. I tested the most
+promising hypothesis against real data and only 2 of 9 cases could have been
+resolved on their own.
+
+**"Which model?"**
+Claude Sonnet, with schema-constrained output and prompt caching. The
+interesting part is not the model, it is what stays outside it: identity,
+arithmetic, triage and validation all live in deterministic code.
+
+---
+
+## Que idioma escolher
+
+`Decisão:` **português**, a não ser que o objetivo mude.
+
+O primeiro teste do algoritmo é feito em 2 a 5% da rede de quem publica, e essa
+rede é portuguesa. Um post em inglês para uma rede lusófona gera sinais fracos
+na hora que decide tudo, e a partir daí não recupera. O ficheiro em inglês
+existe para quando a rede justificar: uma audiência internacional já
+construída, uma candidatura concreta a uma empresa que trabalha em inglês, ou
+uma republicação passados uns meses noutro contexto.
+
+O documento longo dos Destaques está em português. Se um dia o post passar a
+inglês, esse também tem de passar, senão manda-se alguém de uma capa inglesa
+para quinze páginas que não lê.

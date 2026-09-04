@@ -1,0 +1,262 @@
+<title>The Optimization I Rejected · carousel</title>
+<style>
+<!--INCLUIR: fonts.css-->
+<!--INCLUIR: carrossel.css-->
+</style>
+
+<div class="deck">
+
+<!-- ══ 01 · capa ═══════════════════════════════════════════════════ -->
+<section class="page escura">
+  <div class="body">
+    <p class="eyebrow">LLM agent in production · Customer support</p>
+    <h1>The best optimization was the one I decided <em style="font-style:italic">not to ship</em>.</h1>
+    <div class="grow"></div>
+    <p style="font-size:36px;max-width:44ch">I built an agent that reads a small online store’s support inbox and writes reply drafts. I thought the hard part would be the writing.</p>
+    <p class="destaque" style="color:#E4906F;font-size:36px;margin-bottom:0">It was the cost.</p>
+    <div class="grow"></div>
+    <div class="fim">
+      <span class="idx">01 / 10</span>
+      <span class="rodape">453 emails · 4 weeks · 3 Sep 2026</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 02 · isto é produção ════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow plain">The system</p>
+    <h2>This ran on a real inbox, not in a playground.</h2>
+    <div class="regua"></div>
+    <div class="trio">
+      <div>
+        <span class="num lg">453</span>
+        <p class="rot">emails processed<br>in production</p>
+      </div>
+      <div>
+        <span class="num lg medida">0</span>
+        <p class="rot">sent without<br>human review</p>
+      </div>
+      <div>
+        <span class="num lg accent">66%</span>
+        <p class="rot">escalated to<br>a person</p>
+      </div>
+    </div>
+    <div class="grow"></div>
+    <p>It runs every two minutes. For each email it picks one of three actions: draft, escalate, discard. Everything that can be settled in code is settled before the model sees the case: proving identity, adding up deadlines, filtering noise.</p>
+    <p class="destaque">The model writes. A person sends. Always.</p>
+    <div class="grow"></div>
+    <div class="fim">
+      <span class="idx">02 / 10</span>
+      <span class="rodape">Store, domains and names withheld</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 03 · a cache ════════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">Reversal 1 · Cost</p>
+    <h2>An 89% cache hit rate looked solved.</h2>
+    <p>The log stored no token counts at all. The only source was the monthly invoice, aggregated and impossible to attribute to a single email. Before optimizing anything, I instrumented it.</p>
+    <div class="regua"></div>
+    <div class="par">
+      <div class="cartao">
+        <span class="num md medida">$0.0107</span>
+        <p class="rot">reading the prefix<br>that is already cached</p>
+      </div>
+      <div class="cartao">
+        <span class="num md accent">$0.2147</span>
+        <p class="rot">rewriting it on<br>a cold start</p>
+      </div>
+    </div>
+    <div class="grow"></div>
+    <p class="pull">Writing costs twenty times what reading costs. Which is why <em>the 11% of misses cost 2.4× more than every hit combined.</em></p>
+    <div class="grow"></div>
+    <p class="destaque">The problem was never that the prompt was large. It was how often it got rewritten.</p>
+    <div class="fim">
+      <span class="idx">03 / 10</span>
+      <span class="rodape">Measured · 3 Sep 2026</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 04 · a hipótese óbvia ═══════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow plain">The obvious optimization</p>
+    <h2>There were two cache entries, not one.</h2>
+    <p>The output schema is part of the cached prefix. Because the two calls used different schemas, they never shared anything. On a cold start, one escalation rewrote the entire prompt twice.</p>
+    <div class="regua"></div>
+    <p class="destaque" style="font-size:36px">The hypothesis was obvious: one schema, one entry, and half the writes disappear.</p>
+    <div class="grow"></div>
+    <p class="pull">I could have shipped it that afternoon. Everyone would have agreed it was an improvement.</p>
+    <div class="grow"></div>
+    <span class="chip">I tested it first</span>
+    <div class="fim">
+      <span class="idx">04 / 10</span>
+      <span class="rodape">One real call per configuration</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 05 · o teste ════════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">Measured · the test cost $0.008</p>
+    <h2>It would have failed on every call.</h2>
+    <p class="barra-rot">Response time, by number of properties in the output schema</p>
+    <div class="grafico">
+      <div class="limite"></div>
+      <span class="limite-rot">timeout · 60 s</span>
+      <div class="barra">
+        <div class="b" style="width:50px"></div>
+        <span class="cap">5.3 s</span>
+        <span class="leg">11 properties · today’s schema</span>
+      </div>
+      <div class="barra" style="margin-bottom:0">
+        <div class="b estoura" style="width:640px"></div>
+        <span class="cap estoura">67.9 s</span>
+      </div>
+    </div>
+    <p class="barra-rot" style="margin-top:16px">17 properties · the unified schema I tested</p>
+    <div class="regua" style="margin-top:34px"></div>
+    <p>This is not degradation, it is a stop. Past the timeout it fails every time, not some of the time. And the cost is not linear, so trimming a field or two would not have saved it either.</p>
+    <div class="grow"></div>
+    <p class="pull">An optimization rejected after a test <em>is a good engineering outcome.</em></p>
+    <div class="grow"></div>
+    <div class="fim">
+      <span class="idx">05 / 10</span>
+      <span class="rodape"><span class="chip rejeitada">Rejected decision</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 06 · escalação ══════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">Reversal 2 · Escalation</p>
+    <h2>66% escalated. I wanted that number down.</h2>
+    <p>The easy read is “there is a lot left to automate here”. I spent a day reading the reasons, one by one.</p>
+    <table>
+      <tr><td>Action on an order</td><td class="n">103</td><td class="obs">needs write access</td></tr>
+      <tr><td>Earlier commitment</td><td class="n">95</td><td class="obs">state no system records</td></tr>
+      <tr><td>Human judgment</td><td class="n">52</td><td class="obs">warranty, dispute, exception</td></tr>
+      <tr><td>Six other categories</td><td class="n">47</td><td class="obs">context, identity, gap</td></tr>
+    </table>
+    <div class="grow"></div>
+    <p class="destaque">I tested the most promising hypothesis, the refunds: <strong style="color:var(--accent);white-space:nowrap">2 of 9</strong> were already recorded. The other 7 really were unprocessed.</p>
+    <div class="grow"></div>
+    <p class="pull" style="font-size:46px">Getting that number down meant giving the agent write access to the store, <em>which is exactly the guardrail that makes this tolerable.</em></p>
+    <div class="fim">
+      <span class="idx">06 / 10</span>
+      <span class="rodape">Almost all of them escalated for good reason</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 07 · guardrails ═════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow plain">Guardrails · 22 documented, across four layers</p>
+    <h2>A prompt guardrail can be talked around. An infrastructure one cannot.</h2>
+    <div class="regua"></div>
+    <div class="par">
+      <div>
+        <h3 style="font-family:var(--f-data);font-size:32px">No Mail.Send</h3>
+        <p class="rot" style="font-size:30px;color:var(--ink-2)">The application never requested send permission from Microsoft Graph. It is not a rule in the code that someone can work around. It is a permission that does not exist.</p>
+      </div>
+      <div>
+        <h3 style="font-family:var(--f-data);font-size:32px">Read-only store</h3>
+        <p class="rot" style="font-size:30px;color:var(--ink-2)">The agent reads orders and writes none. Nothing it decides can move money or change a shipment.</p>
+      </div>
+    </div>
+    <div class="grow"></div>
+    <p class="pull">Even if every other one fails at the same time, the worst possible outcome is <em>a wrong draft that a person reads and deletes.</em></p>
+    <div class="grow"></div>
+    <p class="destaque">No email goes out. No order changes.</p>
+    <div class="fim">
+      <span class="idx">07 / 10</span>
+      <span class="rodape">Seven of the 22 came from an incident</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 08 · o ciclo ════════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">How the knowledge base grows</p>
+    <h2>Every edit the owner makes is an unwritten requirement.</h2>
+    <p>When he changes a draft before sending it, he is correcting a rule I never wrote.</p>
+    <div class="regua"></div>
+    <table>
+      <tr><td class="n" style="width:90px;color:var(--ink-3)">01</td><td>Compare what was generated with what was actually sent</td></tr>
+      <tr><td class="n" style="width:90px;color:var(--ink-3)">02</td><td>Group by pattern, not by email</td></tr>
+      <tr><td class="n" style="width:90px;color:var(--ink-3)">03</td><td>At 7pm, send him the three that matter most</td></tr>
+      <tr><td class="n" style="width:90px;color:var(--ink-3)">04</td><td>He answers. A person writes the rule</td></tr>
+    </table>
+    <div class="grow"></div>
+    <p class="pull" style="font-size:46px;text-wrap:normal">Ask <em>why</em>, never propose the answer. A polite yes gives you a worse rule than no rule at all.</p>
+    <div class="grow"></div>
+    <p>In the 3 September round: one question produced no rule, one widened a trigger, and one exposed a defect of mine.</p>
+    <div class="fim">
+      <span class="idx">08 / 10</span>
+      <span class="rodape">Not every divergence is missing knowledge</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 09 · a troca ════════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">Before and after · two days against two days</p>
+    <h2>Cost fell 63%. It was not free.</h2>
+    <div class="cab">
+      <span>&nbsp;</span><span>Aug 30–31</span><span>Sep 2–3</span><span>&nbsp;</span>
+    </div>
+    <div class="linha">
+      <span class="lbl">Paid tokens per email</span>
+      <span class="v velho">19,998</span><span class="v">7,443</span><span class="v delta bom">−63%</span>
+    </div>
+    <div class="linha">
+      <span class="lbl">Model calls per email</span>
+      <span class="v velho">1.73</span><span class="v">1.00</span><span class="v delta bom">−42%</span>
+    </div>
+    <div class="linha">
+      <span class="lbl">Emails resolved with a draft</span>
+      <span class="v velho">23%</span><span class="v">40%</span><span class="v delta bom">+17 pts</span>
+    </div>
+    <div class="linha">
+      <span class="lbl">Drafts sent without a word changed</span>
+      <span class="v velho">79%</span><span class="v">74%</span><span class="v delta mau">−5 pts</span>
+    </div>
+    <div class="grow"></div>
+    <p class="destaque">The last row is the price. The system started drafting cases it used to escalate, and taking on harder cases pushes down the share that goes out untouched.</p>
+    <p>Five points for seventeen looks like a good trade to me. But it is a trade, and I would rather write it down than round it off.</p>
+    <div class="grow"></div>
+    <p class="rot" style="font-size:28px">This does not prove causation: three changes landed in the same window.</p>
+    <div class="fim">
+      <span class="idx">09 / 10</span>
+      <span class="rodape"><span class="chip medido">Measured</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 10 · fecho ══════════════════════════════════════════════════ -->
+<section class="page escura">
+  <div class="body">
+    <p class="eyebrow">What stays</p>
+    <div class="grow"></div>
+    <p class="pull" style="font-size:60px">The right metric was never how many cases I automated. <em>It was how many I could automate safely.</em></p>
+    <div class="grow"></div>
+    <div class="regua"></div>
+    <p style="font-size:36px">An average can hide an asymmetry in price, and you only see it after instrumenting. A hypothesis rejected by measurement is a result. And not all the automation left undone is debt.</p>
+    <p class="destaque" style="color:#E4906F;font-size:36px">What is the optimization you measured and decided not to ship?</p>
+    <div class="fim">
+      <span class="idx">10 / 10</span>
+      <span class="rodape">Full case study: 15 pages, in Featured</span>
+    </div>
+  </div>
+</section>
+
+</div>

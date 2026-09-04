@@ -22,15 +22,22 @@ em ecrã inteiro.
 | Ficheiro | O que é |
 |---|---|
 | `case-study.html` | **Fonte do documento longo.** 15 páginas, corpo a 15px |
-| `carrossel.html` | **Fonte do carrossel do feed.** 10 slides, corpo a 34px |
+| `carrossel.html` | **Fonte do carrossel**, em português. 10 slides, corpo a 34px |
+| `carrossel-en.html` | O mesmo carrossel em inglês. Só muda o conteúdo |
+| `carrossel.css` | A folha de estilos partilhada pelos dois carrosséis |
 | `fonts.css` | As três famílias em base64. Gerado, não se edita à mão |
 | `build-fonts.py` | Descarrega as fontes do Google e escreve o `fonts.css` |
 | `build.py` | Gera os PDFs e as imagens |
 | `*-print.html` | Intermediários, criados pelo `build.py`. Não editar |
 | `case-study.pdf` | 15 páginas, 1080×1350. Vai para os Destaques do perfil |
-| `carrossel.pdf` | 10 slides, 1080×1350. É este que vai ao feed |
-| `png/`, `png-carrossel/` | Uma imagem por página a 144 dpi |
+| `carrossel.pdf`, `carrossel-en.pdf` | 10 slides. É um destes que vai ao feed |
+| `png/`, `png-carrossel/`, `png-carrossel-en/` | Uma imagem por página a 144 dpi |
 | `post-linkedin.md` | O texto, a ordem de publicação e as regras do feed |
+
+O desenho dos dois carrosséis vive todo no `carrossel.css`, e os `.html` só
+trazem o conteúdo. Uma alteração de estilo aplica-se aos dois de uma vez: se
+alguém a fizer só num, é porque copiou o CSS de volta para dentro do ficheiro,
+e aí voltam a divergir.
 
 > [!IMPORTANT] O carrossel tem um piso tipográfico
 > Corpo ≥ 32px, rótulos ≥ 26px, nada abaixo de 26px em sítio nenhum. Abaixo
@@ -44,8 +51,9 @@ em ecrã inteiro.
 python docs/case-study/build.py
 ```
 
-Sem argumentos gera os dois. `build.py carrossel` ou `build.py case-study`
-gera só um.
+Sem argumentos gera todos. `build.py carrossel`, `build.py carrossel-en` ou
+`build.py case-study` gera só o que se pedir. Cada documento traz o número de
+páginas esperado, a pasta das imagens e o idioma na tabela `DOCUMENTOS`.
 
 Precisa do Chrome instalado. O `pypdf` e o `pymupdf` são opcionais — sem eles o
 PDF sai na mesma, mas salta-se a verificação e as imagens.
@@ -57,10 +65,10 @@ os pesos usados:
 python docs/case-study/build-fonts.py
 ```
 
-O `carrossel.html` tem um marcador `<!--FONTES-->` e o `build.py` cola lá o
-`fonts.css` sozinho. O `case-study.html` tem as fontes coladas lá dentro por
-razões históricas: nesse é preciso voltar a colá-las à mão no primeiro bloco
-`<style>`.
+Os carrosséis trazem marcadores `<!--INCLUIR: ficheiro.css-->` e o `build.py`
+cola lá o conteúdo sozinho. O `case-study.html` tem as fontes coladas lá dentro
+por razões históricas: nesse é preciso voltar a colá-las à mão no primeiro
+bloco `<style>`.
 
 ## Três coisas que partem isto
 
