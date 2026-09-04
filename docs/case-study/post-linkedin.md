@@ -66,7 +66,7 @@ Para quem prefere que o documento faça o trabalho todo.
 > · A otimização óbvia teria parado o atendimento. $0,008 para descobrir
 > · 66% dos emails escalavam para uma pessoa, e quase todos com razão
 >
-> 14 páginas em anexo, com os números e os erros.
+> 15 páginas em anexo, com os números e os erros.
 >
 > #AIEngineering #LLM #SystemDesign
 
