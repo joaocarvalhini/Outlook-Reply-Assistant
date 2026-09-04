@@ -205,6 +205,49 @@ p:last-of-type { margin-bottom: 0; }
   padding: 34px 34px 30px;
 }
 
+/* Um exemplo destacado do resto da página. O .cartao lá dentro inverte-se
+   para a cor do papel, senão o painel e os cartões ficam da mesma cor. */
+.painel {
+  background: var(--panel);
+  padding: 34px 36px 36px;
+  flex: 0 0 auto;
+}
+.painel .cartao { background: var(--paper); }
+
+/* A regra comum a que os dois ramos de uma bifurcação obedecem. */
+.faixa {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  padding: 18px;
+  text-align: center;
+  font-size: 30px;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+/* Os quatro níveis de confiança da correspondência de encomenda. */
+.niveis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  flex: 0 0 auto;
+}
+.nivel {
+  font-family: var(--f-data);
+  font-size: 34px;
+  font-weight: 500;
+  text-align: center;
+  padding: 24px 8px;
+  border: 1px solid var(--rule);
+  color: var(--ink-3);
+}
+.nivel.ok { color: var(--measured); border-color: var(--measured); }
+.nivel.excl {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: #F5E4E0;
+}
+
 /* ── tabelas e linhas de dados ──────────────────────────────────── */
 
 table {

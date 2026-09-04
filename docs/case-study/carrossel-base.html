@@ -1,0 +1,250 @@
+<title>O Que a Loja Sabe · carrossel</title>
+<style>
+<!--INCLUIR: fonts.css-->
+<!--INCLUIR: carrossel.css-->
+</style>
+
+<div class="deck">
+
+<!-- ══ 01 · capa ═══════════════════════════════════════════════════ -->
+<section class="page escura">
+  <div class="body">
+    <p class="eyebrow">Agente LLM em produção · Apoio ao cliente</p>
+    <h1>A parte difícil<br>não foi o modelo.<br>Foi escrever<br><em style="font-style:italic">o que a loja sabe</em>.</h1>
+    <div class="grow"></div>
+    <p style="font-size:36px;max-width:44ch">Construí um agente que lê a caixa de apoio ao cliente de uma loja online e escreve rascunhos. Ligar o modelo à caixa demorou dias.</p>
+    <p class="destaque" style="color:#E4906F;font-size:36px;margin-bottom:0">Escrever as regras do negócio demorou semanas.</p>
+    <div class="grow"></div>
+    <div class="fim">
+      <span class="idx">01 / 10</span>
+      <span class="rodape">453 emails · 4 semanas · 3 set 2026</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 02 · a única fonte ══════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow plain">A única fonte</p>
+    <h2>O modelo só pode citar 1 088 linhas. Mais nada.</h2>
+    <div class="regua"></div>
+    <div class="trio">
+      <div>
+        <span class="num lg">1088</span>
+        <p class="rot">linhas de base<br>de conhecimento</p>
+      </div>
+      <div>
+        <span class="num lg">7</span>
+        <p class="rot">ficheiros, um<br>por assunto</p>
+      </div>
+      <div>
+        <span class="num lg medida">49</span>
+        <p class="rot">regras confirmadas<br>pelo lojista</p>
+      </div>
+    </div>
+    <div class="grow"></div>
+    <p>Não inventa políticas, não procura na internet, não deduz por analogia. O que não estiver escrito ali não existe para ele, e o caso escala para uma pessoa.</p>
+    <p class="destaque">Escrever aquilo foi a parte do projeto que mais tempo me consumiu, e a que menos se parece com programação.</p>
+    <div class="grow"></div>
+    <div class="fim">
+      <span class="idx">02 / 10</span>
+      <span class="rodape">Loja, domínios e nomes omitidos</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 03 · uma pergunta simples ═══════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">O problema que não era de IA</p>
+    <h2>Uma pergunta simples não é uma regra simples.</h2>
+    <p>A base tem a resposta. Só que ela depende de uma coisa que o cliente quase nunca escreve no email.</p>
+    <div class="painel">
+      <p class="eyebrow plain" style="margin-bottom:14px">Pergunta do cliente</p>
+      <p style="font-family:var(--f-display);font-size:44px;color:var(--ink);margin:0 0 26px;line-height:1.2">“Quem paga o envio da devolução?”</p>
+      <div class="faixa">A loja não emite etiqueta pré-paga</div>
+      <div class="par" style="gap:20px">
+        <div class="cartao" style="padding:24px 26px">
+          <p class="rot" style="margin:0 0 10px">arrependimento</p>
+          <p class="destaque" style="margin:0;font-size:34px">o cliente paga</p>
+        </div>
+        <div class="cartao" style="padding:24px 26px;border-left:4px solid var(--accent)">
+          <p class="rot" style="margin:0 0 10px;color:var(--accent)">defeito confirmado</p>
+          <p class="destaque" style="margin:0;font-size:34px">a loja assume</p>
+        </div>
+      </div>
+    </div>
+    <div class="grow"></div>
+    <p class="destaque">E no segundo caso não é preciso devolver o artigo antigo primeiro, o que muda a resposta inteira.</p>
+    <div class="fim">
+      <span class="idx">03 / 10</span>
+      <span class="rodape">Duas regras verdadeiras sobre o mesmo assunto</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 04 · o custo da ambiguidade ═════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">O que a ambiguidade custa</p>
+    <h2>As duas contradizem-se lidas fora de contexto.</h2>
+    <p>Tiveram de ficar explicitamente ligadas uma à outra, cada uma a apontar para a outra, para o modelo não aplicar a errada com confiança.</p>
+    <div class="regua"></div>
+    <p class="pull">Uma base ambígua não produz respostas erradas. <em>Produz escalações a mais</em>, porque o agente é instruído a escalar na dúvida.</p>
+    <div class="grow"></div>
+    <p class="destaque">O custo da ambiguidade aparece na fatura e na carga de trabalho de quem responde. Não aparece na qualidade, que é onde toda a gente o vai procurar.</p>
+    <div class="grow"></div>
+    <div class="fim">
+      <span class="idx">04 / 10</span>
+      <span class="rodape">Um empate mal escrito é caro, não é errado</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 05 · o ciclo ════════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">Como a base cresce</p>
+    <h2>Cada edição do lojista é um requisito por escrever.</h2>
+    <p>Quando ele muda um rascunho antes de o enviar, está a corrigir uma regra que eu não escrevi.</p>
+    <div class="regua"></div>
+    <table>
+      <tr><td class="n" style="width:90px;color:var(--ink-3)">01</td><td>Compara o gerado com o que foi mesmo enviado</td></tr>
+      <tr><td class="n" style="width:90px;color:var(--ink-3)">02</td><td>Agrupa pelo padrão, não pelo email</td></tr>
+      <tr><td class="n" style="width:90px;color:var(--ink-3)">03</td><td>Às 19h o sistema manda-lhe três, no Discord</td></tr>
+      <tr><td class="n" style="width:90px;color:var(--ink-3)">04</td><td>Ele responde. Uma pessoa escreve a regra</td></tr>
+    </table>
+    <div class="grow"></div>
+    <p class="pull" style="font-size:46px;text-wrap:normal">Pergunta o <em>porquê</em>, nunca propõe a resposta. Uma concordância educada dá uma regra pior do que nenhuma regra.</p>
+    <div class="grow"></div>
+    <p>Na ronda de 3 de setembro: uma pergunta não gerou regra, outra alargou um gatilho, e a terceira revelou um defeito meu.</p>
+    <div class="fim">
+      <span class="idx">05 / 10</span>
+      <span class="rodape">Nem toda a divergência é conhecimento em falta</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 06 · a fronteira ════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">Onde a decisão vive</p>
+    <h2>O guardrail é um <span style="font-family:var(--f-data);font-size:52px;letter-spacing:-.03em">@property</span>, não uma instrução.</h2>
+    <p>Descobrir a encomenda de quem escreve produz quatro níveis de confiança. Só os dois primeiros libertam os dados para o prompt.</p>
+    <div class="niveis">
+      <div class="nivel ok">exata</div>
+      <div class="nivel ok">alta</div>
+      <div class="nivel excl">media</div>
+      <div class="nivel">nenhuma</div>
+    </div>
+    <p class="rot" style="font-size:30px;color:var(--ink-2);margin-top:18px">O nível intermédio foi excluído de propósito: é onde há indícios mas não há prova, e é exatamente aí que um engano mostra a encomenda de outra pessoa.</p>
+    <div class="grow"></div>
+    <p class="pull">Não é uma regra de prompt que o modelo possa desobedecer. <em>Ele nunca chega a ver os dados.</em></p>
+    <div class="grow"></div>
+    <p class="destaque">A soma de prazos e a validação da decisão saíram do modelo pela mesma razão: em produção, ele mostrou que as fazia mal.</p>
+    <div class="fim">
+      <span class="idx">06 / 10</span>
+      <span class="rodape">A fronteira foi movida com evidência</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 07 · guardrails ═════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow plain">Guardrails · 22 documentados, em quatro níveis</p>
+    <h2>Um guardrail de prompt contorna-se. Um de infraestrutura não.</h2>
+    <div class="regua"></div>
+    <div class="par">
+      <div>
+        <h3 style="font-family:var(--f-data);font-size:32px">Sem Mail.Send</h3>
+        <p class="rot" style="font-size:30px;color:var(--ink-2)">A aplicação nunca pediu a permissão de envio ao Microsoft Graph. Não é uma regra no código que alguém possa contornar. É uma permissão que não existe.</p>
+      </div>
+      <div>
+        <h3 style="font-family:var(--f-data);font-size:32px">Só leitura na loja</h3>
+        <p class="rot" style="font-size:30px;color:var(--ink-2)">O agente lê encomendas e não escreve nenhuma. Nada do que ele decida pode mover dinheiro ou alterar um envio.</p>
+      </div>
+    </div>
+    <div class="grow"></div>
+    <p class="pull">Mesmo que todos os outros falhem em simultâneo, o pior resultado possível é <em>um rascunho errado que uma pessoa lê e apaga.</em></p>
+    <div class="grow"></div>
+    <p class="destaque">Nenhum email sai. Nenhuma encomenda muda.</p>
+    <div class="fim">
+      <span class="idx">07 / 10</span>
+      <span class="rodape">Sete dos 22 nasceram de um incidente</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 08 · escalação ══════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">O que sobra para uma pessoa</p>
+    <h2>66% escalavam. Quase todos com razão.</h2>
+    <p>Passei um dia a ler os motivos, um a um, à espera de encontrar automação por fazer.</p>
+    <table>
+      <tr><td>Ação sobre encomenda</td><td class="n">103</td><td class="obs">exige escrita na plataforma</td></tr>
+      <tr><td>Compromisso anterior</td><td class="n">95</td><td class="obs">estado que ninguém regista</td></tr>
+      <tr><td>Julgamento humano</td><td class="n">52</td><td class="obs">garantia, litígio, exceção</td></tr>
+      <tr><td>Outras seis categorias</td><td class="n">47</td><td class="obs">contexto, identidade, lacuna</td></tr>
+    </table>
+    <div class="grow"></div>
+    <p class="destaque">Só as lacunas da base é que eram minhas para resolver, e duas fecharam-se nessa semana. As restantes escalam por desenho.</p>
+    <div class="grow"></div>
+    <p class="pull" style="font-size:46px">Baixar aquela percentagem exigia dar ao agente escrita na loja, <em>que é exatamente o guardrail que torna isto tolerável.</em></p>
+    <div class="fim">
+      <span class="idx">08 / 10</span>
+      <span class="rodape">Nem toda a automação por fazer é dívida</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 09 · qualidade ══════════════════════════════════════════════ -->
+<section class="page">
+  <div class="body">
+    <p class="eyebrow">Como sei que está a funcionar</p>
+    <h2>Comparo o que gerei com o que foi mesmo enviado.</h2>
+    <div class="regua"></div>
+    <div class="trio">
+      <div>
+        <span class="num lg">182</span>
+        <p class="rot">casos<br>comparáveis</p>
+      </div>
+      <div>
+        <span class="num lg medida">137</span>
+        <p class="rot">saíram idênticos<br>ao gerado</p>
+      </div>
+      <div>
+        <span class="num lg accent">16</span>
+        <p class="rot">reescritos<br>de raiz</p>
+      </div>
+    </div>
+    <div class="grow"></div>
+    <p>A mediana é 100% e a média é 90%. Nenhuma das duas descreve isto: três quartos saem intactos e um em cada oito é reescrito de raiz. Publicar só a mediana seria escolher o número a dedo.</p>
+    <div class="grow"></div>
+    <p class="pull" style="font-size:46px">Os 16 de baixo não são um número a esconder. <em>São a lista de trabalho: cada um vira regra nova ou caso de ensaio.</em></p>
+    <div class="fim">
+      <span class="idx">09 / 10</span>
+      <span class="rodape"><span class="chip medido">Medido</span></span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 10 · fecho ══════════════════════════════════════════════════ -->
+<section class="page escura">
+  <div class="body">
+    <p class="eyebrow">O que fica</p>
+    <div class="grow"></div>
+    <p class="pull" style="font-size:58px">Um sistema destes não se mede pelo modelo que usa. <em>Mede-se pelo que está escrito à volta dele.</em></p>
+    <div class="grow"></div>
+    <div class="regua"></div>
+    <p style="font-size:36px">A base é a única fonte que ele pode citar. O código decide o que é seguro revelar. E cada correção do lojista volta a entrar como regra. O modelo escreve o texto; nada disto é ele.</p>
+    <p class="destaque" style="color:#E4906F;font-size:36px">Quanto do teu sistema com LLM é prompt, e quanto é regra de negócio escrita à mão?</p>
+    <div class="fim">
+      <span class="idx">10 / 10</span>
+      <span class="rodape">Case study completo: 15 páginas, nos Destaques</span>
+    </div>
+  </div>
+</section>
+
+</div>

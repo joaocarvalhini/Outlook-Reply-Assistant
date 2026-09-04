@@ -15,12 +15,12 @@ tags:
 
 | Ficheiro | Onde vai | Porquê |
 |---|---|---|
-| `carrossel.pdf` ou `carrossel-en.pdf` | **Post de documento no feed** | É o que é legível no telemóvel |
+| Um dos `carrossel*.pdf` | **Post de documento no feed** | É o que é legível no telemóvel |
 | `case-study.pdf` (15 páginas) | **Destaques do perfil** | É para quem clica no perfil depois |
 
-O carrossel existe em português e em inglês. Escolhe-se **um**, não se publicam
-os dois: dois posts com o mesmo conteúdo competem um com o outro na mesma rede
-e partem o sinal da primeira hora ao meio. A escolha e o raciocínio estão em
+Há três carrosséis e publica-se **um**. Dois posts com o mesmo conteúdo na
+mesma rede competem um com o outro e partem o sinal da primeira hora ao meio.
+A escolha está em [Que espinha escolher](#que-espinha-escolher) e
 [Que idioma escolher](#que-idioma-escolher), no fim.
 
 A razão de existirem dois está no cabeçalho do `carrossel.html`: a LinkedIn
@@ -216,6 +216,73 @@ resolved on their own.
 Claude Sonnet, with schema-constrained output and prompt caching. The
 interesting part is not the model, it is what stays outside it: identity,
 arithmetic, triage and validation all live in deterministic code.
+
+---
+
+## Que espinha escolher
+
+O mesmo projeto contado de duas maneiras. Escolhe-se pela audiência, não pelo
+gosto.
+
+| | `carrossel.pdf` | `carrossel-base.pdf` |
+|---|---|---|
+| Espinha | O custo, e a otimização rejeitada | O que a loja sabe, e o que o modelo nunca toca |
+| Capa | "A melhor otimização foi a que decidi não fazer" | "A parte difícil não foi o modelo" |
+| Prova central | $0,008 de teste que travou um deploy | Duas regras verdadeiras que se contradizem |
+| Fecho | Automatizar com segurança | O que está escrito à volta do modelo |
+| Inglês | sim, `carrossel-en.pdf` | não |
+
+`Recomendação:` **o do custo, para o feed.** "A otimização que decidi não
+fazer" trava o scroll, e "escrevi mil linhas de regras de negócio" não trava.
+A reviravolta e o número pequeno fazem o trabalho que um gancho tem de fazer.
+
+**O da base de conhecimento serve melhor três situações:** uma conversa com um
+cliente que quer perceber onde vai o dinheiro de um projeto destes; uma
+entrevista técnica, onde a fronteira entre modelo e código é o assunto mais
+substancial que este projeto tem; e uma segunda publicação daqui a umas
+semanas, para quem já viu a primeira.
+
+Vale a pena ter presente que o do custo ficou com a espinha mais fácil de
+contar, não a mais importante. O que consumiu mais tempo no projeto foi a base
+de conhecimento. O carrossel do custo dedica-lhe um slide em dez.
+
+---
+
+## Texto para o carrossel da base de conhecimento
+
+> Passei mais tempo a escrever regras de negócio do que a escrever código. 👇
+>
+> Construí um agente que lê a caixa de apoio ao cliente de uma loja online e
+> escreve rascunhos. Não envia nada: a aplicação nunca pediu a permissão de
+> envio.
+>
+> Ligar o modelo à caixa demorou dias. O que demorou semanas foi a base de
+> conhecimento: **1 088 linhas em 7 ficheiros**, a única fonte que ele pode
+> citar.
+>
+> Um exemplo. "Quem paga o envio da devolução?" parece simples. A loja não
+> emite etiqueta pré-paga, portanto num arrependimento paga o cliente. Mas num
+> defeito confirmado a loja assume, e aí nem sequer é preciso devolver o artigo
+> antigo primeiro.
+>
+> Duas regras verdadeiras sobre o mesmo assunto, que se contradizem lidas fora
+> de contexto. Tiveram de ficar explicitamente ligadas uma à outra.
+>
+> E o custo de não o fazer não é o que se espera: uma base ambígua **não produz
+> respostas erradas**. Produz escalações a mais, porque o agente é instruído a
+> escalar na dúvida. Aparece na fatura, não na qualidade.
+>
+> A outra metade do trabalho foi decidir o que o modelo nunca pode tocar.
+> Descobrir a encomenda de quem escreve dá quatro níveis de confiança e só dois
+> libertam os dados para o prompt. O intermédio ficou de fora de propósito: é
+> onde há indícios mas não há prova, e é exatamente aí que um engano mostra a
+> encomenda de outra pessoa.
+>
+> Dez slides em anexo.
+>
+> #AIEngineering #LLM #SystemDesign #Python
+
+As respostas de comentário da secção acima servem as duas versões.
 
 ---
 

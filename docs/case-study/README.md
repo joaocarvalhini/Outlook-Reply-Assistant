@@ -22,22 +22,27 @@ em ecrã inteiro.
 | Ficheiro | O que é |
 |---|---|
 | `case-study.html` | **Fonte do documento longo.** 15 páginas, corpo a 15px |
-| `carrossel.html` | **Fonte do carrossel**, em português. 10 slides, corpo a 34px |
+| `carrossel.html` | **Carrossel com a espinha no custo**, em português |
 | `carrossel-en.html` | O mesmo carrossel em inglês. Só muda o conteúdo |
-| `carrossel.css` | A folha de estilos partilhada pelos dois carrosséis |
+| `carrossel-base.html` | **Carrossel com a espinha na base de conhecimento** |
+| `carrossel.css` | A folha de estilos partilhada pelos três carrosséis |
 | `fonts.css` | As três famílias em base64. Gerado, não se edita à mão |
 | `build-fonts.py` | Descarrega as fontes do Google e escreve o `fonts.css` |
 | `build.py` | Gera os PDFs e as imagens |
 | `*-print.html` | Intermediários, criados pelo `build.py`. Não editar |
 | `case-study.pdf` | 15 páginas, 1080×1350. Vai para os Destaques do perfil |
-| `carrossel.pdf`, `carrossel-en.pdf` | 10 slides. É um destes que vai ao feed |
-| `png/`, `png-carrossel/`, `png-carrossel-en/` | Uma imagem por página a 144 dpi |
+| `carrossel*.pdf` | 10 slides cada. É um destes que vai ao feed |
+| `png*/` | Uma imagem por página a 144 dpi |
 | `post-linkedin.md` | O texto, a ordem de publicação e as regras do feed |
 
-O desenho dos dois carrosséis vive todo no `carrossel.css`, e os `.html` só
-trazem o conteúdo. Uma alteração de estilo aplica-se aos dois de uma vez: se
+O desenho dos três carrosséis vive todo no `carrossel.css`, e os `.html` só
+trazem o conteúdo. Uma alteração de estilo aplica-se aos três de uma vez: se
 alguém a fizer só num, é porque copiou o CSS de volta para dentro do ficheiro,
 e aí voltam a divergir.
+
+Os dois carrosséis portugueses contam o mesmo projeto por espinhas diferentes,
+e `post-linkedin.md` explica quando usar qual. Só existe versão inglesa do do
+custo.
 
 > [!IMPORTANT] O carrossel tem um piso tipográfico
 > Corpo ≥ 32px, rótulos ≥ 26px, nada abaixo de 26px em sítio nenhum. Abaixo
@@ -51,8 +56,7 @@ e aí voltam a divergir.
 python docs/case-study/build.py
 ```
 
-Sem argumentos gera todos. `build.py carrossel`, `build.py carrossel-en` ou
-`build.py case-study` gera só o que se pedir. Cada documento traz o número de
+Sem argumentos gera todos. Um nome como argumento gera só esse. Cada documento traz o número de
 páginas esperado, a pasta das imagens e o idioma na tabela `DOCUMENTOS`.
 
 Precisa do Chrome instalado. O `pypdf` e o `pymupdf` são opcionais — sem eles o

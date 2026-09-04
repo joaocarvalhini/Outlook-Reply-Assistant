@@ -5,6 +5,7 @@
     python build.py case-study      só o documento longo, 15 páginas
     python build.py carrossel       só o carrossel do feed, 10 slides
     python build.py carrossel-en    o mesmo carrossel, em inglês
+    python build.py carrossel-base  o carrossel alternativo, 10 slides
 
 Os HTML são fragmentos (sem <!doctype>, <html> ou <body>) porque é essa a
 forma que a plataforma de Artifacts espera. Para o Chrome o fragmento também
@@ -34,6 +35,7 @@ DOCUMENTOS = {
     "case-study": (15, "png", "pt-PT"),
     "carrossel": (10, "png-carrossel", "pt-PT"),
     "carrossel-en": (10, "png-carrossel-en", "en"),
+    "carrossel-base": (10, "png-carrossel-base", "pt-PT"),
 }
 
 CHROMES = [
