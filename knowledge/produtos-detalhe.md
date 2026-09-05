@@ -2,7 +2,7 @@
 
 Fonte: respostas confirmadas pela loja (14 de agosto de 2026) e conhecimento
 técnico escrito pelo próprio lojista no histórico de apoio ao cliente.
-Última verificação: 2 de setembro de 2026
+Última verificação: 4 de setembro de 2026
 
 ## Smartwatch
 
@@ -27,6 +27,13 @@ técnico escrito pelo próprio lojista no histórico de apoio ao cliente.
   A resposta é encaminhar o cliente para o manual de instruções do produto,
   onde essa informação está disponível. (Confirmado diretamente pelo
   lojista, 2 de setembro de 2026.)
+- **A bracelete sai sempre do relógio, mesmo quando o cliente jura que está
+  presa.** Há um botão na parte de dentro do relógio que tem de ser premido
+  ao mesmo tempo que se arrasta a bracelete para o lado. Quando o cliente diz
+  que a pulseira não sai, ou que veio com defeito por não sair, é isto — e a
+  resposta é explicar-lhe o mecanismo (ver "Pulseira que «não sai» do
+  relógio" em `provas-e-defeitos.md`). (Confirmado diretamente pelo lojista,
+  4 de setembro de 2026.)
 
 ## InPods e fones
 

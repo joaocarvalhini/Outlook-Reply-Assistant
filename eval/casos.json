@@ -1501,5 +1501,20 @@
     "historico": "[2026-09-03 15:31] LOJA: Continuamos a verificar internamente a obtencao do codigo de rastreio junto da transportadora.\n[2026-09-03 15:34] CLIENTE: Voces como remetentes estao ha 3 dias a ver do codigo de rastreio?\n[2026-09-03 15:36] LOJA: Nao estamos ha 3 dias apenas a verificar. Segue o codigo da sua encomenda. [levava um anexo, que não consigo ver]",
     "expect": "escalar",
     "note": "Caso real de 03/09/2026. A loja mandou o codigo da encomenda num print uma mensagem antes; o assistente ofereceu-se para 'verificar internamente se conseguimos localizar a sua encomenda atraves do numero de telemovel', prometendo repetir trabalho ja feito. As imagens do fio anterior nao vao para o modelo, mas a marca de que existiram passou a ir (ver resumir_historico). Verificacao manual do texto: NAO deve prometer procurar de novo -- ou remete para o que ja foi enviado, ou escala."
+  },
+  {
+    "id": "pulseira-presa-explica-mecanismo-sem-pedir-prova",
+    "email": {
+      "from": "carla.sf@example.com",
+      "from_name": "Carla",
+      "subject": "Devolucao relogio",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, queria devolver o relogio. A pulseira veio com defeito, nao ha maneira de a soltar do relogio por mais forca que faca. Como faco para devolver?"
+    },
+    "historico": "",
+    "expect": "rascunhar",
+    "note": "Caso real de 04/09/2026. O assistente pedia foto e video antes de avancar; o lojista explicou logo o mecanismo. A bracelete sai: ha um botao na parte de dentro do relogio que se preme ao mesmo tempo que se arrasta a bracelete para o lado. Excecao estreita a 'Pedir a prova e a resposta', porque a causa e conhecida e certa. Verificacao manual do texto: DEVE explicar o botao e o movimento lateral, e NAO deve pedir foto nem video primeiro nem adiantar instrucoes de devolucao."
   }
 ]

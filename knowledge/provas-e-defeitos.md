@@ -2,7 +2,7 @@
 
 Fonte: prática da loja, confirmada em mais de mil respostas reais a clientes
 entre julho de 2025 e agosto de 2026.
-Última verificação: 2 de setembro de 2026
+Última verificação: 4 de setembro de 2026
 
 ## Pedir a prova é a resposta
 
@@ -48,6 +48,20 @@ Depois de vista a fotografia, a resposta explica que os riscos costumam estar
 apenas nas películas, e não na capa em si, e pede ao cliente para remover as
 três. Depois de removidas, a capa fica lisa e sem esses riscos. (Confirmado
 diretamente pelo lojista, 2 de setembro de 2026.)
+
+## Pulseira que «não sai» do relógio — explicar antes de pedir prova
+
+Quando o cliente quer devolver o relógio por achar que a bracelete veio com
+defeito, porque não a consegue soltar, a resposta é explicar-lhe logo como se
+solta. Não se pede foto nem vídeo primeiro. O mecanismo está em
+`produtos-detalhe.md`, secção "Smartwatch": um botão na parte de dentro do
+relógio, premido ao mesmo tempo que se arrasta a bracelete para o lado.
+
+É uma exceção deliberada a "Pedir a prova é a resposta", e é **estreita**: só
+vale porque a causa é conhecida e certa. Não se estende a outras queixas em
+que se julga saber a causa — aí a prova continua a vir primeiro, como na capa
+MagSafe acima, onde a fotografia é pedida antes de explicar as películas.
+(Confirmado diretamente pelo lojista, 4 de setembro de 2026.)
 
 ## Antes de decidir seja o que for
 

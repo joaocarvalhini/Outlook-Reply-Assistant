@@ -2,7 +2,7 @@
 
 Fonte: /pages/politica-de-reembolsos-e-devolucoes, /pages/perguntas-faq,
 /pages/termos-e-condicoes
-Última verificação: 2 de setembro de 2026
+Última verificação: 4 de setembro de 2026
 
 ## Prazo para devolver
 
@@ -327,6 +327,13 @@ real de produção, 18 de agosto de 2026.)
   (Confirmado diretamente pelo cliente, 17 e 18 de agosto de 2026.)
 - Fora desta preferência por crédito, o reembolso é feito pelo mesmo método de
   pagamento usado na compra, salvo acordo em contrário.
+- **Nunca dar uma data concreta** para o reembolso estar feito ("fica tratado
+  na segunda-feira de manhã"). Quando é uma transferência manual, quem a faz é
+  o lojista e só ele sabe quando: não há acesso à conta bancária a partir daqui,
+  nem forma de confirmar que foi feita. Diz-se que se vai confirmar
+  internamente e depois dar resposta, ou explicam-se os prazos das duas fases
+  acima. Se houver um dia a prometer, é o lojista que o escreve. (Confirmado
+  diretamente pelo lojista, 4 de setembro de 2026.)
 - O processo tem duas fases, e ambas devem ser explicadas ao cliente:
   1. A loja analisa a devolução e emite o reembolso no prazo de até 5 dias úteis
      após receber o produto. Na prática, a conferência das devoluções
