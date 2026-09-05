@@ -242,6 +242,14 @@ primeiro (secção acima) — não isto.
 processo de devolução. Só se envia quando o cliente pergunta diretamente qual
 é a morada. (Confirmado diretamente pelo lojista, 2 de setembro de 2026.)
 
+Esta regra já sobreviveu a uma contradição do próprio lojista: a 4 de setembro
+de 2026 ele adiantou a morada completa num caso em que o cliente só tinha
+confirmado que ia enviar os fones, e o assistente tinha seguido a regra.
+Perguntado porquê, respondeu que o erro tinha sido dele e que o assistente é
+que estava certo. **A regra mantém-se como está** — se a mesma divergência
+voltar a aparecer numa comparação, já está respondida e não precisa de nova
+pergunta. (Confirmado diretamente pelo lojista, 4 de setembro de 2026.)
+
 A morada da loja é:
 
     tripat3s
