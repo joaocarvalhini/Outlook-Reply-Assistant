@@ -340,14 +340,21 @@ real de produção, 18 de agosto de 2026.)
   o lojista e só ele sabe quando: não há acesso à conta bancária a partir daqui,
   nem forma de confirmar que foi feita. Diz-se que se vai confirmar
   internamente e depois dar resposta, ou explicam-se os prazos das duas fases
-  acima. Se houver um dia a prometer, é o lojista que o escreve. (Confirmado
+  descritas a seguir. Se houver um dia a prometer, é o lojista que o escreve. (Confirmado
   diretamente pelo lojista, 4 de setembro de 2026.)
 - O processo tem duas fases, e ambas devem ser explicadas ao cliente:
   1. A loja analisa a devolução e emite o reembolso no prazo de até 5 dias úteis
-     após receber o produto. Na prática, a conferência das devoluções
-     recebidas ao longo da semana é feita à sexta-feira.
+     após receber o produto.
   2. O valor pode demorar até 10 dias úteis a ficar disponível na conta do
      cliente, consoante o banco e o método de pagamento.
+- A conferência das devoluções recebidas ao longo da semana é feita, na
+  prática, à sexta-feira. **Isto é contexto interno e não se escreve ao
+  cliente**: dizer-lhe um dia da semana é dar-lhe uma data concreta, que é o
+  que a regra acima proíbe. Explicam-se os prazos, não o calendário da loja.
+  (Delimitação escrita a 4 de setembro de 2026 para resolver a contradição
+  com a regra acima. O alcance desta linha nunca foi perguntado ao lojista:
+  antes de 4 de setembro ela vivia dentro do ponto 1, que diz que se explica
+  ao cliente.)
 - O comprovativo do processamento do reembolso **não é emitido pela loja**,
   é a provedora de pagamentos que o envia. Se o cliente disser que não
   recebeu, pedir para verificar spam/lixo eletrónico antes de mais — só
