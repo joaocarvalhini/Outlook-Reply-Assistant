@@ -124,7 +124,7 @@ Ver [[knowledge-base|Base de conhecimento]].
 | `LOTE = 25` fixo, não configurável | Uma rajada >25 divide-se por passagens | Trivial |
 | **Sem retentativa em Graph/Shopify** | Um 429/5xx transitório degrada a decisão | Baixo |
 | **Sem CI/CD** | Nada impede deploy com testes a falhar | Baixo |
-| **Sem alertas** | Uma falha só se vê no `journalctl` | Baixo |
+| ~~Sem alertas~~ | ✅ Resolvido 01/09 — `deve_alertar()` conta passagens seguidas sem decisão e dispara o `OnFailure=` do systemd para o `deploy/alertar.py`. Deteta em ~6 min o que antes podia correr horas | — |
 | `processar()` sem testes | 10 caminhos sem rede de segurança | Médio |
 
 ---
@@ -136,22 +136,28 @@ flowchart LR
     A["O que se sabe hoje"] --> A1["✅ decisões gravadas"]
     A --> A2["✅ métricas a pedido"]
     A --> A3["✅ logs no journal"]
-    B["O que NÃO se sabe"] --> B1["❌ custo por email"]
-    B --> B2["❌ latência"]
-    B --> B3["❌ taxa de erro ao longo do tempo"]
-    B --> B4["❌ o rascunho foi enviado<br/>tal e qual, editado ou apagado?"]
-    style B1 fill:#ffe0e0
-    style B2 fill:#ffe0e0
+    A --> A4["✅ custo por email"]
+    A --> A5["✅ latência"]
+    A --> A6["✅ enviado, editado<br/>ou reescrito de raiz"]
+    B["O que NÃO se sabe"] --> B3["❌ taxa de erro ao longo do tempo"]
+    style A4 fill:#e0f0e6
+    style A5 fill:#e0f0e6
+    style A6 fill:#e0f0e6
     style B3 fill:#ffe0e0
-    style B4 fill:#ffe0e0
 ```
 
-> [!WARNING] A lacuna mais importante: o fecho de ciclo
-> O sistema regista o que **decidiu**, mas não sabe o que **aconteceu depois**. `medir_deriva.py`
-> pode responder a isso, mas corre a pedido e a referência (60% editado = ruído) **nunca foi
-> medida**.
+> [!TIP] O fecho de ciclo deixou de ser lacuna a 03/09/2026
+> Era a limitação mais importante deste documento: o sistema registava o que **decidiu** e não
+> sabia o que **aconteceu depois**. Hoje sabe. O `medir_deriva.py` compara o rascunho gerado
+> com o texto que foi mesmo enviado, e o `aprender.py` agrupa as diferenças e manda ao lojista,
+> pelo Discord, as que mais valem uma pergunta.
 >
-> É o risco de "deriva silenciosa" identificado no próprio README, ainda por instrumentar.
+> Medido a 03/09/2026 sobre 182 casos comparáveis: **137 saíram idênticos**, 16 foram reescritos
+> de raiz. Os limiares deixaram de ser palpite — 90% acima do qual a diferença é cosmética, 60%
+> abaixo do qual conta como reescrita.
+>
+> O que continua por instrumentar é a **taxa de erro ao longo do tempo**: sabe-se o estado de
+> hoje, não a tendência.
 
 ---
 
@@ -161,7 +167,7 @@ Para uma loja com o perfil da tripat3s, hoje:
 
 | | |
 |---|---|
-| ✅ **Funciona bem** | Perguntas cobertas pela base, estado de encomendas recentes, provas de defeito por foto, casos escalados com dossiê preparado |
+| ✅ **Funciona bem** | Perguntas cobertas pela base, estado de encomendas recentes, provas de defeito por foto, casos escalados com link direto para a encomenda no admin |
 | 🟡 **Funciona com atrito** | Encomendas >60 dias, perguntas de stock, regras compostas (pack, higiene) |
 | ❌ **Não funciona** | Qualquer coisa que exija escrita, aprendizagem automática, ou conhecimento fora da base |
 

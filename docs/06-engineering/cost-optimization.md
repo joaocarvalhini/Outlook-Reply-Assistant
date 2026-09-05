@@ -16,6 +16,17 @@ tags:
 Auditoria de **30 de agosto de 2026**, sobre os 5 primeiros dias de produção (26-30/08).
 Custo reportado pelo cliente antes da auditoria: **~4 €/dia**.
 
+> [!IMPORTANT] O que mudou depois desta auditoria
+> Este documento é um **registo datado** e as medições continuam válidas para 30-31/08. Não é
+> o estado atual. A 01/09/2026 a segunda chamada ao modelo foi removida por completo, e com ela
+> as duas entradas de cache descritas abaixo passaram a ser **uma só**, de ~36K tokens. O
+> problema que este documento identifica ficou resolvido pela via que a medição não tinha
+> proibido: não unindo os esquemas, mas eliminando a segunda chamada.
+>
+> Onde se lê "as duas entradas", leia-se "as duas entradas, até 01/09/2026". Os efeitos
+> medidos estão em `docs/case-study/case-study.html`, página 13: tokens por email de
+> 19 998 para 7 443 (−63%), chamadas ao modelo de 1,73 para 1,00.
+
 > [!IMPORTANT] O que este sistema **não** faz — e que a maioria das auditorias de custo procura
 > Não usa Opus, não usa *effort* elevado, não tem *tool use*, não tem ciclo agêntico, e não tem
 > retries em cascata. É **uma chamada por email** (duas quando escala), com `thinking` desativado

@@ -107,7 +107,7 @@ servidor, e diz qual dos dois casos é este:
 | | Custo | Porquê |
 |---|---|---|
 | Prompt inalterado (docs, testes, satélites) | **grátis** | O prefixo em cache não muda |
-| Prompt alterado (`PROMPT` ou `knowledge/*.md`) | **~0,07 $** | Reescreve as ~32K tokens do prefixo. Era o dobro até 01/09/2026, quando havia duas entradas de cache |
+| Prompt alterado (`PROMPT` ou `knowledge/*.md`) | **~0,21 $** | Reescreve as ~36K tokens do prefixo. Valor de 04/09/2026, ao preço de $3,00/M que entrou a 01/09 — o `deploy/enviar.sh` avisa e diz o mesmo número |
 
 > [!TIP] Agrupa as alterações à base de conhecimento num só deploy
 > O custo é por *deploy*, não por alteração: três regras novas publicadas juntas pagam uma vez;
