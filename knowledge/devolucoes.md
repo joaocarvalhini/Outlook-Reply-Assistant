@@ -342,6 +342,20 @@ real de produção, 18 de agosto de 2026.)
   internamente e depois dar resposta, ou explicam-se os prazos das duas fases
   descritas a seguir. Se houver um dia a prometer, é o lojista que o escreve. (Confirmado
   diretamente pelo lojista, 4 de setembro de 2026.)
+- O que custa prometer um dia e não o cumprir está documentado. A 21 de agosto
+  de 2026 a loja perguntou a um cliente se podia fazer o reembolso na
+  segunda-feira seguinte e ele aceitou a data. Na segunda-feira recebeu, em vez
+  do reembolso, um "vamos verificar internamente se conseguimos processar a
+  transferência". Respondeu que a resposta era inaceitável, porque quem marca
+  um dia devia chegar a esse dia com o processo pronto a concluir e não a
+  começar. O reembolso só saiu na quarta-feira. (Caso real de produção, 21 a 26
+  de agosto de 2026.)
+- Consequência para a redação: **"vamos verificar internamente" só é boa
+  resposta enquanto não houver nenhum dia prometido.** Depois de uma data
+  falhada, a mesma frase lê-se como adiamento e agrava a reclamação em vez de
+  a acalmar. Aí o que serve é dizer o que já foi feito e o que falta, com
+  datas do passado e não do futuro — ou escalar, porque quem conclui a
+  transferência é o lojista.
 - O processo tem duas fases, e ambas devem ser explicadas ao cliente:
   1. A loja analisa a devolução e emite o reembolso no prazo de até 5 dias úteis
      após receber o produto.
@@ -351,10 +365,11 @@ real de produção, 18 de agosto de 2026.)
   prática, à sexta-feira. **Isto é contexto interno e não se escreve ao
   cliente**: dizer-lhe um dia da semana é dar-lhe uma data concreta, que é o
   que a regra acima proíbe. Explicam-se os prazos, não o calendário da loja.
-  (Delimitação escrita a 4 de setembro de 2026 para resolver a contradição
-  com a regra acima. O alcance desta linha nunca foi perguntado ao lojista:
-  antes de 4 de setembro ela vivia dentro do ponto 1, que diz que se explica
-  ao cliente.)
+  (O facto é do lojista, 16 de agosto de 2026. A delimitação foi verificada a
+  4 de setembro contra 60 pares reais de conversa: em nenhum deles a loja
+  escreveu a um cliente a palavra "conferência" nem um dia de conferência.
+  Antes desta data a linha vivia dentro do ponto 1, que manda explicar ao
+  cliente.)
 - O comprovativo do processamento do reembolso **não é emitido pela loja**,
   é a provedora de pagamentos que o envia. Se o cliente disser que não
   recebeu, pedir para verificar spam/lixo eletrónico antes de mais — só

@@ -1516,5 +1516,20 @@
     "historico": "",
     "expect": "rascunhar",
     "note": "Caso real de 04/09/2026. O assistente pedia foto e video antes de avancar; o lojista explicou logo o mecanismo. A bracelete sai: ha um botao na parte de dentro do relogio que se preme ao mesmo tempo que se arrasta a bracelete para o lado. Excecao estreita a 'Pedir a prova e a resposta', porque a causa e conhecida e certa. Verificacao manual do texto: DEVE explicar o botao e o movimento lateral, e NAO deve pedir foto nem video primeiro nem adiantar instrucoes de devolucao."
+  },
+  {
+    "id": "data-de-reembolso-falhada-nao-repete-verificar-internamente",
+    "email": {
+      "from": "m.rodrigues@example.com",
+      "from_name": "Miguel",
+      "subject": "Re: Esta tudo a funcionar como deve ser?",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Bom dia, na passada sexta-feira foi-me perguntado se podiam efetuar o reembolso na segunda-feira e eu aceitei essa data. Na segunda-feira nao cumpriram o acordado e limitaram-se a informar que iriam verificar internamente. Hoje ja e quarta-feira e continuo sem o reembolso e sem qualquer atualizacao. Peco que o reembolso seja efetuado hoje, sem falta."
+    },
+    "historico": "[2026-08-24 11:02] LOJA: Vamos verificar internamente se conseguimos processar a transferencia bancaria o mais brevemente possivel.",
+    "expect": "escalar",
+    "note": "Caso real de producao, 21 a 26/08/2026. A loja marcou um dia para o reembolso, falhou-o, e respondeu com 'vamos verificar internamente' -- que o cliente classificou de inaceitavel. Quem conclui a transferencia e o lojista, logo escala. Verificacao manual do texto: NAO deve repetir 'vamos verificar internamente' nem prometer nova data. Ver 'Reembolso' em devolucoes.md."
   }
 ]
