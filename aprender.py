@@ -141,6 +141,7 @@ Os campos:
   - `assistente` — o que o assistente tinha escrito, em meia linha.
   - `enviaste` — o que ele enviou em vez disso, em meia linha.
   - `pergunta` — **o PORQUÊ, nunca a resposta.** Sugerir a regra enviesa-o a concordar, e uma regra escrita a partir de uma concordância educada é pior do que nenhuma regra. Se o caso se parece com outro da mesma mensagem, di-lo aqui — é o que o faz perceber que vale a pena responder.
+    Uma pergunta só, e **aberta**: nada de "foi por X ou por Y?", nada que se responda com sim ou não. Duas hipóteses coladas com "ou" dão-lhe duas maneiras de concordar sem dizer nada, e já custou: a 5 de setembro de 2026 uma pergunta de duas opções recebeu "diz que sim" e não deu para escrever regra nenhuma. Também não se pergunta aqui "foi só deste caso?" — é o que o `fecho` já diz, e repeti-lo convida à saída mais fácil.
 - `fecho` — uma frase a dizer que, se algum tiver sido decisão pontual e não regra, basta ele dizer isso.
 
 Os três campos do meio são para ele reconhecer o caso sem abrir o email, não para contar a história toda: uma linha cada, no máximo duas. Sem jargão — ele não sabe o que é um prompt, um modelo ou uma escalação."""
