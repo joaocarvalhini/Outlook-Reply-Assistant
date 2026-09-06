@@ -355,7 +355,8 @@ real de produção, 18 de agosto de 2026.)
   falhada, a mesma frase lê-se como adiamento e agrava a reclamação em vez de
   a acalmar. Aí o que serve é dizer o que já foi feito e o que falta, com
   datas do passado e não do futuro — ou escalar, porque quem conclui a
-  transferência é o lojista.
+  transferência é o lojista. Isto é um caso particular de uma regra geral:
+  ver "Repetir uma não-resposta é pior do que escalar" em `empresa.md`.
 - O processo tem duas fases, e ambas devem ser explicadas ao cliente:
   1. A loja analisa a devolução e emite o reembolso no prazo de até 5 dias úteis
      após receber o produto.

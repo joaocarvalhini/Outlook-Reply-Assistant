@@ -61,3 +61,11 @@ por conta própria. (Confirmado diretamente pelo lojista, 1 de setembro de
 - O conteúdo varia de encomenda para encomenda — não há garantia de receber
   um artigo específico. Não confirmar ao cliente o que vem lá dentro antes
   do envio; a loja é que sabe o que enviou nessa semana.
+- **A oferta só segue acompanhada de um produto pago.** Uma encomenda que
+  tenha apenas a Mystery Box, de valor 0 €, não dá direito ao envio e não é
+  expedida. Se o cliente fizer depois uma encomenda com produto, a oferta
+  segue com essa. Não é a encomenda de 0 € que passa a ser enviada: é a nova
+  que traz a oferta. (Confirmado diretamente pelo lojista, 5 de setembro de
+  2026, a partir de um caso real — a cliente fez uma encomenda de 0 € só com
+  a oferta, essa foi cancelada, e passou a ter direito à Mystery Box na manhã
+  seguinte, quando encomendou um produto.)

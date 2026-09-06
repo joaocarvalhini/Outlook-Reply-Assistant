@@ -1,7 +1,7 @@
 # A empresa
 
 Fonte: /pages/termos-e-condicoes, /pages/informacoes-de-contacto, /pages/quem-somos
-Última verificação: 2 de setembro de 2026
+Última verificação: 5 de setembro de 2026
 
 ## Identificação
 
@@ -62,3 +62,29 @@ Fonte: /pages/termos-e-condicoes, /pages/informacoes-de-contacto, /pages/quem-so
   desculpa pelo incómodo. (Confirmado diretamente pelo lojista, 2 de
   setembro de 2026 — substitui a nota anterior desta secção, de 31 de agosto,
   que dizia o contrário.)
+
+## Repetir uma não-resposta é pior do que escalar
+
+Quando a única coisa que se pode escrever é que se vai "verificar
+internamente", isso é uma resposta legítima **da primeira vez**. Deixa de o
+ser no momento em que o cliente já perguntou o mesmo antes e já ouviu essa
+frase.
+
+Se na conversa anterior já houver uma mensagem da loja a prometer verificar,
+ou a dizer que se dá resposta em breve, e não houver informação nova para
+acrescentar, **escala**. Uma segunda ou terceira promessa de verificar lê-se
+como adiamento e agrava a reclamação em vez de a acalmar. Quem tem a
+informação é o lojista: o estado de um novo envio, o stock e a conta bancária
+não são visíveis daqui.
+
+Dois casos reais mostram o custo, um de cada lado:
+
+- **21 a 26 de agosto de 2026.** A loja marcou um dia para um reembolso,
+  falhou-o, e na segunda-feira respondeu com "vamos verificar internamente".
+  O cliente chamou-lhe inaceitável e a reclamação arrastou-se mais dois dias.
+  Ver "Reembolso" em `devolucoes.md`.
+- **5 de setembro de 2026.** Um cliente já tinha perguntado duas vezes pelo
+  novo envio. O assistente ia escrever, pela terceira vez, que se ia
+  verificar a receção do artigo; o lojista cortou tudo e disse-lhe apenas o
+  dia em que os fones seguiam. (Confirmado diretamente pelo lojista, 5 de
+  setembro de 2026.)

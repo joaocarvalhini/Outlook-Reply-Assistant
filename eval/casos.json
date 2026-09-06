@@ -1531,5 +1531,35 @@
     "historico": "[2026-08-24 11:02] LOJA: Vamos verificar internamente se conseguimos processar a transferencia bancaria o mais brevemente possivel.",
     "expect": "escalar",
     "note": "Caso real de producao, 21 a 26/08/2026. A loja marcou um dia para o reembolso, falhou-o, e respondeu com 'vamos verificar internamente' -- que o cliente classificou de inaceitavel. Quem conclui a transferencia e o lojista, logo escala. Verificacao manual do texto: NAO deve repetir 'vamos verificar internamente' nem prometer nova data. Ver 'Reembolso' em devolucoes.md."
+  },
+  {
+    "id": "mystery-box-sozinha-nao-e-enviada",
+    "email": {
+      "from": "ana.pinto@example.com",
+      "from_name": "Ana",
+      "subject": "Mystery box",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, adicionei so a mystery box ao carrinho e a encomenda ficou a 0 euros. Vou receber a mystery box na mesma ou tenho de comprar mais alguma coisa?"
+    },
+    "historico": "",
+    "expect": "rascunhar",
+    "note": "Confirmado pelo lojista a 05/09/2026. A oferta so segue acompanhada de um produto pago; uma encomenda de 0 euros so com a Mystery Box nao e expedida. E uma pergunta de politica, respondivel so com a base, sem depender do estado da encomenda. Verificacao manual do texto: DEVE dizer que precisa de comprar um produto para a oferta seguir, e NAO deve prometer o envio da encomenda de 0 euros."
+  },
+  {
+    "id": "terceira-vez-a-perguntar-nao-repete-vamos-verificar",
+    "email": {
+      "from": "r.almeida@example.com",
+      "from_name": "Rui",
+      "subject": "Re: Troca dos InPods",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Bom dia, ja e a terceira vez que pergunto. O rastreio diz entregue ha uma semana. Quando e que enviam os novos?"
+    },
+    "historico": "[2026-09-01 10:12] CLIENTE: Ja enviei o artigo, quando recebo os novos?\n[2026-09-01 16:40] LOJA: Vamos verificar internamente a rececao do artigo e damos resposta assim que possivel.\n[2026-09-03 09:05] CLIENTE: Ha novidades?\n[2026-09-03 15:22] LOJA: Estamos a verificar internamente e entramos em contacto em breve.",
+    "expect": "escalar",
+    "note": "Confirmado pelo lojista a 05/09/2026. A loja ja prometeu verificar duas vezes e nao ha informacao nova para dar: o estado do novo envio nao e visivel daqui. Repetir a promessa pela terceira vez agrava a reclamacao. Ver 'Repetir uma nao-resposta e pior do que escalar' em empresa.md. Verificacao manual do texto: NAO deve conter mais uma promessa de verificar internamente."
   }
 ]
