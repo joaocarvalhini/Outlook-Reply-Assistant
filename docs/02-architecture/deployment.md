@@ -107,7 +107,7 @@ servidor, e diz qual dos dois casos é este:
 | | Custo | Porquê |
 |---|---|---|
 | Prompt inalterado (docs, testes, satélites) | **grátis** | O prefixo em cache não muda |
-| Prompt alterado (`PROMPT` ou `knowledge/*.md`) | **~0,21 $** | Reescreve as ~36K tokens do prefixo. Valor de 04/09/2026, ao preço de $3,00/M que entrou a 01/09 — o `deploy/enviar.sh` avisa e diz o mesmo número |
+| Prompt alterado (`PROMPT` ou `knowledge/*.md`) | **~0,14 $** | Reescreve as ~36K tokens do prefixo, a 2× o preço de entrada. Ao preço do Sonnet 5 de $2,00/M, confirmado a 07/09/2026 — a subida para $3,00/M anunciada para 01/09 foi cancelada. O `deploy/enviar.sh` avisa e diz o mesmo número |
 
 > [!TIP] Agrupa as alterações à base de conhecimento num só deploy
 > O custo é por *deploy*, não por alteração: três regras novas publicadas juntas pagam uma vez;

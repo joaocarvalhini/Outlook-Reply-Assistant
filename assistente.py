@@ -2283,13 +2283,16 @@ def nota_anexos_ignorados(ignorados: list[dict]) -> str:
 # na página de preços da Anthropic antes de tirar conclusões de um valor
 # absoluto. As comparações relativas (antes vs. depois) continuam válidas.
 #
-# O Sonnet 5 esteve a 2,00/10,00 em preço de lançamento até 31/08/2026 e
-# passou a 3,00/15,00 a 01/09. A tabela ficou com o preço antigo durante três
-# dias e o registo subestimou o custo real em 50% nesse período, exatamente
-# como o parágrafo acima avisava que aconteceria. Corrigido a 03/09/2026, com
-# as linhas afetadas recalculadas a partir dos tokens gravados.
+# O Sonnet 5 esteve anunciado a 2,00/10,00 como preço de lançamento até
+# 31/08/2026, com subida marcada para 3,00/15,00 a 01/09. A 03/09 a tabela foi
+# mudada para 3,00/15,00 a contar com essa subida -- mas ela foi cancelada: a
+# Anthropic manteve 2,00/10,00 como preço normal. Durante quatro dias o registo
+# sobrestimou o custo em 50%, e a fatura real ficava sempre abaixo do que o
+# metricas.py mostrava. Reposto a 07/09/2026, confirmado na página de preços.
+# Lição: não antecipar uma mudança de preço anunciada -- só mudar a tabela
+# depois de a subida aparecer numa fatura.
 PRECOS = {
-    "claude-sonnet-5": (3.00, 15.00),
+    "claude-sonnet-5": (2.00, 10.00),
     "claude-haiku-4-5": (1.00, 5.00),
     "claude-opus-5": (5.00, 25.00),
 }
