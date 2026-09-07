@@ -118,7 +118,8 @@ def main(argv: list[str] | None = None) -> int:
         estados = Counter(r[0] for r in resultados_draft)
         _tabela(
             f"Resultado de {len(resultados_draft)} rascunho(s) verificado(s) "
-            "pelo id (medir_deriva.py --fechar-ciclo)",
+            "pelo id e, quando esse já não resolve, pela resposta no fio "
+            "(medir_deriva.py --fechar-ciclo)",
             estados, len(resultados_draft),
         )
         aceites = estados.get("enviado-tal-e-qual", 0)
