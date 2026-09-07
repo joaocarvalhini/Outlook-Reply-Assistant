@@ -2175,7 +2175,7 @@ class FecharCiclo(unittest.TestCase):
     def test_rascunho_apagado(self) -> None:
         self._semear("<a@x>", "Boa tarde,\n\nO seu artigo já foi enviado.", "D1")
         graph = GraphFalso(detalhe_rascunho=None)
-        fechar_ciclo(graph, self.con, 0)
+        fechar_ciclo(graph, cfg(), self.con, 0)
         estado, sem = self._resultado("<a@x>")
         self.assertEqual(estado, "apagado")
         self.assertIsNone(sem)
@@ -2183,7 +2183,7 @@ class FecharCiclo(unittest.TestCase):
     def test_rascunho_ainda_pendente(self) -> None:
         self._semear("<a@x>", "Boa tarde,\n\nO seu artigo já foi enviado.", "D1")
         graph = GraphFalso(detalhe_rascunho={"sentDateTime": None, "body": {"content": ""}})
-        fechar_ciclo(graph, self.con, 0)
+        fechar_ciclo(graph, cfg(), self.con, 0)
         estado, sem = self._resultado("<a@x>")
         self.assertEqual(estado, "pendente")
         self.assertIsNone(sem)
@@ -2195,7 +2195,7 @@ class FecharCiclo(unittest.TestCase):
             "sentDateTime": "2026-08-27T10:00:00Z",
             "body": {"content": f"<html><body><p>{corpo}</p></body></html>"},
         })
-        fechar_ciclo(graph, self.con, 0)
+        fechar_ciclo(graph, cfg(), self.con, 0)
         estado, sem = self._resultado("<a@x>")
         self.assertEqual(estado, "enviado-tal-e-qual")
         self.assertGreaterEqual(sem, 90.0)
@@ -2207,7 +2207,7 @@ class FecharCiclo(unittest.TestCase):
             "body": {"content": "<p>Boa tarde. Afinal ainda não foi enviado, "
                                  "peço desculpa pelo erro, vamos verificar já.</p>"},
         })
-        fechar_ciclo(graph, self.con, 0)
+        fechar_ciclo(graph, cfg(), self.con, 0)
         estado, sem = self._resultado("<a@x>")
         self.assertEqual(estado, "enviado-editado")
         self.assertLess(sem, 90.0)
@@ -2215,7 +2215,7 @@ class FecharCiclo(unittest.TestCase):
     def test_sem_rascunho_id_nunca_e_verificado(self) -> None:
         self._semear("<a@x>", "texto", "")  # rascunho_id vazio: nunca criado
         graph = GraphFalso(detalhe_rascunho=None)
-        fechar_ciclo(graph, self.con, 0)
+        fechar_ciclo(graph, cfg(), self.con, 0)
         self.assertEqual(graph.chamadas, [])
         self.assertEqual(self._resultado("<a@x>"), (None, None))
 
@@ -2226,7 +2226,7 @@ class FecharCiclo(unittest.TestCase):
         )
         self.con.commit()
         graph = GraphFalso(detalhe_rascunho={"sentDateTime": "2026-08-27T10:00:00Z", "body": {}})
-        fechar_ciclo(graph, self.con, 0)
+        fechar_ciclo(graph, cfg(), self.con, 0)
         self.assertEqual(graph.chamadas, [])  # não voltou a perguntar ao Graph
 
     def test_pendente_e_reverificado_na_proxima_corrida(self) -> None:
@@ -2239,9 +2239,77 @@ class FecharCiclo(unittest.TestCase):
         )
         self.con.commit()
         graph = GraphFalso(detalhe_rascunho=None)
-        fechar_ciclo(graph, self.con, 0)
-        self.assertEqual(len(graph.chamadas), 1)
+        fechar_ciclo(graph, cfg(), self.con, 0)
+        # Três chamadas e não uma, desde 07/09/2026: o id não resolve e a
+        # seguir procura-se a resposta no fio (buscar_email + resposta_real).
+        self.assertEqual(len(graph.chamadas), 3)
         self.assertEqual(self._resultado("<a@x>")[0], "apagado")
+
+
+    def test_apagado_pelo_id_mas_respondido_no_fio(self) -> None:
+        """O caso que punha 184 de 190 rascunhos em "apagado". O id do Graph
+        tem âmbito de pasta e deixa de resolver quando a mensagem é arrumada
+        (ver a nota em Graph._converter); o lojista apaga o rascunho e
+        responde de novo. O cliente foi respondido, e é isso que conta."""
+        corpo = "Boa tarde,\n\nO seu artigo já foi enviado.\n\nCumprimentos,\nA Loja"
+        self._semear("<a@x>", corpo, "D1")
+        graph = GraphFalso(detalhe_rascunho=None, pedir_respostas={
+            "internetMessageId": {"value": [{
+                "id": "AAMk-1", "internetMessageId": "<a@x>",
+                "conversationId": "conv-1",
+                "receivedDateTime": "2026-08-27T09:00:00Z",
+                "from": {"emailAddress": {"address": "cliente@gmail.com"}},
+            }]},
+            "conversationId": {"value": [{
+                "receivedDateTime": "2026-08-27T10:00:00Z",
+                "from": {"emailAddress": {"address": CAIXA}},
+                "body": {"content": f"<p>{corpo}</p>"},
+            }]},
+        })
+        fechar_ciclo(graph, cfg(), self.con, 0)
+        estado, sem = self._resultado("<a@x>")
+        self.assertEqual(estado, "enviado-tal-e-qual")
+        self.assertGreaterEqual(sem, 90.0)
+
+    def test_enviado_sem_corpo_legivel_fica_por_medir(self) -> None:
+        """Era isto que produzia as cinco linhas com semelhança 0,0 de agosto:
+        consta como enviado, o corpo vem vazio, e gravava-se "editado". Sem
+        texto não há medição -- fica por medir e volta na corrida seguinte."""
+        self._semear("<a@x>", "texto original", "D1")
+        graph = GraphFalso(
+            detalhe_rascunho={"sentDateTime": "2026-08-27T10:00:00Z",
+                              "body": {"content": ""}},
+            pedir_respostas={"conversationId": {"value": []}},
+        )
+        fechar_ciclo(graph, cfg(), self.con, 0)
+        self.assertEqual(self._resultado("<a@x>"), (None, None))
+
+    def test_remedir_reavalia_os_ja_marcados_apagados(self) -> None:
+        """Sem --remedir, os "apagado" são finais e nunca mais são olhados --
+        incluindo os que foram classificados antes de existir a procura no
+        fio."""
+        corpo = "Boa tarde,\n\nO seu artigo já foi enviado.\n\nCumprimentos,\nA Loja"
+        self._semear("<a@x>", corpo, "D1")
+        self.con.execute("UPDATE processados SET resultado_estado = 'apagado' "
+                         "WHERE message_id = '<a@x>'")
+        self.con.commit()
+        graph = GraphFalso(detalhe_rascunho=None, pedir_respostas={
+            "internetMessageId": {"value": [{
+                "id": "AAMk-1", "internetMessageId": "<a@x>",
+                "conversationId": "conv-1",
+                "receivedDateTime": "2026-08-27T09:00:00Z",
+                "from": {"emailAddress": {"address": "cliente@gmail.com"}},
+            }]},
+            "conversationId": {"value": [{
+                "receivedDateTime": "2026-08-27T10:00:00Z",
+                "from": {"emailAddress": {"address": CAIXA}},
+                "body": {"content": f"<p>{corpo}</p>"},
+            }]},
+        })
+        fechar_ciclo(graph, cfg(), self.con, 0)
+        self.assertEqual(graph.chamadas, [])       # continua a ser final
+        fechar_ciclo(graph, cfg(), self.con, 0, remedir=True)
+        self.assertEqual(self._resultado("<a@x>")[0], "enviado-tal-e-qual")
 
 
 class FalhasSeguidas(unittest.TestCase):

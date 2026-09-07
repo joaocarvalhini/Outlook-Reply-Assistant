@@ -201,16 +201,53 @@ def comparar_gravado(graph: a.Graph, cfg: a.Config, con: sqlite3.Connection,
             print(f"\n[O QUE FOI REALMENTE ENVIADO]\n{real[:1200]}")
 
 
-def fechar_ciclo(graph: a.Graph, con: sqlite3.Connection, limite: int) -> None:
-    """Verifica, pelo id do próprio rascunho, se cada um foi enviado tal e
-    qual, editado, apagado sem ser enviado, ou continua pendente -- e grava
-    o resultado. Só lê o Graph; não chama o Claude."""
+def resposta_no_fio(graph: a.Graph, cfg: a.Config, message_id: str) -> str | None:
+    """A resposta real da loja no fio deste email, para quando o rascunho já
+    não existe pelo seu id.
+
+    Procurar pelo id do rascunho responde "o rascunho ainda existe?"; procurar
+    no fio responde "o cliente foi respondido?" -- que é a pergunta que
+    interessa. Nesta caixa as duas divergem quase sempre: o lojista apaga o
+    rascunho e responde de novo. É por esta via que o aprender.py sempre
+    mediu, e é a única que sobrevive a esse hábito.
+    """
+    msg = buscar_email(graph, message_id)
+    if msg is None:
+        return None
+    msg["_caixa"] = cfg.mailbox
+    try:
+        return resposta_real(graph, msg, cfg.aviso)
+    except Exception:  # noqa: BLE001
+        # Uma falha a procurar o fio não deve interromper as restantes linhas:
+        # fica por medir e tenta-se outra vez na corrida seguinte.
+        return None
+
+
+def fechar_ciclo(graph: a.Graph, cfg: a.Config, con: sqlite3.Connection,
+                 limite: int, remedir: bool = False) -> None:
+    """Verifica se cada rascunho foi enviado tal e qual, editado, apagado sem
+    ser enviado, ou continua pendente -- e grava o resultado. Só lê o Graph;
+    não chama o Claude.
+
+    Duas fontes, por esta ordem: o rascunho pelo seu próprio id e, quando esse
+    já não existe ou vem sem corpo legível, a resposta real no fio. A segunda
+    foi acrescentada a 07/09/2026 depois de se olhar para os números: dos 190
+    rascunhos medidos só pela primeira, **184 ficaram "apagado"** e pelo menos
+    dois deles tinham resposta enviada, encontrada no fio pelo aprender.py.
+    Um rascunho apagado não é um cliente sem resposta.
+
+    `remedir` volta a verificar as linhas que estão como "apagado", para
+    reavaliar as que foram classificadas antes de a segunda fonte existir.
+    """
+    finais = ["enviado-tal-e-qual", "enviado-editado"]
+    if not remedir:
+        finais.append("apagado")
     linhas = con.execute(
         "SELECT message_id, corpo, rascunho_id FROM processados "
         "WHERE rascunho_id != '' "
-        "  AND COALESCE(resultado_estado, '') NOT IN "
-        "      ('enviado-tal-e-qual', 'enviado-editado', 'apagado') "
-        "ORDER BY em DESC"
+        f"  AND COALESCE(resultado_estado, '') NOT IN ({','.join('?' * len(finais))}) "
+        "ORDER BY em DESC",
+        finais,
     ).fetchall()
     if limite:
         linhas = linhas[:limite]
@@ -221,19 +258,33 @@ def fechar_ciclo(graph: a.Graph, con: sqlite3.Connection, limite: int) -> None:
         return
 
     contagem: Counter[str] = Counter()
+    ilegiveis = 0
     for message_id, corpo_original, rascunho_id in linhas:
         detalhe = graph.detalhe_rascunho(rascunho_id)
         semelhante: float | None = None
-        if detalhe is None:
-            estado = "apagado"
-        elif not detalhe.get("sentDateTime"):
+        if detalhe is not None and not detalhe.get("sentDateTime"):
             estado = "pendente"
         else:
-            corpo_final = a.cortar_citacao(
-                a.para_texto((detalhe.get("body") or {}).get("content", ""))
-            )
-            semelhante = semelhanca(corpo_original or "", corpo_final)
-            estado = "enviado-tal-e-qual" if semelhante >= _LIMIAR_TAL_E_QUAL else "enviado-editado"
+            corpo_final = ""
+            if detalhe is not None:
+                corpo_final = a.cortar_citacao(
+                    a.para_texto((detalhe.get("body") or {}).get("content", ""))
+                )
+            if not corpo_final:
+                corpo_final = resposta_no_fio(graph, cfg, message_id) or ""
+            if corpo_final:
+                semelhante = semelhanca(corpo_original or "", corpo_final)
+                estado = ("enviado-tal-e-qual" if semelhante >= _LIMIAR_TAL_E_QUAL
+                          else "enviado-editado")
+            elif detalhe is None:
+                estado = "apagado"
+            else:
+                # Consta como enviado, mas nem o rascunho nem o fio deram
+                # texto. Gravar "editado" aqui era inventar -- era exatamente
+                # isso que produzia as cinco linhas com semelhança 0,0 de
+                # agosto. Fica por medir e volta na corrida seguinte.
+                ilegiveis += 1
+                continue
         contagem[estado] += 1
         con.execute(
             "UPDATE processados SET resultado_estado = ?, resultado_semelhanca = ?, "
@@ -242,13 +293,16 @@ def fechar_ciclo(graph: a.Graph, con: sqlite3.Connection, limite: int) -> None:
         )
     con.commit()
 
-    print(f"\n{len(linhas)} rascunho(s) verificado(s) pelo id\n")
+    print(f"\n{len(linhas)} rascunho(s) verificado(s)\n")
     for estado, n in contagem.most_common():
         print(f"  {estado:<20} {n}")
     pendentes = contagem["pendente"]
     if pendentes:
         print(f"\n{pendentes} continuam pendentes (ainda na pasta de rascunhos, "
               "nem enviados nem apagados) -- ficam para a próxima verificação.")
+    if ilegiveis:
+        print(f"{ilegiveis} enviado(s) sem corpo legível nem no rascunho nem no "
+              "fio -- ficam por medir, em vez de contarem como editados.")
     print()
 
 
@@ -314,8 +368,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument(
         "--fechar-ciclo", action="store_true",
-        help="verifica pelo id do rascunho se foi enviado tal e qual, editado, "
-             "ou apagado; grava o resultado. Só lê o Graph, não gasta créditos.",
+        help="verifica se cada rascunho foi enviado tal e qual, editado, "
+             "ou apagado -- pelo id do rascunho e, se esse já não existir, "
+             "pela resposta real no fio; grava o resultado. Só lê o Graph, "
+             "não gasta créditos.",
+    )
+    p.add_argument(
+        "--remedir", action="store_true",
+        help="com --fechar-ciclo, reavalia também as linhas já marcadas "
+             "'apagado' (classificadas antes de existir a procura no fio).",
     )
     p.add_argument(
         "--comparar-gravado", action="store_true",
@@ -329,7 +390,7 @@ def main(argv: list[str] | None = None) -> int:
     graph = a.Graph(cfg)
 
     if args.fechar_ciclo:
-        fechar_ciclo(graph, sqlite3.connect(cfg.db), args.n)
+        fechar_ciclo(graph, cfg, sqlite3.connect(cfg.db), args.n, args.remedir)
         return 0
 
     if args.comparar_gravado:
