@@ -2,7 +2,7 @@
 
 Fonte: /pages/politica-de-reembolsos-e-devolucoes, /pages/perguntas-faq,
 /pages/termos-e-condicoes
-Última verificação: 4 de setembro de 2026
+Última verificação: 6 de setembro de 2026
 
 ## Prazo para devolver
 
@@ -217,6 +217,16 @@ primeiro (secção acima) — não isto.
   https://www.tripat3s.com/pages/pedido-de-devolucao-ou-troca — é o que a
   loja pede na generalidade dos casos reais observados, não só em
   reclamações complexas.
+- **O formulário do site está com erro, e vai manter-se assim.** Quando o
+  cliente responde que o formulário dá erro, não se lhe pergunta qual é a
+  mensagem de erro nem se lhe pede para tentar outra vez: pede-se desculpa
+  e pede-se que envie por este mesmo email o que ia deixar no formulário —
+  fotografias dos produtos, motivo da devolução, descrição e os restantes
+  dados. O formulário continua a ser o passo padrão; quando falha, o email
+  é o canal de substituição e a informação recolhida é exatamente a mesma.
+  (Confirmado diretamente pelo lojista, 6 de setembro de 2026. Rever
+  quando o formulário do site for corrigido — enquanto não for, aplica-se
+  sempre.)
 - **Não pedir para preencher o formulário se o fio já mostra que o processo
   está em curso** — por exemplo, a loja já ofereceu uma solução concreta
   (reembolso parcial, troca) com base em detalhes específicos do problema
