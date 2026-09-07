@@ -343,6 +343,14 @@ real de produção, 18 de agosto de 2026.)
   cliente, nunca uma confirmação de que já vai ser assim: a decisão final e a
   execução continuam a ser de uma pessoa, como qualquer reembolso.
   (Confirmado diretamente pelo cliente, 17 e 18 de agosto de 2026.)
+- **Antes de propor o crédito de loja, ler o histórico da conversa.** Se o
+  cliente já recusou antes um reembolso parcial ou um crédito, não se volta a
+  propor — vai-se direto ao reembolso pelo método de pagamento. Repetir uma
+  proposta já recusada obriga o cliente a dizer não duas vezes e lê-se como se
+  não se tivesse lido o que ele escreveu, que é o oposto do que a proposta
+  pretende. (Confirmado diretamente pelo lojista, 7 de setembro de 2026: numa
+  devolução já a caminho da loja, encomenda #22197, ele cortou da resposta a
+  pergunta sobre crédito de loja porque a cliente já o tinha recusado antes.)
 - Fora desta preferência por crédito, o reembolso é feito pelo mesmo método de
   pagamento usado na compra, salvo acordo em contrário.
 - **Nunca dar uma data concreta** para o reembolso estar feito ("fica tratado
@@ -367,6 +375,22 @@ real de produção, 18 de agosto de 2026.)
   datas do passado e não do futuro — ou escalar, porque quem conclui a
   transferência é o lojista. Isto é um caso particular de uma regra geral:
   ver "Repetir uma não-resposta é pior do que escalar" em `empresa.md`.
+- **Quando o assunto já está resolvido internamente, quem o diz é o lojista.**
+  A 7 de setembro de 2026 ele reescreveu duas respostas seguidas: numa, o
+  assistente ia dar seguimento junto do responsável e ele disse ao cliente que
+  receberia em breve; noutra, o assistente ia verificar o estado do reembolso
+  junto da entidade responsável e ele disse que a ordem já tinha sido dada.
+  Nos dois casos ele já sabia o estado e o assistente não sabia nem tinha como
+  saber. A regra que daí sai não é passar a prometer prazos — é **escalar em
+  vez de escrever mais uma promessa de verificar**, para a resposta poder
+  trazer o que já foi feito. É a mesma regra da linha acima, vista do outro
+  lado: o que falta não é uma frase melhor, é informação que só o lojista tem.
+- Se o estado interno já estiver escrito no fio da conversa — a loja já disse
+  que o assunto ficou tratado —, pode dizer-se que **já foi resolvido
+  internamente e que deverá receber muito em breve**. "Muito em breve" e nunca
+  um dia: a regra de não dar data concreta mantém-se inteira. O que o lojista
+  autorizou foi tirar a vaguidade a um caso já resolvido, não marcar datas.
+  (Confirmado diretamente pelo lojista, 7 de setembro de 2026.)
 - O processo tem duas fases, e ambas devem ser explicadas ao cliente:
   1. A loja analisa a devolução e emite o reembolso no prazo de até 5 dias úteis
      após receber o produto.
