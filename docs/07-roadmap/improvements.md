@@ -94,7 +94,7 @@ Canal externo opcional via `ALERTA_WEBHOOK_URL` — vazio até ser configurado. 
 | P2-4 | **Fechar `INVENTARIO_INDISPONIVEL`** | Scope `read_products` + consulta de stock | Média |
 | ~~P2-5~~ | ✅ **Política de retenção** — feito 27/08, purga aos 90 dias | | |
 | ~~P2-6~~ | ✅ **Deteção de contradições na base** — construído 27/08, `verificar_kb.py` | | |
-| P2-7 | **Medir a linha de base da deriva** | Ferramenta pronta (`--fechar-ciclo`); falta correr um período e agregar | Baixa |
+| ~~P2-7~~ | ~~**Medir a linha de base da deriva**~~ | **Feito a 07/09/2026.** 459 rascunhos medidos: 49% enviados tal e qual, 47% editados, 3% apagados. Aceitação de ~20% em agosto para ~76% em setembro; nos que o modelo decidiu rascunhar, 89% seguem sem uma alteração | — |
 
 ### Sobre P2-4 — a categoria mais facilmente eliminável
 

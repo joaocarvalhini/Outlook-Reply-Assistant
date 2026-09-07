@@ -317,13 +317,30 @@ escrito na altura foi editado, e quanto?". Não chama o Claude, só o Graph.
 ```bash
 python medir_deriva.py --fechar-ciclo
 python medir_deriva.py --fechar-ciclo -n 30
+python medir_deriva.py --fechar-ciclo --remedir    # reavalia os "apagado" antigos
 ```
 
-**Implemented** a 27/08/2026. Diferente do resto do ficheiro: não chama o Claude, não procura
-heuristicamente "a próxima resposta na conversa" — pergunta ao Graph pelo **próprio id** do
-rascunho criado (gravado em `rascunho_id` desde esta data) e classifica em `apagado`, `pendente`,
-`enviado-tal-e-qual` ou `enviado-editado`, comparando o corpo enviado com o corpo gravado. Grava
-o resultado; `metricas.py` lê-o sem repetir as chamadas.
+**Implemented** a 27/08/2026, **corrigido a 07/09/2026**. Não chama o Claude. Classifica cada
+rascunho em `apagado`, `pendente`, `enviado-tal-e-qual` ou `enviado-editado`, comparando o corpo
+enviado com o corpo gravado. Grava o resultado; `metricas.py` lê-o sem repetir as chamadas.
+
+Usa duas fontes, por esta ordem: o **próprio id** do rascunho (gravado em `rascunho_id` desde
+27/08) e, quando esse já não resolve ou vem sem corpo legível, a **resposta real no fio da
+conversa** — a mesma via que o `aprender.py` sempre usou.
+
+> [!WARNING] Porque é que a segunda fonte teve de existir
+> A versão de 27/08 só perguntava pelo id, de propósito: era suposto ser mais exato do que
+> procurar heuristicamente a próxima resposta na conversa. Não era. O id do Graph tem âmbito de
+> pasta e é reatribuído quando a mensagem é arrumada (ver a nota em `Graph._converter`), e este
+> lojista apaga o rascunho e responde de novo. **Dos 190 rascunhos medidos até 01/09, 184 saíram
+> como "apagado"** — e pelo menos dois deles tinham resposta enviada, que o `aprender.py`
+> encontrou no fio. Com as duas fontes, os mesmos 459 rascunhos dão 226 enviados tal e qual, 218
+> editados e 15 apagados. Perguntar pelo id responde "o rascunho existe?"; perguntar ao fio
+> responde "o cliente foi respondido?", que é a pergunta.
+>
+> Pela mesma altura deixou de se gravar `enviado-editado` quando o corpo vem vazio: era isso que
+> produzia cinco linhas com semelhança 0,0 — um valor impossível entre dois textos reais. Sem
+> texto não há medição, e a linha fica por medir em vez de contar como editada.
 
 > [!NOTE] Só cobre rascunhos criados depois de 27/08/2026
 > Registos anteriores não têm `rascunho_id` — ficam de fora deste modo, sem alternativa possível
