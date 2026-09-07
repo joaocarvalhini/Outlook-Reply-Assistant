@@ -17,7 +17,7 @@ import json
 import re
 import sqlite3
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -49,6 +49,7 @@ from aquecer import (
 )
 from exportar import anonimizar, anonimizar_endereco, palpitar
 from medir_deriva import comparar_gravado, fechar_ciclo
+from compromissos import fechar, pendentes, procurar
 from verificar_kb import analisar_base
 
 from assistente import (
@@ -65,11 +66,14 @@ from assistente import (
     agora,
     compromissos_do_fio,
     decidir,
+    dias_desde,
+    emails_anteriores,
     emails_iguais,
     gravar_compromisso,
     nota_anexos_ignorados,
     resolver_encomenda,
     resumir_compromissos,
+    DIAS_COMPROMISSO_SEM_CONFIRMACAO,
     abrir_db,
     carregar_blocklist,
     cortar_citacao,
@@ -1628,6 +1632,56 @@ class RegistoDeCompromissos(unittest.TestCase):
         self.assertEqual(len(compromissos_do_fio(self.con, "conv-1")), 1)
         self.assertEqual(compromissos_do_fio(self.con, "conv-1")[0]["descricao"], "A")
 
+    def _envelhecer(self, dias: int, cid: str = "conv-1") -> None:
+        """Recua o atualizado_em, para simular um compromisso parado."""
+        velho = (datetime.now(timezone.utc) - timedelta(days=dias)).strftime(
+            "%Y-%m-%dT%H:%M:%SZ")
+        self.con.execute(
+            "UPDATE compromissos SET atualizado_em = ? WHERE conversation_id = ?",
+            (velho, cid))
+        self.con.commit()
+
+    def test_idade_do_compromisso_vai_no_resumo(self) -> None:
+        gravar_compromisso(self.con, "conv-1", "reembolso", "devolver 40 EUR",
+                           "pendente", "")
+        self._envelhecer(3)
+        texto = resumir_compromissos(compromissos_do_fio(self.con, "conv-1"))
+        self.assertIn("há 3 dia(s)", texto)
+        self.assertNotIn("sem confirmação", texto)
+
+    def test_compromisso_parado_deixa_de_ser_dado_como_certo(self) -> None:
+        """160 de 170 nunca fecharam porque só fecham se o cliente escrever
+        outra vez. Passado o limite, diz-se o que é: sem confirmação."""
+        gravar_compromisso(self.con, "conv-1", "substituicao", "enviar novo par",
+                           "pendente", "")
+        self._envelhecer(DIAS_COMPROMISSO_SEM_CONFIRMACAO + 4)
+        texto = resumir_compromissos(compromissos_do_fio(self.con, "conv-1"))
+        self.assertIn("sem confirmação há 18 dias", texto)
+        self.assertIn("pode já ter sido cumprido", texto)
+        # Continua a aparecer: é o que dá contexto a um "e o meu reembolso?".
+        self.assertIn("substituicao", texto)
+
+    def test_conta_quantas_vezes_o_cliente_ja_escreveu(self) -> None:
+        for i in range(3):
+            registar(self.con, msg(message_id=f"<{i}@x>"), "escalar", "m", "")
+        self.assertEqual(emails_anteriores(self.con, "conv-1"), 3)
+        self.assertEqual(emails_anteriores(self.con, "conv-outra"), 0)
+        self.assertEqual(emails_anteriores(self.con, ""), 0)
+
+    def test_repeticao_so_aparece_a_partir_da_segunda(self) -> None:
+        gravar_compromisso(self.con, "conv-1", "envio", "vai seguir", "pendente", "")
+        c = compromissos_do_fio(self.con, "conv-1")
+        self.assertNotIn("já escreveu", resumir_compromissos(c, 1))
+        self.assertIn("já escreveu 4 vezes", resumir_compromissos(c, 4))
+
+    def test_data_ilegivel_nao_inventa_idade(self) -> None:
+        gravar_compromisso(self.con, "conv-1", "envio", "vai seguir", "pendente", "")
+        self.con.execute("UPDATE compromissos SET atualizado_em = 'lixo'")
+        self.con.commit()
+        self.assertEqual(dias_desde("lixo", agora()), -1)
+        texto = resumir_compromissos(compromissos_do_fio(self.con, "conv-1"))
+        self.assertNotIn("dia(s)", texto)
+
     def test_tipo_nenhum_nunca_se_grava(self) -> None:
         gravar_compromisso(self.con, "conv-1", "nenhum", "x", "pendente", "")
         self.assertEqual(compromissos_do_fio(self.con, "conv-1"), [])
@@ -1642,6 +1696,69 @@ class RegistoDeCompromissos(unittest.TestCase):
                            "pendente", "2026-08-20")
         resumo = resumir_compromissos(compromissos_do_fio(self.con, "conv-1"))
         self.assertIn("2026-08-20", resumo)
+
+
+
+class FerramentaDeCompromissos(unittest.TestCase):
+    """compromissos.py -- a lista que nenhuma pessoa tinha. A tabela era
+    escrita pelo modelo e lida pelo modelo, e por isso 160 de 170 promessas
+    ficaram penduradas sem ninguém poder fechá-las."""
+
+    def setUp(self) -> None:
+        pasta = TemporaryDirectory()
+        self.addCleanup(pasta.cleanup)
+        self.con = abrir_db(Path(pasta.name) / "t.db")
+        self.addCleanup(self.con.close)
+        registar(self.con, msg(message_id="<a@x>", assunto="Encomenda #22197"),
+                 "escalar", "prometido", "")
+        gravar_compromisso(self.con, "conv-1", "reembolso", "devolver 40 EUR",
+                           "pendente", "")
+
+    def test_lista_o_pendente_com_assunto_e_contagem(self) -> None:
+        c = pendentes(self.con)[0]
+        self.assertEqual(c["tipo"], "reembolso")
+        self.assertEqual(c["assunto"], "Encomenda #22197")
+        self.assertEqual(c["emails"], 1)
+
+    def test_concluido_nao_aparece_na_lista(self) -> None:
+        gravar_compromisso(self.con, "conv-1", "reembolso", "feito", "concluido", "")
+        self.assertEqual(pendentes(self.con), [])
+
+    def test_filtro_por_dias_esconde_os_recentes(self) -> None:
+        self.assertEqual(len(pendentes(self.con, dias_min=0)), 1)
+        self.assertEqual(pendentes(self.con, dias_min=5), [])
+
+    def test_procura_pelo_assunto_e_nao_pelo_id(self) -> None:
+        """Um conversation_id tem centenas de caracteres; o que o lojista
+        reconhece é o assunto."""
+        self.assertEqual(procurar(self.con, "22197"), ["conv-1"])
+        self.assertEqual(procurar(self.con, "conv-1"), ["conv-1"])
+        self.assertEqual(procurar(self.con, "nao existe"), [])
+        self.assertEqual(procurar(self.con, "  "), [])
+
+    def test_procura_ambigua_devolve_todas(self) -> None:
+        registar(self.con, msg(message_id="<b@x>", conversation_id="conv-2",
+                               assunto="Encomenda #22198"), "escalar", "p", "")
+        gravar_compromisso(self.con, "conv-2", "envio", "segue amanha",
+                           "pendente", "")
+        self.assertEqual(len(procurar(self.con, "Encomenda")), 2)
+
+    def test_fechar_marca_cumprido_e_sai_do_contexto(self) -> None:
+        self.assertEqual(fechar(self.con, "conv-1"), 1)
+        self.assertEqual(pendentes(self.con), [])
+        # E deixa de ser injetado no pedido ao modelo, que é o ponto todo.
+        self.assertEqual(compromissos_do_fio(self.con, "conv-1"), [])
+
+    def test_fechar_por_tipo_nao_toca_nos_outros(self) -> None:
+        gravar_compromisso(self.con, "conv-1", "envio", "segue amanha",
+                           "pendente", "")
+        self.assertEqual(fechar(self.con, "conv-1", tipo="reembolso"), 1)
+        restantes = [c["tipo"] for c in pendentes(self.con)]
+        self.assertEqual(restantes, ["envio"])
+
+    def test_fechar_o_que_ja_esta_fechado_nao_faz_nada(self) -> None:
+        fechar(self.con, "conv-1")
+        self.assertEqual(fechar(self.con, "conv-1"), 0)
 
 
 class Anonimizacao(unittest.TestCase):
