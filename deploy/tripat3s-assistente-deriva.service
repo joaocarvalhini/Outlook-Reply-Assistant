@@ -1,0 +1,38 @@
+[Unit]
+Description=Fecha o ciclo dos rascunhos: enviado tal e qual, editado ou apagado (tripat3s)
+Documentation=https://github.com/joaocarvalhini/Outlook-Reply-Assistant
+After=network-online.target
+Wants=network-online.target
+# Sem OnFailure, como o aquecer: falhar a medir não afeta nenhum cliente. O
+# que se perde é um dia de métrica, e a corrida seguinte apanha o atraso --
+# as linhas por medir continuam candidatas até terem um estado final.
+
+[Service]
+Type=oneshot
+
+User=assistente
+Group=assistente
+WorkingDirectory=/opt/assistente
+# Só lê o Graph; não chama o Claude e não gasta créditos.
+ExecStart=/opt/assistente/.venv/bin/python /opt/assistente/medir_deriva.py --fechar-ciclo
+
+# Até três chamadas ao Graph por rascunho por medir. Num dia normal são umas
+# dezenas de linhas e resolve-se em segundos; o limite existe para o caso de
+# ter estado dias parado e apanhar centenas de uma vez.
+TimeoutStartSec=900
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+# Escreve: grava resultado_estado e resultado_semelhanca no registo.
+ReadWritePaths=/opt/assistente
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

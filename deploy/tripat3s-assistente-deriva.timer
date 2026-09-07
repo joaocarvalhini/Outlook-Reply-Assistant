@@ -1,0 +1,18 @@
+[Unit]
+Description=Mede diariamente o que aconteceu aos rascunhos da véspera (tripat3s)
+Requires=tripat3s-assistente-deriva.service
+
+[Timer]
+# De madrugada, e não durante o dia, por causa de um estado que é final: um
+# rascunho que já não existe e ainda não tem resposta no fio fica "apagado"
+# para sempre. Se o lojista apagar o rascunho às 10h e responder à mão às 11h,
+# uma corrida às 10h30 gravava a mentira. Às 4h da manhã o dia anterior já
+# está fechado. (Para reavaliar os que ficaram mal: --remedir.)
+OnCalendar=*-*-* 04:00 Europe/Lisbon
+
+RandomizedDelaySec=5min
+
+Unit=tripat3s-assistente-deriva.service
+
+[Install]
+WantedBy=timers.target

@@ -206,7 +206,7 @@ python aquecer.py --simular   # diz o que faria, sem chamar a API
 python aquecer.py --forcar    # aquece sempre (para verificar)
 ```
 
-Corre sozinho via `tripat3s-assistente-aquecer.timer`, de 20 em 20 minutos. Custa **$0,0135**
+Corre sozinho via `tripat3s-assistente-aquecer.timer`, de 20 em 20 minutos. Custa **$0,0078**
 quando aquece e **nada** quando a cache já está quente — que é o caso na maior parte das
 passagens diurnas.
 
@@ -346,9 +346,14 @@ conversa** — a mesma via que o `aprender.py` sempre usou.
 > Registos anteriores não têm `rascunho_id` — ficam de fora deste modo, sem alternativa possível
 > (o id não foi gravado na altura). Ver [[data-flow|Fluxo de dados]].
 
-Correr periodicamente (ex.: junto com a revisão semanal) para a taxa de aceitação em
-`metricas.py` deixar de estar vazia. É a peça que faltava para medir a referência de deriva do
-Finding M-3.
+Corre sozinho via `tripat3s-assistente-deriva.timer`, **todos os dias às 4h de Lisboa**. Só lê o
+Graph, por isso não custa nada; a hora é que não é indiferente. `apagado` é um estado final, e um
+rascunho apagado às 10h que só é respondido à mão às 11h ficaria gravado como perdido se a
+corrida caísse pelo meio. De madrugada o dia anterior já está fechado.
+
+Antes de haver temporizador correu-se à mão duas vezes em doze dias, e entre a segunda e a
+terceira passaram-se seis dias — tempo suficiente para a taxa de aceitação em `metricas.py` estar
+a falar de outra semana. É a peça que faltava para medir a referência de deriva do Finding M-3.
 
 ### `verificar_kb.py` — contradições na base de conhecimento
 
