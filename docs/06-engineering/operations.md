@@ -97,6 +97,42 @@ como `coberta?` as que já parecem estar na base.
 >
 > Ver [[knowledge-base|Base de conhecimento]].
 
+### `compromissos.py` — as promessas por fechar
+
+```bash
+python compromissos.py                     # pendentes, mais parados primeiro
+python compromissos.py --dias 14           # só os parados há 14 dias ou mais
+python compromissos.py --fechar "#22197"   # marca como cumprido
+python compromissos.py --fechar "#22197" --tipo reembolso
+```
+
+**Implemented** a 08/09/2026. Não chama o Claude nem o Graph — só lê e escreve o registo local.
+Procura-se por parte do assunto, e não pelo `conversation_id`: esse tem centenas de caracteres e
+ninguém o escreve à mão.
+
+> [!CAUTION] O registo capturava e nunca fechava
+> Um compromisso só passa a `concluido` quando um email seguinte confirma que aconteceu. Se a
+> loja cumpre e o cliente fica satisfeito, esse email **nunca chega** — e a promessa fica
+> `pendente` para sempre, a ser injetada em todos os emails seguintes daquela conversa como algo
+> por cumprir. O caso de sucesso é indistinguível do de falha.
+>
+> Medido a 08/09/2026: **160 de 170 compromissos por fechar**, só 6 alguma vez `concluido`, e 68
+> deles em conversas sem um email há mais de uma semana. `COMPROMISSO_ANTERIOR` era 40% das
+> escalações que restavam, e a subir — de 21,7 para 24,9 por cada 100 emails entre agosto e
+> setembro. Não porque a loja prometesse mais: porque a pilha só engordava, ~13 por dia contra
+> ~0,5 fechados.
+
+Duas defesas, além desta ferramenta:
+
+- Acima de `DIAS_COMPROMISSO_SEM_CONFIRMACAO` (14 dias) o compromisso passa a ir para o modelo
+  como *"sem confirmação há N dias — pode já ter sido cumprido"*, e o prompt diz que isso
+  sozinho não é razão para escalar um email que não fala dele. Continua a aparecer, porque é o
+  que dá contexto a um *"e o meu reembolso?"* sem mais nada.
+- O pedido passa a dizer **quantas vezes o cliente já escreveu naquela conversa**. O prompt
+  mandava marcar urgente aos três ou mais, mas o modelo tinha de contar isso a partir do fio, que
+  vem cortado: das 17 conversas com três ou mais escalações por compromisso, **12 nunca foram
+  marcadas urgentes**, incluindo uma com dez. O número exato estava no registo o tempo todo.
+
 ### `aprender.py` — o que aprender com as edições do lojista
 
 ```bash
