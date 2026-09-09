@@ -84,6 +84,7 @@ from assistente import (
     desembrulhar_formulario_contacto,
     desembrulhar_formulario_devolucao,
     desembrulhar_formularios,
+    eh_formulario_contacto,
     ETIQUETAS,
     ETIQUETA_URGENTE,
     etiquetas,
@@ -426,15 +427,34 @@ class FormularioContactoShopify(unittest.TestCase):
         self.assertFalse(desembrulhar_formulario_contacto(m))
         self.assertEqual(m, original)
 
+    CORPO_REAL_INGLES = (
+        "You received a new message from your online store's contact form."
+        "\n\nCountry Code:\n\nPT\n\nName:\n\nGonçalo Padeiro\n\nEmail:\n\n"
+        "goncalopadeiro2007@gmail.com\n\nPhone:\n\n967679786\n\nBody:\n\neu "
+        "comprei os inpods pro 2.0 e eles estão constantemente a parar a "
+        "música do nada\n\nWebsite:\n\n"
+    )
+
     def test_versao_inglesa_do_formulario_tambem_se_reconhece(self) -> None:
-        """4 casos reais entre 29/08 e 01/09/2026 (assunto "New customer
-        message on...") foram descartados como dominio-bloqueado:shopify.com
-        antes sequer de chegar aqui -- o assunto só reconhecia português (ver
-        _PADRAO_FORMULARIO_CONTACTO). O formato exato do corpo em inglês não
-        foi confirmado contra um caso real (os filtros do Graph nesta caixa
-        não devolveram um exemplo); isto é a tentativa razoável, calcada no
-        formato português conhecido, com "Email"/"Message" em vez de
-        "E-mail"/"Corpo"."""
+        """Corpo real de 09/09/2026, o primeiro caso inglês visto de facto.
+
+        A 02/09 o assunto inglês passou a ser reconhecido, mas o rótulo do
+        corpo foi adivinhado como "Message:" -- é "Body:". Entre 02 e
+        09/09/2026 cada submissão em inglês passava a triagem e morria em
+        silêncio como "formulario-contacto-nao-reconhecido".
+        """
+        m = msg(de="mailer@shopify.com", nome="tripat3s (Shopify)",
+                assunto="New customer message on tripat3s",
+                corpo=self.CORPO_REAL_INGLES)
+        self.assertTrue(eh_formulario_contacto(m))
+        self.assertTrue(desembrulhar_formulario_contacto(m))
+        self.assertEqual(m["de"], "goncalopadeiro2007@gmail.com")
+        self.assertEqual(m["nome"], "Gonçalo Padeiro")
+        self.assertIn("inpods pro 2.0", m["corpo"])
+        self.assertNotIn("Website", m["corpo"])
+        self.assertNotIn("Country Code", m["corpo"])
+
+    def test_variante_inglesa_com_message_continua_aceite(self) -> None:
         m = msg(
             de="mailer@shopify.com", nome="tripat3s (Shopify)",
             corpo="You received a new message from your online store's "
@@ -445,7 +465,6 @@ class FormularioContactoShopify(unittest.TestCase):
         self.assertTrue(desembrulhar_formulario_contacto(m))
         self.assertEqual(m["de"], "john@example.com")
         self.assertIn("still waiting", m["corpo"])
-        self.assertNotIn("Website", m["corpo"])
 
 
 class FormularioDevolucaoFormspree(unittest.TestCase):

@@ -123,7 +123,15 @@ tem `mailer@shopify.com` para se poder detetar ali dentro.
 
 ### Contacto (Shopify)
 
-Extração por regex: `E-mail:`, `Name:`, `Corpo:` (até `Website:` ou fim).
+Extração por regex: `E-mail:`/`Email:`, `Name:`, `Corpo:`/`Body:`/`Message:` (até `Website:` ou
+fim).
+
+O mesmo formulário chega em duas línguas, e o Shopify só traduz metade dos rótulos. A versão
+portuguesa (18/08/2026) traz `E-mail:` e `Corpo:`; a inglesa (09/09/2026) traz `Email:` e
+`Body:`. A 02/09/2026 o assunto inglês passou a ser reconhecido mas o rótulo do corpo foi
+**adivinhado** como `Message:` — e entre 02 e 09/09 cada submissão em inglês passava a triagem
+e morria em silêncio como `formulario-contacto-nao-reconhecido`. `Message:` continua aceite por
+não custar nada; o rótulo real e confirmado é `Body:`.
 
 O `replyTo` do Shopify já aponta para o email real do cliente, *"por isso um rascunho normal
 chega à pessoa certa"*.

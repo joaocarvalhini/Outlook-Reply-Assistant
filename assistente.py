@@ -411,9 +411,9 @@ DOMINIOS_BASE = (
 # português -- 4 casos reais descartados como "dominio-bloqueado:shopify.com"
 # entre 29/08 e 01/09/2026, todos por o assunto não bater com o padrão só em
 # português. É o que o lojista via como "às vezes o assistente não responde
-# ao formulário do site". Ficou por confirmar o formato exato do CORPO destas
-# mensagens em inglês (os filtros do Graph nesta caixa não devolveram um
-# exemplo real) -- ver a nota em desembrulhar_formulario_contacto().
+# ao formulário do site". O formato do CORPO em inglês ficou por confirmar
+# nessa altura e a suposição saiu errada -- ver a nota em
+# desembrulhar_formulario_contacto().
 _PADRAO_FORMULARIO_CONTACTO = re.compile(
     r"^(nova mensagem de cliente|new customer message)\b", re.I
 )
@@ -617,11 +617,16 @@ def desembrulhar_formulario_contacto(msg: dict) -> bool:
     finge que se percebeu algo que pode não ser isto: passar um
     "mailer@shopify.com" sem corrigir seria pior do que tê-lo bloqueado.
 
-    Aceita "E-mail:"/"Corpo:" (visto em produção) e "Email:"/"Message:" (a
-    tentativa razoável para a versão inglesa do mesmo formulário -- ainda por
-    confirmar contra um caso real, ver a nota em _PADRAO_FORMULARIO_CONTACTO).
-    Se nenhum dos dois bater, devolve-se False como sempre: continua a ser
-    preferível descartar a inventar um corpo que pode estar errado.
+    Aceita "E-mail:"/"Corpo:" (versão portuguesa, vista em produção a
+    18/08/2026) e "Email:"/"Body:" (versão inglesa, vista em produção a
+    09/09/2026). O rótulo inglês do corpo tinha sido adivinhado como
+    "Message:" a 02/09 e estava errado: desde então, cada submissão em inglês
+    passava a triagem e morria aqui como "formulario-contacto-nao-
+    reconhecido" -- silenciosamente, que é como o lojista deu por isso ("de
+    repente deixou de responder aos formulários"). "Message:" fica aceite na
+    mesma, por não custar nada e cobrir outra variante do tema.
+    Se nenhum bater, devolve-se False como sempre: continua a ser preferível
+    descartar a inventar um corpo que pode estar errado.
     """
     corpo = msg["corpo"]
     if "formulário de contacto" not in corpo.lower() and "contact form" not in corpo.lower():
@@ -630,7 +635,8 @@ def desembrulhar_formulario_contacto(msg: dict) -> bool:
     # O formulário tem um campo "Website" opcional a seguir ao corpo (visto
     # sempre vazio nos casos reais) — corta-se aqui para não ficar pendurado
     # no fim do texto que vai para o modelo.
-    m_corpo = re.search(r"(?:Corpo|Message):\s*(.+?)(?:\n\s*Website:|\Z)", corpo, re.I | re.S)
+    m_corpo = re.search(r"(?:Corpo|Body|Message):\s*(.+?)(?:\n\s*Website:|\Z)",
+                        corpo, re.I | re.S)
     if not m_email or not m_corpo or not m_corpo.group(1).strip():
         return False
     m_nome = re.search(r"Name:\s*(.+)", corpo, re.I)
