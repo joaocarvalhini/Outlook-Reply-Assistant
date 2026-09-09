@@ -687,6 +687,21 @@ ETIQUETAS = {
 ETIQUETA_URGENTE = "Urgente"
 
 
+def primeira_palavra(texto: str) -> str:
+    """A primeira palavra, em minúsculas, de um campo que devia ter só uma.
+
+    O modelo devolve "sim"/"nao" no campo de urgência, mas em setembro de 2026
+    oito de trinta respostas trouxeram texto colado -- de uma justificação
+    ("sim - já escreveu 5 vezes") a fragmentos do próprio esquema. A comparação
+    exata que estava aqui deixava cair a etiqueta em silêncio, e caía
+    precisamente nos casos em que o modelo tinha mais que dizer, que são os
+    graves: a #21868 de 08/09/2026 era uma queixa de demora já escalada duas
+    vezes e ficou sem etiqueta. Ler só a primeira palavra recupera sete dos
+    oito casos observados.
+    """
+    return re.split(r"\W+", texto.strip().lower(), maxsplit=1)[0]
+
+
 def etiquetas(categoria: str, urgencia: str) -> tuple[str, ...]:
     """As etiquetas a pôr no email, além da que marca "precisa de humano".
 
@@ -700,7 +715,7 @@ def etiquetas(categoria: str, urgencia: str) -> tuple[str, ...]:
     nome = ETIQUETAS.get(categoria)
     if nome:
         saida.append(nome)
-    if urgencia.strip().lower() in ("sim", "alto", "alta"):
+    if primeira_palavra(urgencia) in ("sim", "alto", "alta"):
         saida.append(ETIQUETA_URGENTE)
     return tuple(saida)
 
@@ -1330,6 +1345,7 @@ def abrir_db(caminho: Path) -> sqlite3.Connection:
             estado          TEXT,
             data_prometida  TEXT,
             atualizado_em   TEXT,
+            criado_em       TEXT,
             PRIMARY KEY (conversation_id, tipo)
         );
         """
@@ -1340,6 +1356,15 @@ def abrir_db(caminho: Path) -> sqlite3.Connection:
     for nome, tipo in COLUNAS_NOVAS:
         if nome not in existentes:
             con.execute(f"ALTER TABLE processados ADD COLUMN {nome} {tipo}")
+    # criado_em chegou depois de já haver compromissos gravados. Nos antigos
+    # fica a valer o atualizado_em: é a data mais recente em que o compromisso
+    # foi visto, e é a única que existe -- a real é mais antiga, por isso a
+    # idade que sai daqui é sempre conservadora para baixo, nunca inflacionada.
+    colunas_c = {linha[1] for linha in con.execute("PRAGMA table_info(compromissos)")}
+    if "criado_em" not in colunas_c:
+        con.execute("ALTER TABLE compromissos ADD COLUMN criado_em TEXT")
+        con.execute("UPDATE compromissos SET criado_em = atualizado_em "
+                    "WHERE criado_em IS NULL")
     con.commit()
     return con
 
@@ -1456,16 +1481,23 @@ def compromissos_do_fio(con: sqlite3.Connection, conversation_id: str) -> list[d
     if not conversation_id:
         return []
     linhas = con.execute(
-        "SELECT tipo, descricao, estado, data_prometida, atualizado_em "
+        "SELECT tipo, descricao, estado, data_prometida, "
+        " COALESCE(criado_em, atualizado_em) "
         "FROM compromissos WHERE conversation_id = ? AND estado = 'pendente' "
         "ORDER BY atualizado_em DESC",
         (conversation_id,),
     ).fetchall()
     hoje = agora()
+    # A idade conta desde que o compromisso foi registado, não desde a última
+    # vez que o modelo voltou a vê-lo no fio. Com o atualizado_em, cada email
+    # novo da mesma conversa punha o contador a zero -- e é a conversa que
+    # repete que mais precisa da idade. Medido a 09/09/2026: 176 de 176
+    # compromissos pendentes contavam como tendo menos de 14 dias, ou seja o
+    # aviso de "pode já ter sido cumprido" nunca chegou a aparecer uma vez.
     return [
-        {"tipo": t, "descricao": d, "estado": e, "data": dt, "em": em,
-         "dias": dias_desde(em, hoje)}
-        for t, d, e, dt, em in linhas
+        {"tipo": t, "descricao": d, "estado": e, "data": dt, "em": criado,
+         "dias": dias_desde(criado, hoje)}
+        for t, d, e, dt, criado in linhas
     ]
 
 
@@ -1505,15 +1537,17 @@ def gravar_compromisso(con: sqlite3.Connection, conversation_id: str, tipo: str,
     """
     if not conversation_id or tipo not in TIPOS_COMPROMISSO or tipo == "nenhum":
         return
+    # criado_em fica de fora do DO UPDATE de propósito: é a data da promessa,
+    # não a da última vez que se falou dela.
     con.execute(
         "INSERT INTO compromissos (conversation_id, tipo, descricao, estado, "
-        " data_prometida, atualizado_em) VALUES (?, ?, ?, ?, ?, ?) "
+        " data_prometida, atualizado_em, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?) "
         "ON CONFLICT(conversation_id, tipo) DO UPDATE SET "
         " descricao=excluded.descricao, estado=excluded.estado, "
         " data_prometida=excluded.data_prometida, atualizado_em=excluded.atualizado_em",
         (conversation_id, tipo, descricao,
          estado if estado in ESTADOS_COMPROMISSO else "desconhecido",
-         data_prometida, agora()),
+         data_prometida, agora(), agora()),
     )
     con.commit()
 
@@ -2825,7 +2859,8 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
 
     if acao == "escalar":
         log("escalado", email=msg["message_id"][:40], categoria=extra["categoria"],
-            identidade=confianca, urgente=extra["urgencia"] or "-", motivo=motivo)
+            identidade=confianca,
+            urgente=primeira_palavra(extra["urgencia"]) or "-", motivo=motivo)
         if extra["lacuna_tema"]:
             log("lacuna", tema=extra["lacuna_tema"], falta=extra["lacuna_em_falta"])
         # O corpo vai para o registo tal como nos rascunhados: é a resposta de

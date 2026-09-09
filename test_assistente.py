@@ -1633,12 +1633,12 @@ class RegistoDeCompromissos(unittest.TestCase):
         self.assertEqual(compromissos_do_fio(self.con, "conv-1")[0]["descricao"], "A")
 
     def _envelhecer(self, dias: int, cid: str = "conv-1") -> None:
-        """Recua o atualizado_em, para simular um compromisso parado."""
+        """Recua as duas marcas, para simular um compromisso parado."""
         velho = (datetime.now(timezone.utc) - timedelta(days=dias)).strftime(
             "%Y-%m-%dT%H:%M:%SZ")
         self.con.execute(
-            "UPDATE compromissos SET atualizado_em = ? WHERE conversation_id = ?",
-            (velho, cid))
+            "UPDATE compromissos SET atualizado_em = ?, criado_em = ? "
+            "WHERE conversation_id = ?", (velho, velho, cid))
         self.con.commit()
 
     def test_idade_do_compromisso_vai_no_resumo(self) -> None:
@@ -1661,6 +1661,26 @@ class RegistoDeCompromissos(unittest.TestCase):
         # Continua a aparecer: é o que dá contexto a um "e o meu reembolso?".
         self.assertIn("substituicao", texto)
 
+    def test_email_novo_no_fio_nao_poe_a_idade_a_zero(self) -> None:
+        """O bug que fazia a defesa dos 14 dias nunca disparar: o compromisso
+        e regravado a cada email da mesma conversa, e o atualizado_em ia a
+        zero com ele. Medido a 09/09/2026 em producao: 176 de 176 pendentes
+        contavam como tendo menos de 14 dias."""
+        gravar_compromisso(self.con, "conv-1", "reembolso", "devolver 40 EUR",
+                           "pendente", "")
+        self._envelhecer(20)
+        # O cliente escreve outra vez e o modelo volta a ver a mesma promessa.
+        gravar_compromisso(self.con, "conv-1", "reembolso", "devolver 40 EUR",
+                           "pendente", "")
+        texto = resumir_compromissos(compromissos_do_fio(self.con, "conv-1"))
+        self.assertIn("sem confirmação há 20 dias", texto)
+
+    def test_compromisso_novo_conta_a_partir_de_hoje(self) -> None:
+        gravar_compromisso(self.con, "conv-1", "envio", "segue amanha",
+                           "pendente", "")
+        texto = resumir_compromissos(compromissos_do_fio(self.con, "conv-1"))
+        self.assertIn("há 0 dia(s)", texto)
+
     def test_conta_quantas_vezes_o_cliente_ja_escreveu(self) -> None:
         for i in range(3):
             registar(self.con, msg(message_id=f"<{i}@x>"), "escalar", "m", "")
@@ -1676,7 +1696,7 @@ class RegistoDeCompromissos(unittest.TestCase):
 
     def test_data_ilegivel_nao_inventa_idade(self) -> None:
         gravar_compromisso(self.con, "conv-1", "envio", "vai seguir", "pendente", "")
-        self.con.execute("UPDATE compromissos SET atualizado_em = 'lixo'")
+        self.con.execute("UPDATE compromissos SET criado_em = 'lixo'")
         self.con.commit()
         self.assertEqual(dias_desde("lixo", agora()), -1)
         texto = resumir_compromissos(compromissos_do_fio(self.con, "conv-1"))
@@ -2753,6 +2773,25 @@ class Etiquetas(unittest.TestCase):
         """Na dúvida, não urgente: uma etiqueta que aparece de mais deixa de
         querer dizer alguma coisa."""
         for valor in ("", "nao", "não", "medio", "baixo", "talvez", "true"):
+            self.assertNotIn(ETIQUETA_URGENTE, etiquetas("JULGAMENTO_HUMANO", valor),
+                             f"{valor!r} não devia contar como urgente")
+
+    def test_urgente_sobrevive_a_texto_colado_pelo_modelo(self) -> None:
+        """Casos reais de producao, setembro de 2026: oito de trinta respostas
+        trouxeram texto colado ao "sim", e a comparacao exata deixava cair a
+        etiqueta em silencio -- incluindo na #21868, uma queixa de demora ja
+        escalada duas vezes."""
+        for valor in ("sim - já escreveu 5 vezes e a loja repetiu a promessa",
+                      "sim, cliente já perguntou pelo mesmo assunto",
+                      "sim compromisso_tipo=reembolso",
+                      "sim','compromisso_tipo\":",
+                      "sim" + chr(10) + "mais texto"):
+            self.assertIn(ETIQUETA_URGENTE, etiquetas("JULGAMENTO_HUMANO", valor),
+                          f"{valor!r} devia contar como urgente")
+
+    def test_nao_com_texto_colado_continua_a_nao_ser_urgente(self) -> None:
+        for valor in ("nao Não aplicável, mas obrigatório: colocando nao",
+                      "nao is o_", "naoic no wait, need to check schema"):
             self.assertNotIn(ETIQUETA_URGENTE, etiquetas("JULGAMENTO_HUMANO", valor),
                              f"{valor!r} não devia contar como urgente")
 
