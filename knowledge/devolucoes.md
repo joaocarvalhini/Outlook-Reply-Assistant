@@ -286,6 +286,13 @@ real de produção, 18 de agosto de 2026.)
 
 ## Etiqueta de devolução
 
+- **A instrução de envio diz sempre, de forma expressa, que o método tem de
+  incluir rastreio.** Não é uma recomendação: sem rastreio nem o cliente nem a
+  loja conseguem estabelecer se a encomenda chegou, e não é seguro para nenhum
+  dos dois lados. Vale para devoluções e para trocas, e é dito no momento em
+  que se dá a indicação para enviar, não depois. (Confirmado diretamente pelo
+  lojista, 9 de setembro de 2026, a partir de uma devolução enviada em correio
+  normal que a loja nunca conseguiu localizar.)
 - A loja **não emite nem disponibiliza etiqueta de devolução pré-paga**. O
   cliente despacha por conta própria, na transportadora que preferir (CTT ou
   outra) — não é a loja a gerar a etiqueta.
@@ -294,8 +301,9 @@ real de produção, 18 de agosto de 2026.)
   digitais**, e que o envio deve ser feito diretamente para a morada que
   consta no envelope original da DPD (só quando o cliente pergunta qual é a
   morada — ver nota acima). Acrescenta-se que a loja se responsabiliza pelos
-  portes até 3,99 € (ver "Portes de devolução" abaixo) e recomenda-se o envio
-  por correio registado, para haver acompanhamento. (Confirmado diretamente
+  portes até 3,99 € (ver "Portes de devolução" abaixo) e indica-se o envio
+  por correio registado, que cumpre o rastreio obrigatório do primeiro ponto
+  desta secção. (Confirmado diretamente
   pelo lojista, 2 de setembro de 2026.)
   - Isto é sobre devolução por arrependimento. Numa substituição por
     **defeito confirmado**, o cliente reutiliza o envelope da DPD em que
@@ -312,6 +320,18 @@ real de produção, 18 de agosto de 2026.)
 
 - Pedir ao cliente que envie o comprovativo de expedição e o código de
   rastreio, para a loja poder acompanhar a chegada do artigo.
+- **Se a devolução foi enviada sem rastreio, é isso que a resposta explica.**
+  Quando o cliente se queixa da demora e o fio mostra que mandou o artigo em
+  correio normal, o que se diz é que esse método não dá rastreio nenhum que a
+  loja possa consultar, e que por isso não há forma de acompanhar a chegada
+  daqui. Isto substitui mais uma promessa de verificar internamente, que é o
+  que agrava a reclamação — ver "Repetir uma não-resposta é pior do que
+  escalar" em `empresa.md`.
+  - A afirmação de que **ainda não chegou** continua a ser do lojista: é estado
+    interno e não é visível daqui. O que a resposta traz sozinha é a limitação
+    do método de envio, que está no fio porque foi o cliente que o escolheu.
+  - (Confirmado diretamente pelo lojista, 9 de setembro de 2026, na devolução
+    #21868.)
 
 ## Portes de devolução
 
@@ -327,8 +347,9 @@ real de produção, 18 de agosto de 2026.)
   de Portugal. Para devoluções vindas de fora de Portugal, os portes ficam
   **sempre** a cargo do cliente, mesmo com defeito confirmado. (Confirmado
   diretamente pela loja, 17 de agosto de 2026.)
-- Recomenda-se envio por correio registado normal, sem serviços adicionais como
-  notificação por SMS, que apenas encarecem o envio sem serem necessários.
+- O correio registado normal chega, e é ele que cumpre o rastreio obrigatório
+  (ver "Etiqueta de devolução"). Não são precisos serviços adicionais como a
+  notificação por SMS, que apenas encarecem o envio.
 
 ## Reembolso
 
@@ -458,6 +479,10 @@ diferentes a acertar, ou não há?**
   diferença. Isto sim escala sempre, mesmo que o valor pareça óbvio — é a
   equipa que cobra ou reembolsa, nunca o assistente. Ao preparar o caso para
   quem vai decidir, o resumo deve deixar claro qual é o acerto de valor.
+
+Quando é o cliente a propor o caminho mais rápido, confirma-se esse caminho em
+vez de lhe devolver as hipóteses em aberto — ver "Quando o cliente já escolheu,
+não se reabre a escolha" em `empresa.md`.
 
 ## Cor diferente da pedida por falta de stock
 

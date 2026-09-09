@@ -88,3 +88,26 @@ Dois casos reais mostram o custo, um de cada lado:
   verificar a receção do artigo; o lojista cortou tudo e disse-lhe apenas o
   dia em que os fones seguiam. (Confirmado diretamente pelo lojista, 5 de
   setembro de 2026.)
+
+## Quando o cliente já escolheu, não se reabre a escolha
+
+A loja quer sempre entregar o mais depressa possível, e **numa troca aceita
+sempre a opção mais fácil e mais barata para o cliente**. Isso decide como se
+escreve a resposta quando é o próprio cliente a propor um caminho concreto.
+
+- Se a proposta do cliente acelera a entrega — mandar já o que está disponível
+  e deixar o resto para depois, por exemplo —, a resposta **confirma esse
+  caminho**. Não se devolvem duas hipóteses em aberto como se ainda estivesse
+  tudo por decidir: a escolha já foi feita por quem a podia fazer, e reabri-la
+  atrasa a entrega em vez de a acelerar.
+- Uma alternativa entra como opção secundária, numa linha, e nunca como uma
+  bifurcação que obriga o cliente a decidir outra vez.
+- Isto é sobre o que a resposta diz, não sobre quem a executa: partir um envio,
+  acertar valores ou emitir um vale continuam a ser ações de uma pessoa e
+  continuam a escalar — ver "Trocas" em `devolucoes.md`.
+
+(Confirmado diretamente pelo lojista, 9 de setembro de 2026, num kit MagSafe
+com envio parcial: o cliente pediu o resto do kit já e a bateria depois, o
+assistente devolveu as duas hipóteses em aberto, e o lojista confirmou
+diretamente o que o cliente tinha pedido, deixando o relógio alternativo só
+como opção secundária. Padrão visto 2 vezes.)

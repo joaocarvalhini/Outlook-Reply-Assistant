@@ -100,6 +100,28 @@ por email", sem esclarecer que quem envia é a transportadora.)
 > revisitar e remover esta nota nessa altura, não deixá-la por engano a
 > justificar atrasos de outra causa qualquer.
 
+### Quando o cliente diz que não recebeu o aviso por WhatsApp
+
+**A primeira hipótese é o número estar errado na encomenda, não o aviso ter
+falhado.** É por isso que o cliente costuma vir dar o número certo na própria
+mensagem — já percebeu que o problema está do lado dele, mesmo quando não o diz
+assim.
+
+- **Não se promete investigar o problema do WhatsApp.** Isso descreve uma falha
+  da loja que quase nunca existe, e deixa em aberto uma promessa que ninguém
+  chega a fechar. Ver "Repetir uma não-resposta é pior do que escalar" em
+  `empresa.md`.
+- Corrigir o número na encomenda e reenviar o aviso é ação de uma pessoa:
+  **escala**, com o número que o cliente deu bem visível no resumo, para quem
+  trata do caso não ter de o ir procurar ao fio.
+- Não se acrescenta a explicação do estado da encomenda nem do prazo de
+  expedição. O cliente perguntou pelo aviso, não pela entrega — o resto é ruído,
+  e foi exatamente o que o lojista cortou.
+
+(Confirmado diretamente pelo lojista, 9 de setembro de 2026: na encomenda
+#22399 o cliente tinha dado o número errado no checkout, e a resposta enviada
+foi só "Agora já está". Padrão visto 4 vezes.)
+
 ## Entrega falhada
 
 - Se o cliente não estiver em casa, a transportadora tenta nova entrega ou deixa
