@@ -69,6 +69,7 @@ import sqlite3
 import sys
 from collections import Counter
 from difflib import SequenceMatcher
+from pathlib import Path
 
 import anthropic
 
@@ -338,6 +339,27 @@ def formatar_mensagem(dados: dict, casos: list[dict]) -> str:
     return "\n\n".join(p for p in partes if p)
 
 
+def juntar_extra(mensagem: str, texto: str, numero: int) -> str:
+    """Acrescenta uma pergunta escrita por nós ao fim do lote da noite.
+
+    O resto da mensagem sai das edições reais do lojista, e há coisas que
+    nenhuma edição levanta -- uma contradição entre duas regras que ele próprio
+    confirmou em dias diferentes, por exemplo. Sem isto, a única forma de lhe
+    perguntar era uma mensagem à parte, e uma segunda mensagem por noite é a
+    maneira mais rápida de a primeira deixar de ser lida.
+
+    Entra como mais um caso numerado, e não como um apêndice, porque é isso que
+    é do lado dele: mais uma pergunta para responder na mesma linha das outras.
+    """
+    texto = texto.strip()
+    if not texto:
+        return mensagem
+    nl = chr(10)
+    bloco = nl.join([REGUA, f"**{numero}** | Pergunta nossa, sem email por trás",
+                     "", texto])
+    return f"{mensagem}{nl}{nl}{bloco}" if mensagem.strip() else bloco
+
+
 def _limpo(texto: object) -> str:
     """Tira quebras de linha e parênteses retos.
 
@@ -406,6 +428,10 @@ def main(argv: list[str] | None = None) -> int:
                         "padrões mais vistos (sugestão: 5)")
     p.add_argument("--enviar", action="store_true",
                    help="além de compor, manda pelo PERGUNTAS_WEBHOOK_URL")
+    p.add_argument("--extra-ficheiro", metavar="CAMINHO", default="",
+                   help="junta ao lote uma pergunta escrita à mão, lida deste "
+                        "ficheiro; é esvaziado depois de a mensagem sair, "
+                        "para não voltar a ser perguntada amanhã")
     p.add_argument("--classificar", action="store_true",
                    help="+1 chamada ao modelo: falta regra ou é saliência?")
     args = p.parse_args(argv)
@@ -424,8 +450,19 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Não encontrei nenhum registo com esse message_id: {args.marcar}")
         return 1
 
+    # Lê-se antes de tudo: é ele que decide se uma noite sem divergências
+    # nenhumas ainda assim tem mensagem para mandar.
+    extra = ""
+    if args.extra_ficheiro:
+        try:
+            extra = Path(args.extra_ficheiro).read_text(encoding="utf-8").strip()
+        except OSError:
+            # Um ficheiro que não existe é o estado normal: quer dizer que não
+            # há pergunta nossa esta noite. Não é erro nem se anuncia.
+            extra = ""
+
     casos = recolher(a.Graph(cfg), cfg, con, args.tudo)
-    if not casos:
+    if not casos and not (args.perguntar and extra):
         print("\nNada por rever: ou não há divergências, ou já foram todas "
               "tratadas. Correr com --tudo para ver as antigas.\n")
         return 0
@@ -435,7 +472,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.perguntar:
         # A correr todos os dias, o caso normal é não haver nada. Sair aqui
         # poupa a chamada ao modelo e, sobretudo, não manda uma mensagem vazia.
-        if not grupos:
+        if not grupos and not extra:
             print("Nada por perguntar.")
             return 0
         graph = a.Graph(cfg)
@@ -459,7 +496,10 @@ def main(argv: list[str] | None = None) -> int:
                     pass
             escolhidos.append(caso)
 
-        mensagem = compor_pergunta(cliente, cfg, escolhidos)
+        # Sem casos não se chama o modelo: uma noite só com pergunta nossa
+        # sai de graça.
+        mensagem = compor_pergunta(cliente, cfg, escolhidos) if escolhidos else ""
+        mensagem = juntar_extra(mensagem, extra, len(escolhidos) + 1)
         if not mensagem.strip():
             print("O modelo não devolveu mensagem nenhuma. Nada enviado.")
             return 1
@@ -496,7 +536,15 @@ def main(argv: list[str] | None = None) -> int:
                 for grupo in grupos[:args.perguntar]
                 for caso in grupo
             )
-            a.log("perguntas-enviadas",
+            # Esvaziar e não apagar: o ficheiro fica lá, à espera da próxima,
+            # e o serviço continua a apontar para um caminho que existe.
+            if extra and args.extra_ficheiro:
+                try:
+                    Path(args.extra_ficheiro).write_text("", encoding="utf-8")
+                except OSError as exc:  # noqa: BLE001
+                    print(f"Aviso: a pergunta saiu mas o ficheiro não ficou "
+                          f"limpo ({exc}) -- apaga-o à mão ou ela repete-se.")
+            a.log("perguntas-enviadas", extra=bool(extra),
                   padroes=len(escolhidos), marcados=marcados)
             print(f"Enviado. {marcados} caso(s) marcado(s) como revisto(s).")
             return 0

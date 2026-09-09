@@ -30,6 +30,7 @@ from aprender import (
     agrupar,
     classificar,
     formatar_mensagem,
+    juntar_extra,
     mesmo_padrao,
     texto_acrescentado,
 )
@@ -2908,6 +2909,22 @@ class Aprender(unittest.TestCase):
     de quinze divergências não diz por onde começar, que é o problema que ela
     existe para resolver.
     """
+
+    def test_pergunta_nossa_entra_numerada_a_seguir_as_outras(self) -> None:
+        """Do lado dele é mais uma pergunta na mesma lista, não um apêndice."""
+        saida = juntar_extra("**1** | um caso", "As duas regras contradizem-se.", 2)
+        self.assertIn("**2** | Pergunta nossa", saida)
+        self.assertIn("As duas regras contradizem-se.", saida)
+        self.assertTrue(saida.startswith("**1** | um caso"))
+
+    def test_sem_pergunta_nossa_a_mensagem_fica_igual(self) -> None:
+        self.assertEqual(juntar_extra("**1** | um caso", "   ", 2), "**1** | um caso")
+
+    def test_pergunta_nossa_sozinha_dispensa_os_casos(self) -> None:
+        """Uma noite sem divergências nenhumas ainda assim manda a pergunta."""
+        saida = juntar_extra("", "Qual das duas vale?", 1)
+        self.assertTrue(saida.startswith(REGUA))
+        self.assertIn("Qual das duas vale?", saida)
 
     def test_extrai_so_o_que_foi_acrescentado(self) -> None:
         original = "Olá.\n\nVamos verificar internamente.\n\nCumprimentos"

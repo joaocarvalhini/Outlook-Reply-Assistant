@@ -27,3 +27,8 @@ __pycache__/
 *.py[cod]
 .venv/
 .pytest_cache/
+
+# Pergunta escrita à mão para o lote da noite. É conteúdo de uma noite,
+# não código, e o aprender.py esvazia-a depois de sair -- se viesse no
+# git archive, o deploy seguinte repunha-a e ela era perguntada outra vez.
+pergunta-extra.txt

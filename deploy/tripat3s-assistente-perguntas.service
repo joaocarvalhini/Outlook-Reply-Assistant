@@ -18,7 +18,7 @@ WorkingDirectory=/opt/assistente
 #
 # O --enviar marca os casos como revistos assim que a mensagem sai. Sem isso,
 # a correr sozinho todas as noites, reenviava os mesmos casos indefinidamente.
-ExecStart=/opt/assistente/.venv/bin/python /opt/assistente/aprender.py --perguntar 3 --enviar
+ExecStart=/opt/assistente/.venv/bin/python /opt/assistente/aprender.py --perguntar 3 --enviar --extra-ficheiro /opt/assistente/pergunta-extra.txt
 
 # Vai ao Graph buscar o email original de cada caso, mais uma chamada ao
 # modelo. Cinco minutos é folga larga.
