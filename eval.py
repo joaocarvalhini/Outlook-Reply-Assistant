@@ -161,6 +161,17 @@ def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
         return ("parcial-indevido", "modelo",
                 f"assinalou '{parcial[:50]}' quando respondeu ao email todo")
 
+    # Texto obrigatório ou proibido no corpo — ex.: um link que a base de
+    # conhecimento manda incluir sempre (ou nunca, consoante o caso). A ação
+    # e a categoria por si só não apanham uma resposta que "decide bem" mas
+    # esquece um facto literal que tinha de vir junto.
+    em_falta = [t for t in caso.get("expect_texto_contem", ()) if t not in corpo]
+    if em_falta:
+        return ("texto-em-falta", "modelo", f"corpo não contém {em_falta!r}")
+    indevido = [t for t in caso.get("expect_texto_nao_contem", ()) if t in corpo]
+    if indevido:
+        return ("texto-indevido", "modelo", f"corpo contém {indevido!r} quando não devia")
+
     compromisso = d.get("compromisso_tipo", "")
     if "expect_compromisso" in caso and compromisso != caso["expect_compromisso"]:
         return ("compromisso-errado", "modelo",

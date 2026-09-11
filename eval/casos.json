@@ -1410,7 +1410,85 @@
       "body": "Ola,\n\nObrigada pelo contacto. Sim, esta tudo a funcionar muito bem, o kit ficou otimo e adorei a vossa loja!\n\nObrigada mais uma vez."
     },
     "expect": "rascunhar",
-    "note": "Caso real (Catia), confirmado pelo lojista 31/08/2026: cliente satisfeita, elogio espontaneo (nao e agradecimento por resolucao de um problema). Regra nova em empresa.md (\"Pedido de review no Trustpilot\"): agradecer e pedir review de 5 estrelas com o link https://pt.trustpilot.com/review/tripat3s.com. Verificacao manual do texto: deve conter o link do Trustpilot."
+    "expect_texto_contem": ["https://pt.trustpilot.com/review/tripat3s.com"],
+    "note": "Caso real (Catia), confirmado pelo lojista 31/08/2026: cliente satisfeita, elogio espontaneo (nao e agradecimento por resolucao de um problema). Regra nova em empresa.md (\"Pedido de review no Trustpilot\"): agradecer e pedir review de 5 estrelas com o link https://pt.trustpilot.com/review/tripat3s.com."
+  },
+  {
+    "id": "trustpilot-satisfeito-apos-receber-encomenda",
+    "email": {
+      "from": "rita.almeida82@gmail.com",
+      "from_name": "Rita Almeida",
+      "subject": "Encomenda chegou",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nA encomenda chegou e gostei muito, esta tudo otimo. Obrigada!"
+    },
+    "expect": "rascunhar",
+    "expect_texto_contem": ["https://pt.trustpilot.com/review/tripat3s.com"],
+    "note": "Auditoria 11/09/2026 (pedido do cliente): encomenda recebida + satisfacao clara deve pedir review com o link, nao so agradecer."
+  },
+  {
+    "id": "trustpilot-nao-pede-review-com-produto-danificado",
+    "email": {
+      "from": "nuno.ferreira33@gmail.com",
+      "from_name": "Nuno Ferreira",
+      "subject": "Encomenda chegou danificada",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nA encomenda chegou mas o produto veio danificado, uma peca partida. Podem ajudar?"
+    },
+    "expect": "rascunhar",
+    "expect_texto_nao_contem": ["trustpilot"],
+    "note": "Auditoria 11/09/2026: reclamacao/produto danificado nao pede review -- trata-se primeiro do problema, mesmo que a encomenda tenha chegado."
+  },
+  {
+    "id": "trustpilot-nao-pede-review-so-confirma-rececao",
+    "email": {
+      "from": "sofia.martins19@gmail.com",
+      "from_name": "Sofia Martins",
+      "subject": "Re: Encomenda #21945",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nRecebi a encomenda, era so para avisar."
+    },
+    "historico": "Conversa anterior neste fio (encomenda #21945): a loja confirmou a expedicao e enviou o codigo de rastreio.",
+    "dados_encomenda": "Encomenda #21945\nFeita em: 2026-09-02\nPagamento: pago\nEnvio: expedida\nCodigo de rastreio: RR112233445PT",
+    "expect": "rascunhar",
+    "expect_texto_nao_contem": ["trustpilot"],
+    "note": "Auditoria 11/09/2026: confirmacao de rececao com contexto claro, sem qualquer demonstracao de satisfacao, nao deve gerar pedido de review automatico."
+  },
+  {
+    "id": "trustpilot-nao-pede-review-encomenda-nao-recebida",
+    "email": {
+      "from": "diogo.pinto55@gmail.com",
+      "from_name": "Diogo Pinto",
+      "subject": "Encomenda ainda nao chegou",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nAinda nao recebi a minha encomenda, ja passaram duas semanas. Podem verificar?"
+    },
+    "expect": "escalar",
+    "expect_texto_nao_contem": ["trustpilot"],
+    "note": "Auditoria 11/09/2026: encomenda ainda nao recebida nao deve gerar pedido de review, mesmo em forma de resposta de retencao."
+  },
+  {
+    "id": "trustpilot-elogio-sem-mencionar-entrega",
+    "email": {
+      "from": "carla.rocha47@gmail.com",
+      "from_name": "Carla Rocha",
+      "subject": "Obrigada",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nSo para agradecer, adorei o produto e o atendimento foi impecavel. Parabens pela loja!"
+    },
+    "expect": "rascunhar",
+    "expect_texto_contem": ["https://pt.trustpilot.com/review/tripat3s.com"],
+    "note": "Auditoria 11/09/2026: elogio espontaneo positivo que nao menciona a entrega explicitamente continua a ser satisfacao geral com o produto/loja -- deve pedir review."
   },
   {
     "id": "defeito-confirmado-nao-precisa-devolver-artigo-antigo",

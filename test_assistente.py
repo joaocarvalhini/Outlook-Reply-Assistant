@@ -53,8 +53,10 @@ from medir_deriva import comparar_gravado, fechar_ciclo
 from compromissos import fechar, pendentes, procurar
 from verificar_kb import analisar_base
 
+import eval as eval_mod
 from assistente import (
     CATEGORIAS,
+    construir_prompt,
     DOMINIOS_BASE,
     FALHAS_SEGUIDAS_PARA_ALERTA,
     PASSAGENS_ENTRE_AVISOS,
@@ -3311,6 +3313,93 @@ class Aquecer(unittest.TestCase):
     def test_data_ilegivel_devolve_none(self) -> None:
         con = self._base((("nao-e-uma-data", 1),))
         self.assertIsNone(minutos_desde_ultima_chamada(con, datetime(2026, 8, 31)))
+
+
+class PedidoDeReviewTrustpilot(unittest.TestCase):
+    """Auditoria 11/09/2026: o pedido de review com link vem só da base de
+    conhecimento, nunca do motor -- estes testes não chamam o modelo, só
+    confirmam a canalização. O comportamento em si (o modelo decidir pedir a
+    review e incluir o link) só o eval.py, com chamadas reais, comprova."""
+
+    LINK = "https://pt.trustpilot.com/review/tripat3s.com"
+
+    def test_motor_nao_tem_o_nome_da_loja_nem_o_link_hardcoded(self) -> None:
+        """Guarda contra o núcleo partilhado ganhar hardcode desta loja: o
+        link e a palavra "trustpilot" só podem existir em knowledge/ e em
+        eval/ (dados/testes desta instalação), nunca em assistente.py."""
+        texto = Path("assistente.py").read_text(encoding="utf-8").lower()
+        self.assertNotIn("trustpilot", texto)
+        self.assertNotIn("tripat3s.com", texto)
+
+    def test_link_da_kb_chega_ao_prompt_construido(self) -> None:
+        prompt = construir_prompt(cfg(knowledge_dir=Path("knowledge")))
+        self.assertIn(self.LINK, prompt)
+
+    def test_sem_o_paragrafo_na_kb_o_link_desaparece_do_prompt(self) -> None:
+        """Prova que o modelo não tem de onde inventar o link: se a base não
+        o disser, ele não chega ao prompt de forma nenhuma."""
+        original = Path("knowledge/empresa.md").read_text(encoding="utf-8")
+        self.assertIn(self.LINK, original)
+        sem_review = re.sub(
+            r"## Pedido de review no Trustpilot.*?(?=\n## |\Z)", "",
+            original, flags=re.S,
+        )
+        self.assertNotIn(self.LINK, sem_review)
+        with TemporaryDirectory() as tmp:
+            pasta = Path(tmp)
+            (pasta / "empresa.md").write_text(sem_review, encoding="utf-8")
+            prompt = construir_prompt(cfg(knowledge_dir=pasta))
+        self.assertNotIn(self.LINK, prompt)
+        self.assertNotIn("trustpilot", prompt.lower())
+
+
+class AvaliarTextoObrigatorioOuProibido(unittest.TestCase):
+    """eval.py: a asserção genérica expect_texto_contem/expect_texto_nao_contem
+    que fecha a lacuna encontrada na auditoria -- o único caso de review do
+    Trustpilot só verificava a ação, nunca se o link tinha vindo no corpo.
+    Usa ClienteFalso: testa a lógica de eval.avaliar(), não o modelo."""
+
+    def _caso(self, **over: object) -> dict:
+        base: dict[str, object] = {
+            "id": "caso-teste",
+            "email": {"from": "cliente@gmail.com", "from_name": "Cliente",
+                      "subject": "Assunto", "body": "Corpo do email"},
+            "expect": "rascunhar",
+        }
+        base.update(over)
+        return base
+
+    def test_falha_quando_texto_obrigatorio_nao_aparece(self) -> None:
+        decisao = {"acao": "rascunhar", "motivo": "x", "categoria": "OUTRO",
+                   "corpo": "Obrigado pelo seu contacto."}
+        cliente = ClienteFalso(decisao)
+        caso = self._caso(expect_texto_contem=["https://pt.trustpilot.com/review/x"])
+        obtido, etapa, detalhe = eval_mod.avaliar(caso, cfg(), BLOQUEADOS, cliente, "prompt")
+        self.assertEqual(obtido, "texto-em-falta")
+
+    def test_passa_quando_texto_obrigatorio_aparece(self) -> None:
+        decisao = {"acao": "rascunhar", "motivo": "x", "categoria": "OUTRO",
+                   "corpo": "Deixe a sua avaliação em https://pt.trustpilot.com/review/x"}
+        cliente = ClienteFalso(decisao)
+        caso = self._caso(expect_texto_contem=["https://pt.trustpilot.com/review/x"])
+        obtido, etapa, detalhe = eval_mod.avaliar(caso, cfg(), BLOQUEADOS, cliente, "prompt")
+        self.assertEqual(obtido, "rascunhar")
+
+    def test_falha_quando_texto_proibido_aparece(self) -> None:
+        decisao = {"acao": "rascunhar", "motivo": "x", "categoria": "OUTRO",
+                   "corpo": "Aproveite para deixar uma review no trustpilot!"}
+        cliente = ClienteFalso(decisao)
+        caso = self._caso(expect_texto_nao_contem=["trustpilot"])
+        obtido, etapa, detalhe = eval_mod.avaliar(caso, cfg(), BLOQUEADOS, cliente, "prompt")
+        self.assertEqual(obtido, "texto-indevido")
+
+    def test_passa_quando_texto_proibido_nao_aparece(self) -> None:
+        decisao = {"acao": "rascunhar", "motivo": "x", "categoria": "OUTRO",
+                   "corpo": "Lamentamos a situação, vamos resolver."}
+        cliente = ClienteFalso(decisao)
+        caso = self._caso(expect_texto_nao_contem=["trustpilot"])
+        obtido, etapa, detalhe = eval_mod.avaliar(caso, cfg(), BLOQUEADOS, cliente, "prompt")
+        self.assertEqual(obtido, "rascunhar")
 
 
 if __name__ == "__main__":
