@@ -35,6 +35,7 @@ import argparse
 import base64
 import html
 import json
+import mimetypes
 import os
 import re
 import sqlite3
@@ -80,6 +81,7 @@ class Config:
     dry_run: bool
     empresa: str
     assinatura: str
+    assinatura_imagem: Path | None
     cat_rascunho: str
     cat_humano: str
     aviso: str
@@ -144,6 +146,16 @@ def carregar_config(dry_run_flag: bool | None) -> Config:
         dry_run=dry if dry_run_flag is None else dry_run_flag,
         empresa=os.environ.get("COMPANY_NAME", "a loja").strip(),
         assinatura=os.environ.get("SIGNATURE", "tripat3s").strip(),
+        # Imagem colada no fim de cada rascunho, por baixo da assinatura de
+        # texto. Vazio desliga -- e desligado é o comportamento anterior,
+        # sem imagem nenhuma. Não passa pelo modelo: entra em código depois
+        # da resposta estar escrita, por isso não custa tokens nem toca no
+        # prefixo em cache (ver Graph.criar_rascunho).
+        assinatura_imagem=(
+            Path(caminho_assinatura).expanduser()
+            if (caminho_assinatura := os.environ.get("SIGNATURE_IMAGE", "").strip())
+            else None
+        ),
         cat_rascunho=os.environ.get("DRAFTED_CATEGORY", "IA-Rascunhado").strip(),
         cat_humano=os.environ.get("ESCALATED_CATEGORY", "Precisa de humano").strip(),
         # Salvaguarda: se esta linha aparecer num email enviado a um cliente,
@@ -377,6 +389,59 @@ def para_html(texto: str) -> str:
         "<p>" + html.escape(p, quote=False).replace("\n", "<br>") + "</p>"
         for p in paragrafos
     )
+
+
+# O identificador por que o corpo do email e o anexo se encontram um ao outro.
+# Fixo de propósito: um por mensagem chegava, mas fixo torna o HTML gerado
+# comparável entre rascunhos e mais fácil de reconhecer numa caixa real.
+CID_ASSINATURA = "assinatura-loja"
+
+# Acima disto o Graph exige sessão de upload em vez de um POST simples. A
+# imagem da assinatura é a mesma em todos os rascunhos: se um dia passar deste
+# tamanho, o problema é a imagem, não o mecanismo de envio.
+MAX_ASSINATURA_BYTES = 3 * 1024 * 1024
+
+# A imagem vem de um ficheiro de marca (1920 px de largura, no caso da
+# tripat3s). Sem uma largura declarada, o Outlook mostra-a ao tamanho real e
+# arrasta a largura da mensagem inteira; com ela, o ficheiro segue intacto e só
+# a apresentação fica contida. O `max-width` trata do telemóvel, e os clientes
+# que ignoram CSS ficam servidos pelo atributo.
+LARGURA_ASSINATURA = 600
+
+
+def carregar_assinatura(caminho: Path, alt: str) -> dict:
+    """Lê a imagem de assinatura uma vez e devolve o que é preciso para a colar
+    em cada rascunho: o bloco HTML que a referencia e o anexo já em base64.
+
+    Lida no arranque e guardada em memória de propósito -- é o mesmo ficheiro
+    em todos os emails, e relê-lo por rascunho seria I/O sem nada em troca.
+    Falha alto: uma assinatura configurada e ausente é erro de instalação, e
+    dar por isso no primeiro email do dia é pior do que no arranque."""
+    if not caminho.is_file():
+        sys.exit(f"SIGNATURE_IMAGE aponta para um ficheiro que não existe: {caminho}")
+    dados = caminho.read_bytes()
+    if not dados:
+        sys.exit(f"SIGNATURE_IMAGE está vazio: {caminho}")
+    if len(dados) > MAX_ASSINATURA_BYTES:
+        sys.exit(
+            f"SIGNATURE_IMAGE tem {len(dados) // 1024} KB; o máximo por anexo "
+            f"simples é {MAX_ASSINATURA_BYTES // 1024} KB ({caminho})"
+        )
+    tipo = mimetypes.guess_type(caminho.name)[0] or ""
+    if not tipo.startswith("image/"):
+        sys.exit(f"SIGNATURE_IMAGE não é uma imagem reconhecida: {caminho}")
+    return {
+        "nome": caminho.name,
+        "tipo": tipo,
+        "conteudo": base64.standard_b64encode(dados).decode("ascii"),
+        "bytes": len(dados),
+        "html": (
+            f'<p><img src="cid:{CID_ASSINATURA}" '
+            f'alt="{html.escape(alt, quote=True)}" '
+            f'width="{LARGURA_ASSINATURA}" '
+            f'style="max-width:100%;height:auto;border:0;"></p>'
+        ),
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2075,6 +2140,13 @@ CAMPOS_LISTA = (
 class Graph:
     def __init__(self, cfg: Config) -> None:
         self.base = f"{GRAPH}/users/{cfg.mailbox}"
+        # Vazio quando SIGNATURE_IMAGE não está definido: sem imagem, os
+        # rascunhos saem exatamente como saíam antes.
+        self.assinatura_img = (
+            carregar_assinatura(cfg.assinatura_imagem, cfg.empresa)
+            if cfg.assinatura_imagem
+            else None
+        )
         self.http = httpx.Client(timeout=30.0)
         self.app = msal.ConfidentialClientApplication(
             client_id=cfg.client_id,
@@ -2207,12 +2279,61 @@ class Graph:
         ]
 
     def criar_rascunho(self, message_id: str, corpo_html: str) -> str:
+        """Cria o rascunho de resposta, com a imagem de assinatura no fim
+        quando está configurada.
+
+        A imagem é colada aqui, e não no texto que o modelo escreve: o prompt
+        não muda, o prefixo em cache não é reescrito e o custo por email
+        continua o mesmo. O modelo continua a assinar em texto ("tripat3s") e a
+        imagem entra por baixo.
+
+        A ordem é obrigatória -- o anexo precisa de um rascunho já criado para
+        lhe ser pendurado, por isso o corpo refere o `cid:` antes de o anexo
+        existir. Entre uma chamada e a outra o rascunho existe com a imagem por
+        resolver; é uma janela de milissegundos e ninguém está a olhar para a
+        caixa nesse instante.
+        """
+        if self.assinatura_img:
+            corpo_html += self.assinatura_img["html"]
         dados = self._pedir(
             "POST",
             f"{self.base}/messages/{message_id}/createReply",
             json={"comment": corpo_html},
         )
-        return str(dados.get("id", ""))
+        rascunho_id = str(dados.get("id", ""))
+        if self.assinatura_img and rascunho_id:
+            self._anexar_assinatura(rascunho_id)
+        return rascunho_id
+
+    def _anexar_assinatura(self, rascunho_id: str) -> None:
+        """Pendura a imagem no rascunho como anexo embebido.
+
+        `isInline` com o `contentId` que o corpo já refere é o que faz a imagem
+        aparecer dentro do email em vez de como ficheiro à parte.
+
+        Falhar aqui não deita o rascunho fora: o texto já está escrito e é isso
+        que interessa a quem revê. Fica registado e o rascunho mostra a imagem
+        por resolver -- quem revê apaga a linha e envia. Não se repete a
+        chamada: um POST repetido a meio de um 5xx pode pendurar a imagem duas
+        vezes (e são 585 KB de cada vez), pela mesma razão que _pedir() só
+        repete GETs.
+        """
+        try:
+            self._pedir(
+                "POST",
+                f"{self.base}/messages/{rascunho_id}/attachments",
+                json={
+                    "@odata.type": "#microsoft.graph.fileAttachment",
+                    "name": self.assinatura_img["nome"],
+                    "contentType": self.assinatura_img["tipo"],
+                    "contentBytes": self.assinatura_img["conteudo"],
+                    "isInline": True,
+                    "contentId": CID_ASSINATURA,
+                },
+            )
+        except Exception as exc:
+            log("erro-assinatura", draft=rascunho_id[:20],
+                erro=f"{type(exc).__name__}: {exc}")
 
     def detalhe_rascunho(self, rascunho_id: str) -> dict | None:
         """O estado atual de um rascunho criado por criar_rascunho(), pelo seu

@@ -56,6 +56,8 @@ from verificar_kb import analisar_base
 import eval as eval_mod
 from assistente import (
     CATEGORIAS,
+    CID_ASSINATURA,
+    carregar_assinatura,
     construir_prompt,
     DOMINIOS_BASE,
     FALHAS_SEGUIDAS_PARA_ALERTA,
@@ -125,6 +127,7 @@ def cfg(**over: object) -> Config:
         "pre_rascunhos": True, "registo_compromissos": True,
         "respostas_parciais": True, "processar_imagens": True,
         "empresa": "A Loja", "assinatura": "Equipa",
+        "assinatura_imagem": None,
         "cat_rascunho": "IA-Rascunhado", "cat_humano": "Precisa de humano",
         "aviso": "--- rascunho automático ---",
         "outra_caixa_verificacao": "",
@@ -741,6 +744,126 @@ class HtmlDeSaida(unittest.TestCase):
 
     def test_texto_vazio(self) -> None:
         self.assertEqual(para_html("   "), "")
+
+
+class AssinaturaEmImagem(unittest.TestCase):
+    """A imagem colada no fim de cada rascunho: como é lida e como chega ao
+    Graph. O que se protege aqui é o custo -- a imagem entra depois da resposta
+    estar escrita, nunca no prompt -- e o facto de uma falha no anexo não poder
+    levar o rascunho à frente."""
+
+    def imagem(self, pasta: str, nome: str = "assinatura.png",
+               dados: bytes = b"bytes-de-imagem") -> Path:
+        caminho = Path(pasta) / nome
+        caminho.write_bytes(dados)
+        return caminho
+
+    def graph_falso(self, assinatura: dict | None) -> tuple[Graph, list[tuple]]:
+        """Um Graph sem rede nem credenciais: só o que criar_rascunho() toca."""
+        g = Graph.__new__(Graph)
+        g.base = "https://graph.example/v1.0/users/apoio@loja.pt"
+        g.assinatura_img = assinatura
+        chamadas: list[tuple] = []
+
+        def _pedir(metodo: str, url: str, **kw: object) -> dict:
+            chamadas.append((metodo, url, kw.get("json")))
+            return {"id": "AAMk-novo"}
+
+        g._pedir = _pedir  # type: ignore[method-assign]
+        return g, chamadas
+
+    def test_le_a_imagem_e_monta_o_bloco(self) -> None:
+        with TemporaryDirectory() as pasta:
+            a = carregar_assinatura(self.imagem(pasta), "A Loja")
+        self.assertEqual(a["tipo"], "image/png")
+        self.assertEqual(a["bytes"], len(b"bytes-de-imagem"))
+        self.assertIn(f'src="cid:{CID_ASSINATURA}"', a["html"])
+        self.assertIn('alt="A Loja"', a["html"])
+
+    def test_alt_com_aspas_nao_parte_o_html(self) -> None:
+        with TemporaryDirectory() as pasta:
+            a = carregar_assinatura(self.imagem(pasta), 'A "Loja"')
+        self.assertNotIn('alt="A "Loja""', a["html"])
+        self.assertIn("&quot;", a["html"])
+
+    def test_ficheiro_que_nao_existe_falha_no_arranque(self) -> None:
+        with TemporaryDirectory() as pasta:
+            with self.assertRaises(SystemExit):
+                carregar_assinatura(Path(pasta) / "nao-existe.png", "A Loja")
+
+    def test_ficheiro_vazio_falha(self) -> None:
+        with TemporaryDirectory() as pasta:
+            with self.assertRaises(SystemExit):
+                carregar_assinatura(self.imagem(pasta, dados=b""), "A Loja")
+
+    def test_ficheiro_grande_demais_falha(self) -> None:
+        with TemporaryDirectory() as pasta:
+            grande = self.imagem(pasta, dados=b"x" * (3 * 1024 * 1024 + 1))
+            with self.assertRaises(SystemExit):
+                carregar_assinatura(grande, "A Loja")
+
+    def test_o_que_nao_e_imagem_falha(self) -> None:
+        with TemporaryDirectory() as pasta:
+            with self.assertRaises(SystemExit):
+                carregar_assinatura(self.imagem(pasta, nome="notas.txt"), "A Loja")
+
+    def test_sem_assinatura_o_rascunho_sai_como_antes(self) -> None:
+        g, chamadas = self.graph_falso(None)
+        g.criar_rascunho("AAMk-1", "<p>Olá</p>")
+        self.assertEqual(len(chamadas), 1)
+        self.assertEqual(chamadas[0][2], {"comment": "<p>Olá</p>"})
+
+    def test_com_assinatura_cola_o_bloco_e_pendura_o_anexo(self) -> None:
+        with TemporaryDirectory() as pasta:
+            a = carregar_assinatura(self.imagem(pasta), "A Loja")
+        g, chamadas = self.graph_falso(a)
+        self.assertEqual(g.criar_rascunho("AAMk-1", "<p>Olá</p>"), "AAMk-novo")
+
+        self.assertEqual(len(chamadas), 2)
+        corpo = chamadas[0][2]["comment"]
+        self.assertTrue(corpo.startswith("<p>Olá</p>"), corpo)
+        self.assertIn(f"cid:{CID_ASSINATURA}", corpo)
+
+        metodo, url, anexo = chamadas[1]
+        self.assertEqual(metodo, "POST")
+        self.assertTrue(url.endswith("/messages/AAMk-novo/attachments"), url)
+        self.assertTrue(anexo["isInline"])
+        self.assertEqual(anexo["contentId"], CID_ASSINATURA)
+        self.assertEqual(anexo["contentType"], "image/png")
+        self.assertEqual(anexo["@odata.type"], "#microsoft.graph.fileAttachment")
+
+    def test_falha_no_anexo_nao_deita_o_rascunho_fora(self) -> None:
+        with TemporaryDirectory() as pasta:
+            a = carregar_assinatura(self.imagem(pasta), "A Loja")
+        g, _ = self.graph_falso(a)
+
+        def _pedir(metodo: str, url: str, **kw: object) -> dict:
+            if url.endswith("/attachments"):
+                raise RuntimeError("Graph 503: servidor ocupado")
+            return {"id": "AAMk-novo"}
+
+        g._pedir = _pedir  # type: ignore[method-assign]
+        with contextlib.redirect_stdout(io.StringIO()) as saida:
+            self.assertEqual(g.criar_rascunho("AAMk-1", "<p>Olá</p>"), "AAMk-novo")
+        self.assertIn("erro-assinatura", saida.getvalue())
+
+    def test_o_anexo_nao_e_tentado_duas_vezes(self) -> None:
+        """Um POST repetido penduraria a imagem duas vezes -- 585 KB de cada."""
+        with TemporaryDirectory() as pasta:
+            a = carregar_assinatura(self.imagem(pasta), "A Loja")
+        g, chamadas = self.graph_falso(a)
+        tentativas: list[str] = []
+
+        def _pedir(metodo: str, url: str, **kw: object) -> dict:
+            if url.endswith("/attachments"):
+                tentativas.append(url)
+                raise RuntimeError("Graph 503: servidor ocupado")
+            return {"id": "AAMk-novo"}
+
+        g._pedir = _pedir  # type: ignore[method-assign]
+        with contextlib.redirect_stdout(io.StringIO()):
+            g.criar_rascunho("AAMk-1", "<p>Olá</p>")
+        self.assertEqual(len(tentativas), 1)
 
 
 class LixoAposAssinatura(unittest.TestCase):

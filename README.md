@@ -223,6 +223,7 @@ clientes de uma loja online usa Gmail.
 | `PERGUNTAS_WEBHOOK_URL` | vazio | Para onde vão as perguntas diárias ao lojista |
 | `COMPANY_NAME` | `a loja` | Aparece no prompt |
 | `SIGNATURE` | `tripat3s` | Assinatura do rascunho |
+| `SIGNATURE_IMAGE` | vazio | Imagem embebida no fim de cada rascunho; vazio desliga |
 | `DRAFTED_CATEGORY` | `IA-Rascunhado` | Categoria aplicada ao original |
 | `ESCALATED_CATEGORY` | `Precisa de humano` | Categoria de escalação |
 | `DRAFT_PREFIX` | aviso de revisão | Linha no topo de cada rascunho |

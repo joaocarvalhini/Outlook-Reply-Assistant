@@ -220,6 +220,18 @@ Cada rascunho leva no topo a linha de aviso configurada em `DRAFT_PREFIX`:
 > rever. É um canário, não um enfeite. Esvaziar a variável desliga-o quando a revisão estiver
 > estabelecida.
 
+E no fim, quando `SIGNATURE_IMAGE` aponta para um ficheiro, a imagem de
+assinatura da loja — por baixo da assinatura de texto que o modelo escreve.
+Vai como anexo embebido (`isInline` + `contentId`), não como link: vê-se sem o
+cliente ter de autorizar imagens externas, ao contrário de uma imagem alojada
+fora.
+
+> [!IMPORTANT] A imagem não passa pelo modelo
+> É colada em `Graph.criar_rascunho()`, depois da resposta estar escrita. O
+> prompt não muda, o prefixo em cache não é reescrito e o custo por email é
+> exatamente o mesmo de antes. O que ela custa é **peso**: o ficheiro segue em
+> cada rascunho e fica no fio quando o cliente responde.
+
 ## Related
 
 - [[system-architecture|Arquitetura do sistema]] — a visão de conjunto
