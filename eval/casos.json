@@ -1707,10 +1707,9 @@
     "expect_categoria": "ACAO_SOBRE_ENCOMENDA",
     "expect_texto_nao_contem": [
       "verificar internamente",
-      "entidade",
-      "referencia"
+      "verificar se e possivel"
     ],
-    "note": "Confirmado diretamente pelo lojista, 12/09/2026 (#22793): a encomenda esta por pagar, logo a opcao de entidade/referencia existe -- mas so o lojista a pode gerar. Escala para ele; nunca se inventa entidade, referencia ou valor, nem se escreve 'vamos verificar se e possivel alterar'. Ver 'Pedido para mudar o pagamento para Multibanco' em pagamentos.md."
+    "note": "Confirmado diretamente pelo lojista, 12/09/2026 (#22793): a encomenda esta por pagar, logo a opcao de entidade/referencia existe -- mas so o lojista a pode gerar. Escala para ele; nunca se inventa entidade, referencia ou valor, nem se escreve 'vamos verificar se e possivel alterar'. Ver 'Pedido para mudar o pagamento para Multibanco' em pagamentos.md. ASSERCAO CORRIGIDA 12/09: 'entidade'/'referencia' saiem da lista proibida -- anunciar que se enviam os dados e correto; o que nao pode e a frase de verificacao interna nem valores inventados."
   },
   {
     "id": "cancelamento-nao-afirma-que-ainda-nao-foi-expedida",
