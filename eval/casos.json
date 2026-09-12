@@ -1690,5 +1690,62 @@
       "mesmo dia"
     ],
     "note": "Confirmado diretamente pelo lojista, 12/09/2026 (encomenda 21388): duas promessas de verificar ja dadas e o artigo ainda em casa da cliente -- pede-se o envio da unidade para analise em vez de prometer verificar pela terceira vez. Nao se promete data de reenvio. Ver 'Analise que ja se arrastou, com o artigo ainda em casa do cliente' em devolucoes.md."
+  },
+  {
+    "id": "multibanco-encomenda-por-pagar-escala-para-gerar-referencia",
+    "email": {
+      "from": "ines.ferreira@gmail.com",
+      "from_name": "Ines Ferreira",
+      "subject": "Encomenda #22793 - pagamento por multibanco",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nGostaria de mudar o pagamento da encomenda #22793 para multibanco. E possivel?\n\nObrigada."
+    },
+    "dados_encomenda": "Encomenda #22793\nFeita em: 2026-09-11\nPagamento: por pagar\nEnvio: nao expedida",
+    "expect": "escalar",
+    "expect_categoria": "ACAO_SOBRE_ENCOMENDA",
+    "expect_texto_nao_contem": [
+      "verificar internamente",
+      "entidade",
+      "referencia"
+    ],
+    "note": "Confirmado diretamente pelo lojista, 12/09/2026 (#22793): a encomenda esta por pagar, logo a opcao de entidade/referencia existe -- mas so o lojista a pode gerar. Escala para ele; nunca se inventa entidade, referencia ou valor, nem se escreve 'vamos verificar se e possivel alterar'. Ver 'Pedido para mudar o pagamento para Multibanco' em pagamentos.md."
+  },
+  {
+    "id": "cancelamento-nao-afirma-que-ainda-nao-foi-expedida",
+    "email": {
+      "from": "rodrigo.santos@gmail.com",
+      "from_name": "Rodrigo Santos",
+      "subject": "Cancelamento encomenda #22787",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Bom dia,\n\nQueria cancelar a encomenda #22787 e receber o reembolso. Ainda da para travar?\n\nObrigado."
+    },
+    "dados_encomenda": "Encomenda #22787\nFeita em: 2026-09-11\nPagamento: pago\nEnvio: nao expedida",
+    "expect": "escalar",
+    "expect_texto_nao_contem": [
+      "ainda nao foi expedida",
+      "ainda não foi expedida"
+    ],
+    "note": "Confirmado diretamente pelo lojista, 12/09/2026 (#22787): mesmo com os dados a dizer 'nao expedida', a resposta nunca afirma isso ao cliente -- as encomendas do fim de semana podem ja ter seguido. Diz-se que se vai tentar travar internamente, sem 100% de certeza. Ver 'Cancelamento de encomenda' em devolucoes.md."
+  },
+  {
+    "id": "inpods-sem-lacre-pede-fotos-e-manda-link-da-politica",
+    "email": {
+      "from": "carolina.dias@gmail.com",
+      "from_name": "Carolina Dias",
+      "subject": "Devolucao InPods 4 Pro",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nComprei uns InPods 4 Pro e queria devolver. Ja abri a caixa, por isso nao estao lacrados, mas estao intactos, nunca os usei. Como faco a devolucao?\n\nObrigada."
+    },
+    "expect": "rascunhar",
+    "expect_texto_contem": [
+      "https://www.tripat3s.com/pages/politica-de-reembolsos-e-devolucoes"
+    ],
+    "note": "Confirmado diretamente pelo lojista, 12/09/2026 (InPods 4 Pro sem lacre): o lacre aberto nao impede nada -- o criterio e nao haver marcas de uso. InPods sao produto de contacto direto com a pele: o caminho e a troca, nao a devolucao, e o link da politica vai sempre na resposta. Pede-se foto/video do estado em vez de prometer confirmacao interna. Ver 'Lacre aberto nao impede nada' em devolucoes.md."
   }
 ]

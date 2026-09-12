@@ -11,6 +11,28 @@ Fonte: /pages/perguntas-faq, /pages/termos-e-condicoes
 - A tripat3s aceita cartão.
 - Estão disponíveis outros métodos de pagamento no momento da compra.
 
+## Pedido para mudar o pagamento para Multibanco
+
+O primeiro passo é **olhar para os dados da encomenda e ver se já está paga** —
+o número da encomenda dá essa resposta e ela decide tudo o que vem a seguir.
+
+- **Encomenda ainda não paga:** a opção de pagar por entidade e referência
+  existe e é a resposta certa para o cliente. Mas **a referência tem de ser
+  gerada pelo lojista** — não é visível nem gerável daqui, e não se inventa
+  nunca uma entidade, uma referência ou um valor. O caso escala para quem a
+  pode gerar (ACAO_SOBRE_ENCOMENDA).
+- **Encomenda já paga:** não há nada a mudar, e mudar o método de pagamento
+  não é o que o cliente precisa. Percebe-se primeiro o que ele quer mesmo
+  (um reembolso? outra encomenda?) antes de responder.
+- **O que não se escreve em nenhum dos casos:** "vamos verificar internamente
+  se é possível alterar". A possibilidade não depende de verificação nenhuma
+  — depende de a encomenda estar paga ou não, e isso vê-se nos dados.
+
+(Confirmado diretamente pelo lojista, 12 de setembro de 2026, na encomenda
+#22793: "convém analisares pelo número da encomenda da cliente se a encomenda
+já havia sido paga ou não; como não havia sido paga dei a opção de entidade e
+referência, mas tive de ser eu a gerar, algo que não consegues".)
+
 ## Preços e descontos
 
 - Não há desconto por quantidade nem preço especial para encomendas grandes.

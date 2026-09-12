@@ -96,6 +96,40 @@ entramos em contacto depois" — em vez de decidir.)
   decidir o montante. (Confirmado diretamente pelo cliente, 18 de agosto de
   2026.)
 
+## Lacre aberto não impede nada — marcas de uso impedem
+
+O lacre não é critério. Um produto fora do lacre, desde que **sem qualquer
+marca de uso**, continua a servir para troca, e não se pede ao cliente que o
+devolva lacrado nem se lhe diz que a embalagem aberta é um problema.
+
+O que decide é o uso, e para uma família de produtos decide de forma
+absoluta:
+
+- **Smartwatches, InPods e fones P9** (e semelhantes — os que assentam em
+  contacto direto com a pele) **não são aceites para devolução**. O caminho
+  para estes é a troca, quando o artigo não tem marcas de uso. Ver também
+  "Produto com defeito" mais abaixo, que diz o mesmo para o defeito
+  confirmado.
+- **A resposta leva sempre o link da política**, para o cliente poder ler a
+  regra por inteiro:
+  https://www.tripat3s.com/pages/politica-de-reembolsos-e-devolucoes
+- Quando o cliente descreve o estado do artigo, o passo seguinte é pedir
+  **fotografias ou vídeo do estado** — não esperar por uma confirmação
+  interna. A decisão depende do que se vê, e quem tem de ver é a loja.
+
+(Confirmado diretamente pelo lojista, 12 de setembro de 2026, numa devolução
+de InPods 4 Pro sem lacre: "o produto até pode estar sem lacre, ele só precisa
+é de não ter nenhuma marca de uso nem nada parecido, para a troca; para a
+devolução já sabes que não aceitamos smartwatch, fones P9 e InPods devido ao
+uso contacto direto com a pele, e envias sempre o link da política para a
+cliente ver".)
+
+> A página publicada é um pouco mais branda do que esta regra: diz que estes
+> produtos **"que apresentem sinais de utilização"** não podem ser devolvidos.
+> O lojista formulou a regra sem essa condição. Segue-se a formulação do
+> lojista — é ele quem decide os casos — e é por isso que o link vai sempre
+> junto. Se um cliente contestar com base no texto da página, isso escala.
+
 ## Estado exigido
 
 - O produto tem de estar em perfeitas condições e sem uso, com a embalagem
@@ -625,6 +659,15 @@ resposta concreta com maior rapidez".)
   responsável e que se vai tentar impedir o envio, sem garantir o resultado --
   vamos sempre tentar o melhor possível. (Confirmado diretamente pela loja, 26 de
   agosto de 2026.)
+- **Nunca se diz ao cliente que a encomenda "ainda não foi expedida"**, mesmo
+  que os dados da encomenda o indiquem. O estado que se vê pode já não ser o
+  estado real no armazém — as encomendas do fim de semana são o caso claro —,
+  e afirmar que ainda vai a tempo cria uma expectativa que a loja pode não
+  conseguir cumprir. Diz-se sempre a mesma coisa: que se vai tentar
+  internamente travar o envio, **sem 100% de certeza** de o conseguir.
+  (Confirmado diretamente pelo lojista, 12 de setembro de 2026, na encomenda
+  #22787: "nunca digas 'como ainda não foi expedida', diz sempre vamos tentar
+  internamente não fazer o envio mas sem 100% de certeza".)
 - Depois de expedida, aplica-se a política de devolução.
 - Depois de expedida, o cliente pode também recusar a entrega.
 

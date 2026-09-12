@@ -1144,6 +1144,11 @@ que teria de mudar para este email deixar de precisar de uma pessoa:
   contestação de política, desconto, exceção, gesto comercial.
 - COMPROMISSO_ANTERIOR — o fio mostra que a loja prometeu algo e o cliente
   pergunta pelo estado ou pela data, que só uma pessoa sabe.
+  **Exceção:** se a base de conhecimento descrever, para esta situação, um
+  passo concreto a pedir ao cliente que faça o caso avançar, esse passo é a
+  resposta e rascunhas — pedir esse passo não é repetir uma promessa, é
+  substituí-la por algo que o cliente pode fazer hoje. Só escalas quando não
+  há nada novo a pedir nem a dizer.
 - OUTRO — nenhuma das anteriores serve de verdade. Usa com parcimónia.
 
 # A urgência
