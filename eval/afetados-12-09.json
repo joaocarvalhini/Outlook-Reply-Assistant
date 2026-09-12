@@ -1,0 +1,175 @@
+[
+  {
+    "id": "sem-numero-pede-se-o-numero",
+    "email": {
+      "from": "beatriz.sousa@gmail.com",
+      "from_name": "Beatriz Sousa",
+      "subject": "A minha encomenda",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, ainda nao recebi a minha encomenda, ja foi enviada? Obrigada."
+    },
+    "expect": "rascunhar",
+    "expect_categoria": "OUTRO",
+    "note": "cliente nao deu numero nenhum. Antes de 17/08/2026 isto escalava como DADOS_ENCOMENDA_EM_FALTA (regra antiga: 'menciona uma encomenda e nao vieram dados = escala'). Agora pedir o numero e resposta normal, so escala quando um numero FOI dado e a consulta falhou."
+  },
+  {
+    "id": "elogio-espontaneo-pede-review-trustpilot",
+    "email": {
+      "from": "catia.mendes71@gmail.com",
+      "from_name": "Catia",
+      "subject": "Re: Esta tudo a funcionar como deve ser?",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Ola,\n\nObrigada pelo contacto. Sim, esta tudo a funcionar muito bem, o kit ficou otimo e adorei a vossa loja!\n\nObrigada mais uma vez."
+    },
+    "expect": "rascunhar",
+    "expect_texto_contem": [
+      "https://pt.trustpilot.com/review/tripat3s.com"
+    ],
+    "note": "Caso real (Catia), confirmado pelo lojista 31/08/2026: cliente satisfeita, elogio espontaneo (nao e agradecimento por resolucao de um problema). Regra nova em empresa.md (\"Pedido de review no Trustpilot\"): agradecer e pedir review de 5 estrelas com o link https://pt.trustpilot.com/review/tripat3s.com."
+  },
+  {
+    "id": "trustpilot-satisfeito-apos-receber-encomenda",
+    "email": {
+      "from": "rita.almeida82@gmail.com",
+      "from_name": "Rita Almeida",
+      "subject": "Encomenda chegou",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nA encomenda chegou e gostei muito, esta tudo otimo. Obrigada!"
+    },
+    "expect": "rascunhar",
+    "expect_texto_contem": [
+      "https://pt.trustpilot.com/review/tripat3s.com"
+    ],
+    "note": "Auditoria 11/09/2026 (pedido do cliente): encomenda recebida + satisfacao clara deve pedir review com o link, nao so agradecer."
+  },
+  {
+    "id": "trustpilot-nao-pede-review-com-produto-danificado",
+    "email": {
+      "from": "nuno.ferreira33@gmail.com",
+      "from_name": "Nuno Ferreira",
+      "subject": "Encomenda chegou danificada",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nA encomenda chegou mas o produto veio danificado, uma peca partida. Podem ajudar?"
+    },
+    "expect": "rascunhar",
+    "expect_texto_nao_contem": [
+      "trustpilot"
+    ],
+    "note": "Auditoria 11/09/2026: reclamacao/produto danificado nao pede review -- trata-se primeiro do problema, mesmo que a encomenda tenha chegado."
+  },
+  {
+    "id": "trustpilot-pede-review-quando-confirma-rececao",
+    "email": {
+      "from": "sofia.martins19@gmail.com",
+      "from_name": "Sofia Martins",
+      "subject": "Re: Encomenda #21945",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nRecebi a encomenda, era so para avisar."
+    },
+    "historico": "Conversa anterior neste fio (encomenda #21945): a loja confirmou a expedicao e enviou o codigo de rastreio.",
+    "dados_encomenda": "Encomenda #21945\nFeita em: 2026-09-02\nPagamento: pago\nEnvio: expedida\nCodigo de rastreio: RR112233445PT",
+    "expect": "rascunhar",
+    "note": "Confirmado diretamente pelo lojista, 12/09/2026: a confirmacao de rececao e por si so motivo para pedir a review na mesma mensagem, mesmo sem satisfacao declarada. INVERTE este caso, que ate 11/09/2026 (auditoria nossa, nao do lojista) esperava o contrario.",
+    "expect_texto_contem": [
+      "https://pt.trustpilot.com/review/tripat3s.com"
+    ]
+  },
+  {
+    "id": "trustpilot-nao-pede-review-encomenda-nao-recebida",
+    "email": {
+      "from": "diogo.pinto55@gmail.com",
+      "from_name": "Diogo Pinto",
+      "subject": "Encomenda ainda nao chegou",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nAinda nao recebi a minha encomenda, ja passaram duas semanas. Podem verificar?"
+    },
+    "expect": "escalar",
+    "expect_texto_nao_contem": [
+      "trustpilot"
+    ],
+    "note": "Auditoria 11/09/2026: encomenda ainda nao recebida nao deve gerar pedido de review, mesmo em forma de resposta de retencao."
+  },
+  {
+    "id": "trustpilot-elogio-sem-mencionar-entrega",
+    "email": {
+      "from": "carla.rocha47@gmail.com",
+      "from_name": "Carla Rocha",
+      "subject": "Obrigada",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nSo para agradecer, adorei o produto e o atendimento foi impecavel. Parabens pela loja!"
+    },
+    "expect": "rascunhar",
+    "expect_texto_contem": [
+      "https://pt.trustpilot.com/review/tripat3s.com"
+    ],
+    "note": "Auditoria 11/09/2026: elogio espontaneo positivo que nao menciona a entrega explicitamente continua a ser satisfacao geral com o produto/loja -- deve pedir review."
+  },
+  {
+    "id": "terceira-vez-a-perguntar-nao-repete-vamos-verificar",
+    "email": {
+      "from": "r.almeida@example.com",
+      "from_name": "Rui",
+      "subject": "Re: Troca dos InPods",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Bom dia, ja e a terceira vez que pergunto. O rastreio diz entregue ha uma semana. Quando e que enviam os novos?"
+    },
+    "historico": "[2026-09-01 10:12] CLIENTE: Ja enviei o artigo, quando recebo os novos?\n[2026-09-01 16:40] LOJA: Vamos verificar internamente a rececao do artigo e damos resposta assim que possivel.\n[2026-09-03 09:05] CLIENTE: Ha novidades?\n[2026-09-03 15:22] LOJA: Estamos a verificar internamente e entramos em contacto em breve.",
+    "expect": "escalar",
+    "note": "Confirmado pelo lojista a 05/09/2026. A loja ja prometeu verificar duas vezes e nao ha informacao nova para dar: o estado do novo envio nao e visivel daqui. Repetir a promessa pela terceira vez agrava a reclamacao. Ver 'Repetir uma nao-resposta e pior do que escalar' em empresa.md. Verificacao manual do texto: NAO deve conter mais uma promessa de verificar internamente."
+  },
+  {
+    "id": "sem-encomenda-identificada-pede-contacto-nao-promete-analise",
+    "email": {
+      "from": "tiago.nunes88@gmail.com",
+      "from_name": "Tiago Nunes",
+      "subject": "InPods Pro - codigo nunca chegou",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde,\n\nComprei uns InPods Pro e o codigo que era suposto receber nunca me apareceu. Quero reembolso ou troca.\n\nObrigado."
+    },
+    "expect": "rascunhar",
+    "expect_categoria": "OUTRO",
+    "expect_texto_nao_contem": [
+      "internamente",
+      "vamos analisar",
+      "vamos verificar"
+    ],
+    "note": "Confirmado diretamente pelo lojista, 12/09/2026 (caso real InPods Pro): sem encomenda identificada pede-se o numero ou o contacto associado a compra. Nao se promete analise interna nem se explica a politica de troca antes de saber de que compra se trata. Ver 'Primeiro identificar a encomenda, so depois falar do processo' em devolucoes.md."
+  },
+  {
+    "id": "analise-arrastada-artigo-ainda-com-o-cliente-pede-envio",
+    "email": {
+      "from": "lidia.carvalho@gmail.com",
+      "from_name": "Lidia Carvalho",
+      "subject": "Re: Substituicao auricular encomenda 21388",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Bom dia,\n\nHa novidades sobre a substituicao do auricular?\n\nObrigada."
+    },
+    "historico": "[2026-09-04 11:20] CLIENTE: Um dos auriculares deixou de funcionar, ja mandei as fotos.\n[2026-09-04 17:05] LOJA: Vamos verificar internamente e damos resposta assim que possivel.\n[2026-09-08 10:15] CLIENTE: Ha alguma novidade?\n[2026-09-08 16:30] LOJA: Estamos a verificar internamente e entramos em contacto em breve.",
+    "dados_encomenda": "Encomenda #21388\nFeita em: 2026-08-20\nPagamento: pago\nEnvio: entregue",
+    "expect": "rascunhar",
+    "expect_texto_nao_contem": [
+      "mesmo dia"
+    ],
+    "note": "Confirmado diretamente pelo lojista, 12/09/2026 (encomenda 21388): duas promessas de verificar ja dadas e o artigo ainda em casa da cliente -- pede-se o envio da unidade para analise em vez de prometer verificar pela terceira vez. Nao se promete data de reenvio. Ver 'Analise que ja se arrastou, com o artigo ainda em casa do cliente' em devolucoes.md."
+  }
+]

@@ -203,6 +203,32 @@ pedido pelo formulário do site.)
   trocadas por não gostar, por serem feitas por medida (ver "Capas
   personalizadas — exceção").
 
+## Primeiro identificar a encomenda, só depois falar do processo
+
+Quando o cliente pede reembolso ou troca e **não há encomenda identificada**
+— não deu o número, e os dados que deu não chegam para a encontrar —, a
+resposta pede o que falta para a identificar: o número da encomenda ou o
+contacto (email ou telefone) associado à compra. É uma resposta completa e
+normal, e é a primeira coisa a fazer.
+
+O que **não** se faz nesse momento:
+
+- Dizer que a equipa vai analisar, decidir ou verificar internamente. Sem
+  saber de que compra se trata, não há nada a analisar — a frase só adia, e
+  obriga a uma segunda mensagem a pedir na mesma o que se devia ter pedido
+  logo.
+- Explicar a política de troca ou de devolução antes de saber qual é o caso.
+  A explicação vem a seguir, quando já se souber o que o cliente comprou e o
+  que se passou.
+
+(Confirmado diretamente pelo lojista, 12 de setembro de 2026, num pedido de
+reembolso ou troca de InPods Pro em que um código nunca chegou ao cliente: o
+assistente escreveu que a equipa ia decidir internamente e o lojista cortou
+tudo para perguntar só o contacto associado à encomenda — "ainda não tínhamos
+os dados necessários para identificar a compra e perceber exatamente qual era
+a situação. Depois de termos essa informação, já conseguiríamos avançar com a
+explicação relativamente à troca.")
+
 ## Como iniciar uma devolução
 
 Isto é o que se diz **depois** de a prova (foto/vídeo) já ter sido vista,
@@ -557,6 +583,38 @@ presente/oferta já conhecida, ver "produtos.md" para campanhas em curso):
 - Para os restantes produtos, sem essa restrição de contacto com a pele
   (ex.: carregadores, baterias, capas), o cliente escolhe entre reembolso
   total ou substituição do produto.
+
+## Análise que já se arrastou, com o artigo ainda em casa do cliente
+
+Quando o fio já leva **duas ou mais promessas de verificar internamente**, o
+caso é uma substituição ou um defeito por analisar, e o **cliente ainda tem o
+artigo consigo**, o passo seguinte deixa de ser verificar: pede-se ao cliente
+que envie a unidade com defeito, para a loja a analisar presencialmente e dar
+uma resposta concreta.
+
+Isto não contraria "Repetir uma não-resposta é pior do que escalar" em
+`empresa.md` — completa-a. Essa regra manda escalar quando não há nada novo
+para dizer; aqui há: pedir o artigo é um passo concreto, e é mais rápido para
+o cliente do que mais uma ronda de verificação interna.
+
+Limites, que se mantêm todos:
+
+- **Não se promete data de reenvio.** O lojista pode dizer que o artigo novo
+  segue no mesmo dia; a resposta escrita aqui não o diz, porque depende de
+  stock e de expedição que não são visíveis daqui. Diz-se que se analisa
+  assim que chegar e que se dá resposta concreta nessa altura.
+- **Não se dá a morada por iniciativa própria** — só se o cliente perguntar
+  (ver "Para onde enviar a devolução").
+- Se o artigo já foi enviado pelo cliente, esta secção não se aplica: aí não
+  há nada de novo a pedir e o caso escala, como sempre.
+
+(Confirmado diretamente pelo lojista, 12 de setembro de 2026, na substituição
+de um auricular da encomenda 21388: já se tinha dito duas vezes que se ia
+verificar, o assistente ia dizê-lo pela terceira, e o lojista pediu
+diretamente o envio dos fones — "esse processo acaba por levar mais tempo para
+o cliente... achei que o mais adequado seria pedir diretamente o envio dos
+fones para nós, para conseguirmos fazer uma análise presencial e dar uma
+resposta concreta com maior rapidez".)
 
 ## Cancelamento de encomenda
 

@@ -62,6 +62,22 @@ Fonte: /pages/termos-e-condicoes, /pages/informacoes-de-contacto, /pages/quem-so
   desculpa pelo incómodo. (Confirmado diretamente pelo lojista, 2 de
   setembro de 2026 — substitui a nota anterior desta secção, de 31 de agosto,
   que dizia o contrário.)
+- **A confirmação de que a encomenda chegou é, por si só, motivo para pedir
+  a review — mesmo sem elogio nenhum.** Um "recebi a encomenda, era só para
+  avisar" basta: a resposta agradece a confirmação **e pede a review de 5
+  estrelas com o link, na mesma mensagem**. Não se espera por uma segunda
+  mensagem nem por um sinal de satisfação; o momento em que o cliente
+  confirma a receção é o momento de pedir. (Confirmado diretamente pelo
+  lojista, 12 de setembro de 2026: "a partir do momento em que o cliente
+  confirma que recebeu a encomenda, é para pedir sempre a review nessa mesma
+  mensagem". **Substitui a decisão contrária de 11 de setembro de 2026**, que
+  era nossa e não do lojista, e que mandava agradecer sem pedir quando não
+  houvesse satisfação declarada.)
+  - **Exceção, e é a única: a encomenda chegou mal.** Produto danificado,
+    errado, incompleto ou em falta é uma reclamação, não uma confirmação —
+    trata-se do problema e não se pede review nenhuma. O lojista falou de
+    quem confirma que recebeu, não de quem escreve a dizer que o que recebeu
+    está mal.
 
 ## Repetir uma não-resposta é pior do que escalar
 
@@ -88,6 +104,12 @@ Dois casos reais mostram o custo, um de cada lado:
   verificar a receção do artigo; o lojista cortou tudo e disse-lhe apenas o
   dia em que os fones seguiam. (Confirmado diretamente pelo lojista, 5 de
   setembro de 2026.)
+
+Há um caso em que existe alternativa melhor do que escalar: se o artigo ainda
+está com o cliente e o que falta é analisá-lo, pede-se que o envie em vez de
+prometer verificar outra vez — ver "Análise que já se arrastou, com o artigo
+ainda em casa do cliente" em `devolucoes.md`. Escalar continua a ser o caminho
+quando não há nada novo para pedir nem para dizer.
 
 ## Quando o cliente já escolheu, não se reabre a escolha
 
