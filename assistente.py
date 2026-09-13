@@ -376,6 +376,39 @@ def sem_lixo_apos_assinatura(texto: str, assinatura: str) -> str:
     return texto[:fim] if texto[fim:].strip() else texto
 
 
+# Nomes das propriedades do esquema, seguidos do que o modelo escreve quando
+# julga estar a abrir um campo novo: dois pontos, sinal de igual, ou as aspas
+# do JSON. Em texto a sério estas palavras não aparecem -- são identificadores
+# internos, e o prompt manda escrever em português para o cliente.
+_FUGA_DE_ESQUEMA = re.compile(
+    r"""["'\s,;)}\]]*\b(?:acao|motivo|corpo|categoria|lacuna_tema|lacuna_em_falta"""
+    r"""|por_responder|urgencia|compromisso_(?:tipo|descricao|estado|data))\b\s*["':=]""",
+    re.I,
+)
+
+
+def sem_fuga_de_esquema(valor: str) -> str:
+    """Corta um campo no ponto em que o modelo começou a escrever o campo
+    seguinte lá dentro.
+
+    O último campo do esquema não tem para onde transbordar: a gramática da
+    saída estruturada só lhe deixa fechar a chave, por isso o que o modelo
+    ainda quisesse escrever fica agarrado ao valor. Reordenar o esquema tira a
+    causa principal (ver a nota acima de ESQUEMA_NUCLEO); isto é a rede por
+    baixo, para o caso em que o modelo continua a transbordar por outra razão.
+
+    Só se aplica onde o valor volta a ser *lido* pelo sistema -- hoje o
+    "compromisso_data", que é injetado no pedido seguinte do mesmo fio. O
+    "urgencia" fica por tocar de propósito: já está protegido na leitura por
+    primeira_palavra(), e é sobre a coluna crua que se conta quantas respostas
+    vieram degeneradas.
+    """
+    if not valor:
+        return valor
+    m = _FUGA_DE_ESQUEMA.search(valor)
+    return valor[:m.start()].strip() if m else valor
+
+
 def para_html(texto: str) -> str:
     """Converte o texto do modelo em HTML seguro.
 
@@ -769,8 +802,21 @@ def primeira_palavra(texto: str) -> str:
     graves: a #21868 de 08/09/2026 era uma queixa de demora já escalada duas
     vezes e ficou sem etiqueta. Ler só a primeira palavra recupera sete dos
     oito casos observados.
+
+    Os que restavam eram os que vinham *colados*, sem separador nenhum:
+    "simed,", "simdois compromissos_tipo..." ou "sim2Fbcompromisso_tipo=outro".
+    Aí a primeira palavra é "simed" e a etiqueta caía na mesma. Contado sobre o
+    registo de produção de 01 a 13/09/2026: dos 71 campos degenerados, 58 eram
+    recuperados por esta função e 13 não -- e 5 desses perdiam a etiqueta de
+    urgente. Ler o prefixo chega para os apanhar: o campo só tem dois valores
+    possíveis, e uma palavra que comece por "sim" ou "nao" só pode ser um deles
+    com lixo agarrado.
     """
-    return re.split(r"\W+", texto.strip().lower(), maxsplit=1)[0]
+    palavra = re.split(r"\W+", texto.strip().lower(), maxsplit=1)[0]
+    for valor in ("sim", "nao"):
+        if palavra.startswith(valor):
+            return valor
+    return palavra
 
 
 def etiquetas(categoria: str, urgencia: str) -> tuple[str, ...]:
@@ -848,13 +894,6 @@ ESQUEMA_NUCLEO = {
         # fila de lacunas: "não sei" não chega, é preciso saber o que falta.
         "lacuna_tema": {"type": "string"},
         "lacuna_em_falta": {"type": "string"},
-        # Registo de compromissos: fica no núcleo porque se aplica a qualquer
-        # ação, não só a escalar — um rascunho pode prometer uma substituição
-        # tanto quanto um caso escalado, e tem de ficar registado nos dois.
-        "compromisso_tipo": {"type": "string"},
-        "compromisso_descricao": {"type": "string"},
-        "compromisso_estado": {"type": "string"},
-        "compromisso_data": {"type": "string"},
         # Resposta parcial: o que ficou por responder neste email. Quando vem
         # preenchido, o rascunho é criado à mesma mas o email leva também a
         # categoria de humano — não pode sair como se estivesse completo.
@@ -863,6 +902,26 @@ ESQUEMA_NUCLEO = {
         # podem esperar; ver a secção do prompt. Fica no núcleo e não no dossiê
         # porque a etiqueta tem de existir mesmo quando não há dossiê nenhum.
         "urgencia": {"type": "string"},
+        # Registo de compromissos: fica no núcleo porque se aplica a qualquer
+        # ação, não só a escalar — um rascunho pode prometer uma substituição
+        # tanto quanto um caso escalado, e tem de ficar registado nos dois.
+        #
+        # E fica no FIM porque é aqui que o prompt os descreve: a secção "O
+        # registo de compromissos" é a última antes dos exemplos. A ordem das
+        # propriedades é a ordem por que o descodificador obriga a escrever, e
+        # quando as duas discordam o modelo chega ao último campo ainda a achar
+        # que lhe faltam campos -- e despeja-os lá dentro, porque a gramática
+        # já não lhe deixa abrir outra chave. Medido sobre o registo de
+        # produção de 01 a 13/09/2026, com "urgencia" no fim: 71 de 711
+        # respostas (10%) trouxeram o campo corrompido, quase sempre com os
+        # "compromisso_*" por escrever ('sim compromisso_tipo=reembolso',
+        # 'nao,"compromisso_tipo":"reembolso","compromisso_descricao":...').
+        # Alinhar as duas ordens tira a razão para o modelo continuar a
+        # escrever no último campo.
+        "compromisso_tipo": {"type": "string"},
+        "compromisso_descricao": {"type": "string"},
+        "compromisso_estado": {"type": "string"},
+        "compromisso_data": {"type": "string"},
     },
     "required": ["acao", "motivo", "corpo", "categoria"],
     "additionalProperties": False,
@@ -2681,6 +2740,21 @@ def decidir(
 
     dados = _chamar(ESQUEMA_NUCLEO, pedido)
 
+    # "rascunhar" com o corpo vazio não é uma decisão: é a resposta a sair
+    # degenerada. Sem isto, processar() rebaixa-a a escalar com categoria
+    # OUTRO, e perde-se um rascunho que o modelo sabia escrever -- aconteceu
+    # quatro vezes entre 01 e 13/09/2026. Repete-se a chamada uma única vez;
+    # é uma amostra nova do mesmo pedido, e custa ~0,013 $ em cerca de 1% dos
+    # emails. Se a segunda também vier vazia, fica a primeira e o rebaixamento
+    # acontece como antes -- nunca se inventa um corpo.
+    if dados.get("acao") == "rascunhar" and not (dados.get("corpo") or "").strip():
+        segunda = _chamar(ESQUEMA_NUCLEO, pedido)
+        recuperado = bool((segunda.get("corpo") or "").strip())
+        log("corpo-vazio-repetido", email=msg["message_id"][:40],
+            recuperado="sim" if recuperado else "nao")
+        if recuperado:
+            dados = segunda
+
     def _validar(valor: str, validos: tuple[str, ...], omissao: str) -> str:
         """Os enums saíram dos esquemas (ver nota acima de ESQUEMA_NUCLEO); a
         validação que faziam passa a ser feita aqui, sobre texto livre."""
@@ -2706,7 +2780,10 @@ def decidir(
         "compromisso_descricao": dados.get("compromisso_descricao", ""),
         "compromisso_estado": _validar(dados.get("compromisso_estado", ""),
                                        ESTADOS_COMPROMISSO, "desconhecido"),
-        "compromisso_data": dados.get("compromisso_data", ""),
+        # Último campo do esquema: é aqui que aterra o que o modelo ainda
+        # quisesse escrever, e daqui vai parar ao pedido do email seguinte
+        # deste fio (resumir_compromissos). Ver sem_fuga_de_esquema().
+        "compromisso_data": sem_fuga_de_esquema(dados.get("compromisso_data", "")),
     }
 
     # Prefixado com "_" para se distinguir dos campos que vieram do modelo:

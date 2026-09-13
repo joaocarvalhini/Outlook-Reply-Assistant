@@ -89,9 +89,11 @@ from assistente import (
     desembrulhar_formulario_devolucao,
     desembrulhar_formularios,
     eh_formulario_contacto,
+    ESQUEMA_NUCLEO,
     ETIQUETAS,
     ETIQUETA_URGENTE,
     etiquetas,
+    sem_fuga_de_esquema,
     extrair_numero_encomenda,
     extrair_numeros_encomenda,
     gravar_meta,
@@ -2333,6 +2335,58 @@ class Processar(unittest.TestCase):
         self.assertEqual(linha["categoria"], "OUTRO")
         self.assertEqual(linha["motivo"], "modelo escolheu rascunhar mas devolveu corpo vazio")
 
+    def test_corpo_vazio_a_primeira_repete_a_chamada_e_recupera_o_rascunho(self) -> None:
+        """C-4. Um "rascunhar" com o corpo vazio é a saída a degenerar, não uma
+        decisão: o modelo já decidiu que sabia responder. Entre 01 e 13/09/2026
+        isto aconteceu quatro vezes e as quatro perderam o rascunho -- o código
+        rebaixava-as a escalar com categoria OUTRO. Repete-se uma vez."""
+        cliente = ClienteFalso([self._RASCUNHAR_CORPO_VAZIO, self._RASCUNHAR])
+        m = msg()
+        resultado, _, _ = self._correr(m, cfg(), cliente)
+        self.assertEqual(resultado, "rascunhado")
+        self.assertEqual(len(cliente.pedidos), 2)
+        linha = self._linha(m["message_id"])
+        self.assertEqual(linha["acao"], "rascunhar")
+        self.assertIn("24 a 48 horas", linha["corpo"])
+
+    def test_corpo_vazio_nas_duas_continua_a_rebaixar_a_escalar(self) -> None:
+        """A repetição não pode virar uma forma de inventar uma resposta: se a
+        segunda também vier vazia, fica o rebaixamento de sempre."""
+        cliente = ClienteFalso([self._RASCUNHAR_CORPO_VAZIO, self._RASCUNHAR_CORPO_VAZIO])
+        m = msg()
+        resultado, _, _ = self._correr(m, cfg(), cliente)
+        self.assertEqual(resultado, "escalado")
+        self.assertEqual(len(cliente.pedidos), 2)
+        linha = self._linha(m["message_id"])
+        self.assertEqual(linha["categoria"], "OUTRO")
+        self.assertEqual(linha["motivo"], "modelo escolheu rascunhar mas devolveu corpo vazio")
+
+    def test_escalar_de_corpo_vazio_nao_repete_a_chamada(self) -> None:
+        """A repetição é só para o "rascunhar" degenerado. Um escalado com o
+        corpo vazio é uma das três situações deliberadas do prompt -- repetir
+        seria pagar uma segunda chamada para pedir ao modelo que dissesse
+        alguma coisa quando a decisão certa é ficar calado."""
+        cliente = ClienteFalso(self._ESCALAR_SEM_RESPOSTA)
+        self._correr(msg(), cfg(dry_run=False), cliente)
+        self.assertEqual(len(cliente.pedidos), 1)
+
+    def test_data_de_compromisso_degenerada_nao_entra_no_registo(self) -> None:
+        """C-4, rede por baixo da reordenação: o que transborda para o último
+        campo do esquema não pode ir parar ao pedido do email seguinte."""
+        decisao = {
+            **self._RASCUNHAR, "compromisso_tipo": "reembolso",
+            "compromisso_descricao": "reembolso do valor pago",
+            "compromisso_estado": "pendente",
+            "compromisso_data": '2026-09-17","por_responder":"","urgencia":"nao',
+        }
+        m = msg()
+        self._correr(m, cfg(), ClienteFalso(decisao))
+        data = self.con.execute(
+            "SELECT data_prometida FROM compromissos WHERE conversation_id = ?",
+            (m["conversation_id"],),
+        ).fetchone()[0]
+        self.assertEqual(data, "2026-09-17")
+
     # --- Aplicação da decisão: escalar -----------------------------------
 
     def test_escalar_sem_resposta_nao_cria_rascunho(self) -> None:
@@ -2955,10 +3009,93 @@ class Etiquetas(unittest.TestCase):
         sem_traducao = [c for c in CATEGORIAS if c != "OUTRO" and c not in ETIQUETAS]
         self.assertEqual(sem_traducao, [])
 
+    def test_urgente_sobrevive_a_texto_colado_sem_separador(self) -> None:
+        """C-4. Os que a primeira palavra sozinha não apanhava: vinham colados
+        ao "sim", sem espaço nem pontuação, e a primeira palavra era "simed" ou
+        "simdois". Casos reais do registo de produção de 01 a 13/09/2026 -- dos
+        71 campos degenerados, estes cinco perdiam a etiqueta em silêncio."""
+        for valor in ("simed,",
+                      "simdois compromissos_tipo... ignore this line will fix below",
+                      "simdade... na verdade nao",
+                      "simagosado intervaloutolook_a_confirmar",
+                      "sim2Fbcompromisso_tipo=outro&compromisso_descricao=teste"):
+            self.assertIn(ETIQUETA_URGENTE, etiquetas("JULGAMENTO_HUMANO", valor),
+                          f"{valor!r} devia contar como urgente")
+
+    def test_nao_colado_sem_separador_continua_a_nao_ser_urgente(self) -> None:
+        """A outra metade dos mesmos casos: ler o prefixo não pode transformar
+        um "nao" degenerado num urgente."""
+        for valor in ("naoumas ai que ta", "naoicao Falso", "naoherou omitir omitida",
+                      "naodcompromisso_tipo:outro", "nao_nao_placeholder",
+                      "nao11ho, ficando pendente esta decisão para revisão humana"):
+            self.assertNotIn(ETIQUETA_URGENTE, etiquetas("JULGAMENTO_HUMANO", valor),
+                             f"{valor!r} não devia contar como urgente")
+
     def test_nenhuma_etiqueta_e_longa_de_mais(self) -> None:
         """Numa linha do Outlook com três etiquetas, o que é comprido corta."""
         for nome in [*ETIQUETAS.values(), ETIQUETA_URGENTE]:
             self.assertLessEqual(len(nome), 20, nome)
+
+
+class CampoDegeneradoNoFimDoEsquema(unittest.TestCase):
+    """C-4. A saída estruturada obriga a escrever os campos pela ordem do
+    esquema. Quando essa ordem não é a que o prompt descreve, o modelo chega ao
+    último campo ainda a achar que lhe faltam campos -- e escreve-os lá dentro,
+    porque a gramática já não o deixa abrir outra chave. Medido sobre o registo
+    de produção de 01 a 13/09/2026: 71 de 711 respostas (10%) trouxeram o
+    "urgencia" corrompido, e era sempre o último campo do esquema.
+    """
+
+    _ULTIMOS_DO_PROMPT = ("compromisso_tipo", "compromisso_descricao",
+                          "compromisso_estado", "compromisso_data")
+
+    def test_urgencia_deixou_de_ser_a_ultima_propriedade(self) -> None:
+        """A causa reproduzida: com "urgencia" no fim, era nele que aterrava o
+        que o modelo ainda quisesse escrever."""
+        self.assertNotEqual(list(ESQUEMA_NUCLEO["properties"])[-1], "urgencia")
+
+    def test_os_compromissos_ficam_no_fim_como_no_prompt(self) -> None:
+        """O prompt descreve-os na última secção antes dos exemplos, e era
+        isso que o modelo tentava escrever a seguir à urgência. As duas ordens
+        têm de coincidir."""
+        self.assertEqual(tuple(ESQUEMA_NUCLEO["properties"])[-4:], self._ULTIMOS_DO_PROMPT)
+        propriedades = list(ESQUEMA_NUCLEO["properties"])
+        self.assertLess(propriedades.index("urgencia"), propriedades.index("compromisso_tipo"))
+
+    def test_o_esquema_continua_com_doze_propriedades(self) -> None:
+        """A curva medida a 01/09/2026 (ver a nota acima de ESQUEMA_NUCLEO):
+        11 propriedades dão 5,7 s, 12 dão 10,7 s e 13 dão 12,8 s, em todos os
+        emails. Reordenar é de graça; acrescentar um campo não é, e não pode
+        acontecer por distração -- tem de ser uma decisão com estes números à
+        frente."""
+        self.assertEqual(len(ESQUEMA_NUCLEO["properties"]), 12)
+
+    def test_nenhum_campo_se_perdeu_na_reordenacao(self) -> None:
+        """Um campo que desaparecesse daqui deixaria de ser pedido ao modelo e
+        o rascunho saía sem ele, em silêncio."""
+        self.assertEqual(set(ESQUEMA_NUCLEO["properties"]), {
+            "acao", "motivo", "corpo", "categoria", "lacuna_tema", "lacuna_em_falta",
+            "por_responder", "urgencia", *self._ULTIMOS_DO_PROMPT,
+        })
+        self.assertEqual(ESQUEMA_NUCLEO["required"],
+                         ["acao", "motivo", "corpo", "categoria"])
+
+    def test_corta_o_campo_seguinte_escrito_por_dentro(self) -> None:
+        """Formas reais observadas no registo: JSON, pares chave=valor e dois
+        pontos. Todas começam pelo nome de uma propriedade do esquema."""
+        for valor, esperado in (
+            ('2026-09-17","compromisso_estado":"pendente"}', "2026-09-17"),
+            ("2026-09-08 compromisso_tipo=reembolso", "2026-09-08"),
+            ("2026-09-08','compromisso_tipo':", "2026-09-08"),
+            ("até sexta-feira, por_responder: nada", "até sexta-feira"),
+        ):
+            self.assertEqual(sem_fuga_de_esquema(valor), esperado, valor)
+
+    def test_nao_mexe_num_valor_limpo(self) -> None:
+        """O corte não pode comer texto legítimo: em produção este campo traz
+        datas ISO, e o prompt admite também um prazo escrito por palavras."""
+        for valor in ("", "2026-09-17", "até 15 de setembro", "sexta-feira"):
+            self.assertEqual(sem_fuga_de_esquema(valor), valor, valor)
 
 
 class MarcarVarias(unittest.TestCase):
