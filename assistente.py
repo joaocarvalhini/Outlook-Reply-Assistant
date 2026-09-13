@@ -790,6 +790,15 @@ ETIQUETAS = {
 
 ETIQUETA_URGENTE = "Urgente"
 
+# Um caso que já foi escalado antes neste fio e volta a escalar. Não é uma
+# decisão diferente -- continua a precisar de uma pessoa --, é uma marca para
+# quem abre a lista saber que não está a olhar para um caso novo. Auditoria de
+# 01 a 13/09/2026: 213 dos 411 escalamentos (52%) eram re-escalamentos do mesmo
+# fio, 147 deles nas 24 horas seguintes ao anterior, e num deles o mesmo fio
+# escalou 16 vezes. O lojista não estava a ser inundado por escalamentos
+# errados; estava a ser inundado pelo mesmo caso, sem forma de o ver na lista.
+ETIQUETA_SEGUIMENTO = "Seguimento"
+
 
 def primeira_palavra(texto: str) -> str:
     """A primeira palavra, em minúsculas, de um campo que devia ter só uma.
@@ -819,7 +828,7 @@ def primeira_palavra(texto: str) -> str:
     return palavra
 
 
-def etiquetas(categoria: str, urgencia: str) -> tuple[str, ...]:
+def etiquetas(categoria: str, urgencia: str, seguimento: bool = False) -> tuple[str, ...]:
     """As etiquetas a pôr no email, além da que marca "precisa de humano".
 
     Medido sobre 201 dossiês: 57% eram risco "médio". Uma etiqueta cuja maioria
@@ -827,6 +836,11 @@ def etiquetas(categoria: str, urgencia: str) -> tuple[str, ...]:
     mostram três níveis: só aparece a de urgência, e só quando é mesmo, o que
     nos dados históricos dava cerca de duas vezes por semana. A raridade é o que
     lhe dá peso.
+
+    A de seguimento é a exceção a essa regra e é deliberado: metade dos casos
+    escalados são repetições, e é isso mesmo que ela tem de mostrar. Quem vê
+    "Seguimento" sabe que o caso já está na pilha e que o que falta não é uma
+    resposta, é a ação prometida. Ver ETIQUETA_SEGUIMENTO e seguimento_do_fio().
     """
     saida = []
     nome = ETIQUETAS.get(categoria)
@@ -834,6 +848,8 @@ def etiquetas(categoria: str, urgencia: str) -> tuple[str, ...]:
         saida.append(nome)
     if primeira_palavra(urgencia) in ("sim", "alto", "alta"):
         saida.append(ETIQUETA_URGENTE)
+    if seguimento:
+        saida.append(ETIQUETA_SEGUIMENTO)
     return tuple(saida)
 
 # Um único esquema com todos os campos (dossiê e compromisso incluídos) chegou
@@ -1615,6 +1631,49 @@ def emails_anteriores(con: sqlite3.Connection, conversation_id: str) -> int:
         "SELECT COUNT(*) FROM processados WHERE conversation_id = ?",
         (conversation_id,),
     ).fetchone()[0])
+
+
+# Confianças em que os dados da encomenda chegam mesmo a ser revelados ao
+# modelo -- as mesmas de Correspondencia.pode_revelar.
+_CONFIANCA_COM_DADOS = ("exata", "alta")
+
+
+def seguimento_do_fio(con: sqlite3.Connection, conversation_id: str,
+                      message_id: str, categoria: str, confianca: str) -> bool:
+    """Este escalamento continua um caso já escalado neste fio, sem nada de novo?
+
+    Serve uma etiqueta no Outlook, não uma decisão: o email escala na mesma, e
+    escala pela mesma razão. O que muda é o que o lojista vê na lista -- 213 dos
+    411 escalamentos de 01 a 13/09/2026 eram o mesmo caso a voltar, e chegavam
+    indistinguíveis de um caso novo.
+
+    Diz que não sempre que o email pode ter trazido alguma coisa que muda o
+    caso, porque o erro caro aqui é o contrário: marcar como "mais do mesmo" um
+    email que traz um facto novo e que por isso desce na fila. Duas guardas,
+    ambas conservadoras:
+
+    - **mudou o pedido** -- a categoria deste escalamento não é a do anterior.
+      Um fio que estava em COMPROMISSO_ANTERIOR e passa a JULGAMENTO_HUMANO
+      deixou de ser a mesma pergunta.
+    - **chegaram dados de encomenda novos** -- o escalamento anterior não tinha
+      encomenda confirmada e este tem. O cliente deu finalmente o número, ou a
+      identidade passou a estar provada: é material novo, não uma repetição.
+    """
+    if not conversation_id:
+        return False
+    linha = con.execute(
+        "SELECT categoria, confianca_encomenda FROM processados "
+        "WHERE conversation_id = ? AND acao = 'escalar' AND message_id <> ? "
+        "ORDER BY em DESC LIMIT 1",
+        (conversation_id, message_id),
+    ).fetchone()
+    if linha is None:
+        return False
+    categoria_antes, confianca_antes = linha[0] or "", linha[1] or ""
+    if categoria != categoria_antes:
+        return False
+    return not (confianca in _CONFIANCA_COM_DADOS
+                and confianca_antes not in _CONFIANCA_COM_DADOS)
 
 
 def compromissos_do_fio(con: sqlite3.Connection, conversation_id: str) -> list[dict]:
@@ -3072,8 +3131,13 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         extra["por_responder"] = ""
 
     if acao == "escalar":
+        # Antes do registar() de propósito: a seguir a ele este email já está
+        # na tabela, e a consulta veria o próprio escalamento como anterior.
+        seguimento = seguimento_do_fio(
+            con, msg["conversation_id"], msg["message_id"], extra["categoria"], confianca
+        )
         log("escalado", email=msg["message_id"][:40], categoria=extra["categoria"],
-            identidade=confianca,
+            identidade=confianca, seguimento="sim" if seguimento else "nao",
             urgente=primeira_palavra(extra["urgencia"]) or "-", motivo=motivo)
         if extra["lacuna_tema"]:
             log("lacuna", tema=extra["lacuna_tema"], falta=extra["lacuna_em_falta"])
@@ -3093,7 +3157,7 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
                 # urgência: é o que permite decidir por onde começar sem abrir
                 # nada. Vão as três no mesmo PATCH.
                 graph.marcar(msg, cfg.cat_humano,
-                             *etiquetas(extra["categoria"], extra["urgencia"]))
+                             *etiquetas(extra["categoria"], extra["urgencia"], seguimento))
             except Exception as exc:
                 # Ver a nota equivalente no ramo "rascunhar": sem isto, uma
                 # falha aqui derrubava o resto do lote, não só este email.

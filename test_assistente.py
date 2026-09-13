@@ -91,8 +91,10 @@ from assistente import (
     eh_formulario_contacto,
     ESQUEMA_NUCLEO,
     ETIQUETAS,
+    ETIQUETA_SEGUIMENTO,
     ETIQUETA_URGENTE,
     etiquetas,
+    seguimento_do_fio,
     sem_fuga_de_esquema,
     extrair_numero_encomenda,
     extrair_numeros_encomenda,
@@ -2434,6 +2436,51 @@ class Processar(unittest.TestCase):
                           ["Precisa de humano", "Decisão", "Urgente"])
         self.assertEqual(self._linha(m["message_id"])["urgencia"], "sim")
 
+    def test_o_primeiro_escalamento_do_fio_nao_leva_seguimento(self) -> None:
+        """C-1, o lado que não pode regredir: um caso novo continua a chegar
+        com as etiquetas de sempre."""
+        m = msg()
+        _, graph, _ = self._correr(m, cfg(dry_run=False), ClienteFalso(self._ESCALAR))
+        self.assertEqual([c[2] for c in graph.chamadas if c[0] == "marcar"],
+                          ["Precisa de humano", "Ação na encomenda"])
+
+    def test_segundo_escalamento_do_mesmo_fio_leva_seguimento(self) -> None:
+        """C-1. O cliente volta a escrever no mesmo fio, o caso continua na
+        pilha do lojista e o email escala outra vez -- é o padrão de 213 dos
+        411 escalamentos do mês. Continua a escalar, mas deixa de chegar
+        indistinguível de um caso novo."""
+        self._correr(msg(), cfg(dry_run=False), ClienteFalso(self._ESCALAR))
+        segundo = msg(message_id="<def@mail.gmail.com>", id="AAMk-2",
+                      corpo="Então, já têm novidades?")
+        resultado, graph, _ = self._correr(segundo, cfg(dry_run=False),
+                                           ClienteFalso(self._ESCALAR))
+        self.assertEqual(resultado, "escalado")
+        self.assertEqual([c[2] for c in graph.chamadas if c[0] == "marcar"],
+                          ["Precisa de humano", "Ação na encomenda", "Seguimento"])
+        # A decisão é a mesma de sempre: escala, com a resposta de retenção.
+        self.assertEqual(self._linha(segundo["message_id"])["acao"], "escalar")
+        self.assertIn("criar_rascunho", [c[0] for c in graph.chamadas])
+
+    def test_segundo_escalamento_com_outro_pedido_nao_leva_seguimento(self) -> None:
+        """O mesmo fio, mas o cliente passou a invocar direitos legais: mudou o
+        pedido, e tratá-lo como repetição fá-lo-ia descer na fila."""
+        self._correr(msg(), cfg(dry_run=False), ClienteFalso(self._ESCALAR))
+        segundo = msg(message_id="<def@mail.gmail.com>", id="AAMk-2")
+        _, graph, _ = self._correr(segundo, cfg(dry_run=False),
+                                   ClienteFalso(self._ESCALAR_URGENTE))
+        self.assertEqual([c[2] for c in graph.chamadas if c[0] == "marcar"],
+                          ["Precisa de humano", "Decisão", "Urgente"])
+
+    def test_rascunho_nunca_leva_seguimento(self) -> None:
+        """A etiqueta é da fila de quem revê. Um email respondido sozinho não
+        entra nela."""
+        self._correr(msg(), cfg(dry_run=False), ClienteFalso(self._ESCALAR))
+        segundo = msg(message_id="<def@mail.gmail.com>", id="AAMk-2")
+        _, graph, _ = self._correr(segundo, cfg(dry_run=False),
+                                   ClienteFalso(self._RASCUNHAR))
+        marcas = [c[2] for c in graph.chamadas if c[0] == "marcar"]
+        self.assertEqual(marcas, ["IA-Rascunhado"])
+
     def test_erro_a_criar_rascunho_sugerido_nao_derruba_a_passagem(self) -> None:
         cliente = ClienteFalso(self._ESCALAR)
         m = msg()
@@ -3033,7 +3080,7 @@ class Etiquetas(unittest.TestCase):
 
     def test_nenhuma_etiqueta_e_longa_de_mais(self) -> None:
         """Numa linha do Outlook com três etiquetas, o que é comprido corta."""
-        for nome in [*ETIQUETAS.values(), ETIQUETA_URGENTE]:
+        for nome in [*ETIQUETAS.values(), ETIQUETA_URGENTE, ETIQUETA_SEGUIMENTO]:
             self.assertLessEqual(len(nome), 20, nome)
 
 
@@ -3096,6 +3143,96 @@ class CampoDegeneradoNoFimDoEsquema(unittest.TestCase):
         datas ISO, e o prompt admite também um prazo escrito por palavras."""
         for valor in ("", "2026-09-17", "até 15 de setembro", "sexta-feira"):
             self.assertEqual(sem_fuga_de_esquema(valor), valor, valor)
+
+
+class SeguimentoDeCaso(unittest.TestCase):
+    """C-1. Metade dos escalamentos do mês eram o mesmo fio a voltar -- 213 de
+    411, 147 deles nas 24 horas seguintes ao anterior. Continuam a escalar,
+    porque cada email novo precisa mesmo de uma pessoa; o que faltava era o
+    lojista poder ver na lista que não era um caso novo.
+    """
+
+    def setUp(self) -> None:
+        pasta = TemporaryDirectory()
+        self.addCleanup(pasta.cleanup)
+        self.con = abrir_db(Path(pasta.name) / "t.db")
+        self.addCleanup(self.con.close)
+
+    def _antes(self, acao: str = "escalar", categoria: str = "COMPROMISSO_ANTERIOR",
+               confianca: str = "exata", message_id: str = "<antes@mail>") -> None:
+        registar(self.con, msg(message_id=message_id), acao, "primeiro pedido", "texto",
+                 categoria=categoria, confianca_encomenda=confianca)
+
+    def _agora(self, categoria: str = "COMPROMISSO_ANTERIOR",
+               confianca: str = "exata", conversation_id: str = "conv-1") -> bool:
+        return seguimento_do_fio(self.con, conversation_id, "<agora@mail>",
+                                 categoria, confianca)
+
+    def test_fio_ja_escalado_com_o_mesmo_pedido_e_seguimento(self) -> None:
+        self._antes()
+        self.assertTrue(self._agora())
+
+    def test_primeiro_escalamento_do_fio_nao_e_seguimento(self) -> None:
+        self.assertFalse(self._agora())
+
+    def test_fio_so_com_rascunhos_anteriores_nao_e_seguimento(self) -> None:
+        """Um fio onde o assistente já respondeu sozinho não é um caso na pilha
+        do lojista -- este é o primeiro escalamento."""
+        self._antes(acao="rascunhar")
+        self.assertFalse(self._agora())
+
+    def test_mudanca_de_categoria_nao_e_seguimento(self) -> None:
+        """O cliente que perguntava pelo estado de uma promessa e passa a
+        invocar direitos legais mudou o pedido. Marcar isso como "mais do
+        mesmo" fá-lo-ia descer na fila."""
+        self._antes(categoria="COMPROMISSO_ANTERIOR")
+        self.assertFalse(self._agora(categoria="JULGAMENTO_HUMANO"))
+
+    def test_dados_de_encomenda_novos_nao_sao_seguimento(self) -> None:
+        """O escalamento anterior não tinha encomenda confirmada e este tem: o
+        cliente deu finalmente o número, ou a identidade ficou provada."""
+        self._antes(confianca="nenhuma")
+        self.assertFalse(self._agora(confianca="exata"))
+        self._antes(confianca="media", message_id="<antes2@mail>")
+        self.assertFalse(self._agora(confianca="alta"))
+
+    def test_continuar_sem_dados_de_encomenda_e_seguimento(self) -> None:
+        """Os dois sem dados: nada de novo chegou."""
+        self._antes(confianca="nenhuma")
+        self.assertTrue(self._agora(confianca="nenhuma"))
+
+    def test_perder_dados_de_encomenda_continua_a_ser_seguimento(self) -> None:
+        """Só a chegada de dados novos quebra o seguimento. O contrário -- o
+        cliente escrever outra vez sem repetir o número -- é a repetição
+        típica."""
+        self._antes(confianca="exata")
+        self.assertTrue(self._agora(confianca="nenhuma"))
+
+    def test_outro_fio_nao_conta(self) -> None:
+        self._antes()
+        self.assertFalse(self._agora(conversation_id="conv-2"))
+
+    def test_sem_conversa_nao_e_seguimento(self) -> None:
+        """Sem conversation_id não há fio a que pertencer."""
+        self._antes()
+        self.assertFalse(self._agora(conversation_id=""))
+
+    def test_o_proprio_email_nao_conta_como_anterior(self) -> None:
+        """registar() é um INSERT OR REPLACE: um email reprocessado já está na
+        tabela e não pode ser o seu próprio escalamento anterior."""
+        self._antes(message_id="<agora@mail>")
+        self.assertFalse(self._agora())
+
+    def test_etiqueta_acresce_as_outras_sem_as_substituir(self) -> None:
+        """Não é uma decisão diferente: o tipo de caso e a urgência continuam
+        lá, e continua a ser um caso para uma pessoa."""
+        self.assertEqual(etiquetas("COMPROMISSO_ANTERIOR", "nao", True),
+                         ("Já prometido", ETIQUETA_SEGUIMENTO))
+        self.assertEqual(etiquetas("JULGAMENTO_HUMANO", "sim", True),
+                         ("Decisão", ETIQUETA_URGENTE, ETIQUETA_SEGUIMENTO))
+
+    def test_sem_seguimento_as_etiquetas_nao_mudam(self) -> None:
+        self.assertEqual(etiquetas("COMPROMISSO_ANTERIOR", "nao"), ("Já prometido",))
 
 
 class MarcarVarias(unittest.TestCase):

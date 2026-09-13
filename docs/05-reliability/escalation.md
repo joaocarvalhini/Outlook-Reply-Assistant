@@ -129,12 +129,23 @@ Na lista de mensagens, **etiquetas** que dizem o que há a fazer sem abrir nada:
 
 ```
 Re: Encomenda #22241    [Precisa de humano] [Ação na encomenda] [Urgente]
-Re: Encomenda #22440    [Precisa de humano] [Já prometido]
+Re: Encomenda #22440    [Precisa de humano] [Já prometido] [Seguimento]
 Re: Devolução           [Precisa de humano] [Decisão]
 ```
 
 E, ao abrir, um rascunho com **apenas a resposta ao cliente** — sem resumo, sem validação, sem
 link.
+
+> [!NOTE] `[Seguimento]` — o mesmo caso a voltar
+> Auditoria de 01 a 13/09/2026: **213 dos 411 escalamentos (52%) eram re-escalamentos do mesmo
+> fio**, 147 deles nas 24 horas seguintes ao anterior, e um fio chegou a escalar 16 vezes. Não são
+> escalamentos errados — cada email novo do cliente precisa mesmo de uma pessoa. O que faltava era
+> distingui-los na lista de um caso novo: o que falta neles não é a resposta (em metade o rascunho
+> foi enviado sem uma edição), é a ação que continua por fazer.
+>
+> A etiqueta não muda a decisão. E não aparece quando o email pode ter trazido alguma coisa nova:
+> se a categoria do escalamento mudou, ou se chegaram dados de encomenda que o escalamento
+> anterior não tinha, o caso volta a contar como novo. Ver `seguimento_do_fio()`.
 
 > [!NOTE] A nota interna foi removida a pedido do lojista
 > *"O rascunho é só o email, sem nota nenhuma à volta — o lojista pediu para tirar a nota interna,

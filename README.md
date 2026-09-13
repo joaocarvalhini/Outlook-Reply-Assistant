@@ -412,9 +412,14 @@ ser preciso abrir nada:
 
 ```
 Re: Encomenda #22241    [Precisa de humano] [Ação na encomenda] [Urgente]
-Re: Encomenda #22440    [Precisa de humano] [Já prometido]
+Re: Encomenda #22440    [Precisa de humano] [Já prometido] [Seguimento]
 Re: Devolução           [Precisa de humano] [Decisão]
 ```
+
+A de seguimento diz que o caso já foi escalado antes neste fio e continua à espera de uma ação —
+metade dos casos escalados são o mesmo caso a voltar, e chegavam indistinguíveis de um caso novo.
+Só não aparece quando o email trouxe algo que muda o caso: outra categoria, ou dados de encomenda
+que o escalamento anterior não tinha.
 
 A etiqueta de urgência só aparece quando esperar piora o caso — ameaça de
 queixa, invocação de legislação, terceira insistência, valor elevado. Nos dados
