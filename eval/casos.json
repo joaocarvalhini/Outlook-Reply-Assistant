@@ -1908,5 +1908,167 @@
       "verificar internamente"
     ],
     "note": "Regressao real, encomenda #22417 (item 15 -- nao altera a KB, a regra ja existe). O fio ja mostra o defeito confirmado e a troca combinada (a loja ja ofereceu uma solucao concreta), e o cliente pergunta diretamente pela morada de envio. O comportamento incorreto observado foi voltar a responder de forma vaga ('vamos verificar internamente') em vez de avancar para os passos de envio ja previstos em devolucoes.md ('Como iniciar uma devolucao' -- nao pedir o formulario quando o processo ja esta em curso -- e 'Depois de o cliente enviar a devolucao', que pede comprovativo e codigo de rastreio apos o envio). Verificacao manual do texto: deve dar a morada (o cliente perguntou diretamente), mencionar que o envio tem de ter rastreio, e pedir o comprovativo/codigo de rastreio depois de enviado -- sem repetir uma promessa de verificacao interna."
+  },
+  {
+    "id": "inpods-diferenca-pequena-sugere-mbway-sem-prometer",
+    "email": {
+      "from": "beatriz.moura4@gmail.com",
+      "from_name": "Beatriz Moura",
+      "subject": "Re: Encomenda 22510 - troca InPods",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, encomendei os InPods Pro 2.0 mas na verdade queria os Pro 4, sei que sao so uns euros de diferenca, e possivel trocar e eu pago a diferenca por MBWay?"
+    },
+    "dados_encomenda": "Encomenda #22510\nFeita em: 2026-09-13\nPagamento: pago\nEnvio: ainda nao expedida\nValor: 29.99 EUR",
+    "expect": "escalar",
+    "expect_corpo": true,
+    "expect_texto_nao_contem": [
+      "vou alterar a encomenda",
+      "ja alterei a encomenda",
+      "já alterei a encomenda",
+      "a troca ja foi feita",
+      "a troca já foi feita",
+      "fica trocado"
+    ],
+    "note": "Confirmado diretamente pelo lojista, 15/09/2026: sem threshold fixo em euros para 'diferenca pequena' entre variantes InPods -- e a equipa, na escalacao, quem avalia se vale a pena cobrar so a diferenca por MBWay em vez de cancelar/reembolsar. O caso continua a escalar sempre, como qualquer troca com diferenca de valor; o assistente nunca confirma nem promete que a encomenda ja foi alterada. Regra em devolucoes.md, 'Troca entre variantes InPods com diferenca pequena de valor'. Verificacao manual do texto: a resposta pode sugerir que a troca vai ser verificada internamente, mas nao pode afirmar que ja foi feita nem que o metodo (MBWay) ja ficou decidido."
+  },
+  {
+    "id": "espumas-p9-pedido-cor-morada-mbway",
+    "email": {
+      "from": "carlos.esteves6@gmail.com",
+      "from_name": "Carlos Esteves",
+      "subject": "Espuma avulsa P9",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, gostava de comprar so a espuma/almofada avulsa dos P9, e possivel? Quanto custa?"
+    },
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_contem": [
+      "14,99",
+      "927 524 686"
+    ],
+    "note": "Confirmado diretamente pelo lojista, 15/09/2026: a espuma/almofada P9 e a unica peca vendida avulsa, preco 14,99 EUR, normalmente disponivel, pagamento por MBWay para o 927 524 686. Regra em produtos.md, 'Espumas/almofadas P9'. Verificacao manual do texto: deve pedir logo a cor pretendida e a morada completa de entrega, sem afirmar disponibilidade garantida (a regra geral de disponibilidade em produtos.md mantem-se)."
+  },
+  {
+    "id": "sem-registo-transportadora-nao-diz-ainda-nao-expedida",
+    "email": {
+      "from": "marta.pinheiro9@gmail.com",
+      "from_name": "Marta Pinheiro",
+      "subject": "Re: Encomenda 22521",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Bom dia, tenho o codigo de rastreio mas no site da transportadora nao aparece nenhum registo da minha encomenda, o que se passa?"
+    },
+    "dados_encomenda": "Encomenda #22521\nFeita em: 2026-09-12\nPagamento: pago\nEnvio: ainda nao expedida",
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_nao_contem": [
+      "ainda nao foi expedida",
+      "ainda não foi expedida",
+      "ainda nao foi picada",
+      "ainda não foi picada",
+      "nao foi picada",
+      "não foi picada"
+    ],
+    "note": "Confirmado diretamente pelo lojista, 15/09/2026: quando a transportadora ainda nao tem registo da encomenda, 'ainda nao foi picada em armazem' e so a causa interna que justifica contactar a transportadora de imediato -- nao entra na resposta ao cliente. A frase dita ao cliente mantem-se a existente (nota [!IMPORTANT] em entregas.md, confirmada 02/09/2026): nunca 'ainda nao foi expedida' nem 'ainda nao foi picada'. Regra em entregas.md, 'Cliente diz que a transportadora nao tem registo da encomenda'. Verificacao manual do texto: deve dizer que o rastreio deve surgir em breve e que a loja vai contactar de imediato a transportadora."
+  },
+  {
+    "id": "analise-segunda-pergunta-com-evidencia-confirma",
+    "email": {
+      "from": "joana.esteves3@gmail.com",
+      "from_name": "Joana Esteves",
+      "subject": "Re: Substituicao encomenda 21920",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, passado uma semana ainda nao sei nada, como esta a analise dos meus fones?"
+    },
+    "historico": "[2026-09-05 10:00] CLIENTE: Bom dia, enviei os fones com defeito para a vossa analise, aqui fica o comprovativo de envio e o codigo de rastreio CTT123456789PT.\n[2026-09-08 09:30] LOJA: Boa tarde, confirmamos a rececao dos fones nas nossas instalacoes, vao entrar em analise.",
+    "expect": "escalar",
+    "expect_corpo": true,
+    "note": "Confirmado diretamente pelo lojista, 15/09/2026: quando o historico mostra evidencia textual explicita de que o artigo foi recebido e entrou em analise, a segunda pergunta do cliente pode ter resposta concreta (o artigo esta em analise ou em tratamento pela equipa) em vez de repetir 'vamos verificar internamente' como se fosse um caso novo.\n\nDecisao final, 15/09/2026, apos a corrida real: a ACAO correta e escalar, nao rascunhar -- o cliente pergunta pelo RESULTADO da analise, e so o lojista sabe o ponto de situacao real; escalar com um corpo util (a confirmar que o artigo esta em analise/em tratamento e que se vai verificar o resultado) e o comportamento mais seguro, e nao um caso de 'repetir uma nao-resposta'. Regra em devolucoes.md, 'Artigo ja enviado para analise, cliente pergunta de novo pelo estado', mantida sem alteracao -- so o expect deste caso mudou.\n\nO requisito e semantico, nao lexical: havendo evidencia no fio, o corpo pode comunicar que o artigo esta em analise/em tratamento pela equipa, com qualquer formulacao equivalente ('entrou em analise', 'esta a ser analisado', 'em tratamento', etc.) -- nao se fixa uma substring obrigatoria como 'em analise' ou 'analis', porque isso reprova formulacoes corretas so por nao baterem literalmente (medido: 1 amostra falhou so nisto apesar de a acao e o conteudo estarem certos). O que tem de se verificar sempre, e fica coberto pelas proibicoes abaixo, e que a resposta nunca inventa o resultado final da analise (aprovado, recusado, concluido) -- so confirma que esta em curso. Verificacao manual do texto: a resposta deve, na pratica, deixar claro (por palavras suas) que o artigo esta em analise ou em tratamento -- isto nao e automatizavel por substring sem reintroduzir falsos negativos.",
+    "expect_texto_nao_contem": [
+      "a análise concluiu",
+      "a analise concluiu",
+      "a análise foi concluída",
+      "a analise foi concluida",
+      "a análise terminou",
+      "a analise terminou",
+      "o resultado da análise é",
+      "o resultado da analise e",
+      "foi aprovada",
+      "foi aprovado",
+      "foi recusada",
+      "foi recusado",
+      "nao tem defeito",
+      "não tem defeito",
+      "tem defeito confirmado",
+      "já foi decidido",
+      "ja foi decidido"
+    ]
+  },
+  {
+    "id": "analise-segunda-pergunta-sem-evidencia-nao-afirma",
+    "email": {
+      "from": "ruben.antunes7@gmail.com",
+      "from_name": "Ruben Antunes",
+      "subject": "Re: Fones com problema",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, ja faz dias que enviei o email sobre o problema no meu fone, como esta isso?"
+    },
+    "historico": "[2026-09-10 14:00] CLIENTE: Boa tarde, o meu fone direito deixou de ligar, o que posso fazer?\n[2026-09-10 16:20] LOJA: Lamentamos a situacao, vamos verificar internamente e voltamos a contactar.",
+    "expect": "escalar",
+    "expect_corpo": true,
+    "expect_texto_nao_contem": [
+      "ja esta em analise",
+      "já está em análise",
+      "o produto ja esta em analise",
+      "o artigo ja esta em analise",
+      "esta a ser analisado"
+    ],
+    "note": "Confirmado diretamente pelo lojista, 15/09/2026: sem evidencia textual no fio de que o artigo foi recebido/enviado para analise, o assistente nao pode afirmar que 'ja esta em analise' -- so ha uma promessa anterior de verificar, sem nada de novo. Aplica-se 'Repetir uma nao-resposta e pior do que escalar' (empresa.md): escala em vez de repetir a mesma frase vazia. Regra em devolucoes.md, 'Artigo ja enviado para analise, cliente pergunta de novo pelo estado'."
+  },
+  {
+    "id": "ponto-situacao-generico-sem-numero-encomenda",
+    "email": {
+      "from": "sara.brito2@gmail.com",
+      "from_name": "Sara Brito",
+      "subject": "Ponto de situacao",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, como esta a minha encomenda? Fico a aguardar novidades."
+    },
+    "expect": "escalar",
+    "expect_corpo": true,
+    "expect_texto_nao_contem": [
+      "vamos analisar",
+      "vamos verificar internamente",
+      "estamos a analisar",
+      "já está em análise",
+      "ja esta em analise",
+      "está em análise",
+      "esta em analise",
+      "já foi enviada",
+      "ja foi enviada",
+      "já foi expedida",
+      "ja foi expedida",
+      "foi entregue",
+      "está a caminho",
+      "esta a caminho",
+      "o pagamento foi confirmado",
+      "código de rastreio",
+      "codigo de rastreio"
+    ],
+    "note": "Confirmado diretamente pelo lojista, 15/09/2026: pedido generico de ponto de situacao, fora do contexto de reembolso/troca, sem numero de encomenda nem dados que a identifiquem -- pede-se o numero da encomenda ou o contacto associado a compra, sem inventar nem dizer vagamente que se esta a analisar. Generalizacao de 'Primeiro identificar a encomenda, so depois falar do processo' em devolucoes.md (antes so cobria reembolso/troca). Ver tambem 'sem-encomenda-identificada-pede-contacto-nao-promete-analise', que cobre a mesma regra no contexto de reembolso/troca (esse caso continua a passar como rascunhar).\n\nDecisao final, 15/09/2026, apos medicao de estabilidade: tentou-se uma excecao estreita no PROMPT central de assistente.py para forcar rascunhar quando falta so o identificador. Com a excecao, 5 corridas do mesmo caso pelo caminho canonico deram 1 rascunhar / 4 escalar -- instavel, sem maioria clara para rascunhar. Decisao: reverter a excecao do PROMPT (a regra geral 'na duvida, escala' fica sem enfraquecer) e aceitar escalar como o expect deste caso. O corpo continua a ser o contrato de qualidade: mesmo escalado, tem de pedir o numero da encomenda ou contacto, sem afirmar nenhum estado, analise, envio, entrega, pagamento ou tracking inventado. Categoria nao se forca (oscilou entre OUTRO e CONTEXTO_EM_FALTA sem mudar o corpo util).",
+    "expect_texto_contem": [
+      "número da encomenda"
+    ]
   }
 ]

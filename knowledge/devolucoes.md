@@ -239,21 +239,34 @@ pedido pelo formulário do site.)
 
 ## Primeiro identificar a encomenda, só depois falar do processo
 
-Quando o cliente pede reembolso ou troca e **não há encomenda identificada**
-— não deu o número, e os dados que deu não chegam para a encontrar —, a
-resposta pede o que falta para a identificar: o número da encomenda ou o
-contacto (email ou telefone) associado à compra. É uma resposta completa e
-normal, e é a primeira coisa a fazer.
+Quando o cliente pede reembolso, troca, ou qualquer ponto de situação sobre
+uma encomenda (por exemplo, "como está a minha encomenda?", sem mais
+detalhe), e **não há encomenda identificada** — não deu o número, e os dados
+que deu não chegam para a encontrar —, a resposta pede o que falta para a
+identificar: o número da encomenda ou o contacto (email ou telefone)
+associado à compra. É uma resposta completa e normal, e é a primeira coisa a
+fazer, seja qual for o motivo do contacto.
 
 O que **não** se faz nesse momento:
 
-- Dizer que a equipa vai analisar, decidir ou verificar internamente. Sem
-  saber de que compra se trata, não há nada a analisar — a frase só adia, e
-  obriga a uma segunda mensagem a pedir na mesma o que se devia ter pedido
-  logo.
+- Dizer que a equipa vai analisar, decidir ou verificar internamente, ou
+  responder vagamente que "estamos a analisar" quando nem se sabe ainda qual
+  é a encomenda. Sem saber de que compra se trata, não há nada a analisar —
+  a frase só adia, e obriga a uma segunda mensagem a pedir na mesma o que se
+  devia ter pedido logo.
+- Inventar um estado (enviado, em análise, atrasado) sem ter a encomenda
+  identificada.
 - Explicar a política de troca ou de devolução antes de saber qual é o caso.
   A explicação vem a seguir, quando já se souber o que o cliente comprou e o
   que se passou.
+
+Faltar o identificador **não escala por si só**: pedir o número da encomenda
+ou o contacto associado à compra é uma resposta normal, direta ao cliente —
+não é diferente de pedir qualquer outro dado simples em falta (por exemplo, a
+identidade). Não confundir com um fio sem histórico suficiente para se
+perceber o caso: aqui a conversa está completa, só falta um dado concreto
+que o cliente ainda não deu, e pedi-lo é a resposta em si, não um sinal de
+que falta contexto para decidir.
 
 (Confirmado diretamente pelo lojista, 12 de setembro de 2026, num pedido de
 reembolso ou troca de InPods Pro em que um código nunca chegou ao cliente: o
@@ -262,6 +275,11 @@ tudo para perguntar só o contacto associado à encomenda — "ainda não tínha
 os dados necessários para identificar a compra e perceber exatamente qual era
 a situação. Depois de termos essa informação, já conseguiríamos avançar com a
 explicação relativamente à troca.")
+
+Regra generalizada a qualquer pedido de ponto de situação, não só reembolso
+ou troca — mesmo princípio, sem dado suficiente para identificar a encomenda
+não há nada a analisar. (Confirmado diretamente pelo lojista, 15 de setembro
+de 2026.)
 
 ## Como iniciar uma devolução
 
@@ -549,6 +567,32 @@ Quando é o cliente a propor o caminho mais rápido, confirma-se esse caminho em
 vez de lhe devolver as hipóteses em aberto — ver "Quando o cliente já escolheu,
 não se reabre a escolha" em `empresa.md`.
 
+### Troca entre variantes InPods com diferença pequena de valor
+
+Não há um valor limite fixo em euros para o que conta como "diferença
+pequena" — é a equipa, na escalação, quem avalia se vale a pena e se é
+operacionalmente possível (stock da variante pedida, encomenda ainda
+alterável). Quando a diferença entre as duas variantes de InPods é pequena,
+a equipa pode preferir cobrar só a diferença por MBWay em vez de cancelar a
+encomenda e reembolsar — evita o processo mais lento de cancelamento e
+reembolso quando não é preciso.
+
+- O caso continua a escalar sempre, como qualquer troca com diferença de
+  valor (secção acima) — o assistente **nunca confirma nem promete** que a
+  encomenda já foi alterada, nem que se vai cobrar a diferença por MBWay.
+  Isso é decisão da equipa, caso a caso.
+- Na resposta ao cliente, a formulação segura é dizer que a possibilidade de
+  trocar entre as duas variantes vai ser verificada internamente, sem
+  garantir o resultado nem o método de acerto.
+- Ao preparar o resumo do caso para escalação, sugerir a opção de cobrar a
+  diferença por MBWay quando a diferença de valor for pequena, para a equipa
+  decidir mais rápido — mas isto é uma sugestão no resumo, não uma resposta
+  ao cliente.
+
+(Confirmado diretamente pelo lojista, 15 de setembro de 2026: sem valor
+limite definido, regra qualitativa — "diferença pequena" decide-se caso a
+caso pela equipa, não por um número fixo no conhecimento.)
+
 ## Cor diferente da pedida por falta de stock
 
 Quando a cor pedida pelo cliente não está em stock, a loja envia o produto
@@ -654,6 +698,32 @@ diretamente o envio dos fones — "esse processo acaba por levar mais tempo para
 o cliente... achei que o mais adequado seria pedir diretamente o envio dos
 fones para nós, para conseguirmos fazer uma análise presencial e dar uma
 resposta concreta com maior rapidez".)
+
+## Artigo já enviado para análise, cliente pergunta de novo pelo estado
+
+Diferente da secção acima: aqui o artigo **já saiu de casa do cliente** e foi
+enviado para a loja analisar (substituição ou defeito), e o cliente volta a
+perguntar como está.
+
+Só se afirma "o produto já está em análise" (ou equivalente) quando o
+**histórico do fio contém evidência textual explícita** de que o artigo foi
+recebido pela loja ou enviado para análise, e o estado é compatível com essa
+afirmação — por exemplo, uma mensagem anterior da loja a confirmar a receção,
+ou o cliente a partilhar o comprovativo/código de rastreio da devolução com
+entrega já confirmada.
+
+Sem essa evidência no fio:
+
+- Não se inventa que o artigo já chegou ou já está em análise — não há como
+  saber isso sem o dado explícito.
+- Não se repete indefinidamente "vamos verificar internamente" só para
+  preencher a resposta — ver "Repetir uma não-resposta é pior do que
+  escalar" em `empresa.md`.
+- Aplica-se a regra segura já existente: pedir o que falta para confirmar a
+  situação (por exemplo, se o artigo já foi enviado e com que rastreio), ou
+  escalar quando não há nada de novo a pedir.
+
+(Confirmado diretamente pelo lojista, 15 de setembro de 2026.)
 
 ## Cancelamento de encomenda
 

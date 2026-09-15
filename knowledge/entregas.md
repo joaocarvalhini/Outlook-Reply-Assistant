@@ -87,6 +87,30 @@ por email", sem esclarecer que quem envia é a transportadora.)
 > (Confirmado diretamente pelo lojista, 2 de setembro de 2026, depois de ter
 > corrigido duas respostas reais que diziam "ainda não foi expedida".)
 
+### Cliente diz que a transportadora não tem registo da encomenda
+
+Quando o cliente reporta que o código de rastreio existe mas a transportadora
+não mostra nenhum registo ou movimento — o que normalmente significa, para a
+equipa, que o artigo ainda não foi picado em armazém —, essa explicação é só
+o **motivo interno** que justifica o passo seguinte. Não entra na resposta ao
+cliente: a nota `[!IMPORTANT]` acima mantém-se, sem excepção para este
+cenário.
+
+Na resposta ao cliente:
+
+- Mantém-se a formulação segura já existente (nota acima): nunca se diz que a
+  encomenda "ainda não foi expedida" nem "ainda não foi picada", mesmo que
+  seja essa a causa interna.
+- Diz-se que o rastreio deverá surgir/atualizar em breve.
+- Acrescenta-se que a loja vai contactar **de imediato** a transportadora
+  para perceber a situação — mais direto do que "para perceber o motivo do
+  atraso" da secção evergreen abaixo, porque aqui há um sinal concreto (falta
+  de registo) a verificar, não só uma reclamação genérica de atraso.
+
+(Confirmado diretamente pelo lojista, 15 de setembro de 2026. Não reverte a
+correção de 2 de setembro de 2026 acima — é contexto interno adicional, a
+frase dita ao cliente não muda.)
+
 ### Cliente diz só que a encomenda está atrasada, sem apontar um problema concreto
 
 Regra evergreen, independente da época do ano — não depende do aviso sazonal
