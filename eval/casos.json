@@ -1923,15 +1923,12 @@
     "dados_encomenda": "Encomenda #22510\nFeita em: 2026-09-13\nPagamento: pago\nEnvio: ainda nao expedida\nValor: 29.99 EUR",
     "expect": "escalar",
     "expect_corpo": true,
-    "expect_texto_nao_contem": [
-      "vou alterar a encomenda",
-      "ja alterei a encomenda",
-      "já alterei a encomenda",
-      "a troca ja foi feita",
-      "a troca já foi feita",
-      "fica trocado"
-    ],
-    "note": "Confirmado diretamente pelo lojista, 15/09/2026: sem threshold fixo em euros para 'diferenca pequena' entre variantes InPods -- e a equipa, na escalacao, quem avalia se vale a pena cobrar so a diferenca por MBWay em vez de cancelar/reembolsar. O caso continua a escalar sempre, como qualquer troca com diferenca de valor; o assistente nunca confirma nem promete que a encomenda ja foi alterada. Regra em devolucoes.md, 'Troca entre variantes InPods com diferenca pequena de valor'. Verificacao manual do texto: a resposta pode sugerir que a troca vai ser verificada internamente, mas nao pode afirmar que ja foi feita nem que o metodo (MBWay) ja ficou decidido."
+    "note": "Troca InPods com pequena diferenca: escala sempre. MBWay e apenas sugestao interna, sem prometer troca ou cobrar antes de confirmacao. Regex normalizadas cobrem compromissos diretos; rever semanticamente formulacoes condicionais e parafrases.",
+    "expect_texto_nao_regex": [
+      "\\b(?:vou|vamos|iremos)\\b[^.!?]{0,20}\\b(?:alterar|trocar|cobrar|troca)\\b",
+      "\\b(?:ja alterei a encomenda|a troca ja foi feita|fica trocado)\\b",
+      "\\b(?:pague|transfira)\\b|\\b(?:pode|deve|tera de)\\s+(?:pagar|transferir)\\b"
+    ]
   },
   {
     "id": "espumas-p9-pedido-cor-morada-mbway",
@@ -1946,11 +1943,21 @@
     },
     "expect": "rascunhar",
     "expect_corpo": true,
-    "expect_texto_contem": [
-      "14,99",
-      "927 524 686"
+    "note": "Espumas P9: unica peca atualmente vendida avulsa. Validar preco exato 14,99 EUR, MBWay 927524686 com formatacao livre, pedido de cor e morada completa. Nao garantir stock absoluto. Revisao manual complementa regex para o sentido do pedido e disponibilidade.",
+    "expect_texto_regex": [
+      "(?<![\\d.,])14[,.]99\\s*(?:€|eur(?:os?)?\\b)",
+      "(?<!\\d)927[\\s().-]*524[\\s().-]*686(?![\\s().-]*\\d)",
+      "\\bmb\\s*way\\b"
     ],
-    "note": "Confirmado diretamente pelo lojista, 15/09/2026: a espuma/almofada P9 e a unica peca vendida avulsa, preco 14,99 EUR, normalmente disponivel, pagamento por MBWay para o 927 524 686. Regra em produtos.md, 'Espumas/almofadas P9'. Verificacao manual do texto: deve pedir logo a cor pretendida e a morada completa de entrega, sem afirmar disponibilidade garantida (a regra geral de disponibilidade em produtos.md mantem-se)."
+    "expect_texto_pedido_regex": [
+      "\\bcor\\b",
+      "\\b(?:morada|endereco)\\b(?:\\s+(?:de\\s+entrega|postal)\\b)?\\s+complet[ao]\\b|\\bcomplet[ao]\\b\\s+(?:de\\s+entrega\\s+)?\\b(?:morada|endereco)\\b"
+    ],
+    "expect_texto_nao_regex": [
+      "(?<![\\d.,])(?!(?:14[,.]99)\\s*(?:€|eur))\\d+(?:[.,]\\d+)?\\s*(?:€|eur(?:os?)?\\b)",
+      "\\b(?:stock|disponibilidade)\\s+(?:sempre\\s+)?garantid\\w*",
+      "\\b(?:sempre|permanentemente)\\s+(?:em stock|disponiveis|disponivel)|\\b(?:temos|ha)\\s+sempre\\s+stock\\b"
+    ]
   },
   {
     "id": "sem-registo-transportadora-nao-diz-ainda-nao-expedida",
@@ -1966,15 +1973,16 @@
     "dados_encomenda": "Encomenda #22521\nFeita em: 2026-09-12\nPagamento: pago\nEnvio: ainda nao expedida",
     "expect": "rascunhar",
     "expect_corpo": true,
-    "expect_texto_nao_contem": [
-      "ainda nao foi expedida",
-      "ainda não foi expedida",
-      "ainda nao foi picada",
-      "ainda não foi picada",
-      "nao foi picada",
-      "não foi picada"
+    "note": "Manter guardrail: nao revelar falta de expedicao/picagem. Comunicar rastreio em breve e contacto imediato da loja com a transportadora. Regex aceitam vocabulario e ordem alternativos; rever manualmente que as duas acoes se referem ao caso.",
+    "expect_texto_regex": [
+      "\\b(?:rastreio|seguimento|acompanhamento|tracking)\\b[^.!?]{0,220}\\b(?:breve|brevemente)|\\b(?:breve|brevemente)\\b[^.!?]{0,220}\\b(?:rastreio|seguimento|acompanhamento|tracking)\\b",
+      "\\b(?:vamos|iremos|iremos tambem|vamos tambem|contactaremos|entraremos|iremos de imediato|vamos de imediato)\\b[^.!?]{0,130}\\btransportadora\\b|\\btransportadora\\b[^.!?]{0,60}\\bsera contactada\\b",
+      "\\b(?:contactar|contactaremos|contacto|contactada)\\b",
+      "\\b(?:de imediato|imediatamente|imediato)\\b"
     ],
-    "note": "Confirmado diretamente pelo lojista, 15/09/2026: quando a transportadora ainda nao tem registo da encomenda, 'ainda nao foi picada em armazem' e so a causa interna que justifica contactar a transportadora de imediato -- nao entra na resposta ao cliente. A frase dita ao cliente mantem-se a existente (nota [!IMPORTANT] em entregas.md, confirmada 02/09/2026): nunca 'ainda nao foi expedida' nem 'ainda nao foi picada'. Regra em entregas.md, 'Cliente diz que a transportadora nao tem registo da encomenda'. Verificacao manual do texto: deve dizer que o rastreio deve surgir em breve e que a loja vai contactar de imediato a transportadora."
+    "expect_texto_nao_regex": [
+      "\\b(?:ainda\\s+)?nao foi (?:expedida|picada)\\b"
+    ]
   },
   {
     "id": "analise-segunda-pergunta-com-evidencia-confirma",
@@ -1987,28 +1995,17 @@
       ],
       "body": "Boa tarde, passado uma semana ainda nao sei nada, como esta a analise dos meus fones?"
     },
-    "historico": "[2026-09-05 10:00] CLIENTE: Bom dia, enviei os fones com defeito para a vossa analise, aqui fica o comprovativo de envio e o codigo de rastreio CTT123456789PT.\n[2026-09-08 09:30] LOJA: Boa tarde, confirmamos a rececao dos fones nas nossas instalacoes, vao entrar em analise.",
+    "historico": "[2026-09-05 10:00] CLIENTE: Bom dia, enviei os fones com defeito para a vossa analise, aqui fica o comprovativo de envio e o codigo de rastreio CTT123456789PT.\n[2026-09-08 09:30] LOJA: Boa tarde, confirmamos a rececao dos fones nas nossas instalacoes, ja entraram em analise.",
     "expect": "escalar",
     "expect_corpo": true,
-    "note": "Confirmado diretamente pelo lojista, 15/09/2026: quando o historico mostra evidencia textual explicita de que o artigo foi recebido e entrou em analise, a segunda pergunta do cliente pode ter resposta concreta (o artigo esta em analise ou em tratamento pela equipa) em vez de repetir 'vamos verificar internamente' como se fosse um caso novo.\n\nDecisao final, 15/09/2026, apos a corrida real: a ACAO correta e escalar, nao rascunhar -- o cliente pergunta pelo RESULTADO da analise, e so o lojista sabe o ponto de situacao real; escalar com um corpo util (a confirmar que o artigo esta em analise/em tratamento e que se vai verificar o resultado) e o comportamento mais seguro, e nao um caso de 'repetir uma nao-resposta'. Regra em devolucoes.md, 'Artigo ja enviado para analise, cliente pergunta de novo pelo estado', mantida sem alteracao -- so o expect deste caso mudou.\n\nO requisito e semantico, nao lexical: havendo evidencia no fio, o corpo pode comunicar que o artigo esta em analise/em tratamento pela equipa, com qualquer formulacao equivalente ('entrou em analise', 'esta a ser analisado', 'em tratamento', etc.) -- nao se fixa uma substring obrigatoria como 'em analise' ou 'analis', porque isso reprova formulacoes corretas so por nao baterem literalmente (medido: 1 amostra falhou so nisto apesar de a acao e o conteudo estarem certos). O que tem de se verificar sempre, e fica coberto pelas proibicoes abaixo, e que a resposta nunca inventa o resultado final da analise (aprovado, recusado, concluido) -- so confirma que esta em curso. Verificacao manual do texto: a resposta deve, na pratica, deixar claro (por palavras suas) que o artigo esta em analise ou em tratamento -- isto nao e automatizavel por substring sem reintroduzir falsos negativos.",
-    "expect_texto_nao_contem": [
-      "a análise concluiu",
-      "a analise concluiu",
-      "a análise foi concluída",
-      "a analise foi concluida",
-      "a análise terminou",
-      "a analise terminou",
-      "o resultado da análise é",
-      "o resultado da analise e",
-      "foi aprovada",
-      "foi aprovado",
-      "foi recusada",
-      "foi recusado",
-      "nao tem defeito",
-      "não tem defeito",
-      "tem defeito confirmado",
-      "já foi decidido",
-      "ja foi decidido"
+    "note": "Historico confirma explicitamente rececao E entrada em analise (nao apenas uma intencao futura). Escalar com corpo util: comunicar analise/tratamento e verificar o ponto de situacao, sem inventar conclusao. Regex normalizadas cobrem estados e conclusoes; rever semanticamente as parafrases.",
+    "expect_texto_regex": [
+      "\\b(?:em analise|a ser analisad\\w*|em tratamento)\\b"
+    ],
+    "expect_texto_nao_regex": [
+      "\\banalise\\s+(?:(?:ja\\s+)?(?:foi|esta)\\s+)?(?:conclu\\w*|termin\\w*|finaliz\\w*)",
+      "\\b(?:foi|foram)\\s+(?:aprovad|recusad)\\w*|\\b(?:resultado da analise e|ja foi decidido)\\b",
+      "\\b(?:nao tem defeito|tem defeito confirmado)\\b"
     ]
   },
   {
@@ -2025,14 +2022,14 @@
     "historico": "[2026-09-10 14:00] CLIENTE: Boa tarde, o meu fone direito deixou de ligar, o que posso fazer?\n[2026-09-10 16:20] LOJA: Lamentamos a situacao, vamos verificar internamente e voltamos a contactar.",
     "expect": "escalar",
     "expect_corpo": true,
-    "expect_texto_nao_contem": [
-      "ja esta em analise",
-      "já está em análise",
-      "o produto ja esta em analise",
-      "o artigo ja esta em analise",
-      "esta a ser analisado"
-    ],
-    "note": "Confirmado diretamente pelo lojista, 15/09/2026: sem evidencia textual no fio de que o artigo foi recebido/enviado para analise, o assistente nao pode afirmar que 'ja esta em analise' -- so ha uma promessa anterior de verificar, sem nada de novo. Aplica-se 'Repetir uma nao-resposta e pior do que escalar' (empresa.md): escala em vez de repetir a mesma frase vazia. Regra em devolucoes.md, 'Artigo ja enviado para analise, cliente pergunta de novo pelo estado'."
+    "note": "O fio so mostra uma promessa de verificar o defeito, sem envio, rececao ou entrada em analise. Escalar com corpo seguro sem afirmar esses estados. Rever manualmente a utilidade do corpo e as parafrases das afirmacoes proibidas.",
+    "expect_texto_nao_regex": [
+      "\\b(?:esta|estao|encontra-se|encontram-se|entrou|entraram)\\s+(?:ja\\s+)?(?:em analise|a ser analisad\\w*)\\b",
+      "\\b(?:estamos|estou)\\s+a analisar\\b|\\bem analise pela (?:nossa )?equipa\\b",
+      "\\banalise\\s+(?:(?:ja\\s+)?(?:foi|esta)\\s+)?(?:conclu\\w*|termin\\w*|finaliz\\w*)",
+      "\\b(?:foi|foram)\\s+(?:aprovad|recusad)\\w*|\\b(?:resultado da analise e|ja foi decidido)\\b",
+      "\\b(?:nao tem defeito|tem defeito confirmado)\\b"
+    ]
   },
   {
     "id": "ponto-situacao-generico-sem-numero-encomenda",
@@ -2045,30 +2042,46 @@
       ],
       "body": "Boa tarde, como esta a minha encomenda? Fico a aguardar novidades."
     },
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "expect_corpo": true,
+    "note": "Sem encomenda identificada, pedir numero OU email/telefone associado a compra. Rascunhar e escalar sao ambos aceites com corpo util e seguro, sem categoria obrigatoria. Nao inventar estado, tracking, pagamento ou entrega; revisao semantica complementa os padroes.",
+    "expect_texto_pedido_regex": [
+      "\\b(?:numero|n[.º°o]*)\\b(?:\\s+(?:da|do|de|sua|seu|propria|proprio|minha|meu)\\b){0,3}\\s+encomenda\\b|\\b(?:e-?mail|telefone|contacto)\\b[^.!?]{0,100}\\b(?:associad\\w*|utilizad\\w*|usad\\w*|compra|encomenda)\\b"
+    ],
+    "expect_texto_nao_regex": [
+      "\\b(?:esta|estao|encontra-se|encontram-se|entrou|entraram)\\s+(?:ja\\s+)?(?:em analise|a ser analisad\\w*)\\b",
+      "\\b(?:estamos|estou)\\s+a analisar\\b|\\bem analise pela (?:nossa )?equipa\\b",
+      "\\b(?:vamos analisar|vamos verificar internamente|estamos a analisar)\\b",
+      "\\b(?:foi|esta|segue|encontra-se)\\s+(?:ja\\s+)?(?:enviada|expedida|entregue|paga|atrasada|a caminho|em transito)\\b",
+      "\\bpagamento\\s+(?:(?:foi|esta)\\s+)?(?:confirmado|recebido)\\b",
+      "\\b(?:codigo de rastreio|tracking)\\b"
+    ]
+  },
+  {
+    "id": "analise-enviado-sem-rececao-confirmada-nao-afirma",
+    "email": {
+      "from": "tiago.costa8@gmail.com",
+      "from_name": "Tiago Costa",
+      "subject": "Re: Analise dos fones - encomenda 21931",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, ja enviei os fones e o comprovativo. Podem dizer como esta a analise?"
+    },
+    "historico": "[2026-09-10 10:00] LOJA: Envie os fones para analise e partilhe o comprovativo e o codigo de rastreio.\n[2026-09-12 11:00] CLIENTE: Enviei hoje os fones por correio registado. O comprovativo de expedicao indica aceitacao nos CTT e o codigo e CTT987654321PT. Ainda nao tenho confirmacao de entrega.",
     "expect": "escalar",
     "expect_corpo": true,
-    "expect_texto_nao_contem": [
-      "vamos analisar",
-      "vamos verificar internamente",
-      "estamos a analisar",
-      "já está em análise",
-      "ja esta em analise",
-      "está em análise",
-      "esta em analise",
-      "já foi enviada",
-      "ja foi enviada",
-      "já foi expedida",
-      "ja foi expedida",
-      "foi entregue",
-      "está a caminho",
-      "esta a caminho",
-      "o pagamento foi confirmado",
-      "código de rastreio",
-      "codigo de rastreio"
+    "expect_texto_nao_regex": [
+      "\\b(?:esta|estao|encontra-se|encontram-se|entrou|entraram)\\s+(?:ja\\s+)?(?:em analise|a ser analisad\\w*)\\b",
+      "\\b(?:estamos|estou)\\s+a analisar\\b|\\bem analise pela (?:nossa )?equipa\\b",
+      "\\banalise\\s+(?:(?:ja\\s+)?(?:foi|esta)\\s+)?(?:conclu\\w*|termin\\w*|finaliz\\w*)",
+      "\\b(?:foi|foram)\\s+(?:aprovad|recusad)\\w*|\\b(?:resultado da analise e|ja foi decidido)\\b",
+      "\\b(?:nao tem defeito|tem defeito confirmado)\\b",
+      "\\b(?:recebemos|ja chegou|ja chegaram)\\b[^.!?]{0,60}\\b(?:artigo|produto|fones)\\b|\\b(?:artigo|produto|fones)\\b[^.!?]{0,60}\\b(?:foi recebido|foram recebidos|ja chegou|ja chegaram)\\b"
     ],
-    "note": "Confirmado diretamente pelo lojista, 15/09/2026: pedido generico de ponto de situacao, fora do contexto de reembolso/troca, sem numero de encomenda nem dados que a identifiquem -- pede-se o numero da encomenda ou o contacto associado a compra, sem inventar nem dizer vagamente que se esta a analisar. Generalizacao de 'Primeiro identificar a encomenda, so depois falar do processo' em devolucoes.md (antes so cobria reembolso/troca). Ver tambem 'sem-encomenda-identificada-pede-contacto-nao-promete-analise', que cobre a mesma regra no contexto de reembolso/troca (esse caso continua a passar como rascunhar).\n\nDecisao final, 15/09/2026, apos medicao de estabilidade: tentou-se uma excecao estreita no PROMPT central de assistente.py para forcar rascunhar quando falta so o identificador. Com a excecao, 5 corridas do mesmo caso pelo caminho canonico deram 1 rascunhar / 4 escalar -- instavel, sem maioria clara para rascunhar. Decisao: reverter a excecao do PROMPT (a regra geral 'na duvida, escala' fica sem enfraquecer) e aceitar escalar como o expect deste caso. O corpo continua a ser o contrato de qualidade: mesmo escalado, tem de pedir o numero da encomenda ou contacto, sem afirmar nenhum estado, analise, envio, entrega, pagamento ou tracking inventado. Categoria nao se forca (oscilou entre OUTRO e CONTEXTO_EM_FALTA sem mudar o corpo util).",
-    "expect_texto_contem": [
-      "número da encomenda"
-    ]
+    "note": "Comprovativo de expedicao prova apenas envio. Nao ha confirmacao de rececao pela loja nem de entrada em analise. Escalar com corpo seguro, reconhecendo o envio comunicado e indicando que a equipa vai confirmar a rececao/estado. Nao voltar a pedir o comprovativo ou rastreio ja presentes. Rever tambem semanticamente."
   }
 ]

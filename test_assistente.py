@@ -3886,5 +3886,503 @@ class AvaliarTextoObrigatorioOuProibido(unittest.TestCase):
         self.assertEqual(obtido, "rascunhar")
 
 
+class AvaliarContratosFeedbackLojista(unittest.TestCase):
+    """Contratos reais do lote, com respostas sintéticas e sem API."""
+
+    INPODS = "inpods-diferenca-pequena-sugere-mbway-sem-prometer"
+    P9 = "espumas-p9-pedido-cor-morada-mbway"
+    TRANSPORTADORA = "sem-registo-transportadora-nao-diz-ainda-nao-expedida"
+    ANALISE = "analise-segunda-pergunta-com-evidencia-confirma"
+    SEM_EVIDENCIA = "analise-segunda-pergunta-sem-evidencia-nao-afirma"
+    GENERICO = "ponto-situacao-generico-sem-numero-encomenda"
+    ENVIADO = "analise-enviado-sem-rececao-confirmada-nao-afirma"
+    P9_SEGURO = (
+        "As espumas custam 14,99 €. Pagamento por MBWay para 927 524 686. "
+        "Indique a cor e a morada completa de entrega."
+    )
+    TRANSPORTADORA_SEGURA = (
+        "O rastreio deverá surgir em breve. Vamos contactar de imediato a transportadora."
+    )
+    # label, caso, ação, corpo, deve passar. Estes exemplos também permitem
+    # imprimir uma prova local legível sem chamar o modelo.
+    CENARIOS = (
+        ("InPods: promessa de troca/cobrança", INPODS, "escalar",
+         "Vamos trocar para os Pro 4. Pague a diferença por MBWay.", False),
+        ("InPods: cobrança isolada", INPODS, "escalar",
+         "Pague a diferença por MBWay.", False),
+        ("InPods: verificação interna", INPODS, "escalar",
+         "Vamos verificar internamente se conseguimos trocar para os Pro 4.", True),
+        ("Análise: conclusão inventada", ANALISE, "escalar",
+         "A análise foi concluída. Vamos substituir os fones.", False),
+        ("Análise: conclusão apesar de estado válido", ANALISE, "escalar",
+         "O artigo entrou em análise. A ANÁLISE FOI CONCLUÍDA.", False),
+        ("Análise: estado confirmado", ANALISE, "escalar",
+         "Os fones estão em tratamento pela equipa. Vamos confirmar o ponto de situação.", True),
+        ("Sem evidência: análise inventada", SEM_EVIDENCIA, "escalar",
+         "O artigo está a ser analisado pela nossa equipa.", False),
+        ("Sem evidência: corpo seguro", SEM_EVIDENCIA, "escalar",
+         "Pode indicar o número da encomenda para a equipa acompanhar o pedido?", True),
+        ("P9: preço 114,99", P9, "rascunhar", P9_SEGURO.replace("14,99", "114,99"), False),
+        ("P9: preço 15,99", P9, "rascunhar", P9_SEGURO.replace("14,99", "15,99"), False),
+        ("P9: dois preços contraditórios", P9, "rascunhar", P9_SEGURO + " O preço é 15,99 €.", False),
+        ("P9: telefone errado", P9, "rascunhar", P9_SEGURO.replace("686", "687"), False),
+        ("P9: telefone incompleto", P9, "rascunhar", P9_SEGURO.replace("686", "68"), False),
+        ("P9: telefone com dígito extra", P9, "rascunhar", P9_SEGURO.replace("686", "6860"), False),
+        ("P9: sem cor", P9, "rascunhar", P9_SEGURO.replace("a cor e ", ""), False),
+        ("P9: sem morada completa", P9, "rascunhar", P9_SEGURO.replace("completa ", ""), False),
+        ("P9: stock garantido", P9, "rascunhar", P9_SEGURO + " Temos sempre stock garantido.", False),
+        ("P9: sem dados, stock garantido", P9, "rascunhar",
+         "As espumas custam 14,99 euros. Pague por MBWay para 927 524 686. Temos sempre stock garantido.", False),
+        ("P9: resposta completa", P9, "rascunhar", P9_SEGURO, True),
+        ("P9: telefone e preço formatados", P9, "rascunhar",
+         P9_SEGURO.replace("14,99 €", "14.99 EUR").replace("927 524 686", "+351 (927) 524-686"), True),
+        ("Transportadora: só aguardar", TRANSPORTADORA, "rascunhar", "Aguarde mais uns dias.", False),
+        ("Transportadora: sem contacto", TRANSPORTADORA, "rascunhar", "O rastreio surgirá em breve.", False),
+        ("Transportadora: guardrail expedição", TRANSPORTADORA, "rascunhar",
+         TRANSPORTADORA_SEGURA + " Ainda NÃO foi expedida.", False),
+        ("Transportadora: guardrail picagem", TRANSPORTADORA, "rascunhar",
+         TRANSPORTADORA_SEGURA + " Ainda não foi picada.", False),
+        ("Transportadora: resposta completa", TRANSPORTADORA, "rascunhar", TRANSPORTADORA_SEGURA, True),
+        ("Transportadora: formulação equivalente", TRANSPORTADORA, "rascunhar",
+         "Em breve terá o acompanhamento disponível. Entraremos imediatamente em contacto com a transportadora.", True),
+        ("Genérico: contacto, escalar", GENERICO, "escalar",
+         "Pode indicar o email ou telefone associado à compra?", True),
+        ("Genérico: número, rascunhar", GENERICO, "rascunhar",
+         "Pode indicar o número da encomenda?", True),
+        ("Genérico: contacto, rascunhar", GENERICO, "rascunhar",
+         "Indique o telefone utilizado na encomenda.", True),
+        ("Genérico: número, escalar", GENERICO, "escalar",
+         "Pode indicar o número da encomenda?", True),
+        ("Genérico: estado inventado", GENERICO, "escalar",
+         "Pode indicar o número da encomenda? Já foi enviada.", False),
+        ("Genérico: pagamento inventado", GENERICO, "rascunhar",
+         "Pode indicar o número da encomenda? O pagamento foi confirmado.", False),
+        ("Genérico: tracking inventado", GENERICO, "rascunhar",
+         "Pode indicar o número da encomenda? O código de rastreio é CTT123456789PT.", False),
+        ("Genérico: corpo vazio", GENERICO, "escalar", "", False),
+        ("Genérico: cliente descartado", GENERICO, "saltar", "", False),
+        ("Enviado: análise inventada", ENVIADO, "escalar",
+         "O artigo está a ser analisado pela nossa equipa.", False),
+        ("Enviado: receção inventada", ENVIADO, "escalar",
+         "Já recebemos os fones nas nossas instalações.", False),
+        ("Enviado: corpo seguro", ENVIADO, "escalar",
+         "Obrigado pelo comprovativo de envio. A equipa vai confirmar a receção e o ponto de situação.", True),
+        # Ronda de 16/09: negação, pedido de confirmação e variantes de "em análise"
+        # não podem ser tratadas como equivalentes a uma afirmação direta.
+        ("Transportadora: contacto negado não cumpre o obrigatório", TRANSPORTADORA, "rascunhar",
+         "O rastreio deverá surgir em breve. Não vamos contactar de imediato a transportadora.", False),
+        ("InPods: negar a troca antes da confirmação é seguro", INPODS, "escalar",
+         "Vamos verificar internamente se conseguimos trocar para os Pro 4. "
+         "Não vamos efetuar a troca antes da confirmação interna.", True),
+        ("P9: pedir morada com ordem natural das palavras", P9, "rascunhar",
+         "As espumas custam 14,99 €. Pagamento por MBWay para 927 524 686. "
+         "Indique a cor e a morada de entrega completa.", True),
+        ("Genérico: pedir número com ordem natural das palavras", GENERICO, "rascunhar",
+         "Pode indicar o número da sua encomenda?", True),
+        ("Sem evidência: encontra-se em análise, singular", SEM_EVIDENCIA, "escalar",
+         "O artigo encontra-se em análise.", False),
+        ("Sem evidência: encontram-se em análise, plural", SEM_EVIDENCIA, "escalar",
+         "Os artigos encontram-se em análise.", False),
+    )
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.casos = {c["id"]: c for c in json.loads(Path("eval/casos.json").read_text(encoding="utf-8"))}
+
+    @classmethod
+    def avaliar_sintetico(cls, caso_id: str, acao: str, corpo: str) -> tuple:
+        cliente = ClienteFalso({"acao": acao, "corpo": corpo, "categoria": "OUTRO", "motivo": "teste local"})
+        return eval_mod.avaliar(cls.casos[caso_id], cfg(), BLOQUEADOS, cliente, "prompt")
+
+    def test_contratos_com_respostas_sinteticas(self) -> None:
+        for nome, caso_id, acao, corpo, deve_passar in self.CENARIOS:
+            with self.subTest(cenario=nome):
+                resultado = self.avaliar_sintetico(caso_id, acao, corpo)
+                passou = resultado[0] in eval_mod.acoes_esperadas(self.casos[caso_id])
+                self.assertEqual(passou, deve_passar, resultado)
+
+    def test_normalizacao_maiusculas_acentos_e_espacos(self) -> None:
+        self.assertEqual(eval_mod.normalizar_texto("  ANÁLISE\n\tconcluída  "), "analise concluida")
+
+    def test_negacao_nao_e_afirmacao_direta(self) -> None:
+        """Par A do feedback de 16/09: a mesma oração, negada, não é a mesma
+        afirmação -- nem para um padrão obrigatório nem para um proibido."""
+        padrao = r"\b(?:vamos|iremos)\b[^.!?]{0,20}\bcontactar\b[^.!?]{0,20}\btransportadora\b"
+        self.assertTrue(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("Vamos contactar de imediato a transportadora."), padrao))
+        self.assertFalse(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("Não vamos contactar de imediato a transportadora."), padrao))
+
+    def test_pedido_de_confirmacao_nao_e_afirmacao_direta(self) -> None:
+        """Par C do feedback de 16/09: 'vamos confirmar/verificar se X' não
+        afirma X -- pergunta por X."""
+        padrao = r"\b(?:esta em analise|entrou em analise|a ser analisad\w*)\b"
+        self.assertTrue(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("O artigo está em análise."), padrao))
+        self.assertFalse(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto(
+                "Vamos confirmar se o artigo foi recebido e entrou em análise."), padrao))
+
+    def test_negacao_de_troca_e_de_stock_garantido(self) -> None:
+        """Pares B e D do feedback de 16/09."""
+        padrao_troca = r"\b(?:vamos|iremos)\b[^.!?]{0,20}\b(?:trocar|troca)\b"
+        self.assertTrue(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("Vamos trocar para os Pro 4."), padrao_troca))
+        self.assertFalse(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto(
+                "Não vamos efetuar a troca antes da confirmação interna."), padrao_troca))
+
+        padrao_stock = r"\bstock\b[^.!?]{0,10}\bgarantid\w*\b"
+        self.assertTrue(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("Temos stock garantido."), padrao_stock))
+        self.assertFalse(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("Não temos stock garantido."), padrao_stock))
+
+    def test_variantes_comuns_de_em_analise_sao_reconhecidas(self) -> None:
+        """Achado 1 do feedback de 16/09: 'encontra-se'/'encontram-se' em
+        análise têm de ser apanhadas pelo mesmo padrão que já cobre 'está'."""
+        padrao = self.casos[self.SEM_EVIDENCIA]["expect_texto_nao_regex"][0]
+        for frase in (
+            "O artigo está em análise.",
+            "O artigo está a ser analisado.",
+            "O artigo encontra-se em análise.",
+            "Os artigos encontram-se em análise.",
+        ):
+            with self.subTest(frase=frase):
+                self.assertTrue(eval_mod.afirmacoes_diretas(eval_mod.normalizar_texto(frase), padrao))
+
+    def test_variacoes_de_ordem_das_palavras_sao_aceites(self) -> None:
+        """Achado 3 do feedback de 16/09 (pares E e F): não exigir que
+        palavras semanticamente relacionadas fiquem coladas ou em ordem fixa."""
+        padrao_morada = next(p for p in self.casos[self.P9]["expect_texto_pedido_regex"] if "morada" in p)
+        self.assertTrue(eval_mod.pedidos_de_dados(
+            eval_mod.normalizar_texto("Indique a cor e a morada de entrega completa."), padrao_morada))
+
+        padrao_numero = next(p for p in self.casos[self.GENERICO]["expect_texto_pedido_regex"] if "encomenda" in p)
+        self.assertTrue(eval_mod.pedidos_de_dados(
+            eval_mod.normalizar_texto("Pode indicar o número da sua encomenda?"), padrao_numero))
+
+    def test_pedido_de_confirmacao_neutraliza_so_a_sua_propria_clausula(self) -> None:
+        """Par A da ronda de 17/09: uma afirmação independente depois de
+        ', mas' já não está sob o pedido de confirmação anterior -- só a
+        cláusula do 'confirmar/verificar se' é neutralizada, não a frase
+        inteira."""
+        p_concluida = r"\banalise\s+(?:(?:ja\s+)?(?:foi|esta)\s+)?(?:conclu\w*|termin\w*|finaliz\w*)"
+        self.assertTrue(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto(
+                "Vamos confirmar se recebemos os fones, mas a análise já foi concluída "
+                "e o produto não tem defeito."), p_concluida))
+        self.assertFalse(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto(
+                "Vamos confirmar se recebemos os fones e se já entraram em análise."),
+            r"\bentraram em analise\b"))
+
+    def test_pedido_de_confirmacao_satisfaz_campo_explicito_de_pedidos(self) -> None:
+        for padrao in self.casos[self.P9]["expect_texto_pedido_regex"]:
+            self.assertTrue(eval_mod.pedidos_de_dados(
+                eval_mod.normalizar_texto(
+                    "Confirme se pretende a cor rosa e informe a morada de entrega completa."),
+                padrao), padrao)
+
+    def test_sem_so_nega_quando_local_ao_conceito(self) -> None:
+        """Par B da ronda de 17/09: 'sem' como marcador de discurso distante
+        não pode contaminar a cláusula seguinte; 'sem X garantido' continua a
+        negar X."""
+        p_transp = r"\b(?:vamos|iremos)\b[^.!?]{0,20}\bcontactar\b[^.!?]{0,20}\btransportadora\b"
+        self.assertTrue(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("Sem outras notas, vamos contactar de imediato a transportadora."),
+            p_transp))
+        p_stock = r"\bstock\b[^.!?]{0,10}\bgarantid\w*\b"
+        self.assertFalse(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("Estamos sem stock garantido."), p_stock))
+
+    def test_negacao_dentro_do_proprio_match(self) -> None:
+        """Par C da ronda de 17/09: um padrão de duas âncoras (morada...
+        completa) não pode ser lido como afirmação positiva quando a negação
+        está inserida entre as duas."""
+        # Este padrão tem de casar ANTES do filtro de negação. Usar aqui o
+        # padrão restrito de morada dos casos tornava o teste inoperante.
+        padrao_morada = r"\bmorada\b(?:\s+\w+){0,3}\s+completa\b"
+        self.assertRegex(eval_mod.normalizar_texto("A morada não está completa."), padrao_morada)
+        self.assertFalse(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("A morada não está completa."),
+            padrao_morada))
+        self.assertTrue(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("Indique a morada de entrega completa."),
+            padrao_morada))
+
+    def test_negacao_dentro_do_match_nao_apaga_padrao_que_ja_e_negacao(self) -> None:
+        """Um padrão que já é ele próprio a negação (ex.: 'não foi expedida')
+        não pode ser anulado pelo próprio mecanismo que deteta negação
+        inserida -- só se aplica quando a negação não é do padrão."""
+        padrao = self.casos[self.TRANSPORTADORA]["expect_texto_nao_regex"][0]
+        self.assertTrue(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("A encomenda ainda não foi expedida."), padrao))
+
+    def test_negacao_com_virgula_a_seguir(self) -> None:
+        """Par D da ronda de 17/09: 'Não, vamos trocar...' continua negação,
+        não promessa positiva."""
+        padrao = r"\b(?:vamos|iremos)\b[^.!?]{0,20}\b(?:trocar|troca)\b"
+        self.assertFalse(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("Não, vamos trocar para os Pro 4."), padrao))
+        self.assertTrue(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("Vamos trocar para os Pro 4."), padrao))
+
+    def test_numero_da_encomenda_nao_casa_por_coincidencia(self) -> None:
+        """Par E da ronda de 17/09: conectores naturais (da/do/sua/própria)
+        são aceites; duas palavras só próximas por coincidência, não."""
+        padrao = self.casos[self.GENERICO]["expect_texto_pedido_regex"][0]
+        self.assertTrue(eval_mod.pedidos_de_dados(
+            eval_mod.normalizar_texto("Pode indicar o número da sua encomenda?"),
+            padrao))
+        self.assertTrue(eval_mod.pedidos_de_dados(
+            eval_mod.normalizar_texto("Pode indicar o número da sua própria encomenda?"),
+            padrao))
+        self.assertFalse(eval_mod.pedidos_de_dados(
+            eval_mod.normalizar_texto("O número de artigos nesta encomenda é três."),
+            padrao))
+
+    @classmethod
+    def resultados_a_m(cls) -> list[tuple]:
+        """Exemplos pedidos, com padrões dos contratos sempre que possível."""
+        conclusao = cls.casos[cls.ANALISE]["expect_texto_nao_regex"][0]
+        estado = cls.casos[cls.ANALISE]["expect_texto_regex"][0]
+        troca = cls.casos[cls.INPODS]["expect_texto_nao_regex"][0]
+        stock = cls.casos[cls.P9]["expect_texto_nao_regex"][1]
+        contacto = cls.casos[cls.TRANSPORTADORA]["expect_texto_regex"][1]
+        # Permite que J case realmente, para exercitar o filtro interno.
+        conclusao_com_negacao = r"\banalise\b(?:\s+\w+){0,3}\s+concluida\b"
+        diretos = (
+            ("A", "Vamos confirmar se recebemos os fones, mas a análise já foi concluída.", conclusao, True),
+            ("B", "Vamos confirmar se recebemos os fones mas a análise já foi concluída.", conclusao, True),
+            ("C", "A análise já foi concluída e vamos confirmar se recebemos os fones.", conclusao, True),
+            ("D", "Vamos confirmar se os fones estão em análise.", estado, False),
+            ("E", "Sem demora, vamos trocar para os Pro 4.", troca, True),
+            ("F", "Sem dúvida, temos stock garantido.", stock, True),
+            ("G", "Estamos sem stock garantido.", stock, False),
+            ("H", "Vamos contactar sem demora a transportadora.", contacto, True),
+            ("I", "Não, vamos trocar para os Pro 4.", troca, False),
+            ("J", "A análise não está concluída.", conclusao_com_negacao, False),
+        )
+        resultados = [
+            (letra, frase, bool(eval_mod.afirmacoes_diretas(eval_mod.normalizar_texto(frase), padrao)), esperado)
+            for letra, frase, padrao, esperado in diretos
+        ]
+        for letra, frase, caso_id, esperado in (
+            ("K", "Confirme se pretende a cor rosa e indique a morada postal completa.", cls.P9, True),
+            ("L", "Pode indicar o número da sua encomenda?", cls.GENERICO, True),
+            ("M", "O número de artigos nesta encomenda é três.", cls.GENERICO, False),
+        ):
+            obtido = all(eval_mod.pedidos_de_dados(eval_mod.normalizar_texto(frase), p)
+                         for p in cls.casos[caso_id]["expect_texto_pedido_regex"])
+            resultados.append((letra, frase, obtido, esperado))
+        return resultados
+
+    def test_regressoes_a_m(self) -> None:
+        for letra, frase, obtido, esperado in self.resultados_a_m():
+            with self.subTest(exemplo=letra, frase=frase):
+                self.assertEqual(obtido, esperado)
+
+    def test_adversativas_com_e_sem_virgula(self) -> None:
+        for conector in ("mas", "porém", "contudo", "todavia", "no entanto"):
+            for separador in (" ", ", "):
+                with self.subTest(conector=conector, separador=separador):
+                    corpo = ("Vamos confirmar se recebemos os fones" + separador + conector
+                             + " a análise já foi concluída.")
+                    self.assertEqual(self.avaliar_sintetico(self.ENVIADO, "escalar", corpo)[0],
+                                     "texto-indevido")
+
+    def test_confirmacao_posterior_nao_apaga_conclusao(self) -> None:
+        corpo = "A análise já foi concluída e vamos confirmar se recebemos os fones."
+        self.assertEqual(self.avaliar_sintetico(self.ENVIADO, "escalar", corpo)[0], "texto-indevido")
+
+    def test_confirmacao_nao_cumpre_afirmacao_obrigatoria(self) -> None:
+        for verbo in ("confirmar", "verificar", "apurar"):
+            with self.subTest(verbo=verbo):
+                corpo = f"Vamos {verbo} se os fones estão em análise."
+                self.assertEqual(self.avaliar_sintetico(self.ANALISE, "escalar", corpo)[0], "texto-em-falta")
+                # O match começa em "Vamos", ANTES de "se", e atravessa-o.
+                corpo = ("O rastreio deverá surgir em breve. "
+                         f"Vamos {verbo} se iremos contactar de imediato a transportadora.")
+                self.assertEqual(self.avaliar_sintetico(self.TRANSPORTADORA, "rascunhar", corpo)[0],
+                                 "texto-em-falta")
+
+    def test_sem_adverbial_preserva_afirmacoes(self) -> None:
+        for corpo in ("Sem demora, vamos trocar para os Pro 4.", "Vamos sem demora trocar para os Pro 4."):
+            with self.subTest(corpo=corpo):
+                self.assertEqual(self.avaliar_sintetico(self.INPODS, "escalar", corpo)[0], "texto-indevido")
+        for afirmacao in ("Sem dúvida, temos stock garantido.", "Temos sem dúvida stock garantido."):
+            with self.subTest(afirmacao=afirmacao):
+                self.assertEqual(self.avaliar_sintetico(self.P9, "rascunhar", self.P9_SEGURO + afirmacao)[0],
+                                 "texto-indevido")
+        corpo = "O rastreio deverá surgir em breve. Vamos contactar sem demora a transportadora de imediato."
+        self.assertEqual(self.avaliar_sintetico(self.TRANSPORTADORA, "rascunhar", corpo)[0], "rascunhar")
+        self.assertEqual(self.avaliar_sintetico(self.P9, "rascunhar",
+                                             self.P9_SEGURO + " Estamos sem stock garantido.")[0], "rascunhar")
+
+    def test_negacao_interna_de_conclusao_tem_match_real(self) -> None:
+        padrao = r"\banalise\b(?:\s+\w+){0,3}\s+concluida\b"
+        for negacao in ("não", "nunca", "nem"):
+            with self.subTest(negacao=negacao):
+                frase = eval_mod.normalizar_texto(f"A análise {negacao} está concluída.")
+                self.assertRegex(frase, padrao)
+                self.assertFalse(eval_mod.afirmacoes_diretas(frase, padrao))
+        self.assertTrue(eval_mod.afirmacoes_diretas("a analise esta concluida.", padrao))
+
+    def test_variantes_de_morada_no_pedido(self) -> None:
+        for morada in ("morada completa", "morada de entrega completa", "morada postal completa",
+                       "endereço completo", "endereço de entrega completo", "endereço postal completo"):
+            with self.subTest(morada=morada):
+                corpo = self.P9_SEGURO.replace("morada completa de entrega", morada)
+                self.assertEqual(self.avaliar_sintetico(self.P9, "rascunhar", corpo)[0], "rascunhar")
+
+    def test_pedido_precisa_de_pedir_o_dado(self) -> None:
+        for corpo in ("O número da sua encomenda é 123.",
+                      "Pode aguardar? O número da sua encomenda é 123.",
+                      "Não indique o número da sua encomenda.",
+                      "Não, pode indicar o número da sua encomenda.",
+                      "Pode indicar o número de artigos nesta encomenda?"):
+            with self.subTest(corpo=corpo):
+                self.assertEqual(self.avaliar_sintetico(self.GENERICO, "rascunhar", corpo)[0], "texto-em-falta")
+        corpo = self.P9_SEGURO.replace("Indique a cor e a morada completa de entrega.",
+                                      "Confirme se pretende a cor rosa e indique a morada postal completa.")
+        self.assertEqual(self.avaliar_sintetico(self.P9, "rascunhar", corpo)[0], "rascunhar")
+
+    def test_confirmacao_fecha_ambito_antes_de_nova_declaracao(self) -> None:
+        """Feedback de 15/09: uma nova declaração explícita ("e informamos
+        que...") fecha o âmbito do "confirmar/verificar se" antes dela -- não
+        neutraliza tudo o que vem depois na mesma cláusula."""
+        conclusao = self.casos[self.ANALISE]["expect_texto_nao_regex"][0]
+        estado = self.casos[self.ANALISE]["expect_texto_regex"][0]
+        casos = (
+            ("Vamos confirmar se recebeu o email e informamos que a análise já foi concluída.",
+             conclusao, True),
+            ("A análise já foi concluída e vamos confirmar se recebeu o email.", conclusao, True),
+            ("Vamos confirmar se os fones estão em análise.", estado, False),
+            ("Vamos confirmar se recebemos os fones e se já entraram em análise.",
+             r"\bentraram em analise\b", False),
+        )
+        for frase, padrao, esperado in casos:
+            with self.subTest(frase=frase):
+                self.assertEqual(
+                    bool(eval_mod.afirmacoes_diretas(eval_mod.normalizar_texto(frase), padrao)),
+                    esperado)
+
+    def test_declaracao_nova_e_fronteira_real_nao_so_fim_de_ambito(self) -> None:
+        """Feedback de 15/09 (parte 2), achado HIGH: uma "nova declaração"
+        ("e informamos que...") tem de ser uma fronteira de segmentação real
+        -- um match não pode começar antes dela e atravessá-la para dentro da
+        declaração seguinte, mesmo que o início do match esteja sob um
+        "confirmar/verificar se" anterior."""
+        receb = next(p for p in self.casos[self.ENVIADO]["expect_texto_nao_regex"] if "recebemos" in p)
+        casos = (
+            ("Vamos confirmar se recebemos o email e informamos que recebemos os fones.",
+             receb, True),
+            ("Vamos confirmar se recebemos os fones e se já entraram em análise.",
+             r"\bentraram em analise\b", False),
+        )
+        for frase, padrao, esperado in casos:
+            with self.subTest(frase=frase):
+                self.assertEqual(
+                    bool(eval_mod.afirmacoes_diretas(eval_mod.normalizar_texto(frase), padrao)),
+                    esperado)
+
+    def test_pedido_ligado_localmente_ao_dado(self) -> None:
+        """Feedback de 15/09: um marcador de pedido só valida o dado a que
+        está ligado -- não qualquer dado que apareça na mesma cláusula."""
+        padrao = self.casos[self.GENERICO]["expect_texto_pedido_regex"][0]
+        casos = (
+            ("Já sabemos qual é o número da sua encomenda.", False),
+            ("Indique o seu nome, o número da sua encomenda é 123.", False),
+            ("Pode indicar o número da sua encomenda?", True),
+            ("Qual é o número da sua encomenda?", True),
+            ("Indique o número da sua encomenda.", True),
+        )
+        for frase, esperado in casos:
+            with self.subTest(frase=frase):
+                self.assertEqual(
+                    bool(eval_mod.pedidos_de_dados(eval_mod.normalizar_texto(frase), padrao)),
+                    esperado)
+
+    def test_enumeracao_nominal_nao_e_cortada_pela_virgula(self) -> None:
+        """Feedback de 15/09 (parte 2), achado MEDIUM: uma vírgula entre
+        itens de uma enumeração nominal ("indique a cor, a morada... e o
+        nome") não termina o pedido -- só uma declaração nova depois da
+        vírgula ("...o número é 123") o faz."""
+        p_morada = next(p for p in self.casos[self.P9]["expect_texto_pedido_regex"] if "morada" in p)
+        self.assertTrue(eval_mod.pedidos_de_dados(
+            eval_mod.normalizar_texto("Indique a cor, a morada completa de entrega e o seu nome."),
+            p_morada))
+        p_numero = self.casos[self.GENERICO]["expect_texto_pedido_regex"][0]
+        self.assertFalse(eval_mod.pedidos_de_dados(
+            eval_mod.normalizar_texto("Indique o seu nome, o número da sua encomenda é 123."),
+            p_numero))
+
+    def test_por_favor_nao_religa_segmentos_distintos(self) -> None:
+        """Feedback de 15/09 (parte 2), achado MEDIUM: ", por favor," é
+        transparente só dentro do mesmo pedido -- uma conjunção causal
+        ("pois", "porque") a seguir começa uma justificação nova e não herda
+        o verbo de pedido anterior."""
+        p_numero = self.casos[self.GENERICO]["expect_texto_pedido_regex"][0]
+        p_morada = next(p for p in self.casos[self.P9]["expect_texto_pedido_regex"] if "morada" in p)
+        casos = (
+            ("Indique o seu nome, por favor, pois já temos o número da sua encomenda.", p_numero, False),
+            ("Indique a cor, por favor, porque já temos a morada completa.", p_morada, False),
+            ("Indique-nos, por favor, o número da sua encomenda.", p_numero, True),
+            ("Indique a cor, por favor, e a morada completa.", p_morada, True),
+        )
+        for frase, padrao, esperado in casos:
+            with self.subTest(frase=frase):
+                self.assertEqual(
+                    bool(eval_mod.pedidos_de_dados(eval_mod.normalizar_texto(frase), padrao)),
+                    esperado)
+
+    def test_pergunta_direta_nao_e_afirmacao(self) -> None:
+        """Feedback de 15/09: uma pergunta terminada em "?" não afirma o que
+        pergunta, mesmo com o padrão que proíbe a afirmação equivalente."""
+        estado = self.casos[self.ANALISE]["expect_texto_regex"][0]
+        self.assertFalse(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("Os fones estão em análise?"), estado))
+        self.assertFalse(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("O artigo está em análise?"), estado))
+        self.assertTrue(eval_mod.afirmacoes_diretas(
+            eval_mod.normalizar_texto("Os fones estão em análise. Quer saber quando termina?"), estado))
+
+    def test_numero_da_encomenda_variantes_em_pedidos(self) -> None:
+        for numero in ("número da encomenda", "número da sua encomenda", "número da sua própria encomenda"):
+            with self.subTest(numero=numero):
+                self.assertEqual(self.avaliar_sintetico(self.GENERICO, "rascunhar", f"Pode indicar o {numero}?")[0],
+                                 "rascunhar")
+
+    def test_regex_invalida_no_novo_campo_e_rejeitada_sem_api(self) -> None:
+        caso = {**self.casos[self.GENERICO], "expect_texto_pedido_regex": ["["]}
+        with patch.object(eval_mod.a, "carregar_config", return_value=cfg()), \
+                patch.object(eval_mod.Path, "read_text", return_value=json.dumps([caso])):
+            with self.assertRaisesRegex(SystemExit, "expect_texto_pedido_regex inválido"):
+                eval_mod.main(["--triagem"])
+
+    def test_substrings_antigas_continuam_literais(self) -> None:
+        caso = {**self.casos[self.INPODS], "expect_texto_contem": ["ANÁLISE"],
+                "expect_texto_nao_regex": []}
+        cliente = ClienteFalso({"acao": "escalar", "corpo": "análise", "categoria": "OUTRO", "motivo": "x"})
+        self.assertEqual(eval_mod.avaliar(caso, cfg(), BLOQUEADOS, cliente, "")[0], "texto-em-falta")
+
+    def test_relatorio_aceita_acoes_alternativas_sem_penalizar_precisao(self) -> None:
+        caso = self.casos[self.GENERICO]
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida):
+            codigo = eval_mod.relatar([(caso, (acao, "modelo", "ok")) for acao in ("rascunhar", "escalar")], False)
+        self.assertEqual(codigo, 0)
+        self.assertIn("2/2 casos corretos", saida.getvalue())
+        self.assertRegex(saida.getvalue(), r"precisão de escalação:\s+100%")
+
+    def test_relatorio_deteta_cliente_perdido_com_acoes_alternativas(self) -> None:
+        saida = io.StringIO()
+        with contextlib.redirect_stdout(saida):
+            codigo = eval_mod.relatar([(self.casos[self.GENERICO], ("saltar", "modelo", "erro"))], False)
+        self.assertEqual(codigo, 1)
+        self.assertIn("CLIENTES PERDIDOS:", saida.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()

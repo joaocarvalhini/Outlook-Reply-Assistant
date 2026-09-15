@@ -29,7 +29,9 @@ import argparse
 import base64
 import json
 import os
+import re
 import sys
+import unicodedata
 from pathlib import Path
 
 import assistente as a
@@ -37,6 +39,152 @@ import assistente as a
 ACOES = ("saltar", "escalar", "rascunhar")
 CORRESPONDENCIA_DE_CLIENTE = ("escalar", "rascunhar")
 ERRO = "erro"
+
+
+def acoes_esperadas(caso: dict) -> tuple[str, ...]:
+    """Um caso pode aceitar várias ações sem abdicar do contrato do corpo."""
+    esperado = caso["expect"]
+    return (esperado,) if isinstance(esperado, str) else tuple(esperado)
+
+
+def normalizar_texto(texto: str) -> str:
+    """Só para os novos contratos regex; as substrings antigas não mudam."""
+    texto = unicodedata.normalize("NFKD", texto.casefold())
+    return " ".join("".join(c for c in texto if not unicodedata.combining(c)).split())
+
+# Negação local: "não/nunca/nem" até 4 tokens antes ou dentro do match.
+# "sem" só nega quando precede imediatamente o início do conceito.
+_SEPARADOR = r"[\s,;:-]"
+_NEGACAO_CURTA = re.compile(rf"\b(?:nao|nunca|nem)\b(?:{_SEPARADOR}+\S+){{0,4}}{_SEPARADOR}*$")
+_SEM_IMEDIATO = re.compile(r"\bsem\s+$")
+_ALGUMA_NEGACAO = re.compile(r"\b(?:nao|nunca|nem)\b")
+
+# A confirmação só afeta matches depois do "se" (ou que o atravessam).
+# Pontuação forte e adversativas, com ou sem vírgula, terminam esse âmbito.
+_PEDIDO_DE_CONFIRMACAO = re.compile(r"\b(?:confirmar|confirmamos|confirme|verificar|verificamos|apurar)\s+(?:internamente\s+)?se\b")
+_CONECTOR_ADVERSATIVO = r"mas|porem|contudo|todavia|no entanto"
+_FRONTEIRA_DE_CLAUSULA = re.compile(rf"(?<=[.!?;])\s+|\b(?:{_CONECTOR_ADVERSATIVO})\b")
+# Fecha o âmbito de um "confirmar/verificar se" antes do fim da cláusula
+# quando surge uma nova declaração explícita ("e informamos que...").
+_INICIO_NOVA_DECLARACAO = re.compile(
+    r"\b(?:e|mas)\s+(?:informamos|informo|dizemos|digo|comunicamos|comunico"
+    r"|confirmamos|confirmo|esclarecemos|esclareco|acrescentamos|acrescento)\s+que\b"
+)
+_PEDIDO_DE_DADO = re.compile(
+    r"\b(?:pode(?:ria)?\s+(?:indicar|enviar|partilhar|confirmar|facultar|informar|dizer)"
+    r"|indiquem?|enviem?|partilhem?|confirmem?|facultem?|informem?|digam?"
+    r"|qual|quais|precisamos|necessitamos)\b"
+)
+# ", por favor," é uma interjeição -- não separa um pedido do seu alvo.
+_INCISO_TRANSPARENTE = re.compile(r",\s*por favor\s*,")
+# Conjunção causal ou existencial que abre uma declaração/justificação nova
+# dentro do troço de uma enumeração ("...por favor, pois já temos..."), e
+# cópula seguida de valor ("o número é 123") -- não de artigo+substantivo
+# ("e a morada completa"), que continua a ser enumeração.
+_MARCADOR_DECLARACAO_LOCAL = re.compile(r"\b(?:pois|porque|temos)\b|\be\s+\d")
+
+
+def _segmentos(clausula: str) -> list[str]:
+    """Divide uma cláusula nas fronteiras reais de nova declaração.
+
+    Ver _INICIO_NOVA_DECLARACAO: "e/mas informamos que..." fecha aqui, não só
+    como cálculo posterior de âmbito. Um match nunca atravessa esta fronteira
+    -- corta-se a cláusula antes dela, para procurar padrões em cada troço.
+    """
+    cortes = sorted({0, len(clausula), *(m.start() for m in _INICIO_NOVA_DECLARACAO.finditer(clausula))})
+    return [clausula[i:j] for i, j in zip(cortes, cortes[1:])]
+
+
+def _ocorrencias_nao_negadas(normalizado: str, padrao: str):
+    """Partilha apenas a deteção de negação entre afirmações e pedidos.
+
+    Padrões explicitamente negativos ("não foi expedida") mantêm o sentido
+    literal; a sua própria negação não os elimina.
+    """
+    padrao_ja_contem_negacao = bool(_ALGUMA_NEGACAO.search(padrao))
+    for clausula in _FRONTEIRA_DE_CLAUSULA.split(normalizado):
+        for segmento in _segmentos(clausula):
+            for m in re.finditer(padrao, segmento):
+                prefixo = segmento[:m.start()]
+                if _NEGACAO_CURTA.search(prefixo) or _SEM_IMEDIATO.search(prefixo):
+                    continue
+                if not padrao_ja_contem_negacao and _ALGUMA_NEGACAO.search(m.group(0)):
+                    continue
+                yield segmento, m
+
+
+def afirmacoes_diretas(normalizado: str, padrao: str) -> list[str]:
+    """Matches não negados, fora de perguntas diretas e fora do âmbito de um
+    "confirmar/verificar/apurar se".
+
+    Um segmento que termina em "?" é uma pergunta direta -- não afirma nada.
+    Uma nova declaração explícita já teve o seu próprio segmento (ver
+    _segmentos), por isso um "confirmar se" só neutraliza matches no mesmo
+    segmento. Heurística, não parser.
+    """
+    resultado = []
+    for segmento, m in _ocorrencias_nao_negadas(normalizado, padrao):
+        if segmento.rstrip().endswith("?"):
+            continue
+        sob_confirmacao = any(
+            p.end() <= m.end() for p in _PEDIDO_DE_CONFIRMACAO.finditer(segmento)
+        )
+        if not sob_confirmacao:
+            resultado.append(m.group(0))
+    return resultado
+
+
+def _inicio_do_segmento(segmento: str, pos: int) -> int:
+    """Início do troço do segmento, delimitado por vírgulas reais, que
+    contém `pos`.
+
+    Uma vírgula só separa pedidos distintos quando o troço que abre introduz
+    uma declaração nova (_MARCADOR_DECLARACAO_LOCAL) antes da vírgula
+    seguinte -- "indique X, o Y é 123" corta, "indique X, Y e Z" (enumeração
+    nominal) não. Um marcador sem vírgula nenhuma antes (".., por favor, pois
+    já temos...") corta na mesma, no seu próprio fim. Um inciso transparente
+    (", por favor,") nunca conta como vírgula real.
+    """
+    incisos = [(t.start(), t.end()) for t in _INCISO_TRANSPARENTE.finditer(segmento)]
+    virgulas = [v.start() for v in re.finditer(",", segmento)
+                if not any(i <= v.start() < f for i, f in incisos)]
+    inicio = 0
+    for i, v in enumerate(virgulas):
+        if v >= pos:
+            break
+        fim_do_troco = virgulas[i + 1] if i + 1 < len(virgulas) else len(segmento)
+        if _MARCADOR_DECLARACAO_LOCAL.search(segmento, v + 1, fim_do_troco):
+            inicio = v + 1
+    for m in _MARCADOR_DECLARACAO_LOCAL.finditer(segmento, inicio, pos):
+        inicio = m.end()
+    return inicio
+
+
+def pedidos_de_dados(normalizado: str, padrao: str) -> list[str]:
+    """Matches com um pedido/pergunta não negado, ligado ao próprio match.
+
+    O padrão descreve o dado; "indique", "confirme se", "pode indicar", etc.
+    identificam o pedido, mas só quando estão no mesmo troço (delimitado por
+    vírgulas reais, ver _inicio_do_segmento) do match -- um pedido sobre
+    outra coisa não o valida. Mencionar o dado como facto, por si só, não
+    basta. "qual/quais" só conta dentro de uma pergunta direta (o segmento
+    termina em "?").
+    """
+    resultado = []
+    for segmento, m in _ocorrencias_nao_negadas(normalizado, padrao):
+        inicio = _inicio_do_segmento(segmento, m.start())
+        interrogativa = segmento.rstrip().endswith("?")
+        valido = False
+        for p in _PEDIDO_DE_DADO.finditer(segmento, inicio, m.start()):
+            if _NEGACAO_CURTA.search(segmento[:p.start()]):
+                continue
+            if p.group(0) in ("qual", "quais") and not interrogativa:
+                continue
+            valido = True
+            break
+        if valido:
+            resultado.append(m.group(0))
+    return resultado
 
 _TIPO_POR_EXTENSAO = {
     ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
@@ -172,6 +320,21 @@ def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
     if indevido:
         return ("texto-indevido", "modelo", f"corpo contém {indevido!r} quando não devia")
 
+    # Regex normalizadas: afirmações e pedidos são contratos distintos.
+    # Só expect_texto_pedido_regex aceita pedir/confirmar dados em vez de
+    # afirmar factos. Os campos literais antigos mantêm-se inalterados.
+    normalizado = normalizar_texto(corpo)
+    for padrao in caso.get("expect_texto_regex", ()):
+        if not afirmacoes_diretas(normalizado, padrao):
+            return "texto-em-falta", "modelo", f"corpo não afirma /{padrao}/"
+    for padrao in caso.get("expect_texto_pedido_regex", ()):
+        if not pedidos_de_dados(normalizado, padrao):
+            return "texto-em-falta", "modelo", f"corpo não pede /{padrao}/"
+    for padrao in caso.get("expect_texto_nao_regex", ()):
+        achados = afirmacoes_diretas(normalizado, padrao)
+        if achados:
+            return "texto-indevido", "modelo", f"corpo afirma {achados!r} quando não devia"
+
     compromisso = d.get("compromisso_tipo", "")
     if "expect_compromisso" in caso and compromisso != caso["expect_compromisso"]:
         return ("compromisso-errado", "modelo",
@@ -192,10 +355,11 @@ def relatar(resultados: list[tuple[dict, tuple[str, str, str]]], so_triagem: boo
         elif obtido == ERRO:
             marca, mostrado = "ERRO", "sem veredito"
         else:
-            marca = "PASS" if obtido == caso["expect"] else "FALHA"
+            marca = "PASS" if obtido in acoes_esperadas(caso) else "FALHA"
             mostrado = obtido
+        esperado = "|".join(acoes_esperadas(caso))
         print(
-            f"{marca}  {caso['id']:<32} esperado={caso['expect']:<10} "
+            f"{marca}  {caso['id']:<32} esperado={esperado:<10} "
             f"obtido={mostrado:<18} [{etapa}] {detalhe}"
         )
         if marca == "FALHA" and caso.get("note"):
@@ -206,14 +370,16 @@ def relatar(resultados: list[tuple[dict, tuple[str, str, str]]], so_triagem: boo
         r for r in resultados
         if r[1][0] != ERRO and not (so_triagem and r[1][0] == "passou")
     ]
-    falhas = [r for r in julgados if r[1][0] != r[0]["expect"]]
+    falhas = [r for r in julgados if r[1][0] not in acoes_esperadas(r[0])]
 
     deviam_escalar = [r for r in julgados if r[0]["expect"] == "escalar"]
     escalaram = [r for r in julgados if r[1][0] == "escalar"]
     acertos = [r for r in deviam_escalar if r[1][0] == "escalar"]
+    escalacoes_aceites = [r for r in escalaram if "escalar" in acoes_esperadas(r[0])]
     perdidos = [
         r for r in julgados
-        if r[0]["expect"] in CORRESPONDENCIA_DE_CLIENTE and r[1][0] == "saltar"
+        if set(acoes_esperadas(r[0])) <= set(CORRESPONDENCIA_DE_CLIENTE)
+        and r[1][0] == "saltar"
     ]
 
     largura = 24
@@ -230,7 +396,7 @@ def relatar(resultados: list[tuple[dict, tuple[str, str, str]]], so_triagem: boo
     else:
         print(f"{'clientes perdidos:':<{largura}}0")
     recall = f"{len(acertos) / len(deviam_escalar):.0%}" if deviam_escalar else "n/a"
-    precisao = f"{len(acertos) / len(escalaram):.0%}" if escalaram else "n/a"
+    precisao = f"{len(escalacoes_aceites) / len(escalaram):.0%}" if escalaram else "n/a"
     print(f"{'recall de escalação:':<{largura}}{recall}")
     print(f"{'precisão de escalação:':<{largura}}{precisao}")
     print()
@@ -267,8 +433,16 @@ def main(argv: list[str] | None = None) -> int:
 
     vistos: set[str] = set()
     for caso in casos:
-        if caso["expect"] not in ACOES:
+        if (not isinstance(caso["expect"], (str, list))
+                or not acoes_esperadas(caso)
+                or any(acao not in ACOES for acao in acoes_esperadas(caso))):
             sys.exit(f"Caso {caso['id']!r}: expect inválido {caso['expect']!r}")
+        for campo in ("expect_texto_regex", "expect_texto_pedido_regex", "expect_texto_nao_regex"):
+            for padrao in caso.get(campo, ()):
+                try:
+                    re.compile(padrao)
+                except re.error as exc:
+                    sys.exit(f"Caso {caso['id']!r}: {campo} inválido: {exc}")
         if caso["id"] in vistos:
             sys.exit(f"Caso duplicado: {caso['id']!r}")
         vistos.add(caso["id"])

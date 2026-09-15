@@ -63,21 +63,18 @@ imediato:
    o Instagram da loja (@tripat3sss), para fechar os detalhes por lá.
 
 Aplica-se só à troca do cabo de um kit já comprado — não se generaliza para
-uma peça avulsa fora de um kit. A única excepção é a espuma/almofada P9, que
-é vendida avulsa (ver secção abaixo). (Confirmado diretamente pelo lojista,
-15 de setembro de 2026.)
+outras peças nem para uma peça avulsa fora de um kit. (Confirmado diretamente
+pelo lojista, 15 de setembro de 2026.)
 
 ## Espumas/almofadas P9
 
-- É a **única peça vendida avulsa** fora de um kit, segundo o feedback atual
-  do lojista — todas as outras peças (cabos, borrachas, etc.) só se tratam
-  como troca dentro de um kit já comprado (secção acima), não como venda
-  avulsa independente.
+- É a **única peça atualmente vendida avulsa**, segundo o feedback confirmado
+  do lojista. Isto não define um procedimento de troca para outras peças.
 - Preço: **14,99 €**.
 - Estão normalmente disponíveis, mas segue-se a regra geral de
   disponibilidade acima — a loja não garante stock contínuo de nenhum
   produto, incluindo esta peça.
-- Quando o cliente quer comprar, pode-se pedir logo, na mesma resposta: a cor
+- Quando o cliente quer comprar, pede-se logo, na mesma resposta: a cor
   pretendida e a morada completa de entrega.
 - Pagamento por MBWay, para o número **927 524 686**.
 

@@ -705,12 +705,19 @@ Diferente da secção acima: aqui o artigo **já saiu de casa do cliente** e foi
 enviado para a loja analisar (substituição ou defeito), e o cliente volta a
 perguntar como está.
 
-Só se afirma "o produto já está em análise" (ou equivalente) quando o
-**histórico do fio contém evidência textual explícita** de que o artigo foi
-recebido pela loja ou enviado para análise, e o estado é compatível com essa
-afirmação — por exemplo, uma mensagem anterior da loja a confirmar a receção,
-ou o cliente a partilhar o comprovativo/código de rastreio da devolução com
-entrega já confirmada.
+O estado comunicado tem de corresponder à **evidência textual no histórico**:
+
+- Comprovativo de expedição ou código de rastreio partilhado pelo cliente,
+  por si só, só prova envio: não prova receção pela loja nem entrada em análise.
+- Só se afirma que a loja recebeu o artigo com evidência de receção — por
+  exemplo, confirmação da loja ou entrega confirmada no rastreio da devolução.
+- Só se afirma "o produto está em análise" (ou equivalente) com evidência de
+  que entrou efetivamente em análise, ou contexto textual suficientemente
+  explícito desse estado. "Recebemos o artigo" ou "vai entrar em análise"
+  não bastam, por si só, para afirmar que a análise já começou.
+- Nunca se inventa a conclusão ou o resultado da análise. Se o ponto de
+  situação atual só o lojista sabe, escala-se com corpo útil e seguro,
+  limitando as afirmações ao que o histórico efetivamente confirma.
 
 Sem essa evidência no fio:
 
@@ -719,9 +726,11 @@ Sem essa evidência no fio:
 - Não se repete indefinidamente "vamos verificar internamente" só para
   preencher a resposta — ver "Repetir uma não-resposta é pior do que
   escalar" em `empresa.md`.
-- Aplica-se a regra segura já existente: pedir o que falta para confirmar a
-  situação (por exemplo, se o artigo já foi enviado e com que rastreio), ou
-  escalar quando não há nada de novo a pedir.
+- Escala-se com corpo seguro: reconhece-se apenas o que está confirmado
+  (por exemplo, o envio comunicado pelo cliente) e indica-se que a equipa
+  vai confirmar a receção e o ponto de situação. Pode pedir-se um dado
+  concreto em falta, sem repetir pedidos de comprovativo/rastreio já dados
+  nem inventar que o artigo foi recebido ou está em análise.
 
 (Confirmado diretamente pelo lojista, 15 de setembro de 2026.)
 
