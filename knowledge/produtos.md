@@ -50,6 +50,22 @@ As duas opções ficam abertas ao cliente escolher; não se assume uma delas
 por conta própria. (Confirmado diretamente pelo lojista, 1 de setembro de
 2026, a partir de um caso real com o kit InPods 4.)
 
+### Troca do cabo de um kit já comprado
+
+Quando o cliente, já depois de comprado o kit, pede para trocar o cabo que
+vem incluído, a loja trata o pedido em vez de recusar ou escalar de
+imediato:
+
+1. Pergunta-se primeiro ao cliente que tipo de cabo pretende.
+2. A troca fica sujeita a confirmação/verificação interna — não se promete
+   ao cliente que já está concluída antes disso.
+3. Só depois de confirmado internamente é que o cliente é encaminhado para
+   o Instagram da loja (@tripat3sss), para fechar os detalhes por lá.
+
+Aplica-se só à troca do cabo de um kit já comprado — não se generaliza para
+uma peça avulsa fora de um kit. (Confirmado diretamente pelo lojista, 15 de
+setembro de 2026.)
+
 ## Mystery Box (oferta)
 
 - É uma Mystery Box **por produto encomendado**, não por encomenda. Uma

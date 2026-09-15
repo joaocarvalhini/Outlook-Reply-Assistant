@@ -940,7 +940,11 @@
       "body": "Boa tarde, em vez de enviar por correio posso entregar os fones ai pessoalmente na loja?"
     },
     "expect": "rascunhar",
-    "note": "entrega pessoal aceite mas precisa de hora marcada, nao e loja aberta ao publico. Caso real de producao, 18/08/2026 (devolucoes.md, secao Entrega pessoal)."
+    "note": "entrega pessoal aceite mas precisa de hora marcada, nao e loja aberta ao publico. Caso real de producao, 18/08/2026 (devolucoes.md, secao 'Loja fisica / escritorio'). A combinacao passa a ser feita pelo Instagram (@tripat3sss), confirmado diretamente pelo lojista, 15/09/2026.",
+    "expect_corpo": true,
+    "expect_texto_contem": [
+      "@tripat3sss"
+    ]
   },
   {
     "id": "capa-personalizada-troca-por-defeito-mesma-foto",
@@ -1748,5 +1752,161 @@
       "https://www.tripat3s.com/pages/politica-de-reembolsos-e-devolucoes"
     ],
     "note": "Confirmado diretamente pelo lojista, 12/09/2026 (InPods 4 Pro sem lacre): o lacre aberto nao impede nada -- o criterio e nao haver marcas de uso. InPods sao produto de contacto direto com a pele: o caminho e a troca, nao a devolucao, e o link da politica vai sempre na resposta. Pede-se foto/video do estado em vez de prometer confirmacao interna. Ver 'Lacre aberto nao impede nada' em devolucoes.md."
+  },
+  {
+    "id": "troca-cabo-kit-pergunta-tipo-e-encaminha-instagram",
+    "email": {
+      "from": "andre.figueiredo9@gmail.com",
+      "from_name": "Andre Figueiredo",
+      "subject": "Re: Encomenda 22455 - kit",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Otimo, e agora como faco para tratar disso?"
+    },
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_contem": [
+      "@tripat3sss"
+    ],
+    "expect_texto_nao_contem": [
+      "ja esta trocado",
+      "ja está trocado",
+      "trocado com sucesso"
+    ],
+    "note": "Confirmado diretamente pelo lojista, 15/09/2026: e possivel tratar a troca do cabo de um kit ja comprado. Pergunta-se primeiro que tipo de cabo o cliente quer, a troca fica sujeita a confirmacao/verificacao interna (nao se promete logo como concluida), e so depois de confirmado internamente e que o cliente e encaminhado para o Instagram (@tripat3sss) para fechar os detalhes. Regra em produtos.md, 'Troca do cabo de um kit ja comprado'. Verificacao manual do texto: deve perguntar o tipo de cabo, nao afirmar que a troca ja esta concluida, e encaminhar para o Instagram.",
+    "historico": "[2026-09-12 10:00] CLIENTE: Bom dia, o kit que comprei veio com um cabo Lightning mas eu queria trocar para um Type-C, e possivel?\n[2026-09-12 11:15] LOJA: Sim, confirmamos internamente que e possivel fazer essa troca do cabo do kit."
+  },
+  {
+    "id": "codigo-desconto-desconhecido-encaminha-instagram",
+    "email": {
+      "from": "carla.nogueira7@gmail.com",
+      "from_name": "Carla Nogueira",
+      "subject": "Codigo de desconto",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, tenho o codigo VERAO26 mas nao sei se ainda e valido, podem confirmar?"
+    },
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_contem": [
+      "@tripat3sss"
+    ],
+    "note": "Corrigido pelo lojista, 15/09/2026: pergunta por um codigo de desconto concreto que o assistente nao conhece deixa de escalar e passa a encaminhar para o Instagram da loja (@tripat3sss). Regra em pagamentos.md, 'Precos e descontos'. Verificacao manual do texto: deve encaminhar para o Instagram, sem escalar e sem inventar se o codigo e valido."
+  },
+  {
+    "id": "desconto-por-quantidade-continua-sem-existir",
+    "email": {
+      "from": "paulo.reis14@gmail.com",
+      "from_name": "Paulo Reis",
+      "subject": "Desconto em quantidade",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, se eu comprar 5 unidades do mesmo produto tenho algum desconto?"
+    },
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_nao_contem": [
+      "@tripat3sss"
+    ],
+    "note": "Regressao do item 4: pergunta sobre desconto por quantidade nao e um codigo de desconto desconhecido, por isso nao deve encaminhar para o Instagram nem escalar -- continua a resposta direta de pagamentos.md ('nao ha desconto por quantidade')."
+  },
+  {
+    "id": "inpods-pro-2-vs-pro-4-diferencas",
+    "email": {
+      "from": "ines.barbosa22@gmail.com",
+      "from_name": "Ines Barbosa",
+      "subject": "Duvida antes de comprar - InPods Pro",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, qual e a diferenca entre os InPods Pro 2.0 e os InPods Pro 4? Obrigada"
+    },
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_contem": [
+      "borrachas"
+    ],
+    "note": "Confirmado diretamente pelo lojista, 15/09/2026: Pro 2.0 tem borrachas, Pro 4 nao tem; os dois usam Type-C, tem carregamento rapido, e a caixa de nenhum dos dois tem botoes. Regra em produtos-detalhe.md, secao 'InPods e fones'. Verificacao manual do texto: deve mencionar a diferenca das borrachas sem inventar mais caracteristicas nem recomendar um modelo consoante o perfil do cliente."
+  },
+  {
+    "id": "escritorio-visita-so-com-combinacao-previa-instagram",
+    "email": {
+      "from": "diogo.pinto11@gmail.com",
+      "from_name": "Diogo Pinto",
+      "subject": "Loja fisica",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, voces tem loja fisica onde eu possa ir ver os produtos pessoalmente?"
+    },
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_contem": [
+      "@tripat3sss"
+    ],
+    "expect_texto_nao_contem": [
+      "loja aberta ao publico",
+      "pode aparecer"
+    ],
+    "note": "Confirmado diretamente pelo lojista, 15/09/2026: a tripat3s nao e loja aberta ao publico, mas e possivel tratar presencialmente no escritorio quando previamente combinado, e a combinacao e feita pelo Instagram (@tripat3sss). Regra generalizada em devolucoes.md, 'Loja fisica / escritorio - presenca so com combinacao previa' (antes so cobria entrega de devolucoes). Verificacao manual do texto: nao pode convidar o cliente a aparecer sem combinar, tem de encaminhar para o Instagram para combinar."
+  },
+  {
+    "id": "janela-horaria-entrega-e-a-transportadora-que-avisa",
+    "email": {
+      "from": "monica.alves8@gmail.com",
+      "from_name": "Monica Alves",
+      "subject": "Re: Encomenda 22470",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Bom dia, a minha encomenda vem hoje, a que horas mais ou menos e a entrega?"
+    },
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "note": "Confirmado diretamente pelo lojista, 15/09/2026: a loja nao define nem garante hora exata de entrega; no proprio dia e a transportadora que comunica ao cliente a janela horaria prevista. Regra em entregas.md, 'Cliente pergunta a que horas e entregue'. Verificacao manual do texto: nao pode prometer uma hora concreta em nome da loja, tem de dizer que e a transportadora que avisa a janela horaria no proprio dia."
+  },
+  {
+    "id": "atraso-generico-sem-problema-concreto-evergreen",
+    "email": {
+      "from": "ricardo.tavares5@gmail.com",
+      "from_name": "Ricardo Tavares",
+      "subject": "Encomenda 22480 atrasada",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, a minha encomenda 22480 esta atrasada, ja demorou mais do que o normal. Podem ver o que se passa?"
+    },
+    "dados_encomenda": "Encomenda #22480\nFeita em: 2026-09-10\nPagamento: pago\nEnvio: nao expedida",
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_nao_contem": [
+      "ainda nao foi expedida",
+      "ainda não foi expedida"
+    ],
+    "note": "Confirmado diretamente pelo lojista, 15/09/2026: regra evergreen para quando o cliente so diz que a encomenda esta atrasada, sem apontar um problema concreto -- nao pode depender so do aviso sazonal de agosto. Regra em entregas.md, 'Cliente diz so que a encomenda esta atrasada, sem apontar um problema concreto'. Verificacao manual do texto: deve pedir desculpa pelo atraso, seguir o estado confirmado sem nunca dizer que 'ainda nao foi expedida' (mesmo com os dados a mostrar isso), dizer que o seguimento chega em breve pela transportadora, e dizer que a loja vai contactar a transportadora para perceber o motivo do atraso."
+  },
+  {
+    "id": "processo-ja-em-curso-avanca-para-envio-nao-repete-verificacao",
+    "email": {
+      "from": "sofia.pereira31@gmail.com",
+      "from_name": "Sofia Pereira",
+      "subject": "Re: Encomenda #22417",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Perfeito, entao para onde envio o antigo?"
+    },
+    "historico": "[2026-09-08 10:15] CLIENTE: Bom dia, o meu smartwatch da encomenda #22417 chegou com o ecra rachado. Seguem fotos em anexo.\n[2026-09-08 15:40] LOJA: Lamentamos, com o defeito confirmado avancamos para a substituicao por uma unidade nova.",
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_nao_contem": [
+      "vamos verificar internamente",
+      "vamos analisar internamente",
+      "verificar internamente"
+    ],
+    "note": "Regressao real, encomenda #22417 (item 15 -- nao altera a KB, a regra ja existe). O fio ja mostra o defeito confirmado e a troca combinada (a loja ja ofereceu uma solucao concreta), e o cliente pergunta diretamente pela morada de envio. O comportamento incorreto observado foi voltar a responder de forma vaga ('vamos verificar internamente') em vez de avancar para os passos de envio ja previstos em devolucoes.md ('Como iniciar uma devolucao' -- nao pedir o formulario quando o processo ja esta em curso -- e 'Depois de o cliente enviar a devolucao', que pede comprovativo e codigo de rastreio apos o envio). Verificacao manual do texto: deve dar a morada (o cliente perguntou diretamente), mencionar que o envio tem de ter rastreio, e pedir o comprovativo/codigo de rastreio depois de enviado -- sem repetir uma promessa de verificacao interna."
   }
 ]

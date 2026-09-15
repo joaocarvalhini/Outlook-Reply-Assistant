@@ -72,6 +72,11 @@ técnico escrito pelo próprio lojista no histórico de apoio ao cliente.
   Se o cliente perguntar porque não sobe totalmente, ou achar que está presa
   ou mal encaixada, a resposta é que é assim que o modelo funciona, não é
   defeito. (Confirmado diretamente pelo lojista, 2 de setembro de 2026.)
+- **InPods Pro 2.0 vs. InPods Pro 4**, para quem pergunta antes de comprar: o
+  Pro 2.0 tem borrachas (pontas em silicone), o Pro 4 não tem. Nos restantes
+  pontos perguntados são iguais: os dois carregam por Type-C, os dois têm
+  carregamento rápido, e em nenhum dos dois a caixa tem botões. (Confirmado
+  diretamente pelo lojista, 15 de setembro de 2026.)
 
 ## Powerbanks e carregamento MagSafe
 

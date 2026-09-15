@@ -87,9 +87,33 @@ por email", sem esclarecer que quem envia é a transportadora.)
 > (Confirmado diretamente pelo lojista, 2 de setembro de 2026, depois de ter
 > corrigido duas respostas reais que diziam "ainda não foi expedida".)
 
+### Cliente diz só que a encomenda está atrasada, sem apontar um problema concreto
+
+Regra evergreen, independente da época do ano — não depende do aviso sazonal
+logo a seguir, nem desaparece quando esse aviso for removido. Aplica-se
+quando o cliente só reclama do atraso, sem indicar uma causa concreta (código
+de rastreio em falta, entrega falhada, aviso de WhatsApp — esses casos têm
+resposta própria, ver acima). A resposta segue sempre esta estrutura:
+
+1. Pede-se desculpa pelo atraso.
+2. Segue-se o estado confirmado da encomenda e os guardrails já
+   estabelecidos nesta secção — nunca se diz que a encomenda "ainda não foi
+   expedida", mesmo que os dados o indiquem (ver nota acima).
+3. Diz-se que o acompanhamento chega, ou é atualizado, em breve, diretamente
+   pela transportadora — conforme já estabelecido acima. Não se inventa uma
+   data nem uma hora concretas.
+4. Diz-se que a loja vai contactar a transportadora para perceber o motivo
+   do atraso.
+
+Se houver, na altura, um motivo sazonal em vigor (ver aviso "Vigente enquanto
+durar" abaixo), esse motivo concreto entra como explicação adicional dentro
+desta estrutura — não a substitui. (Confirmado diretamente pelo lojista, 15
+de setembro de 2026.)
+
 > [!WARNING] Vigente enquanto durar — período de agosto de 2026
-> Motivo real a dar quando o cliente pergunta por um atraso na atualização do
-> envio ou no código de rastreio: há um atraso pontual porque os postos da
+> Motivo concreto adicional a dar, dentro da estrutura evergreen acima,
+> quando o cliente pergunta por um atraso na atualização do envio ou no
+> código de rastreio: há um atraso pontual porque os postos da
 > transportadora estão com equipa reduzida neste período de agosto, o que
 > está a atrasar a atualização dos envios. Pede-se para aguardar mais um
 > pouco, a encomenda segue normalmente. (Confirmado diretamente pelo
@@ -97,8 +121,9 @@ por email", sem esclarecer que quem envia é a transportadora.)
 >
 > **Isto é sazonal, não uma regra permanente.** Quando a equipa da
 > transportadora voltar ao normal, esta explicação deixa de ser verdade —
-> revisitar e remover esta nota nessa altura, não deixá-la por engano a
-> justificar atrasos de outra causa qualquer.
+> revisitar e remover esta nota nessa altura. A remoção desta nota **não**
+> apaga o comportamento evergreen acima (pedir desculpa, estado confirmado,
+> seguimento a caminho, contacto à transportadora) — esse mantém-se sempre.
 
 ### Quando o cliente diz que não recebeu o aviso por WhatsApp
 
@@ -121,6 +146,14 @@ assim.
 (Confirmado diretamente pelo lojista, 9 de setembro de 2026: na encomenda
 #22399 o cliente tinha dado o número errado no checkout, e a resposta enviada
 foi só "Agora já está". Padrão visto 4 vezes.)
+
+### Cliente pergunta a que horas é entregue
+
+A loja não define nem garante uma hora exata de entrega. No próprio dia, é a
+**transportadora** que comunica ao cliente a janela horária prevista — não a
+loja. Não se promete uma hora concreta em nome da loja: diz-se que é a
+transportadora que avisa, no próprio dia, com a janela prevista. (Confirmado
+diretamente pelo lojista, 15 de setembro de 2026.)
 
 ## Entrega falhada
 

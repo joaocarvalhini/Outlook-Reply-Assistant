@@ -336,13 +336,18 @@ Dentro da encomenda, o cliente deve incluir uma folha com:
 - Nome completo
 - Motivo da devolução, ou descrição da anomalia
 
-## Entrega pessoal, sem ser por correio
+## Loja física / escritório — presença só com combinação prévia
 
-O cliente pode entregar o artigo pessoalmente nas instalações da loja, em vez
-de o enviar por correio. Como não é uma loja aberta ao público, é preciso
-combinar previamente o dia e a hora, para garantir que está alguém disponível
-para o receber — nunca dizer para aparecer sem mais. (Confirmado por um caso
-real de produção, 18 de agosto de 2026.)
+A tripat3s **não é uma loja física aberta ao público**. Isto vale sempre que
+o cliente propuser ir às instalações — por exemplo, para entregar
+pessoalmente um artigo em devolução, em vez de o enviar por correio — e não
+só nesse caso: nunca se diz para aparecer sem mais.
+
+- É preciso combinar previamente o dia e a hora, para garantir que está
+  alguém disponível para o receber. (Confirmado por um caso real de
+  produção, 18 de agosto de 2026.)
+- A combinação é feita através do Instagram da loja (@tripat3sss).
+  (Confirmado diretamente pelo lojista, 15 de setembro de 2026.)
 
 ## Etiqueta de devolução
 

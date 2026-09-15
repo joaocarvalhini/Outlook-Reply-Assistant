@@ -41,7 +41,12 @@ referência, mas tive de ser eu a gerar, algo que não consegues".)
 - Códigos de desconto aplicam-se no campo "Código de desconto", disponível no
   carrinho ou durante o checkout, antes de finalizar a encomenda. Os códigos em
   si mudam de campanha para campanha e não estão listados aqui — se o cliente
-  perguntar por um código concreto que não conhece, isso escala.
+  perguntar por um código concreto que não conhece, **não se escala**:
+  encaminha-se para o Instagram da loja (@tripat3sss), que trata do assunto
+  por lá. (Corrigido pelo lojista, 15 de setembro de 2026 — a versão anterior
+  desta secção mandava escalar só por o código ser desconhecido.) Isto não
+  muda os restantes pontos desta secção: continua sem desconto por
+  quantidade, e o preço de promoção continua a não ser retroativo.
 - O preço de uma promoção não é retroativo: quem comprou antes de a campanha
   começar não tem direito ao preço promocional depois.
 
