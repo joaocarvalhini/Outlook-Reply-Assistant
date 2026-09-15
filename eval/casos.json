@@ -586,9 +586,11 @@
       "body": "Ainda nao chegou nada, sabem alguma coisa?"
     },
     "compromissos": "- envio: substituição dos InPods, unidade nova (estado: pendente, sem data confirmada, registado em 2026-08-01)",
+    "dados_encomenda": "Encomenda #21850\nFeita em: 2026-07-28\nPagamento: pago\nEnvio: expedida\nCódigo de rastreio: RR334455667PT",
     "expect": "escalar",
     "expect_categoria": "COMPROMISSO_ANTERIOR",
-    "note": "resolve o caso mencionado em Fase 11: compromisso registado ha duas semanas, fora da janela do fio, mas continua acessivel e usado corretamente"
+    "expect_corpo": true,
+    "note": "resolve o caso mencionado em Fase 11: compromisso registado ha duas semanas, fora da janela do fio, mas continua acessivel e usado corretamente. expect_corpo cobre a regressao de producao de 15/09/2026 (Troca de Inpods Pro): escalar por COMPROMISSO_ANTERIOR nao e ficar calado"
   },
   {
     "id": "email-com-dois-assuntos-responde-o-que-sabe",

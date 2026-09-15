@@ -2062,6 +2062,14 @@ class Processar(unittest.TestCase):
         "lacuna_tema": "prazo Madeira", "lacuna_em_falta": "se é diferente do continente",
     }
     _ESCALAR_URGENTE = {**_ESCALAR, "urgencia": "sim", "categoria": "JULGAMENTO_HUMANO"}
+    # Caso de produção 15/09/2026 ("Troca de Inpods Pro", Marta Alves): o
+    # modelo escala COMPROMISSO_ANTERIOR com corpo vazio sem nenhuma das 3
+    # exceções do prompt se aplicar -- a rede de segurança em processar()
+    # substitui isto quando confianca_encomenda é "alta"/"exata".
+    _ESCALAR_COMPROMISSO_ANTERIOR_VAZIO = {
+        "acao": "escalar", "motivo": "cliente pergunta se receberam a troca; só uma pessoa sabe",
+        "corpo": "", "categoria": "COMPROMISSO_ANTERIOR",
+    }
 
     def setUp(self) -> None:
         pasta = TemporaryDirectory()
@@ -2427,6 +2435,85 @@ class Processar(unittest.TestCase):
         self._correr(m, cfg(dry_run=False), cliente)
         self.assertIn("Vamos verificar se conseguimos",
                       self._linha(m["message_id"])["corpo"])
+
+    # --- Rede de segurança: COMPROMISSO_ANTERIOR com corpo vazio ----------
+
+    def test_marta_compromisso_anterior_confianca_exata_corpo_vazio_recebe_retencao(self) -> None:
+        """Reprodução do caso de produção: email e encomenda batem exatamente
+        (mesmo email do remetente e da compra), o modelo devolve corpo vazio
+        e a rede de segurança substitui pela resposta de retenção fixa."""
+        shopify = ShopifyFalsa(por_numero=[encomenda_falsa(
+            customer={"first_name": "Marta", "last_name": "Alves", "phone": None})])
+        cliente = ClienteFalso(self._ESCALAR_COMPROMISSO_ANTERIOR_VAZIO)
+        m = msg(nome="Marta Alves", assunto="Troca de Inpods Pro",
+                corpo="Já receberam a troca que enviei? Quando expedem os novos da "
+                      "encomenda 21910?")
+        resultado, graph, _ = self._correr(m, cfg(dry_run=False), cliente, shopify=shopify)
+        self.assertEqual(resultado, "escalado")
+        self.assertEqual(len(cliente.pedidos), 1)  # sem segunda chamada ao modelo
+        criados = [c for c in graph.chamadas if c[0] == "criar_rascunho"]
+        self.assertEqual(len(criados), 1)
+        corpo_gravado = self._linha(m["message_id"])["corpo"]
+        self.assertIn("verificar internamente", corpo_gravado)
+        # Nunca inventa estado, data ou resultado.
+        self.assertNotIn("recebemos", corpo_gravado.lower())
+        self.assertNotIn("confirmamos", corpo_gravado.lower())
+        self.assertFalse(any(c.isdigit() for c in corpo_gravado))
+
+    def test_compromisso_anterior_confianca_alta_corpo_vazio_recebe_retencao(self) -> None:
+        """Identidade confirmada por nome completo (sem o email bater): a
+        rede de segurança também dispara em confiança "alta", não só "exata"."""
+        shopify = ShopifyFalsa(por_numero=[encomenda_falsa(
+            customer={"first_name": "Marta", "last_name": "Pinho", "phone": None})])
+        cliente = ClienteFalso(self._ESCALAR_COMPROMISSO_ANTERIOR_VAZIO)
+        m = msg(de="marta.p@outro.pt", nome="Marta Pinho",
+                corpo="Já receberam a troca que enviei? Quando expedem os novos da "
+                      "encomenda 21910?")
+        resultado, graph, _ = self._correr(m, cfg(dry_run=False), cliente, shopify=shopify)
+        self.assertEqual(resultado, "escalado")
+        self.assertEqual(len(cliente.pedidos), 1)
+        criados = [c for c in graph.chamadas if c[0] == "criar_rascunho"]
+        self.assertEqual(len(criados), 1)
+        self.assertIn("verificar internamente", self._linha(m["message_id"])["corpo"])
+
+    def test_compromisso_anterior_confianca_nenhuma_mantem_corpo_vazio(self) -> None:
+        """Sem encomenda correspondente (uma das 3 exceções legítimas do
+        prompt): a rede de segurança não deve inventar uma resposta."""
+        shopify = ShopifyFalsa(por_numero=[])
+        cliente = ClienteFalso(self._ESCALAR_COMPROMISSO_ANTERIOR_VAZIO)
+        m = msg(corpo="Já receberam a troca que enviei da encomenda 99999?")
+        resultado, graph, _ = self._correr(m, cfg(dry_run=False), cliente, shopify=shopify)
+        self.assertEqual(resultado, "escalado")
+        self.assertNotIn("criar_rascunho", [c[0] for c in graph.chamadas])
+        self.assertEqual(self._linha(m["message_id"])["corpo"], "")
+
+    def test_compromisso_anterior_confianca_media_mantem_corpo_vazio(self) -> None:
+        """Identidade não confirmada (a outra exceção legítima): número bate,
+        mas nem o email nem outro indício ligam a encomenda a quem escreveu."""
+        shopify = ShopifyFalsa(por_numero=[encomenda_falsa()])
+        cliente = ClienteFalso(self._ESCALAR_COMPROMISSO_ANTERIOR_VAZIO)
+        m = msg(de="outra.pessoa@gmail.com", nome="X",
+                corpo="Já receberam a troca que enviei da encomenda 21910?")
+        resultado, graph, _ = self._correr(m, cfg(dry_run=False), cliente, shopify=shopify)
+        self.assertEqual(resultado, "escalado")
+        self.assertNotIn("criar_rascunho", [c[0] for c in graph.chamadas])
+        self.assertEqual(self._linha(m["message_id"])["corpo"], "")
+
+    def test_compromisso_anterior_confianca_alta_com_corpo_nao_e_alterado(self) -> None:
+        """A rede de segurança só entra em ação com corpo vazio -- uma
+        resposta que o modelo já escreveu fica exatamente como veio."""
+        shopify = ShopifyFalsa(por_numero=[encomenda_falsa()])
+        escalar_com_corpo = {
+            "acao": "escalar", "motivo": "cliente pergunta estado",
+            "corpo": "Boa tarde,\n\nVamos verificar internamente se conseguimos "
+                     "confirmar o ponto de situação.",
+            "categoria": "COMPROMISSO_ANTERIOR",
+        }
+        cliente = ClienteFalso(escalar_com_corpo)
+        m = msg(corpo="Já receberam a troca que enviei da encomenda 21910?")
+        resultado, _, _ = self._correr(m, cfg(dry_run=False), cliente, shopify=shopify)
+        self.assertEqual(resultado, "escalado")
+        self.assertEqual(self._linha(m["message_id"])["corpo"], escalar_com_corpo["corpo"])
 
     def test_urgente_acrescenta_a_etiqueta(self) -> None:
         cliente = ClienteFalso(self._ESCALAR_URGENTE)

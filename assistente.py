@@ -1179,6 +1179,15 @@ alguém da equipa decidir. "Vamos verificar" só é aceitável quando é
 literalmente verdade e vem acompanhado do pedido concreto do ponto 2 — nunca
 sozinho, como frase de preenchimento.
 
+**Exceção única, em COMPROMISSO_ANTERIOR:** quando "Dados da encomenda" vem
+no pedido e a encomenda está confirmada, uma resposta neutra de retenção
+("vamos verificar internamente o ponto de situação e respondemos assim que
+possível") é conteúdo válido e obrigatório mesmo sem um pedido concreto do
+ponto 2 — ver a regra completa em COMPROMISSO_ANTERIOR, mais abaixo. Essa
+resposta nunca pode afirmar que a troca foi recebida, que a encomenda vai
+ser expedida, datas, resultados ou qualquer ação já executada. Esta exceção
+não se estende a nenhuma outra categoria.
+
 "saltar" — não é correspondência de cliente: newsletter, promoção, notificação
 automática de uma plataforma, angariação comercial a frio, comunicação de
 fornecedor ou email interno. O "corpo" fica vazio.
@@ -1224,6 +1233,11 @@ que teria de mudar para este email deixar de precisar de uma pessoa:
   resposta e rascunhas — pedir esse passo não é repetir uma promessa, é
   substituí-la por algo que o cliente pode fazer hoje. Só escalas quando não
   há nada novo a pedir nem a dizer.
+  **Quando "Dados da encomenda" vem no pedido, a encomenda está confirmada e
+  o "corpo" nunca fica vazio nesta categoria** — mesmo sem um passo novo a
+  pedir, escreve a resposta de retenção ("vamos verificar internamente se
+  conseguimos confirmar o ponto de situação"). Só fica vazio quando não há
+  nenhuma encomenda correspondente ou a identidade não está confirmada.
 - OUTRO — nenhuma das anteriores serve de verdade. Usa com parcimónia.
 
 # A urgência
@@ -2856,6 +2870,22 @@ def decidir(
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+def resposta_retencao_compromisso_anterior(msg: dict, assinatura: str) -> str:
+    """Rede de segurança: nunca deixar COMPROMISSO_ANTERIOR com encomenda
+    confirmada sem resposta de retenção, mesmo se o modelo devolver "corpo"
+    vazio sem nenhuma das três exceções do prompt se aplicar (visto em
+    produção, "Troca de Inpods Pro", 15/09/2026). Fixa e sem segunda chamada
+    ao modelo -- nunca afirma estado, data ou resultado.
+    """
+    primeiro_nome = (msg.get("nome") or "").split()[0] if (msg.get("nome") or "").strip() else ""
+    saudado = f"{saudacao()}, {primeiro_nome}," if primeiro_nome else f"{saudacao()},"
+    return (
+        f"{saudado}\n\nObrigado pelo seu contacto.\n\nVamos verificar "
+        "internamente o ponto de situação deste pedido e respondemos assim "
+        f"que possível.\n\nCom os melhores cumprimentos,\n{assinatura}"
+    )
+
+
 def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
               con: sqlite3.Connection, cliente: object, prompt: str,
               bloqueados: frozenset[str]) -> str:
@@ -3131,6 +3161,16 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         extra["por_responder"] = ""
 
     if acao == "escalar":
+        # Rede de segurança: nenhuma das 3 exceções da secção "corpo vazio"
+        # do prompt cobre este caso -- há uma encomenda confirmada e um
+        # pedido concreto sobre o estado dela (é a própria definição da
+        # categoria). Visto em produção a 15/09/2026 ("Troca de Inpods Pro",
+        # Marta Alves): o modelo devolveu corpo vazio sem razão válida.
+        if (extra["categoria"] == "COMPROMISSO_ANTERIOR"
+                and confianca in ("alta", "exata") and not corpo.strip()):
+            corpo = resposta_retencao_compromisso_anterior(msg, cfg.assinatura)
+            log("corpo-vazio-compromisso-anterior", email=msg["message_id"][:40],
+                confianca=confianca)
         # Antes do registar() de propósito: a seguir a ele este email já está
         # na tabela, e a consulta veria o próprio escalamento como anterior.
         seguimento = seguimento_do_fio(
