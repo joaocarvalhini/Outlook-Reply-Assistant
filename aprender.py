@@ -383,6 +383,12 @@ def recolher(graph: "a.Graph", cfg: "a.Config", con: sqlite3.Connection,
              tudo: bool) -> list[dict]:
     """As divergências entre o que o assistente escreveu e o que saiu."""
     condicao = "" if tudo else f" AND COALESCE({CHAVE_REVISTO}, '') = ''"
+    # `corpo != ''` também é o que mantém as notas internas fora daqui: um
+    # escalado cujo rascunho só tem a nota grava corpo vazio (o texto da nota
+    # vive em nota_interna_texto), e nunca chega a ser um caso a aprender --
+    # não havia resposta ao cliente para o lojista divergir dela. Do outro
+    # lado, resposta_real() já devolve o texto sem a nota. Ver
+    # assistente.remover_nota_interna().
     linhas = con.execute(
         "SELECT message_id, assunto, acao, corpo FROM processados "
         f"WHERE corpo != '' AND conversation_id != ''{condicao} ORDER BY em DESC"

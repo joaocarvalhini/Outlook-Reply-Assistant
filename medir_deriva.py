@@ -116,7 +116,11 @@ def resposta_real(graph: a.Graph, msg: dict, aviso: str) -> str | None:
         return None
     candidatas.sort(key=lambda m: m.get("receivedDateTime", ""))
     corpo = (candidatas[0].get("body") or {}).get("content", "")
-    texto = a.cortar_citacao(a.para_texto(corpo))
+    # Sem a nota interna: quando o lojista envia um rascunho parcial sem a
+    # apagar, a nota é texto da automação, não dele -- contá-la aqui punha o
+    # aprender.py a aprendê-la como estilo da loja e o --fechar-ciclo a
+    # medi-la como edição. Ver assistente.remover_nota_interna().
+    texto = a.remover_nota_interna(a.cortar_citacao(a.para_texto(corpo)))
     # Um caso desta sessão teve um rascunho criado manualmente por mim, fora do
     # DRY_RUN, só para o cliente ver a qualidade — não é o lojista a responder,
     # é o próprio texto do assistente a aparecer como se fosse a resposta real.
@@ -267,9 +271,12 @@ def fechar_ciclo(graph: a.Graph, cfg: a.Config, con: sqlite3.Connection,
         else:
             corpo_final = ""
             if detalhe is not None:
-                corpo_final = a.cortar_citacao(
+                # remover_nota_interna() pela mesma razão que em
+                # resposta_real(): num rascunho parcial a nota está lá dentro
+                # e não faz parte da resposta ao cliente que se está a medir.
+                corpo_final = a.remover_nota_interna(a.cortar_citacao(
                     a.para_texto((detalhe.get("body") or {}).get("content", ""))
-                )
+                ))
             if not corpo_final:
                 corpo_final = resposta_no_fio(graph, cfg, message_id) or ""
             if corpo_final:
@@ -348,7 +355,11 @@ def casos_da_pasta(graph: a.Graph, cfg: a.Config, bloqueados: frozenset[str],
     for cliente_msg, loja_msg in pares:
         graph.detalhe(cliente_msg, cfg.max_body)
         graph.detalhe(loja_msg, cfg.max_body)
-        casos.append((cliente_msg, loja_msg["corpo"]))
+        # Esta via lê o email enviado diretamente, sem passar por
+        # resposta_real() -- a limpeza da nota interna tem de ser feita aqui
+        # também, senão um rascunho enviado sem a nota apagada entra na
+        # comparação como se o texto da automação fosse do lojista.
+        casos.append((cliente_msg, a.remover_nota_interna(loja_msg["corpo"])))
     return casos, 0
 
 

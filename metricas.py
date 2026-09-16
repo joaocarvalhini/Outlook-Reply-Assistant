@@ -75,6 +75,10 @@ def main(argv: list[str] | None = None) -> int:
         valores,
     ).fetchall()
 
+    # Tudo o que se lê já está nas quatro consultas acima: a ligação fecha-se
+    # aqui e não no fim, para não ficar um ficheiro preso enquanto se imprime.
+    con.close()
+
     janela = "todo o histórico" if args.tudo else f"últimos {args.dias} dia(s)"
     print(f"\n{len(linhas)} email(is) processado(s) · {janela}\n")
     if not linhas:
@@ -117,12 +121,23 @@ def main(argv: list[str] | None = None) -> int:
         # Notas internas (ENABLE_INTERNAL_NOTES): à parte de propósito, para
         # não se misturarem com "resposta escrita" acima -- uma nota nunca é
         # uma resposta, é a marca de que a automação parou. Só faz sentido
-        # olhar para os escalados que não têm resposta nenhuma.
+        # olhar para os escalados que não têm resposta nenhuma: são esses cujo
+        # rascunho na conversa é só a nota.
         sem_resposta = [l for l in escalados if not (l[3] or "").strip()]
         com_nota = [l for l in sem_resposta if (l[4] or "").strip()]
         if sem_resposta:
             print(f"{len(com_nota)} de {len(sem_resposta)} escalado(s) sem resposta "
-                  f"têm nota interna criada ({len(com_nota) / len(sem_resposta) * 100:.0f}%)")
+                  f"têm rascunho só com nota interna "
+                  f"({len(com_nota) / len(sem_resposta) * 100:.0f}%)")
+
+    # Rascunhos parciais que levaram a nota dentro do próprio rascunho, a
+    # seguir à resposta. Contam-se com os rascunhados, não com os escalados:
+    # há resposta ao cliente lá dentro, e ela conta como resposta.
+    rascunhados = [l for l in linhas if l[0] == "rascunhar"]
+    parciais_com_nota = [l for l in rascunhados if (l[4] or "").strip()]
+    if parciais_com_nota:
+        print(f"\n{len(parciais_com_nota)} de {len(rascunhados)} rascunho(s) levaram "
+              f"nota interna a dizer o que ficou por tratar")
 
     if resultados_draft:
         estados = Counter(r[0] for r in resultados_draft)

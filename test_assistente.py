@@ -32,6 +32,7 @@ from aprender import (
     formatar_mensagem,
     juntar_extra,
     mesmo_padrao,
+    recolher,
     texto_acrescentado,
 )
 
@@ -52,6 +53,7 @@ from exportar import anonimizar, anonimizar_endereco, palpitar
 from medir_deriva import comparar_gravado, fechar_ciclo
 from compromissos import fechar, pendentes, procurar
 from verificar_kb import analisar_base
+import metricas
 
 import eval as eval_mod
 from assistente import (
@@ -93,6 +95,13 @@ from assistente import (
     ETIQUETAS,
     ETIQUETA_SEGUIMENTO,
     ETIQUETA_URGENTE,
+    ACAO_HUMANA_NOTA_INTERNA,
+    MOTIVO_NOTA_INTERNA,
+    NOTA_INTERNA_CABECALHO,
+    NOTA_INTERNA_RODAPE,
+    montar_nota_interna,
+    nota_interna_html,
+    remover_nota_interna,
     etiquetas,
     seguimento_do_fio,
     sem_fuga_de_esquema,
@@ -835,6 +844,37 @@ class AssinaturaEmImagem(unittest.TestCase):
         self.assertEqual(anexo["contentId"], CID_ASSINATURA)
         self.assertEqual(anexo["contentType"], "image/png")
         self.assertEqual(anexo["@odata.type"], "#microsoft.graph.fileAttachment")
+
+    def test_a_nota_vai_no_mesmo_createreply_depois_da_assinatura(self) -> None:
+        """Um único POST, ao createReply da conversa do cliente: a nota é um
+        bloco no fim do mesmo rascunho, nunca uma mensagem nova em Rascunhos.
+        Depois da imagem da loja, para ser a última coisa antes da citação."""
+        with TemporaryDirectory() as pasta:
+            a = carregar_assinatura(self.imagem(pasta), "A Loja")
+        g, chamadas = self.graph_falso(a)
+        g.criar_rascunho("AAMk-1", "<p>Olá</p>", "<hr><div>NOTA</div>")
+
+        posts = [c for c in chamadas if c[0] == "POST"]
+        criar = [c for c in posts if c[1].endswith("/createReply")]
+        self.assertEqual(len(criar), 1)
+        # Nenhum POST a /messages: era assim que a nota se criava à parte.
+        self.assertEqual([c for c in posts if c[1].endswith("/messages")], [])
+        corpo = criar[0][2]["comment"]
+        self.assertLess(corpo.index("<p>Olá</p>"), corpo.index(f"cid:{CID_ASSINATURA}"))
+        self.assertLess(corpo.index(f"cid:{CID_ASSINATURA}"), corpo.index("NOTA"))
+
+    def test_rascunho_so_com_nota_nao_leva_assinatura_da_loja(self) -> None:
+        """Não é um email para o cliente: não leva o bloco da assinatura nem
+        o anexo da imagem (585 KB por rascunho, para nada)."""
+        with TemporaryDirectory() as pasta:
+            a = carregar_assinatura(self.imagem(pasta), "A Loja")
+        g, chamadas = self.graph_falso(a)
+        self.assertEqual(g.criar_rascunho("AAMk-1", "", "<hr><div>NOTA</div>"),
+                         "AAMk-novo")
+
+        self.assertEqual(len(chamadas), 1)                     # sem /attachments
+        self.assertTrue(chamadas[0][1].endswith("/createReply"), chamadas[0][1])
+        self.assertEqual(chamadas[0][2], {"comment": "<hr><div>NOTA</div>"})
 
     def test_falha_no_anexo_nao_deita_o_rascunho_fora(self) -> None:
         with TemporaryDirectory() as pasta:
@@ -1585,8 +1625,6 @@ class GraphFalso:
         historico: list[dict] | Exception | None = None,
         rascunho_id: str = "AAMk-fake",
         criar_rascunho: Exception | None = None,
-        nota_interna_id: str = "AAMk-nota-fake",
-        criar_nota_interna: Exception | None = None,
         marcar: Exception | None = None,
         detalhe_rascunho: dict | None | Exception = "omisso",
         pedir_respostas: dict[str, dict] | None = None,
@@ -1600,8 +1638,6 @@ class GraphFalso:
         self._historico = historico if historico is not None else []
         self._rascunho_id = rascunho_id
         self._erro_criar_rascunho = criar_rascunho
-        self._nota_interna_id = nota_interna_id
-        self._erro_criar_nota_interna = criar_nota_interna
         self._erro_marcar = marcar
         # "omisso" (sentinela) em vez de None, porque None é uma resposta
         # válida de detalhe_rascunho() (mensagem apagada).
@@ -1653,17 +1689,14 @@ class GraphFalso:
             raise self._historico
         return list(self._historico)
 
-    def criar_rascunho(self, message_id: str, corpo_html: str) -> str:
-        self.chamadas.append(("criar_rascunho", message_id, corpo_html))
+    def criar_rascunho(self, message_id: str, corpo_html: str,
+                       nota_html: str = "") -> str:
+        # A nota vai no mesmo tuplo do corpo: é assim que os testes verificam
+        # que houve UM createReply, com as duas partes lá dentro, e não dois.
+        self.chamadas.append(("criar_rascunho", message_id, corpo_html, nota_html))
         if self._erro_criar_rascunho is not None:
             raise self._erro_criar_rascunho
         return self._rascunho_id
-
-    def criar_nota_interna(self, assunto_original: str, corpo_html: str) -> str:
-        self.chamadas.append(("criar_nota_interna", assunto_original, corpo_html))
-        if self._erro_criar_nota_interna is not None:
-            raise self._erro_criar_nota_interna
-        return self._nota_interna_id
 
     def marcar(self, msg: dict, *categorias: str) -> None:
         # Uma entrada por categoria, para os testes antigos (que esperam
@@ -2643,6 +2676,69 @@ class Processar(unittest.TestCase):
         self.assertEqual(self._linha(m["message_id"])["corpo"], "")
 
     # --- Nota interna (ENABLE_INTERNAL_NOTES) ------------------------------
+    #
+    # Regra que atravessa todos estes testes: UM createReply por email, na
+    # conversa do cliente, nunca uma segunda mensagem em Rascunhos. A nota é
+    # um bloco dentro desse rascunho, a seguir à resposta (parcial) ou sozinha
+    # (escalado sem resposta nenhuma).
+
+    def _rascunhos(self, graph) -> list[tuple]:
+        return [c for c in graph.chamadas if c[0] == "criar_rascunho"]
+
+    def test_completo_com_flag_ligada_nao_leva_nota(self) -> None:
+        """Um email respondido por inteiro (por_responder vazio) continua a
+        ser um rascunho normal: só o texto para o cliente."""
+        cliente = ClienteFalso(self._RASCUNHAR)
+        m = msg()
+        resultado, graph, _ = self._correr(
+            m, cfg(dry_run=False, notas_internas=True), cliente)
+        self.assertEqual(resultado, "rascunhado")
+        criados = self._rascunhos(graph)
+        self.assertEqual(len(criados), 1)
+        self.assertEqual(criados[0][3], "")            # sem bloco de nota
+        self.assertNotIn("NOTA INTERNA", criados[0][2])
+        linha = self._linha(m["message_id"])
+        self.assertEqual(linha["nota_interna_texto"], "")
+        self.assertEqual(linha["nota_interna_id"], "")
+
+    def test_parcial_leva_resposta_e_nota_no_mesmo_rascunho(self) -> None:
+        cliente = ClienteFalso(self._RASCUNHAR_PARCIAL)
+        m = msg()
+        resultado, graph, _ = self._correr(
+            m, cfg(dry_run=False, notas_internas=True), cliente)
+        self.assertEqual(resultado, "rascunhado-parcial")
+        criados = self._rascunhos(graph)
+        self.assertEqual(len(criados), 1)              # um só createReply
+        corpo_html, nota_html = criados[0][2], criados[0][3]
+        # A resposta segura vai na parte de cima, a nota na de baixo.
+        self.assertIn("As entregas demoram 24 a 48 horas", corpo_html)
+        self.assertNotIn("NOTA INTERNA", corpo_html)
+        self.assertIn(NOTA_INTERNA_CABECALHO, para_texto(nota_html))
+        self.assertIn(NOTA_INTERNA_RODAPE, para_texto(nota_html))
+        # por_responder refletido, rotulado como parte por tratar.
+        self.assertIn("Parte por tratar: pediu também um desconto por fidelidade",
+                      para_texto(nota_html))
+        self.assertIn("Ação necessária:", para_texto(nota_html))
+        # O que fica gravado como resposta é só o texto do cliente.
+        linha = self._linha(m["message_id"])
+        self.assertNotIn("NOTA INTERNA", linha["corpo"])
+        self.assertIn("Parte por tratar", linha["nota_interna_texto"])
+        self.assertEqual(linha["rascunho_id"], "AAMk-fake")
+        self.assertEqual(linha["nota_interna_id"], "")
+
+    def test_parcial_com_flag_desligada_fica_como_antes(self) -> None:
+        cliente = ClienteFalso(self._RASCUNHAR_PARCIAL)
+        m = msg()
+        resultado, graph, _ = self._correr(
+            m, cfg(dry_run=False, notas_internas=False), cliente)
+        self.assertEqual(resultado, "rascunhado-parcial")
+        criados = self._rascunhos(graph)
+        self.assertEqual(len(criados), 1)
+        self.assertEqual(criados[0][3], "")
+        # As duas etiquetas de sempre, nem mais nem menos.
+        self.assertEqual([c[2] for c in graph.chamadas if c[0] == "marcar"],
+                         ["IA-Rascunhado", "Precisa de humano"])
+        self.assertEqual(self._linha(m["message_id"])["nota_interna_texto"], "")
 
     def test_nota_interna_desligada_por_omissao_nao_cria_nada(self) -> None:
         """A flag é desligada por omissão: nada muda em relação ao
@@ -2652,33 +2748,78 @@ class Processar(unittest.TestCase):
         resultado, graph, _ = self._correr(
             m, cfg(dry_run=False, notas_internas=False), cliente)
         self.assertEqual(resultado, "escalado")
-        self.assertNotIn("criar_nota_interna", [c[0] for c in graph.chamadas])
+        self.assertEqual(self._rascunhos(graph), [])
+        self.assertEqual([c[2] for c in graph.chamadas if c[0] == "marcar"],
+                         ["Precisa de humano", "Falta regra"])
         linha = self._linha(m["message_id"])
         self.assertEqual(linha["nota_interna_id"], "")
         self.assertEqual(linha["nota_interna_texto"], "")
 
-    def test_nota_interna_ligada_com_corpo_vazio_cria_nota_a_parte(self) -> None:
+    def test_corpo_vazio_cria_um_rascunho_so_com_a_nota(self) -> None:
         cliente = ClienteFalso(self._ESCALAR_SEM_RESPOSTA)
         m = msg()
         resultado, graph, _ = self._correr(
             m, cfg(dry_run=False, notas_internas=True), cliente)
         self.assertEqual(resultado, "escalado")
-        self.assertNotIn("criar_rascunho", [c[0] for c in graph.chamadas])
-        criadas = [c for c in graph.chamadas if c[0] == "criar_nota_interna"]
-        self.assertEqual(len(criadas), 1)
-        self.assertIn("NOTA INTERNA", criadas[0][2])
-        self.assertIn("NÃO ENVIAR AO CLIENTE", criadas[0][2])
-        # Etiqueta de visibilidade na caixa, além da "Precisa de humano".
+        criados = self._rascunhos(graph)
+        self.assertEqual(len(criados), 1)
+        self.assertEqual(criados[0][1], m["id"])       # na conversa do cliente
+        self.assertEqual(criados[0][2], "")            # sem resposta nenhuma
+        texto = para_texto(criados[0][3])
+        self.assertIn(NOTA_INTERNA_CABECALHO, texto)
+        self.assertIn(NOTA_INTERNA_RODAPE, texto)
+        self.assertNotIn("Parte por tratar", texto)    # não é um parcial
+        # "Nota interna" e nunca "IA-Rascunhado": não há resposta pronta.
         self.assertEqual([c[2] for c in graph.chamadas if c[0] == "marcar"],
-                          ["Precisa de humano", "Falta regra", "Nota interna"])
+                         ["Precisa de humano", "Falta regra", "Nota interna"])
         linha = self._linha(m["message_id"])
         self.assertEqual(linha["corpo"], "")
-        self.assertEqual(linha["rascunho_id"], "")
-        self.assertEqual(linha["nota_interna_id"], "AAMk-nota-fake")
+        self.assertEqual(linha["rascunho_id"], "")     # não é resposta preparada
+        self.assertEqual(linha["nota_interna_id"], "AAMk-fake")
         self.assertIn("Falta regra", linha["nota_interna_texto"])
         self.assertIn("prazo Madeira", linha["nota_interna_texto"])
-        # Nunca o "motivo" livre do modelo como facto -- ver montar_nota_interna().
-        self.assertNotIn(self._ESCALAR_SEM_RESPOSTA["motivo"], linha["nota_interna_texto"])
+
+    def test_nota_interna_nunca_usa_o_motivo_livre_do_modelo(self) -> None:
+        """O "motivo" é a justificação do modelo -- pode ser uma inferência
+        errada, e sob o rótulo "Motivo:" passaria por facto verificado."""
+        for decisao in (self._ESCALAR_SEM_RESPOSTA, self._RASCUNHAR_PARCIAL):
+            with self.subTest(acao=decisao["acao"]):
+                m = msg(message_id="<" + decisao["acao"] + "@x>")
+                _, graph, _ = self._correr(
+                    m, cfg(dry_run=False, notas_internas=True), ClienteFalso(decisao))
+                nota = self._linha(m["message_id"])["nota_interna_texto"]
+                self.assertNotEqual(nota, "")
+                self.assertNotIn(decisao["motivo"], nota)
+                self.assertNotIn(decisao["motivo"], self._rascunhos(graph)[0][3])
+
+    def test_copy_deterministica_por_categoria(self) -> None:
+        """A mesma categoria dá sempre o mesmo motivo e a mesma ação, e a
+        linguagem não afirma nada que a consulta não tenha provado."""
+        nota = montar_nota_interna({"categoria": "DADOS_ENCOMENDA_EM_FALTA"}, "21910")
+        self.assertIn(MOTIVO_NOTA_INTERNA["DADOS_ENCOMENDA_EM_FALTA"], nota)
+        self.assertIn(ACAO_HUMANA_NOTA_INTERNA["DADOS_ENCOMENDA_EM_FALTA"], nota)
+        # Nunca "não existe no Shopify" -- a consulta é que pode ter falhado.
+        self.assertNotIn("Shopify", nota)
+        self.assertNotIn("não existe", nota)
+        # O número é do que o cliente escreveu, não um facto validado.
+        self.assertIn("Número de encomenda mencionado: 21910", nota)
+        self.assertEqual(nota, montar_nota_interna(
+            {"categoria": "DADOS_ENCOMENDA_EM_FALTA"}, "21910"))
+
+    def test_categoria_outro_tem_motivo_e_acao_necessaria_na_nota(self) -> None:
+        """OUTRO não é caso raro aqui -- é o destino do rebaixamento de
+        'rascunhar' com corpo vazio, provavelmente a categoria mais comum a
+        chegar a este ramo. Ao contrário de ETIQUETAS, o dict da nota não a
+        pode omitir."""
+        outro_sem_resposta = {**self._ESCALAR_SEM_RESPOSTA, "categoria": "OUTRO",
+                              "lacuna_tema": "", "lacuna_em_falta": ""}
+        cliente = ClienteFalso(outro_sem_resposta)
+        m = msg()
+        self._correr(m, cfg(dry_run=False, notas_internas=True), cliente)
+        texto = self._linha(m["message_id"])["nota_interna_texto"]
+        self.assertIn("Motivo:", texto)
+        self.assertIn("Ação necessária:", texto)
+        self.assertNotIn("Categoria:", texto)  # ETIQUETAS omite OUTRO de propósito
 
     def test_nota_interna_grava_uma_so_linha_por_email(self) -> None:
         """Pedido explícito na revisão do plano: nota_interna_texto viaja
@@ -2700,7 +2841,7 @@ class Processar(unittest.TestCase):
         m = msg()
         _, graph, _ = self._correr(
             m, cfg(dry_run=False, pre_rascunhos=False, notas_internas=True), cliente)
-        self.assertNotIn("criar_nota_interna", [c[0] for c in graph.chamadas])
+        self.assertEqual(self._rascunhos(graph), [])
         self.assertEqual(self._linha(m["message_id"])["nota_interna_texto"], "")
 
     def test_nota_interna_nao_dispara_quando_rede_de_seguranca_preenche_corpo(self) -> None:
@@ -2713,31 +2854,33 @@ class Processar(unittest.TestCase):
         resultado, graph, _ = self._correr(
             m, cfg(dry_run=False, notas_internas=True), cliente, shopify=shopify)
         self.assertEqual(resultado, "escalado")
-        self.assertNotIn("criar_nota_interna", [c[0] for c in graph.chamadas])
-        self.assertIn("criar_rascunho", [c[0] for c in graph.chamadas])
+        criados = self._rascunhos(graph)
+        self.assertEqual(len(criados), 1)
+        self.assertIn("verificar internamente", criados[0][2])
+        self.assertEqual(criados[0][3], "")
         self.assertEqual(self._linha(m["message_id"])["nota_interna_texto"], "")
 
     def test_nota_interna_em_dry_run_nao_escreve_na_caixa(self) -> None:
-        cliente = ClienteFalso(self._ESCALAR_SEM_RESPOSTA)
-        m = msg()
-        resultado, graph, _ = self._correr(
-            m, cfg(dry_run=True, notas_internas=True), cliente)
-        self.assertEqual(resultado, "escalado")
-        nomes = [c[0] for c in graph.chamadas]
-        self.assertNotIn("criar_nota_interna", nomes)
-        self.assertNotIn("marcar", nomes)
-        # Mas fica gravado -- dry_run só afeta a caixa, não o registo.
-        linha = self._linha(m["message_id"])
-        self.assertNotEqual(linha["nota_interna_texto"], "")
-        self.assertEqual(linha["nota_interna_id"], "")
+        for decisao in (self._ESCALAR_SEM_RESPOSTA, self._RASCUNHAR_PARCIAL):
+            with self.subTest(acao=decisao["acao"]):
+                m = msg(message_id="<dry-" + decisao["acao"] + "@x>")
+                _, graph, _ = self._correr(
+                    m, cfg(dry_run=True, notas_internas=True), ClienteFalso(decisao))
+                nomes = [c[0] for c in graph.chamadas]
+                self.assertNotIn("criar_rascunho", nomes)
+                self.assertNotIn("marcar", nomes)
+                # Mas fica gravado -- dry_run só afeta a caixa, não o registo.
+                linha = self._linha(m["message_id"])
+                self.assertNotEqual(linha["nota_interna_texto"], "")
+                self.assertEqual(linha["nota_interna_id"], "")
 
-    def test_erro_a_criar_nota_interna_nao_derruba_a_passagem(self) -> None:
+    def test_erro_a_criar_o_rascunho_da_nota_nao_derruba_a_passagem(self) -> None:
         """Pedido explícito na revisão: falha do Graph não perde nem duplica
         o registo -- fica exatamente como o único registar() já o tinha
         deixado, só sem nota_interna_id."""
         cliente = ClienteFalso(self._ESCALAR_SEM_RESPOSTA)
         m = msg()
-        graph = GraphFalso(criar_nota_interna=RuntimeError("Graph 500: instável"))
+        graph = GraphFalso(criar_rascunho=RuntimeError("Graph 500: instável"))
         resultado, _, _ = self._correr(
             m, cfg(dry_run=False, notas_internas=True), cliente, graph=graph)
         self.assertEqual(resultado, "escalado")
@@ -2751,32 +2894,30 @@ class Processar(unittest.TestCase):
 
     def test_erro_a_marcar_nao_bloqueia_nem_e_confundido_com_erro_na_nota(self) -> None:
         """Uma falha só na etiqueta "Nota interna" (marcar()) não pode
-        aparecer como falha a criar a nota -- são duas tentativas separadas
-        (ver o comentário em processar()). A nota em si fica criada."""
+        aparecer como falha a criar o rascunho -- são duas tentativas
+        separadas (ver o comentário em processar()). O rascunho fica criado."""
         cliente = ClienteFalso(self._ESCALAR_SEM_RESPOSTA)
         m = msg()
         graph = GraphFalso(marcar=RuntimeError("Graph 500: instável"))
         resultado, _, _ = self._correr(
             m, cfg(dry_run=False, notas_internas=True), cliente, graph=graph)
         self.assertEqual(resultado, "escalado")
-        self.assertEqual(len([c for c in graph.chamadas if c[0] == "criar_nota_interna"]), 1)
-        # A nota foi criada com sucesso -- só a etiqueta falhou.
-        self.assertEqual(self._linha(m["message_id"])["nota_interna_id"], "AAMk-nota-fake")
+        self.assertEqual(len(self._rascunhos(graph)), 1)
+        self.assertEqual(self._linha(m["message_id"])["nota_interna_id"], "AAMk-fake")
 
-    def test_categoria_outro_tem_motivo_e_acao_humana_na_nota(self) -> None:
-        """OUTRO não é caso raro aqui -- é o destino do rebaixamento de
-        'rascunhar' com corpo vazio, provavelmente a categoria mais comum a
-        chegar a este ramo. Ao contrário de ETIQUETAS, o dict da nota não a
-        pode omitir."""
-        outro_sem_resposta = {**self._ESCALAR_SEM_RESPOSTA, "categoria": "OUTRO",
-                               "lacuna_tema": "", "lacuna_em_falta": ""}
-        cliente = ClienteFalso(outro_sem_resposta)
+    def test_compromisso_anterior_sem_encomenda_leva_nota_da_categoria_certa(self) -> None:
+        """A rede de segurança não dispara sem encomenda confiável: fica sem
+        corpo, e a nota tem de falar de compromisso anterior, não de OUTRO."""
+        cliente = ClienteFalso(self._ESCALAR_COMPROMISSO_ANTERIOR_VAZIO)
         m = msg()
-        self._correr(m, cfg(dry_run=False, notas_internas=True), cliente)
-        texto = self._linha(m["message_id"])["nota_interna_texto"]
-        self.assertIn("Motivo:", texto)
-        self.assertIn("Ação humana:", texto)
-        self.assertNotIn("Categoria:", texto)  # ETIQUETAS omite OUTRO de propósito
+        resultado, graph, _ = self._correr(
+            m, cfg(dry_run=False, notas_internas=True), cliente)
+        self.assertEqual(resultado, "escalado")
+        nota = self._linha(m["message_id"])["nota_interna_texto"]
+        self.assertIn(MOTIVO_NOTA_INTERNA["COMPROMISSO_ANTERIOR"], nota)
+        self.assertIn(ACAO_HUMANA_NOTA_INTERNA["COMPROMISSO_ANTERIOR"], nota)
+        self.assertIn("Já prometido", nota)
+        self.assertEqual(len(self._rascunhos(graph)), 1)
 
     def test_saltar_do_modelo_e_registado(self) -> None:
         m = msg(corpo="Reserve já o seu stand na feira 2027")
@@ -2954,6 +3095,166 @@ class FecharCiclo(unittest.TestCase):
         self.assertEqual(graph.chamadas, [])       # continua a ser final
         fechar_ciclo(graph, cfg(), self.con, 0, remedir=True)
         self.assertEqual(self._resultado("<a@x>")[0], "enviado-tal-e-qual")
+
+
+class NotaInternaNoCicloDeAprendizagem(unittest.TestCase):
+    """A nota é interface para o lojista, não resposta ao cliente: não pode
+    entrar no que o aprender.py aprende como estilo da loja, nem contar como
+    edição no --fechar-ciclo, nem aparecer nas métricas como resposta escrita.
+
+    O caso que obriga a isto é banal: o lojista envia um rascunho parcial sem
+    apagar a nota. Sem remover_nota_interna(), o texto da própria automação
+    voltava pelo fio como se fosse texto dele.
+    """
+
+    _CORPO = "Boa tarde,\n\nAs entregas demoram 24 a 48 horas.\n\nCumprimentos,\nA Loja"
+
+    def setUp(self) -> None:
+        pasta = TemporaryDirectory()
+        self.addCleanup(pasta.cleanup)
+        self.con = abrir_db(Path(pasta.name) / "t.db")
+        self.addCleanup(self.con.close)
+
+    def _enviado_com_nota(self) -> str:
+        """O HTML de um rascunho parcial que foi enviado tal e qual, nota
+        incluída -- exatamente o que criar_rascunho() põe na caixa."""
+        nota = montar_nota_interna(
+            {"categoria": "JULGAMENTO_HUMANO"}, "21910",
+            por_responder="pediu também um desconto por fidelidade")
+        return para_html(self._CORPO) + nota_interna_html(nota)
+
+    # --- remover_nota_interna() -------------------------------------------
+
+    def test_ida_e_volta_devolve_exatamente_o_texto_do_cliente(self) -> None:
+        texto = cortar_citacao(para_texto(self._enviado_com_nota()))
+        self.assertIn(NOTA_INTERNA_CABECALHO, texto)
+        self.assertEqual(remover_nota_interna(texto), self._CORPO)
+
+    def test_texto_sem_nota_fica_intacto(self) -> None:
+        self.assertEqual(remover_nota_interna(self._CORPO), self._CORPO)
+        self.assertEqual(remover_nota_interna(""), "")
+
+    def test_nota_sozinha_nao_deixa_resto_nenhum(self) -> None:
+        """O caso só-nota: o rascunho não tem resposta nenhuma lá dentro."""
+        nota = montar_nota_interna({"categoria": "LACUNA_DE_CONHECIMENTO"}, None)
+        texto = cortar_citacao(para_texto(nota_interna_html(nota)))
+        self.assertEqual(remover_nota_interna(texto), "")
+
+    def test_nota_truncada_sem_rodape_e_cortada_na_mesma(self) -> None:
+        """Meio apagada à mão antes de enviar: o que sobra continua a ser
+        texto da automação e não pode passar por texto do lojista."""
+        texto = self._CORPO + "\n\n" + NOTA_INTERNA_CABECALHO + "\n\nMotivo: seja o que for"
+        self.assertEqual(remover_nota_interna(texto), self._CORPO)
+
+    # --- medir_deriva.py ---------------------------------------------------
+
+    def _graph_com_resposta(self, html_resposta: str) -> GraphFalso:
+        return GraphFalso(detalhe_rascunho=None, pedir_respostas={
+            "internetMessageId": {"value": [{
+                "id": "AAMk-1", "internetMessageId": "<a@x>",
+                "conversationId": "conv-1",
+                "receivedDateTime": "2026-09-16T09:00:00Z",
+                "from": {"emailAddress": {"address": "cliente@gmail.com"}},
+            }]},
+            "conversationId": {"value": [{
+                "receivedDateTime": "2026-09-16T10:00:00Z",
+                "from": {"emailAddress": {"address": CAIXA}},
+                "body": {"content": html_resposta},
+            }]},
+        })
+
+    def test_parcial_enviado_com_a_nota_conta_como_tal_e_qual(self) -> None:
+        """Sem a limpeza, a nota fazia a semelhança cair e o rascunho ficava
+        eternamente como "enviado-editado" -- uma deriva que não existiu."""
+        registar(self.con, msg(message_id="<a@x>"), "rascunhar", "sabia responder",
+                 self._CORPO, rascunho_id="D1", nota_interna_texto="nota qualquer")
+        graph = self._graph_com_resposta(self._enviado_com_nota())
+        fechar_ciclo(graph, cfg(), self.con, 0)
+        estado, sem = self.con.execute(
+            "SELECT resultado_estado, resultado_semelhanca FROM processados "
+            "WHERE message_id = '<a@x>'").fetchone()
+        self.assertEqual(estado, "enviado-tal-e-qual")
+        self.assertGreaterEqual(sem, 90.0)
+
+    def test_nota_no_proprio_rascunho_tambem_e_ignorada(self) -> None:
+        """A outra fonte do --fechar-ciclo: o rascunho pelo seu próprio id."""
+        registar(self.con, msg(message_id="<a@x>"), "rascunhar", "sabia responder",
+                 self._CORPO, rascunho_id="D1", nota_interna_texto="nota qualquer")
+        graph = GraphFalso(detalhe_rascunho={
+            "sentDateTime": "2026-09-16T10:00:00Z",
+            "body": {"content": self._enviado_com_nota()},
+        })
+        fechar_ciclo(graph, cfg(), self.con, 0)
+        self.assertEqual(self.con.execute(
+            "SELECT resultado_estado FROM processados WHERE message_id = '<a@x>'"
+        ).fetchone()[0], "enviado-tal-e-qual")
+
+    def test_so_nota_nunca_e_verificado_pelo_fecho_de_ciclo(self) -> None:
+        """O id do rascunho só-nota vive em nota_interna_id, nunca em
+        rascunho_id -- é o que o mantém fora desta medição, porque não há
+        resposta preparada nenhuma para medir."""
+        registar(self.con, msg(message_id="<a@x>"), "escalar", "não está na base", "",
+                 nota_interna_texto="texto da nota", nota_interna_id="AAMk-nota")
+        graph = GraphFalso(detalhe_rascunho=None)
+        fechar_ciclo(graph, cfg(), self.con, 0)
+        self.assertEqual(graph.chamadas, [])
+        self.assertIsNone(self.con.execute(
+            "SELECT resultado_estado FROM processados WHERE message_id = '<a@x>'"
+        ).fetchone()[0])
+
+    # --- aprender.py -------------------------------------------------------
+
+    def test_aprender_nao_ve_a_nota_como_texto_do_lojista(self) -> None:
+        """recolher() compara `corpo` (só o texto do cliente) com a resposta
+        real já sem nota: um envio sem apagar a nota não é uma divergência."""
+        registar(self.con, msg(message_id="<a@x>"), "rascunhar", "sabia responder",
+                 self._CORPO, rascunho_id="D1", nota_interna_texto="nota qualquer")
+        graph = self._graph_com_resposta(self._enviado_com_nota())
+        self.assertEqual(recolher(graph, cfg(), self.con, tudo=True), [])
+
+    def test_aprender_ignora_por_completo_o_caso_so_nota(self) -> None:
+        """`corpo` vazio: não havia resposta ao cliente de que o lojista
+        pudesse divergir, e a nota vive noutra coluna."""
+        registar(self.con, msg(message_id="<a@x>"), "escalar", "não está na base", "",
+                 nota_interna_texto="texto da nota", nota_interna_id="AAMk-nota")
+        graph = self._graph_com_resposta("<p>Respondi eu à mão.</p>")
+        self.assertEqual(recolher(graph, cfg(), self.con, tudo=True), [])
+        self.assertEqual(graph.chamadas, [])
+
+    # --- metricas.py -------------------------------------------------------
+
+    def _metricas(self) -> str:
+        with patch.object(metricas.a, "carregar_config", lambda _: cfg(db=self.db)), \
+                contextlib.redirect_stdout(io.StringIO()) as saida:
+            metricas.main(["--tudo"])
+        return saida.getvalue()
+
+    def test_so_nota_nao_conta_como_escalado_com_resposta_escrita(self) -> None:
+        pasta = TemporaryDirectory()
+        self.addCleanup(pasta.cleanup)
+        self.db = Path(pasta.name) / "m.db"
+        con = abrir_db(self.db)
+        registar(con, msg(message_id="<com@x>"), "escalar", "x",
+                 "Boa tarde, vamos verificar.", categoria="ACAO_SOBRE_ENCOMENDA")
+        registar(con, msg(message_id="<nota@x>"), "escalar", "x", "",
+                 categoria="LACUNA_DE_CONHECIMENTO",
+                 nota_interna_texto="texto da nota", nota_interna_id="AAMk-nota")
+        con.close()
+        saida = self._metricas()
+        self.assertIn("1 de 2 escalado(s) já trazem resposta escrita", saida)
+        self.assertIn("1 de 1 escalado(s) sem resposta têm rascunho só com nota", saida)
+
+    def test_parcial_com_nota_conta_como_rascunho_com_resposta(self) -> None:
+        pasta = TemporaryDirectory()
+        self.addCleanup(pasta.cleanup)
+        self.db = Path(pasta.name) / "m.db"
+        con = abrir_db(self.db)
+        registar(con, msg(message_id="<p@x>"), "rascunhar", "x", self._CORPO,
+                 rascunho_id="D1", por_responder="um desconto",
+                 nota_interna_texto="texto da nota")
+        con.close()
+        saida = self._metricas()
+        self.assertIn("1 de 1 rascunho(s) levaram nota interna", saida)
 
 
 class FalhasSeguidas(unittest.TestCase):

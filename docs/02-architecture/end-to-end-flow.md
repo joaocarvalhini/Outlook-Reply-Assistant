@@ -179,15 +179,15 @@ flowchart TD
     style X fill:#ffe0b2
 ```
 
-> [!NOTE] O rascunho de resposta de um caso escalado não leva nota nenhuma à volta
-> Quando há resposta, o rascunho contém **apenas** o texto para o cliente — sem resumo,
-> sem validação, sem link do admin. O cliente pediu explicitamente para tirar a nota interna
-> de dentro desse rascunho. A triagem faz-se pelas etiquetas na lista de mensagens, não por
-> texto dentro do rascunho.
+> [!NOTE] Um rascunho por email, sempre na conversa do cliente
+> Quando há resposta de retenção, o rascunho contém **apenas** o texto para o cliente — sem
+> resumo, sem validação, sem link do admin. A triagem faz-se pelas etiquetas na lista de
+> mensagens, não por texto dentro do rascunho.
 >
-> Quando não há resposta nenhuma (corpo vazio) e `ENABLE_INTERNAL_NOTES` está ligada, existe
-> uma nota interna separada — um rascunho novo sem destinatário, fora da conversa do cliente,
-> nunca um texto colado ao rascunho de resposta. Ver `docs/05-reliability/escalation.md`.
+> Com `ENABLE_INTERNAL_NOTES` ligada, um rascunho parcial leva por baixo da resposta um bloco
+> de nota interna com o que ficou por tratar, e um escalado sem resposta nenhuma leva um
+> rascunho só com essa nota. Continua a ser um `createReply` por email — nunca uma mensagem
+> nova em Rascunhos. Ver `docs/05-reliability/escalation.md`.
 
 ### 7. Fecho da passagem
 

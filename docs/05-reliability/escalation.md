@@ -147,19 +147,49 @@ link.
 > se a categoria do escalamento mudou, ou se chegaram dados de encomenda que o escalamento
 > anterior não tinha, o caso volta a contar como novo. Ver `seguimento_do_fio()`.
 
-> [!NOTE] O rascunho de resposta ao cliente nunca leva nota nenhuma à volta
-> *"O rascunho é só o email, sem nota nenhuma à volta — o lojista pediu para tirar a nota interna,
-> quer só o texto que mandaria."* (17/08/2026, commit `5d3a267`, depois de um teste em produção.)
+### A nota interna vive dentro do rascunho da conversa
+
+> [!NOTE] Uma nota à parte foi tentada e abandonada
+> A 17/08/2026 (commit `5d3a267`) a nota saiu de dentro do rascunho a pedido do lojista: *"o
+> rascunho é só o email, sem nota nenhuma à volta, quer só o texto que mandaria"*. A 16/09/2026
+> tentou-se o oposto — um rascunho novo, sem destinatário, fora da conversa (`POST /messages`).
+> Também não serve: obriga o lojista a saltar entre a conversa do cliente e a pasta de Rascunhos
+> para tratar de um só email.
 >
-> Nota interna dentro do rascunho de resposta é nota interna que um dia sai para o cliente por
-> engano — essa decisão não muda.
->
-> Quando não sobra nenhuma resposta segura (corpo vazio) e `ENABLE_INTERNAL_NOTES` está ligada,
-> a automação cria uma nota interna **à parte**: um rascunho novo, sem destinatário, fora da
-> conversa do cliente (`Graph.criar_nota_interna()`, não `createReply`) — nunca pode ser
-> confundida com uma resposta nem enviada por engano ao cliente, porque não está endereçada a
-> ninguém. Desligada por omissão; a ativação em produção depende de mostrar o formato ao lojista
-> primeiro. Ver `montar_nota_interna()` em `assistente.py`.
+> **Decisão de 16/09/2026:** o lojista trabalha sempre dentro do email do cliente. Há **um**
+> rascunho por email, sempre por `createReply`, e a nota é um bloco dentro dele.
+
+Com `ENABLE_INTERNAL_NOTES` ligada:
+
+| Caso | O que vai no único rascunho |
+|---|---|
+| Resposta completa | só o texto para o cliente, como sempre |
+| Resposta parcial (`por_responder` preenchido) | a resposta segura e, por baixo, a nota com o que ficou por tratar |
+| Nenhuma resposta segura (corpo vazio) | só a nota |
+
+A nota é um bloco com moldura vermelha, aberto por `NOTA INTERNA DA AUTOMAÇÃO — NÃO ENVIAR ESTA
+PARTE` e fechado por `APAGAR ESTA NOTA ANTES DE ENVIAR AO CLIENTE`. O estilo é reforço; o que a
+torna impossível de confundir é o próprio texto, que sobrevive a um cliente de email que ignore
+CSS.
+
+Três regras que a mantêm segura:
+
+- **Determinística.** Motivo e ação saem de `MOTIVO_NOTA_INTERNA` / `ACAO_HUMANA_NOTA_INTERNA`,
+  por categoria. O `motivo` livre do modelo nunca aparece: é a justificação dele para ter
+  escalado, pode ser uma inferência errada, e sob o rótulo "Motivo:" passaria por facto
+  verificado. Continua gravado na coluna `motivo` e no log, como sempre esteve.
+- **Nunca afirma o que não foi provado.** Para `DADOS_ENCOMENDA_EM_FALTA` diz que *a consulta não
+  conseguiu encontrar ou validar* os dados — não que a encomenda não existe. Um número dado pelo
+  cliente aparece como "Número de encomenda mencionado", não como encomenda confirmada.
+- **Fora do ciclo de aprendizagem.** `corpo` continua a ser só o texto destinado ao cliente; a
+  nota vive em `nota_interna_texto`. Do outro lado, `remover_nota_interna()` tira o bloco do texto
+  que volta da caixa, para que um rascunho enviado sem a nota apagada não apareça ao `aprender.py`
+  como texto do lojista nem ao `--fechar-ciclo` como uma edição que não houve.
+
+O rascunho só-nota leva a etiqueta `Nota interna` e nunca `IA-Rascunhado` — não há resposta pronta
+lá dentro — e o seu id fica em `nota_interna_id`, nunca em `rascunho_id`, que é o que o mantém
+fora da medição de deriva. Desligada por omissão; a ativação em produção depende de mostrar o
+formato ao lojista primeiro. Ver `montar_nota_interna()` em `assistente.py`.
 
 A etiqueta de urgência só aparece quando esperar piora o caso: ameaça de queixa formal, invocação
 de legislação, terceira insistência, ou valor elevado. **Nos dados históricos isso dava ~2 casos

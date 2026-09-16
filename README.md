@@ -218,7 +218,7 @@ clientes de uma loja online usa Gmail.
 | `ENABLE_PRE_DRAFTS` | `true` | Preparar o caso quando escala um pedido acionável |
 | `ENABLE_COMMITMENT_REGISTRY` | `true` | Registar e lembrar promessas feitas ao cliente |
 | `ENABLE_PARTIAL_ANSWERS` | `true` | Responder à parte coberta de um email com vários assuntos |
-| `ENABLE_INTERNAL_NOTES` | `false` | Nota interna à parte (sem destinatário, fora da conversa) quando escala sem nenhuma resposta segura |
+| `ENABLE_INTERNAL_NOTES` | `false` | Nota interna dentro do próprio rascunho: o que ficou por tratar e a ação necessária |
 | `DRY_RUN` | `true` | `true` não escreve nada na caixa |
 | `ALERTA_WEBHOOK_URL` | vazio | Para onde vão os alertas de falha (Discord, ntfy, …) |
 | `PERGUNTAS_WEBHOOK_URL` | vazio | Para onde vão as perguntas diárias ao lojista |
@@ -404,16 +404,22 @@ leva sempre a resposta de retenção já escrita — o texto que o lojista pode
 enviar enquanto trata do caso. Medido a 01/09/2026: **94% dos casos escalados
 trazem a resposta pronta**.
 
-O rascunho de resposta ao cliente é só o email, sem nada à volta. Sem resumo,
-sem validação, sem categoria — decisão explícita do lojista: nota interna
-dentro do rascunho de resposta é nota interna que um dia sai para o cliente
-por engano.
+Quando há resposta de retenção, o rascunho é só o email, sem nada à volta.
+Sem resumo, sem validação, sem categoria — decisão explícita do lojista.
 
 Quando não sobra nenhuma resposta segura (corpo vazio), essa marca é tudo o
 que fica por omissão. Com `ENABLE_INTERNAL_NOTES=true` (desligada por
-omissão), a automação cria também uma nota interna **à parte**: um rascunho
-novo, sem destinatário, fora desta conversa — nunca colada ao rascunho acima,
-nunca endereçada ao cliente. Ver `docs/05-reliability/escalation.md`.
+omissão), cria-se na mesma **um** rascunho na conversa do cliente, e o que vai
+lá dentro é só a nota interna: o motivo, por categoria, e a ação que a pessoa
+tem de tomar. Nunca uma mensagem à parte na pasta de Rascunhos — o lojista
+trabalha sempre dentro do email do cliente.
+
+O mesmo bloco aparece no fim de um **rascunho parcial** (um email respondido
+em parte, com o resto em `por_responder`): primeiro a resposta que se pode
+enviar, depois a nota a dizer o que ficou por tratar, em moldura vermelha e
+com o aviso de a apagar antes de enviar. O texto da nota é determinístico —
+nunca a justificação livre do modelo — e nunca entra no que o assistente
+aprende com as edições do lojista. Ver `docs/05-reliability/escalation.md`.
 
 A triagem faz-se pelas **etiquetas no Outlook**, que dizem o que há a fazer sem
 ser preciso abrir nada:

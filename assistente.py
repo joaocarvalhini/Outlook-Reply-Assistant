@@ -172,8 +172,9 @@ def carregar_config(dry_run_flag: bool | None) -> Config:
         # enviar enquanto trata do caso. Desligado, um caso escalado leva só a
         # marca de que precisa de humano, sem texto nenhum preparado.
         pre_rascunhos=ligado("ENABLE_PRE_DRAFTS", "true"),
-        # Nota interna (rascunho à parte, sem destinatário, fora da conversa do
-        # cliente) para escalados sem nenhuma resposta segura. Desligada por
+        # Nota interna dentro do próprio rascunho da conversa do cliente, a
+        # seguir à resposta segura (ou sozinha, quando não há nenhuma): diz o
+        # que ficou por tratar e o que a pessoa tem de fazer. Desligada por
         # omissão de propósito -- ao contrário das flags acima -- porque a
         # ativação em produção depende de mostrar o formato ao lojista primeiro
         # (ver docs/05-reliability/escalation.md).
@@ -1498,10 +1499,13 @@ COLUNAS_NOVAS = (
     ("dossie_resposta", "TEXT"),
     ("dossie_link", "TEXT"),
     ("rascunho_id", "TEXT"),
-    # Nota interna: rascunho à parte (sem destinatário, fora da conversa do
-    # cliente) para escalados sem resposta segura. Colunas próprias, nunca
-    # corpo/rascunho_id -- é assim que aprender.py e medir_deriva.py --fechar-
-    # ciclo continuam a ignorá-las sem precisar de saber que existem. Ver
+    # Nota interna: o bloco que vai dentro do rascunho da conversa, a seguir à
+    # resposta segura ou sozinho quando não há nenhuma. Colunas próprias, nunca
+    # `corpo` -- `corpo` continua a ser só o texto destinado ao cliente, é
+    # assim que aprender.py e medir_deriva.py continuam a medir a resposta e
+    # não a nota. `nota_interna_id` só se preenche no caso só-nota: aí o
+    # rascunho criado não é uma resposta preparada e não pode ir para
+    # `rascunho_id`, senão o fecho de ciclo passava a contá-lo como tal. Ver
     # docs/05-reliability/escalation.md.
     ("nota_interna_id", "TEXT"),
     ("nota_interna_texto", "TEXT"),
@@ -1826,12 +1830,15 @@ def registar(con: sqlite3.Connection, msg: dict, acao: str, motivo: str, corpo: 
     Ver medir_deriva.py --fechar-ciclo.
 
     `nota_interna_texto` é o texto (determinístico, sem chamada ao modelo) da
-    nota interna para um escalado sem resposta segura -- gravado aqui, no
-    único INSERT do email, antes de se tentar criar o rascunho da nota no
-    Graph. Só `nota_interna_id` (o id do Graph, que só existe depois de a
-    chamada suceder) é que é gravado à parte, por gravar_nota_interna_id().
-    Nunca vai para `corpo`: é assim que aprender.py e medir_deriva.py
-    continuam a tratar estas linhas como não tendo rascunho nenhum.
+    nota interna que seguiu dentro do rascunho -- gravado aqui, no único
+    INSERT do email. Nunca vai para `corpo`: `corpo` é o texto destinado ao
+    cliente e mais nada, e é assim que aprender.py e medir_deriva.py continuam
+    a medir a resposta sem a nota lá pelo meio.
+
+    `nota_interna_id` é o id do rascunho só-nota (escalado sem resposta
+    nenhuma), gravado à parte por gravar_nota_interna_id() porque só existe
+    depois de a chamada ao Graph suceder. Nunca em `rascunho_id`: um rascunho
+    que só tem a nota não é uma resposta preparada ao cliente.
 
     As colunas vão nomeadas e não por posição: a tabela ganha colunas com o
     tempo, e um INSERT posicional passa a gravar valores na coluna errada sem
@@ -1877,9 +1884,11 @@ def gravar_rascunho_id(con: sqlite3.Connection, message_id: str, rascunho_id: st
 
 
 def gravar_nota_interna_id(con: sqlite3.Connection, message_id: str, nota_id: str) -> None:
-    """Espelha gravar_rascunho_id(): o texto da nota já foi gravado no
-    registar() que correu antes; só o id do Graph, que só existe depois de a
-    chamada suceder, é que precisa deste UPDATE à parte."""
+    """Espelha gravar_rascunho_id(), para o rascunho que só tem a nota: o
+    texto já foi gravado no registar() que correu antes; só o id do Graph, que
+    só existe depois de a chamada suceder, é que precisa deste UPDATE à parte.
+
+    Coluna à parte de `rascunho_id` de propósito -- ver COLUNAS_NOVAS."""
     con.execute(
         "UPDATE processados SET nota_interna_id = ? WHERE message_id = ?",
         (nota_id, message_id),
@@ -2319,11 +2328,12 @@ def resumir_encomenda(encomenda: dict, shopify: "Shopify | None" = None) -> str:
 def link_admin(cfg: Config, encomenda: dict | None) -> str:
     """Link para a encomenda no admin da Shopify, para quem vai decidir.
 
-    Nunca no rascunho de resposta ao cliente -- esse é só a resposta
-    sugerida, nada mais à volta (decisão do lojista, ver
-    docs/05-reliability/escalation.md). Pode aparecer na nota interna
-    (montar_nota_interna(), quando ENABLE_INTERNAL_NOTES está ligada) --
-    essa não é endereçada ao cliente nem faz parte da conversa dele.
+    Nunca no texto destinado ao cliente -- a resposta sugerida é só a
+    resposta, nada mais à volta (decisão do lojista, ver
+    docs/05-reliability/escalation.md). Pode aparecer dentro da nota interna
+    (montar_nota_interna(), quando ENABLE_INTERNAL_NOTES está ligada), que
+    vai no rascunho mas fora da resposta, marcada para ser apagada antes de
+    enviar.
     """
     ident = (encomenda or {}).get("id")
     if not ident:
@@ -2483,9 +2493,10 @@ class Graph:
             for m in anteriores[-quantas:]
         ]
 
-    def criar_rascunho(self, message_id: str, corpo_html: str) -> str:
-        """Cria o rascunho de resposta, com a imagem de assinatura no fim
-        quando está configurada.
+    def criar_rascunho(self, message_id: str, corpo_html: str,
+                       nota_html: str = "") -> str:
+        """Cria o rascunho de resposta na conversa do cliente, com a imagem de
+        assinatura no fim quando está configurada.
 
         A imagem é colada aqui, e não no texto que o modelo escreve: o prompt
         não muda, o prefixo em cache não é reescrito e o custo por email
@@ -2497,16 +2508,25 @@ class Graph:
         existir. Entre uma chamada e a outra o rascunho existe com a imagem por
         resolver; é uma janela de milissegundos e ninguém está a olhar para a
         caixa nesse instante.
+
+        `nota_html` é a nota interna (nota_interna_html()), quando existe: vai
+        depois de tudo, assinatura incluída, para ser a última coisa antes da
+        citação e não ficar entalada entre o texto e a imagem da loja. Um
+        rascunho só com nota (`corpo_html` vazio) não leva assinatura nenhuma
+        -- não é um email para o cliente, é um aviso para quem revê.
         """
-        if self.assinatura_img:
-            corpo_html += self.assinatura_img["html"]
+        conteudo = corpo_html
+        assinar = bool(corpo_html) and bool(self.assinatura_img)
+        if assinar:
+            conteudo += self.assinatura_img["html"]
+        conteudo += nota_html
         dados = self._pedir(
             "POST",
             f"{self.base}/messages/{message_id}/createReply",
-            json={"comment": corpo_html},
+            json={"comment": conteudo},
         )
         rascunho_id = str(dados.get("id", ""))
-        if self.assinatura_img and rascunho_id:
+        if assinar and rascunho_id:
             self._anexar_assinatura(rascunho_id)
         return rascunho_id
 
@@ -2539,31 +2559,6 @@ class Graph:
         except Exception as exc:
             log("erro-assinatura", draft=rascunho_id[:20],
                 erro=f"{type(exc).__name__}: {exc}")
-
-    def criar_nota_interna(self, assunto_original: str, corpo_html: str) -> str:
-        """Cria a nota interna de um escalado sem resposta segura -- um
-        rascunho à parte, não uma resposta.
-
-        Deliberadamente `POST {base}/messages` (mensagem nova) e não
-        createReply: sem destinatário, não fica na conversa do cliente, e não
-        há "RE:" nem cabeçalhos de fio a preservar -- por isso o assunto pode
-        ser livremente prefixado sem qualquer risco de estragar o
-        agrupamento de conversa que createReply teria dado (ver
-        docs/05-reliability/escalation.md). `toRecipients` vazio de propósito:
-        só pode ser enviada se alguém preencher um destinatário à mão, um ato
-        deliberado, não um clique acidental. Não leva a imagem de assinatura
-        -- não é um email para o cliente.
-        """
-        dados = self._pedir(
-            "POST",
-            f"{self.base}/messages",
-            json={
-                "subject": f"⚠️ [NOTA INTERNA] {assunto_original}",
-                "body": {"contentType": "HTML", "content": corpo_html},
-                "toRecipients": [],
-            },
-        )
-        return str(dados.get("id", ""))
 
     def detalhe_rascunho(self, rascunho_id: str) -> dict | None:
         """O estado atual de um rascunho criado por criar_rascunho(), pelo seu
@@ -2979,13 +2974,12 @@ def resposta_retencao_compromisso_anterior(msg: dict, assinatura: str) -> str:
     )
 
 
-# As duas tabelas a seguir alimentam a nota interna de um escalado sem
-# resposta segura (ver processar() e montar_nota_interna()). Nunca usam o
-# "motivo" livre do modelo: é a própria justificação do modelo para ter
-# escalado, pode conter uma inferência errada, e mostrá-la sob o rótulo
-# "Motivo:" apresentá-la-ia como facto verificado quando pode não ser. O
-# "motivo" livre continua gravado como sempre esteve -- coluna `motivo`,
-# log "escalado" -- só deixa de alimentar texto visível ao lojista.
+# As duas tabelas a seguir alimentam a nota interna (ver processar() e
+# montar_nota_interna()). Nunca usam o "motivo" livre do modelo: é a própria
+# justificação do modelo para ter escalado, pode conter uma inferência errada,
+# e mostrá-la sob o rótulo "Motivo:" apresentá-la-ia como facto verificado
+# quando pode não ser. O "motivo" livre continua gravado como sempre esteve --
+# coluna `motivo`, log "escalado" -- só não alimenta texto visível ao lojista.
 #
 # As duas têm de cobrir OUTRO explicitamente: ao contrário de ETIQUETAS, que
 # o omite de propósito (uma etiqueta "outro" não ajuda a decidir nada), OUTRO
@@ -3027,6 +3021,16 @@ MOTIVO_NOTA_INTERNA = {
     ),
 }
 
+# Num rascunho parcial, OUTRO não pode dizer o que diz acima ("não conseguiu
+# preparar uma resposta"): a resposta está mesmo ali por cima, na mesma
+# mensagem. O que ficou por tratar é que não se enquadra em nada conhecido.
+# As restantes categorias servem os dois casos -- descrevem o bloqueio, não a
+# ausência de resposta -- e é a linha "Parte por tratar" que lhes dá o âmbito.
+MOTIVO_NOTA_INTERNA_PARCIAL_OUTRO = (
+    "A automação não conseguiu enquadrar esta parte do pedido em nenhuma "
+    "das categorias que sabe tratar."
+)
+
 ACAO_HUMANA_NOTA_INTERNA = {
     "DADOS_ENCOMENDA_EM_FALTA": "Confirmar manualmente a encomenda e responder ao pedido do cliente.",
     "IDENTIDADE_NAO_VERIFICADA": "Confirmar a identidade do cliente antes de responder.",
@@ -3042,44 +3046,141 @@ ACAO_HUMANA_NOTA_INTERNA = {
     "OUTRO": "Rever o email manualmente.",
 }
 
-NOTA_INTERNA_CABECALHO = "⚠️ NOTA INTERNA DA AUTOMAÇÃO — NÃO ENVIAR AO CLIENTE"
-NOTA_INTERNA_RODAPE = "⚠️ APAGAR ESTA NOTA ANTES DE RESPONDER AO CLIENTE"
+# Pelo mesmo motivo que MOTIVO_NOTA_INTERNA_PARCIAL_OUTRO: num parcial já há
+# resposta escrita, o que falta é tratar a parte de cima.
+ACAO_HUMANA_NOTA_INTERNA_PARCIAL_OUTRO = (
+    "Tratar a parte por tratar acima antes de enviar a resposta."
+)
+
+# O cabeçalho e o rodapé são a fronteira da nota nos dois sentidos: são o que
+# a torna impossível de confundir com texto para o cliente dentro do rascunho,
+# e são por onde remover_nota_interna() a corta outra vez quando o texto volta
+# do Graph. Mudar uma destas linhas muda as duas coisas -- ver _MARCA_NOTA_*.
+NOTA_INTERNA_CABECALHO = "⚠️⚠️ NOTA INTERNA DA AUTOMAÇÃO — NÃO ENVIAR ESTA PARTE ⚠️⚠️"
+NOTA_INTERNA_RODAPE = "⚠️ APAGAR ESTA NOTA ANTES DE ENVIAR AO CLIENTE ⚠️"
+
+# A etiqueta do email cujo rascunho é só a nota: sem ela, um rascunho na
+# conversa é indistinguível de uma resposta pronta na lista de mensagens, e
+# cat_rascunho ("IA-Rascunhado") mentiria -- não há resposta nenhuma lá dentro.
+NOTA_INTERNA_ETIQUETA = "Nota interna"
+
+# Os dois pedaços estáveis do cabeçalho e do rodapé, sem os avisos gráficos à
+# volta: é por eles que remover_nota_interna() encontra o bloco num texto que
+# passou por um cliente de email (que pode ter mexido nos ⚠️, na pontuação ou
+# no travessão, mas não numa frase inteira em maiúsculas).
+_MARCA_NOTA_INICIO = "NOTA INTERNA DA AUTOMAÇÃO"
+_MARCA_NOTA_FIM = "APAGAR ESTA NOTA ANTES DE ENVIAR AO CLIENTE"
 
 
-def montar_nota_interna(extra: dict, numero: str | None) -> str:
-    """Texto determinístico da nota interna de um escalado sem resposta
-    segura -- sem chamada ao modelo. Repara que não recebe "motivo": de
-    propósito, para ser impossível usá-lo por engano (ver MOTIVO_NOTA_INTERNA
-    acima). Texto simples, parágrafo por bloco; para_html() trata da
-    conversão a seguir, tal como para qualquer outro corpo.
+def montar_nota_interna(extra: dict, numero: str | None,
+                        por_responder: str = "") -> str:
+    """Texto determinístico da nota interna -- sem chamada ao modelo. Repara
+    que não recebe "motivo": de propósito, para ser impossível usá-lo por
+    engano (ver MOTIVO_NOTA_INTERNA acima). Texto simples, parágrafo por
+    bloco; nota_interna_html() trata da conversão a seguir.
+
+    `por_responder` é a exceção à regra do texto livre, e é deliberada: ao
+    contrário de "motivo" -- uma justificação, que pode ser uma inferência
+    errada apresentada como facto --, é a enumeração do que ficou por tratar,
+    que é exatamente o que a pessoa precisa de ler num rascunho parcial. Vai
+    rotulado como o que é ("Parte por tratar"), nunca como facto verificado.
     """
     categoria = extra.get("categoria") or "OUTRO"
+    parcial = bool(por_responder.strip())
 
-    bloco_motivo = [
-        f"Motivo: {MOTIVO_NOTA_INTERNA.get(categoria, MOTIVO_NOTA_INTERNA['OUTRO'])}"
-    ]
+    # Uma categoria que o modelo tenha inventado cai em OUTRO, como em
+    # ETIQUETAS -- nunca se mostra texto que não venha destas tabelas.
+    conhecida = categoria if categoria in MOTIVO_NOTA_INTERNA else "OUTRO"
+
+    abertura = (
+        "A automação escreveu acima a parte que conseguiu responder. O que "
+        "está aqui em baixo ficou de fora e precisa de uma pessoa."
+        if parcial else
+        "A automação analisou este email, mas não conseguiu preparar uma "
+        "resposta segura."
+    )
+
+    bloco_motivo = []
+    if parcial:
+        bloco_motivo.append(f"Parte por tratar: {por_responder.strip()}")
+    bloco_motivo.append("Motivo: " + (
+        MOTIVO_NOTA_INTERNA_PARCIAL_OUTRO
+        if parcial and conhecida == "OUTRO" else MOTIVO_NOTA_INTERNA[conhecida]
+    ))
     etiqueta = ETIQUETAS.get(categoria)
     if etiqueta:
         bloco_motivo.append(f"Categoria: {etiqueta}")
     if numero:
+        # "mencionado" e não "a encomenda": o número saiu do email do cliente
+        # ou do fio, não de uma consulta que o tenha validado.
         bloco_motivo.append(f"Número de encomenda mencionado: {numero}")
     if categoria == "LACUNA_DE_CONHECIMENTO" and extra.get("lacuna_tema"):
         bloco_motivo.append(f"Tema em falta: {extra['lacuna_tema']}")
 
-    bloco_acao = [
-        f"Ação humana: {ACAO_HUMANA_NOTA_INTERNA.get(categoria, ACAO_HUMANA_NOTA_INTERNA['OUTRO'])}"
-    ]
+    bloco_acao = ["Ação necessária: " + (
+        ACAO_HUMANA_NOTA_INTERNA_PARCIAL_OUTRO
+        if parcial and conhecida == "OUTRO" else ACAO_HUMANA_NOTA_INTERNA[conhecida]
+    )]
     if extra.get("dossie_link"):
         bloco_acao.append(f"Mais detalhe da encomenda: {extra['dossie_link']}")
 
     blocos = [
         NOTA_INTERNA_CABECALHO,
-        "A automação analisou este email, mas não conseguiu preparar uma resposta segura.",
+        abertura,
         "\n".join(bloco_motivo),
         "\n".join(bloco_acao),
         NOTA_INTERNA_RODAPE,
     ]
     return "\n\n".join(blocos)
+
+
+def nota_interna_html(texto: str) -> str:
+    """A nota como bloco visual dentro do rascunho: moldura vermelha, fundo
+    claro, separada por uma linha do que vem acima.
+
+    O que garante que ninguém a confunde com texto para o cliente é o próprio
+    texto (cabeçalho e rodapé em maiúsculas, com avisos) -- o estilo é só
+    reforço, porque nem todo o cliente de email honra CSS. Vai tudo em
+    `style` inline pela mesma razão: o Outlook deita fora um `<style>` de
+    cabeçalho num corpo de mensagem.
+    """
+    return (
+        '<hr><div style="border:3px solid #c0392b;background:#fdecea;'
+        'padding:12px;margin-top:16px;color:#7b241c;font-weight:bold">'
+        + para_html(texto)
+        + "</div>"
+    )
+
+
+def remover_nota_interna(texto: str) -> str:
+    """Tira o bloco da nota interna de um texto vindo da caixa.
+
+    Existe para o ciclo de aprendizagem: a nota é interface para o lojista,
+    não resposta ao cliente, e se ele enviar o rascunho sem a apagar não pode
+    aparecer ao aprender.py como texto que ele acrescentou, nem ao
+    --fechar-ciclo como diferença em relação ao que a automação escreveu. Ver
+    medir_deriva.resposta_real() e fechar_ciclo().
+
+    Corta do cabeçalho ao fim da linha do rodapé. Sem rodapé (nota truncada
+    ou meio apagada à mão), corta do cabeçalho até ao fim -- o que sobrava a
+    seguir seria só o resto da própria nota.
+    """
+    if not texto:
+        return texto
+    i = texto.find(_MARCA_NOTA_INICIO)
+    if i < 0:
+        return texto
+    # Do início da linha do cabeçalho, não do meio: os ⚠️ à esquerda dele
+    # fazem parte da nota e não podem ficar para trás.
+    quebra = texto.rfind("\n", 0, i)
+    antes = texto[:quebra + 1] if quebra >= 0 else ""
+    j = texto.find(_MARCA_NOTA_FIM, i)
+    fim_linha = texto.find("\n", j) if j >= 0 else -1
+    depois = texto[fim_linha + 1:] if fim_linha >= 0 else ""
+    junto = antes.rstrip()
+    if depois.strip():
+        junto = f"{junto}\n\n{depois.strip()}" if junto else depois.strip()
+    return junto.strip()
 
 
 def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
@@ -3319,13 +3420,25 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         html_corpo = para_html(corpo)
         if cfg.aviso:
             html_corpo = f"<p>{html.escape(cfg.aviso)}</p>" + html_corpo
+        # Num rascunho parcial, o que ficou por tratar passa a estar dentro do
+        # próprio rascunho, a seguir à resposta segura -- até aqui só existia
+        # na etiqueta "Precisa de humano" e no registo local, e quem abria o
+        # rascunho não tinha como saber o que faltava. Continua a ser um só
+        # createReply; a nota é um bloco no fim, não uma segunda mensagem.
+        nota_texto = (
+            montar_nota_interna(extra, numero, por_responder=extra["por_responder"])
+            if cfg.notas_internas and parcial else ""
+        )
         rascunho_id = ""
         if not cfg.dry_run:
             try:
-                rascunho_id = graph.criar_rascunho(msg["id"], html_corpo)
+                rascunho_id = graph.criar_rascunho(
+                    msg["id"], html_corpo,
+                    nota_interna_html(nota_texto) if nota_texto else "")
                 log("rascunho", email=msg["message_id"][:40], draft=rascunho_id[:20],
                     shopify=bool(dados_encomenda), identidade=confianca,
-                    parcial=extra["por_responder"] or "-")
+                    parcial=extra["por_responder"] or "-",
+                    nota="sim" if nota_texto else "nao")
             except Exception as exc:
                 # Sem isto, uma falha aqui (ex.: 5xx no createReply) derrubava
                 # a passagem inteira sem apanhar -- perdendo não só este
@@ -3338,8 +3451,13 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         else:
             log("rascunho-simulado", email=msg["message_id"][:40],
                 shopify=bool(dados_encomenda), identidade=confianca,
-                parcial=extra["por_responder"] or "-")
-        registar(con, msg, "rascunhar", motivo, corpo, rascunho_id=rascunho_id, **extra)
+                parcial=extra["por_responder"] or "-",
+                nota="sim" if nota_texto else "nao")
+        # `corpo` fica com o texto para o cliente e mais nada -- a nota vai na
+        # coluna dela. É o que mantém aprender.py e --fechar-ciclo a comparar
+        # resposta com resposta, sem a nota a contar como texto do lojista.
+        registar(con, msg, "rascunhar", motivo, corpo, rascunho_id=rascunho_id,
+                 nota_interna_texto=nota_texto, **extra)
         # Sem rascunho_id não há rascunho nenhum na caixa (criar_rascunho()
         # falhou acima) -- marcar "IA-Rascunhado" seria enganador, dava a
         # entender que há uma resposta pronta à espera quando não há nada.
@@ -3400,13 +3518,13 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         )
         registar(con, msg, "escalar", motivo, resposta_sugerida,
                  nota_interna_texto=nota_texto, **extra)
-        # O rascunho de resposta ao cliente é só o email, sem nota nenhuma à
-        # volta -- o lojista pediu para tirar a nota interna dali, quer só o
-        # texto que mandaria (ver docs/05-reliability/escalation.md). Quando
-        # não há nada seguro a dizer, esse rascunho não se cria: fica a marca
-        # de que precisa de uma pessoa e, com a flag ligada, a nota interna
-        # à parte criada abaixo -- um rascunho não endereçado ao cliente,
-        # fora desta conversa, nunca "à volta" do que se enviaria.
+        # Quando há resposta de retenção, o rascunho é só o email, sem nota
+        # nenhuma à volta -- o lojista pediu para tirar a nota interna dali,
+        # quer só o texto que mandaria (ver docs/05-reliability/escalation.md).
+        # Quando não há nada seguro a dizer, cria-se na mesma um rascunho na
+        # conversa, com a nota lá dentro e mais nada: o lojista trabalha sempre
+        # dentro do email do cliente, e um rascunho vazio de resposta é menos
+        # útil do que um que diga porque é que a automação parou.
         if not cfg.dry_run:
             try:
                 # Além da marca de "precisa de humano", o tipo de caso e a
@@ -3428,23 +3546,31 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
                     log("erro-rascunho", email=msg["message_id"][:40],
                         erro=f"{type(exc).__name__}: {exc}")
             elif nota_texto:
+                # O mesmo createReply de sempre, com a nota no lugar do corpo:
+                # um único rascunho por email, na conversa do cliente. O id
+                # vai para nota_interna_id e nunca para rascunho_id -- este
+                # rascunho não tem resposta nenhuma preparada lá dentro, e o
+                # --fechar-ciclo passaria a medi-lo como se tivesse.
+                #
                 # Duas tentativas separadas, como no ramo "rascunhar" acima
                 # (rascunho_id / cat_rascunho): uma falha só a marcar não pode
-                # aparecer como falha a criar a nota, e vice-versa.
+                # aparecer como falha a criar o rascunho, e vice-versa.
                 nota_id = ""
                 try:
-                    nota_id = graph.criar_nota_interna(msg["assunto"], para_html(nota_texto))
+                    nota_id = graph.criar_rascunho(
+                        msg["id"], "", nota_interna_html(nota_texto))
                     log("nota-interna", email=msg["message_id"][:40], nota=nota_id[:20])
                     gravar_nota_interna_id(con, msg["message_id"], nota_id)
                 except Exception as exc:
                     log("erro-nota-interna", email=msg["message_id"][:40],
                         erro=f"{type(exc).__name__}: {exc}")
-                # Só depois de confirmado que a nota existe -- senão a
+                # Só depois de confirmado que o rascunho existe -- senão a
                 # etiqueta ficaria a mentir sobre uma nota que a chamada
-                # acima falhou a criar.
+                # acima falhou a criar. E é NOTA_INTERNA_ETIQUETA, nunca
+                # cat_rascunho: não há resposta pronta para enviar.
                 if nota_id:
                     try:
-                        graph.marcar(msg, "Nota interna")
+                        graph.marcar(msg, NOTA_INTERNA_ETIQUETA)
                     except Exception as exc:
                         log("erro-marcar", email=msg["message_id"][:40],
                             erro=f"{type(exc).__name__}: {exc}")
