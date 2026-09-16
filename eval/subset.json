@@ -344,5 +344,70 @@
     "dados_encomenda": "Encomenda #21039\nFeita em: 2026-07-02\nPagamento: pago\nEnvio: expedida\nValor: 48.90 EUR\n\nEncomenda #20852\nFeita em: 2026-06-23\nPagamento: pago\nEnvio: expedida\nEstado do envio: falha na entrega\nValor: 72.80 EUR",
     "expect": "escalar",
     "note": "cliente menciona duas encomendas no assunto (#21039 e #20852) mas a mensagem nao diz qual delas foi devolvida -- so 'ja enviei... ja recebi confirmacao que foi entregue', sem numero. Bug corrigido em 22/08/2026: extrair_numero_encomenda() usava .search(), so via a primeira; nova extrair_numeros_encomenda() (.finditer()) apanha as duas, e ambas sao verificadas por identidade (resolver_encomenda) antes de entrarem em dados_encomenda. So ter os dois blocos de dados nao bastou em teste real -- o modelo continuava generico ('a encomenda', 'o artigo') sem citar nenhum numero; foi preciso a instrucao explicita agora presente no inicio de dados_encomenda a pedir para citar os numeros concretos e perguntar qual quando nao for claro. Verificacao manual do texto: a resposta deve citar OS DOIS numeros (#21039 e #20852) e perguntar qual deles corresponde ao artigo devolvido -- nunca responder em genero 'a encomenda'/'o artigo' sem numero, nem assumir uma das duas sem se justificar pelo fio."
+  },
+  {
+    "id": "garantia-com-encomenda-nao-encontrada-pede-prova-e-testes",
+    "email": {
+      "from": "ana.marques@gmail.com",
+      "from_name": "Ana Marques",
+      "subject": "Garantia",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Comprei uns fones da Tripat3s e um dos fones deixou de funcionar.\n\nOs fones ainda estão dentro do período de garantia de 3 anos, por isso gostaria de acionar a garantia e saber como devo proceder para enviar o produto para reparação ou substituição.\n\nDados da compra:\nNome: Ana Marques\nNúmero da encomenda: #19043\nData da compra: 7/4/2026\nModelo dos fones: Inpods 2.0\n\nSe necessário, posso enviar fotografias ou um vídeo a demonstrar o problema."
+    },
+    "aviso_identidade": "O cliente indicou o número de encomenda 19043, mas a consulta não conseguiu encontrar nem validar essa encomenda para esta pessoa. Não afirmes nenhum facto específico dela: a parte do pedido que depender de dados específicos dessa encomenda escala, com a categoria DADOS_ENCOMENDA_EM_FALTA. Isto não bloqueia o resto do email -- se a base de conhecimento cobrir o que ele pede sem precisar dos dados da encomenda (por exemplo o primeiro passo de um defeito ou os testes a fazer antes da garantia), esse passo é a resposta: rascunhas, e pões em \"por_responder\" só o que ficou dependente da encomenda.",
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "(fotografia|foto|video|outro cabo|reset|emparelh)"
+    ],
+    "expect_texto_nao_contem": [
+      "verificar internamente",
+      "analisar internamente"
+    ],
+    "note": "Caso real de producao, 16/09/2026 13:36 UTC. A encomenda #19043 e de 07/04/2026 e a Shopify so devolve os ultimos 60 dias sem read_all_orders, por isso a consulta veio vazia -- nao falhou, nem provou que a encomenda nao e desta pessoa. O assistente escalou com corpo vazio e o cliente ficou sem resposta nenhuma, com as etiquetas 'Falta informacao' e 'Precisa de humano'. Nada do primeiro passo depende da encomenda: provas-e-defeitos.md diz que pedir prova 'nao exige consultar a encomenda' e lista os testes a fazer antes da garantia (outro cabo, varias horas de carga, reset e novo emparelhamento). Este e o confundidor que faltava ao defeito-sem-prova-pede-video, que passa mas nao tem numero de encomenda. Verificacao manual do texto: nao pode prometer analise de garantia nem afirmar a data de compra, que continua por confirmar."
+  },
+  {
+    "id": "defeito-com-encomenda-nao-encontrada-responde-e-deixa-parcial",
+    "email": {
+      "from": "ana.marques@gmail.com",
+      "from_name": "Ana Marques",
+      "subject": "Garantia - InPods 2.0",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, um dos meus fones deixou de funcionar e queria acionar a garantia. Aproveito para vos pedir que me confirmem a data de compra que têm registada na encomenda #19043, porque já não encontro o recibo."
+    },
+    "aviso_identidade": "O cliente indicou o número de encomenda 19043, mas a consulta não conseguiu encontrar nem validar essa encomenda para esta pessoa. Não afirmes nenhum facto específico dela: a parte do pedido que depender de dados específicos dessa encomenda escala, com a categoria DADOS_ENCOMENDA_EM_FALTA. Isto não bloqueia o resto do email -- se a base de conhecimento cobrir o que ele pede sem precisar dos dados da encomenda (por exemplo o primeiro passo de um defeito ou os testes a fazer antes da garantia), esse passo é a resposta: rascunhas, e pões em \"por_responder\" só o que ficou dependente da encomenda.",
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_parcial": true,
+    "expect_categoria": "DADOS_ENCOMENDA_EM_FALTA",
+    "expect_texto_regex": [
+      "(fotografia|foto|video|outro cabo|reset|emparelh)"
+    ],
+    "expect_texto_nao_contem": [
+      "7/4/2026",
+      "07/04/2026"
+    ],
+    "note": "O mesmo bloqueio do caso anterior, mas com uma parte que depende mesmo dos dados da encomenda. A confirmacao da data de compra nao pode ser respondida nem inventada: vai para por_responder, e e ela que decide a categoria (regra do prompt: com por_responder preenchido a categoria descreve a causa do que ficou por responder, nunca OUTRO). O primeiro passo do defeito e respondido na mesma. Isto separa 'a consulta nao devolveu dados' de 'o email inteiro esta bloqueado' -- era essa confusao que produzia corpos vazios em producao."
+  },
+  {
+    "id": "estado-de-encomenda-nao-encontrada-continua-a-escalar",
+    "email": {
+      "from": "bruno.tavares@gmail.com",
+      "from_name": "Bruno Tavares",
+      "subject": "Encomenda 30402",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, onde está a minha encomenda #30402? Já foi expedida? Queria saber o estado e o código de rastreio."
+    },
+    "aviso_identidade": "O cliente indicou o número de encomenda 30402, mas a consulta não conseguiu encontrar nem validar essa encomenda para esta pessoa. Não afirmes nenhum facto específico dela: a parte do pedido que depender de dados específicos dessa encomenda escala, com a categoria DADOS_ENCOMENDA_EM_FALTA. Isto não bloqueia o resto do email -- se a base de conhecimento cobrir o que ele pede sem precisar dos dados da encomenda (por exemplo o primeiro passo de um defeito ou os testes a fazer antes da garantia), esse passo é a resposta: rascunhas, e pões em \"por_responder\" só o que ficou dependente da encomenda.",
+    "expect": "escalar",
+    "expect_categoria": "DADOS_ENCOMENDA_EM_FALTA",
+    "expect_sem_corpo": true,
+    "note": "Guarda da correcao de 16/09/2026. Delimitar a escalacao ao que depende dos dados da encomenda nao pode virar licenca para responder a perguntas de estado sem os ter: aqui o email nao pede mais nada, tudo o que pergunta depende da consulta que veio vazia, e continua a escalar com o corpo vazio. Se este caso passar a rascunhar, a correcao foi longe demais."
   }
 ]

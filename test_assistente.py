@@ -2236,6 +2236,33 @@ class Processar(unittest.TestCase):
         conteudo = cliente.pedidos[0]["messages"][0]["content"]
         self.assertIn("DADOS_ENCOMENDA_EM_FALTA", conteudo)
 
+    def test_numero_sem_correspondencia_nao_bloqueia_o_resto_do_email(self) -> None:
+        """O aviso delimita o que escala, em vez de condenar o email inteiro.
+
+        Caso real de 16/09/2026 (Ana Ângelo, "Garantia", encomenda #19043 de
+        07/04/2026): a Shopify só devolve os últimos 60 dias sem
+        `read_all_orders`, a consulta veio vazia, e o aviso -- que dizia só
+        "Categoria: DADOS_ENCOMENDA_EM_FALTA" -- levou a escalar com o corpo
+        vazio um pedido de garantia cujo primeiro passo (prova e testes) a base
+        de conhecimento cobre sem precisar da encomenda. O cliente ficou sem
+        resposta nenhuma.
+
+        Duas coisas a garantir aqui, ambas sobre o texto que chega ao modelo:
+        que o aviso não infere uma causa que ninguém verificou (nem "a consulta
+        falhou", nem "a encomenda não é desta pessoa"), e que diz explicitamente
+        que só escala o que depende dos dados da encomenda.
+        """
+        m = msg(corpo="Encomenda 30402, ainda não chegou.")
+        cliente = ClienteFalso(self._SALTAR)
+        self._correr(m, cfg(), cliente, shopify=ShopifyFalsa(por_numero=[]))
+        conteudo = cliente.pedidos[0]["messages"][0]["content"]
+        self.assertIn("depender de dados específicos dessa encomenda", conteudo)
+        self.assertIn("por_responder", conteudo)
+        # A causa não é conhecida: o aviso não pode afirmar nenhuma das duas
+        # que estavam aqui antes.
+        self.assertNotIn("a consulta falhou", conteudo)
+        self.assertNotIn("não pertence a quem escreveu", conteudo)
+
     def test_varias_encomendas_do_mesmo_email_pede_para_especificar_sem_escalar(self) -> None:
         """Diferente de 'media' ou de um número sem correspondência: aqui o
         email de quem escreveu bate com as duas encomendas -- a identidade
