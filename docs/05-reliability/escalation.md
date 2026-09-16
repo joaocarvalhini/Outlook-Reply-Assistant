@@ -147,11 +147,19 @@ link.
 > se a categoria do escalamento mudou, ou se chegaram dados de encomenda que o escalamento
 > anterior não tinha, o caso volta a contar como novo. Ver `seguimento_do_fio()`.
 
-> [!NOTE] A nota interna foi removida a pedido do lojista
+> [!NOTE] O rascunho de resposta ao cliente nunca leva nota nenhuma à volta
 > *"O rascunho é só o email, sem nota nenhuma à volta — o lojista pediu para tirar a nota interna,
-> quer só o texto que mandaria."*
+> quer só o texto que mandaria."* (17/08/2026, commit `5d3a267`, depois de um teste em produção.)
 >
-> Nota interna dentro do rascunho é nota interna que um dia sai para o cliente por engano.
+> Nota interna dentro do rascunho de resposta é nota interna que um dia sai para o cliente por
+> engano — essa decisão não muda.
+>
+> Quando não sobra nenhuma resposta segura (corpo vazio) e `ENABLE_INTERNAL_NOTES` está ligada,
+> a automação cria uma nota interna **à parte**: um rascunho novo, sem destinatário, fora da
+> conversa do cliente (`Graph.criar_nota_interna()`, não `createReply`) — nunca pode ser
+> confundida com uma resposta nem enviada por engano ao cliente, porque não está endereçada a
+> ninguém. Desligada por omissão; a ativação em produção depende de mostrar o formato ao lojista
+> primeiro. Ver `montar_nota_interna()` em `assistente.py`.
 
 A etiqueta de urgência só aparece quando esperar piora o caso: ameaça de queixa formal, invocação
 de legislação, terceira insistência, ou valor elevado. **Nos dados históricos isso dava ~2 casos

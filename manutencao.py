@@ -48,6 +48,11 @@ COLUNAS_A_PURGAR = (
     "assunto",
     "corpo",
     "por_responder",
+    # Texto livre da nota interna (motivo, categoria, número de encomenda) --
+    # mesmo tipo de conteúdo que corpo/por_responder, mesma purga. nota_
+    # interna_id fica de fora, tal como rascunho_id: é um id opaco, não texto
+    # pessoal.
+    "nota_interna_texto",
     # As colunas dossie_* continuam na tabela com dados anteriores a
     # 01/09/2026, quando o dossiê foi removido. Ficam de fora da purga de
     # propósito: já não crescem, e apagá-las agora seria trabalho para nada.

@@ -218,6 +218,7 @@ clientes de uma loja online usa Gmail.
 | `ENABLE_PRE_DRAFTS` | `true` | Preparar o caso quando escala um pedido acionável |
 | `ENABLE_COMMITMENT_REGISTRY` | `true` | Registar e lembrar promessas feitas ao cliente |
 | `ENABLE_PARTIAL_ANSWERS` | `true` | Responder à parte coberta de um email com vários assuntos |
+| `ENABLE_INTERNAL_NOTES` | `false` | Nota interna à parte (sem destinatário, fora da conversa) quando escala sem nenhuma resposta segura |
 | `DRY_RUN` | `true` | `true` não escreve nada na caixa |
 | `ALERTA_WEBHOOK_URL` | vazio | Para onde vão os alertas de falha (Discord, ntfy, …) |
 | `PERGUNTAS_WEBHOOK_URL` | vazio | Para onde vão as perguntas diárias ao lojista |
@@ -403,9 +404,16 @@ leva sempre a resposta de retenção já escrita — o texto que o lojista pode
 enviar enquanto trata do caso. Medido a 01/09/2026: **94% dos casos escalados
 trazem a resposta pronta**.
 
-O rascunho é só o email, sem nada à volta. Sem resumo, sem validação, sem
-categoria — decisão explícita do lojista: nota interna dentro do rascunho é
-nota interna que um dia sai para o cliente por engano.
+O rascunho de resposta ao cliente é só o email, sem nada à volta. Sem resumo,
+sem validação, sem categoria — decisão explícita do lojista: nota interna
+dentro do rascunho de resposta é nota interna que um dia sai para o cliente
+por engano.
+
+Quando não sobra nenhuma resposta segura (corpo vazio), essa marca é tudo o
+que fica por omissão. Com `ENABLE_INTERNAL_NOTES=true` (desligada por
+omissão), a automação cria também uma nota interna **à parte**: um rascunho
+novo, sem destinatário, fora desta conversa — nunca colada ao rascunho acima,
+nunca endereçada ao cliente. Ver `docs/05-reliability/escalation.md`.
 
 A triagem faz-se pelas **etiquetas no Outlook**, que dizem o que há a fazer sem
 ser preciso abrir nada:

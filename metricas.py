@@ -57,7 +57,7 @@ def main(argv: list[str] | None = None) -> int:
         condicao, valores = "em >= ?", [desde]
 
     linhas = con.execute(
-        f"SELECT acao, categoria, urgencia, corpo FROM processados "
+        f"SELECT acao, categoria, urgencia, corpo, nota_interna_texto FROM processados "
         f"WHERE {condicao} ORDER BY em",
         valores,
     ).fetchall()
@@ -95,7 +95,7 @@ def main(argv: list[str] | None = None) -> int:
     if escalados:
         _tabela(
             f"Categoria dos {len(escalados)} escalado(s)",
-            Counter(cat or "(sem categoria)" for _, cat, _, _ in escalados),
+            Counter(cat or "(sem categoria)" for _, cat, _, _, _ in escalados),
             len(escalados),
         )
 
@@ -113,6 +113,16 @@ def main(argv: list[str] | None = None) -> int:
         com_resposta = [l for l in escalados if (l[3] or "").strip()]
         print(f"{len(com_resposta)} de {len(escalados)} escalado(s) já trazem "
               f"resposta escrita ({len(com_resposta) / len(escalados) * 100:.0f}%)")
+
+        # Notas internas (ENABLE_INTERNAL_NOTES): à parte de propósito, para
+        # não se misturarem com "resposta escrita" acima -- uma nota nunca é
+        # uma resposta, é a marca de que a automação parou. Só faz sentido
+        # olhar para os escalados que não têm resposta nenhuma.
+        sem_resposta = [l for l in escalados if not (l[3] or "").strip()]
+        com_nota = [l for l in sem_resposta if (l[4] or "").strip()]
+        if sem_resposta:
+            print(f"{len(com_nota)} de {len(sem_resposta)} escalado(s) sem resposta "
+                  f"têm nota interna criada ({len(com_nota) / len(sem_resposta) * 100:.0f}%)")
 
     if resultados_draft:
         estados = Counter(r[0] for r in resultados_draft)
