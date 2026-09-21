@@ -425,6 +425,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.triagem:
         os.environ.setdefault("ANTHROPIC_API_KEY", "nao-usado-na-triagem")
 
+    # Uma corrida de eval acaba em minutos: a cache nao precisa da validade de
+    # uma hora que a producao paga a dobrar (2x a escrita, contra 1,25x). Tem
+    # de vir antes de carregar_config(), que e quem le a variavel, e nao toca
+    # na producao -- so este processo a ve. Quem quiser medir com o ttl da
+    # producao passa CACHE_TTL=1h. O ttl e uma propriedade da escrita: se a
+    # cache de producao ja estiver quente com este mesmo prefixo, esta corrida
+    # le-a na mesma e nao escreve nada.
+    os.environ.setdefault("CACHE_TTL", "5m")
     cfg = a.carregar_config(True)
     try:
         casos = json.loads(args.casos.read_text(encoding="utf-8"))

@@ -1193,6 +1193,21 @@ class DecidirComImagens(unittest.TestCase):
             "source": {"type": "base64", "media_type": "image/png", "data": "dadosbase64"},
         })
 
+    def test_ttl_da_cache_vem_da_config(self) -> None:
+        """O eval poe CACHE_TTL=5m para nao pagar 2x a escrita de um prefixo
+        de ~55K tokens que so precisa de durar os dois minutos da corrida. Se
+        o valor deixar de chegar ao pedido, a poupanca desaparece em silencio
+        e a fatura e o unico sitio onde isso aparece."""
+        cliente = ClienteFalso(self._DECISAO_SIMPLES)
+        decidir(cliente, cfg(cache_ttl="5m"), "prompt", msg())
+        sistema = cliente.pedidos[0]["system"][0]
+        self.assertEqual(sistema["cache_control"], {"type": "ephemeral", "ttl": "5m"})
+
+    def test_ttl_da_cache_por_omissao_e_o_da_producao(self) -> None:
+        cliente = ClienteFalso(self._DECISAO_SIMPLES)
+        decidir(cliente, cfg(), "prompt", msg())
+        self.assertEqual(cliente.pedidos[0]["system"][0]["cache_control"]["ttl"], "1h")
+
     def test_nota_de_anexos_ignorados_entra_no_pedido(self) -> None:
         cliente = ClienteFalso(self._DECISAO_SIMPLES)
         decidir(cliente, cfg(), "prompt", msg(), nota_anexos="\n\nFicheiro não processado.")

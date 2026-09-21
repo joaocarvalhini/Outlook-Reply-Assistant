@@ -92,6 +92,9 @@ class Config:
     respostas_parciais: bool
     processar_imagens: bool
     outra_caixa_verificacao: str
+    # Ultimo e com omissao: os dubles de Config nos testes constroem-na por
+    # posicao, e um campo obrigatorio a meio da lista partia-os todos.
+    cache_ttl: str = "1h"
 
     @property
     def dominio(self) -> str:
@@ -132,6 +135,16 @@ def carregar_config(dry_run_flag: bool | None) -> Config:
         # (91%) e não perdeu clientes, mas a precisão de escalação caiu de 91%
         # para 77% -- escala casos que sabia resolver. Custa ~3x menos.
         modelo=os.environ.get("MODELO", "claude-sonnet-5").strip(),
+        # A escrita da cache custa 2x com ttl de 1 hora e 1,25x com o de 5
+        # minutos. Em produção o de 1 hora paga-se: os emails chegam com ~15
+        # minutos de intervalo mediano e 89% das chamadas apanham a cache
+        # quente (ver a nota em decidir()). Numa corrida de eval não: os casos
+        # correm todos em dois minutos, a cache nunca precisa de durar mais do
+        # que isso, e o ttl longo só paga o dobro por uma validade que ninguém
+        # usa. Daí o eval pôr CACHE_TTL=5m -- e nada mais mudar, porque o
+        # ttl e uma propriedade da escrita: uma cache de 1 hora ja quente
+        # continua a ser lida na mesma.
+        cache_ttl=os.environ.get("CACHE_TTL", "1h").strip(),
         knowledge_dir=Path(os.environ.get("KNOWLEDGE_DIR", "knowledge")),
         blocklist=Path(os.environ.get("BLOCKLIST_FILE", "blocklist.txt")),
         db=Path(os.environ.get("DB_FILE", "assistente.db")),
@@ -2908,7 +2921,7 @@ def decidir(
             system=[{
                 "type": "text",
                 "text": prompt,
-                "cache_control": {"type": "ephemeral", "ttl": "1h"},
+                "cache_control": {"type": "ephemeral", "ttl": cfg.cache_ttl},
             }],
             thinking={"type": "disabled"},
             output_config={"format": {"type": "json_schema", "schema": schema}},
