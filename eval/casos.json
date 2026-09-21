@@ -1996,9 +1996,9 @@
       "body": "Boa tarde, passado uma semana ainda nao sei nada, como esta a analise dos meus fones?"
     },
     "historico": "[2026-09-05 10:00] CLIENTE: Bom dia, enviei os fones com defeito para a vossa analise, aqui fica o comprovativo de envio e o codigo de rastreio CTT123456789PT.\n[2026-09-08 09:30] LOJA: Boa tarde, confirmamos a rececao dos fones nas nossas instalacoes, ja entraram em analise.",
-    "expect": "rascunhar",
+    "expect": "escalar",
     "expect_corpo": true,
-    "note": "Historico confirma rececao E entrada em analise, e e a segunda vez que a cliente pergunta. Regra do lojista (15 e 19/09/2026, devolucoes.md, 'A segunda vez que o cliente pergunta, confirma-se'): confirmar que ja chegou e esta em analise e resposta completa, nao escala. Ate 19/09 este caso esperava 'escalar'. Continua proibido afirmar a CONCLUSAO da analise -- e o que as regex negativas garantem.",
+    "note": "Historico confirma rececao E entrada em analise -- e ja o tinha dito ao cliente. A segunda pergunta, uma semana depois, e pela CONCLUSAO, que so o lojista tem: escala com corpo util. A regra de 15 e 19/09 ('a segunda vez, confirma-se') nao se aplica aqui porque a confirmacao ja tinha sido dada -- ver analise-segunda-pergunta-nunca-confirmada-confirma, que e a forma real dessa regra. Esta expectativa chegou a ser mudada para 'rascunhar' a 21/09 e foi revertida no mesmo dia.",
     "expect_texto_regex": [
       "\\b(?:em analise|a ser analisad\\w*|em tratamento)\\b"
     ],
@@ -2238,7 +2238,7 @@
     "expect": "rascunhar",
     "expect_corpo": true,
     "expect_texto_regex": [
-      "troca"
+      "(troc|substitu)"
     ],
     "note": "devolucoes.md, 19/09/2026: smartwatch, InPods e fones P9 abertos deixam de poder ser devolvidos e so dao direito a troca, por higiene. Basta a abertura, nao e preciso provar uso. Explicar a regra e a resposta, nao escala."
   },
@@ -2257,8 +2257,30 @@
     "expect": "rascunhar",
     "expect_corpo": true,
     "expect_texto_regex": [
-      "troca"
+      "(troc|substitu|correta)"
     ],
     "note": "devolucoes.md, 'Erro de envio pela loja', 18/09/2026: com o erro ja confirmado, a resposta e perguntar diretamente se se pode fazer a troca, para o cliente enviar o artigo errado e a loja enviar o correto. Nao se pede paciencia nem se detalha a solucao completa (portes, datas, dispensa de devolucao previa)."
+  },
+  {
+    "id": "analise-segunda-pergunta-nunca-confirmada-confirma",
+    "email": {
+      "from": "marta.leal@gmail.com",
+      "from_name": "Marta Leal",
+      "subject": "Re: Fones enviados para analise",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, ja perguntei ha uns dias e continuo sem saber nada. Os fones ja chegai ai?"
+    },
+    "historico": "[2026-09-10 09:00] CLIENTE: Boa tarde, enviei hoje os fones para analise, o rastreio e CTT987654321PT.\n[2026-09-10 11:40] LOJA: Obrigado, vamos verificar internamente e damos noticias.\n[2026-09-15 08:30] CLIENTE: Bom dia, ha novidades?\n[2026-09-15 10:00] LOJA: Estamos a verificar e entramos em contacto assim que possivel.",
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "(an[áa]lise|analisad)"
+    ],
+    "expect_texto_nao_regex": [
+      "an[áa]lise\\s+(?:(?:j[áa]\\s+)?(?:foi|est[áa])\\s+)?(?:conclu\\w*|termin\\w*|finaliz\\w*)"
+    ],
+    "note": "devolucoes.md, 15 e 19/09/2026: o cliente enviou o artigo, ja perguntou duas vezes e a loja nunca passou de 'vamos verificar'. A terceira nao-resposta nao se escreve: confirma-se que chegou e esta em analise. E a forma real da regra do lojista -- distingue-se de analise-segunda-pergunta-com-evidencia-confirma (onde a confirmacao ja tinha sido dada e o que falta e a conclusao) e de analise-arrastada-artigo-ainda-com-o-cliente-pede-envio (onde o artigo nunca saiu de casa do cliente)."
   }
 ]

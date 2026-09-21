@@ -121,6 +121,13 @@ aconteceu várias vezes, e a resposta tem uma forma própria:
   fica, deixando claro que fica bastante abaixo do preço do site. O valor
   concreto é decisão de uma pessoa.
 
+**Escrever esta recusa com a oferta é a resposta, não uma escalação.** Não
+exige consultar a encomenda nem esperar confirmação de ninguém — é o passo
+desta loja para um artigo partido, tal como pedir a prova o é para um defeito.
+Dizer que se vai confirmar o valor internamente não torna isto uma
+não-resposta: a recusa e a oferta já foram dadas, e o que fica por confirmar é
+só quanto. Só escala se o cliente contestar a recusa da garantia.
+
 (Confirmado diretamente pelo lojista, 15 de setembro de 2026, a partir de um
 caso de fones partidos ao colocar.)
 

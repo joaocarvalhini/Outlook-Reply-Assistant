@@ -636,7 +636,8 @@ simples substituição de cor por falta de stock — ver secção acima):
   pedir paciência nem repetir que o caso está a ser tratado: pergunta-se
   diretamente ao cliente se pode fazer-se a troca, para ele enviar o artigo
   errado até à loja e a loja enviar o correto. É uma pergunta, não um
-  compromisso, e é a resposta normal nestes casos. Não se adianta a solução
+  compromisso, e **escrevê-la é a resposta, não uma escalação** — o erro já
+  está reconhecido no fio, não há nada para confirmar antes de perguntar. Não se adianta a solução
   completa (portes, datas, dispensa de devolução prévia) — isso decide-se
   depois de o cliente aceitar. (Confirmado diretamente pelo lojista, 18 de
   setembro de 2026, em dois casos no mesmo dia: uma capa errada e a cor
@@ -683,7 +684,8 @@ presente/oferta já conhecida, ver "produtos.md" para campanhas em curso):
   de 2026.)
 - **Abrir já chega, nestes três produtos.** Smartwatches, InPods e fones P9
   abertos deixam de poder ser devolvidos e passam a ter só direito a troca,
-  sem ser preciso provar que chegaram a ser usados. Para os restantes
+  sem ser preciso provar que chegaram a ser usados. Explicar isto ao cliente
+  é a resposta — a regra é conhecida e não depende de ninguém a confirmar. Para os restantes
   produtos mantém-se o que está em "Estado exigido": aberto mas não usado
   pede fotografias e vídeo antes de se decidir. (Confirmado diretamente pelo
   lojista, 19 de setembro de 2026: "produtos que já foram abertos, como
@@ -766,12 +768,24 @@ Sem essa evidência no fio:
 > estado. Quando é a segunda vez (ou mais) que ele pergunta pelo mesmo
 > artigo, a resposta deixa de ser "vamos verificar" e passa a confirmar que
 > o artigo já chegou e está em análise. É regra da loja, não uma leitura do
-> fio, e é resposta completa — não escala.
+> fio, e **escrever essa confirmação é a resposta: rascunha-se, não se
+> escala**. Que o cliente já tenha ouvido "vamos verificar" antes não puxa
+> isto para COMPROMISSO_ANTERIOR — precisamente porque desta vez não se está
+> a repetir a promessa, está a dar-se a informação.
 >
 > O alcance é este: o cliente já enviou o artigo, ou a loja já o tem. Quando
 > o fio não mostra envio nenhum — o cliente só descreveu o problema e
 > perguntou de novo —, não há artigo para estar em análise e não se afirma
-> que está: aí continua a valer o corpo seguro descrito acima. A regra é
+> que está: aí continua a valer o corpo seguro descrito acima. E se o artigo
+> ainda está em casa do cliente, a resposta é pedir-lhe que o envie, não
+> confirmar uma análise que não existe — ver "Análise que já se arrastou,
+> com o artigo ainda em casa do cliente", acima.
+>
+> A outra ponta: isto é para dar uma confirmação que ainda não foi dada. Se
+> a loja **já confirmou** no fio que recebeu o artigo e que ele está em
+> análise, repetir a mesma frase não é confirmar nada — é a terceira
+> não-resposta, e aí o que o cliente quer é a conclusão, que só o lojista
+> tem. Isso escala. A regra é
 > sobre não adiar uma confirmação que a loja pode dar, não sobre inventar
 > uma receção que não houve.
 >
