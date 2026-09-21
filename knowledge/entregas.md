@@ -18,6 +18,12 @@ Fonte: /pages/politica-de-envio, /pages/perguntas-faq
 - Encomendas feitas ao sábado, a qualquer hora do dia, são sempre expedidas na
   segunda-feira seguinte. Não há hora de corte ao sábado. (Confirmado
   diretamente pela loja, 14 de agosto de 2026.)
+- **A transportadora faz entregas ao sábado de manhã.** Responder a "entregam
+  ao fim de semana?" é resposta normal e imediata — não é caso para verificar
+  internamente. Isto é sobre a *entrega*; a *expedição* ao sábado continua a
+  fazer-se só na segunda-feira seguinte (ver o ponto acima), e as duas coisas
+  não se confundem. (Confirmado diretamente pelo lojista, 19 de setembro de
+  2026.)
 - Para os restantes países, o prazo médio de entrega é de 5 a 7 dias úteis.
 - Os prazos podem variar consoante o país de destino.
 - O prazo de 24 a 48 horas úteis é para Portugal continental. Para Açores e

@@ -1996,9 +1996,9 @@
       "body": "Boa tarde, passado uma semana ainda nao sei nada, como esta a analise dos meus fones?"
     },
     "historico": "[2026-09-05 10:00] CLIENTE: Bom dia, enviei os fones com defeito para a vossa analise, aqui fica o comprovativo de envio e o codigo de rastreio CTT123456789PT.\n[2026-09-08 09:30] LOJA: Boa tarde, confirmamos a rececao dos fones nas nossas instalacoes, ja entraram em analise.",
-    "expect": "escalar",
+    "expect": "rascunhar",
     "expect_corpo": true,
-    "note": "Historico confirma explicitamente rececao E entrada em analise (nao apenas uma intencao futura). Escalar com corpo util: comunicar analise/tratamento e verificar o ponto de situacao, sem inventar conclusao. Regex normalizadas cobrem estados e conclusoes; rever semanticamente as parafrases.",
+    "note": "Historico confirma rececao E entrada em analise, e e a segunda vez que a cliente pergunta. Regra do lojista (15 e 19/09/2026, devolucoes.md, 'A segunda vez que o cliente pergunta, confirma-se'): confirmar que ja chegou e esta em analise e resposta completa, nao escala. Ate 19/09 este caso esperava 'escalar'. Continua proibido afirmar a CONCLUSAO da analise -- e o que as regex negativas garantem.",
     "expect_texto_regex": [
       "\\b(?:em analise|a ser analisad\\w*|em tratamento)\\b"
     ],
@@ -2184,5 +2184,81 @@
       "(fotografia|foto|v[ií]deo)"
     ],
     "note": "'Pedir a prova e a resposta' (provas-e-defeitos.md) e uma resposta completa desta loja. Enquanto a prova nao foi vista nao ha decisao de reembolso a tomar, por isso o pedido de reembolso nao puxa o caso para escalar. Caso real de producao, 20/08/2026."
+  },
+  {
+    "id": "entrega-ao-sabado-responde-logo",
+    "email": {
+      "from": "tiago.melo@gmail.com",
+      "from_name": "Tiago Melo",
+      "subject": "Entregas ao fim de semana",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, entregam ao fim de semana? So estou em casa ao sabado."
+    },
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "s[áa]bado"
+    ],
+    "note": "entregas.md, 19/09/2026: a transportadora entrega ao sabado de manha. E resposta imediata, nao e caso para verificar internamente. Nao confundir com a expedicao ao sabado, que so sai na segunda."
+  },
+  {
+    "id": "artigo-partido-garantia-nao-cobre",
+    "email": {
+      "from": "ines.paiva@gmail.com",
+      "from_name": "Ines Paiva",
+      "subject": "Fones partiram-se",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, os meus fones partiram-se sozinhos quando os fui colocar, nao cairam nem nada. Ja vos enviei as fotos ontem. Querem substituir?"
+    },
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "garantia"
+    ],
+    "expect_texto_nao_regex": [
+      "\\d+\\s*(?:%|euros|€)"
+    ],
+    "note": "provas-e-defeitos.md, 15/09/2026: partido nao e defeito de fabrico, a garantia nao cobre. Explica-se como deve ser e oferece-se unidade nova por valor muito abaixo do site, sem indicar o valor (confirma-se internamente). Verificacao manual: a resposta deve recusar a garantia e oferecer a unidade nova, sem pedir de novo as fotos que a cliente ja enviou."
+  },
+  {
+    "id": "smartwatch-aberto-so-troca",
+    "email": {
+      "from": "nuno.vilela@gmail.com",
+      "from_name": "Nuno Vilela",
+      "subject": "Devolucao smartwatch",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, abri o smartwatch e experimentei-o, mas afinal nao e o que eu queria. Queria devolver e ser reembolsado."
+    },
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "troca"
+    ],
+    "note": "devolucoes.md, 19/09/2026: smartwatch, InPods e fones P9 abertos deixam de poder ser devolvidos e so dao direito a troca, por higiene. Basta a abertura, nao e preciso provar uso. Explicar a regra e a resposta, nao escala."
+  },
+  {
+    "id": "erro-da-loja-confirmado-pergunta-pela-troca",
+    "email": {
+      "from": "diogo.castro@gmail.com",
+      "from_name": "Diogo Castro",
+      "subject": "Re: Cor errada na encomenda 22874",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, ja viram a fotografia que vos mandei? A capa veio mesmo na cor errada."
+    },
+    "historico": "[2026-09-17 11:00] CLIENTE: Recebi a capa mas e preta, eu pedi azul. Envio foto.\n[2026-09-17 15:10] LOJA: Recebemos a fotografia, confirmamos que a cor enviada nao e a que pediu.",
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "troca"
+    ],
+    "note": "devolucoes.md, 'Erro de envio pela loja', 18/09/2026: com o erro ja confirmado, a resposta e perguntar diretamente se se pode fazer a troca, para o cliente enviar o artigo errado e a loja enviar o correto. Nao se pede paciencia nem se detalha a solucao completa (portes, datas, dispensa de devolucao previa)."
   }
 ]

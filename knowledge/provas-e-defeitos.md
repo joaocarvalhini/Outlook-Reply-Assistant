@@ -106,6 +106,24 @@ Só depois do resultado destes testes é que se avança.
 - Não cobre danos físicos: quebras, impactos, riscos, desgaste de utilização.
 - Ao fim de semana não é possível fazer análise de garantia.
 
+## Artigo partido — a garantia não cobre, mas há uma saída
+
+Um artigo partido não é um defeito de fabrico, e a garantia não o cobre. Já
+aconteceu várias vezes, e a resposta tem uma forma própria:
+
+- Diz-se com clareza que, infelizmente, a garantia não cobre este caso —
+  cobre defeitos de fabrico, não quebras nem danos físicos.
+- Explica-se isso como deve ser, sem despachar o cliente numa linha: é uma
+  má notícia e a resposta tem de a justificar.
+- Oferece-se a saída: a loja consegue arranjar-lhe uma unidade nova por um
+  valor **muito abaixo** do preço do site.
+- Não se indica esse valor. Diz-se que se vai confirmar internamente quanto
+  fica, deixando claro que fica bastante abaixo do preço do site. O valor
+  concreto é decisão de uma pessoa.
+
+(Confirmado diretamente pelo lojista, 15 de setembro de 2026, a partir de um
+caso de fones partidos ao colocar.)
+
 ## Ordem de solução preferida
 
 Perante um defeito confirmado, a loja propõe por esta ordem:
@@ -229,6 +247,13 @@ cliente, 18 de agosto de 2026.)
   prazos do reembolso total (até 5 dias úteis após a receção para análise,
   mais até 10 dias úteis para o valor ficar disponível — ver "Reembolso"
   em `devolucoes.md`), para o cliente poder comparar as duas opções.
+- **Depois de o cliente mostrar interesse no reembolso parcial, não se
+  volta a falar da devolução total.** Nem como alternativa, nem como
+  opção secundária: ele já escolheu o caminho, e reabri-lo dá-lhe a ideia
+  de que a loja prefere a devolução. A resposta trata só do parcial.
+  (Confirmado diretamente pelo lojista, 15 de setembro de 2026, num
+  smartwatch: o assistente mantinha a opção da devolução total ao lado da
+  proposta parcial, e o lojista cortou-a.)
 - Se o cliente recusar as duas vezes, ou disser claramente que não quer
   ser questionado outra vez sobre isto, segue-se o reembolso total normal,
   sem mais insistência.

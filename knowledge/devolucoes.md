@@ -447,6 +447,14 @@ só nesse caso: nunca se diz para aparecer sem mais.
   cliente, nunca uma confirmação de que já vai ser assim: a decisão final e a
   execução continuam a ser de uma pessoa, como qualquer reembolso.
   (Confirmado diretamente pelo cliente, 17 e 18 de agosto de 2026.)
+- **Quando já se disse ao cliente que o reembolso foi ordenado, não se
+  recua.** Se o fio mostra a loja a confirmar a ordem de reembolso e uma
+  data, a resposta seguinte é afirmativa — confirma-se a data e explica-se
+  que o tempo que falta depende do banco. Voltar a "estamos a verificar"
+  contradiz o que a loja já afirmou e é pior do que não ter respondido.
+  Quando o prazo ainda não terminou, fecha-se sempre da mesma forma: se não
+  receber o valor até ao último dia, que volte a entrar em contacto.
+  (Confirmado diretamente pelo lojista, 15 de setembro de 2026.)
 - **Antes de propor o crédito de loja, ler o histórico da conversa.** Se o
   cliente já recusou antes um reembolso parcial ou um crédito, não se volta a
   propor — vai-se direto ao reembolso pelo método de pagamento. Repetir uma
@@ -623,6 +631,16 @@ simples substituição de cor por falta de stock — ver secção acima):
   é normal, mas a emissão do vale em si é uma ação da equipa — escala.
 - Se preferir trocar ou devolver o produto recebido por engano, não se promete
   a execução automática: escala para a equipa tratar do processo.
+- **Quando o erro já está confirmado** — a fotografia foi vista, ou a loja já
+  reconheceu no fio que enviou a cor ou o artigo errado —, a resposta não é
+  pedir paciência nem repetir que o caso está a ser tratado: pergunta-se
+  diretamente ao cliente se pode fazer-se a troca, para ele enviar o artigo
+  errado até à loja e a loja enviar o correto. É uma pergunta, não um
+  compromisso, e é a resposta normal nestes casos. Não se adianta a solução
+  completa (portes, datas, dispensa de devolução prévia) — isso decide-se
+  depois de o cliente aceitar. (Confirmado diretamente pelo lojista, 18 de
+  setembro de 2026, em dois casos no mesmo dia: uma capa errada e a cor
+  errada da encomenda #22874.)
 
 ## Artigos a mais ou conteúdo errado na encomenda
 
@@ -663,6 +681,15 @@ presente/oferta já conhecida, ver "produtos.md" para campanhas em curso):
   troca, explica-se de novo o motivo — não se escala como "decidir se
   aceita o reembolso". (Confirmado diretamente pelo cliente, 21 de agosto
   de 2026.)
+- **Abrir já chega, nestes três produtos.** Smartwatches, InPods e fones P9
+  abertos deixam de poder ser devolvidos e passam a ter só direito a troca,
+  sem ser preciso provar que chegaram a ser usados. Para os restantes
+  produtos mantém-se o que está em "Estado exigido": aberto mas não usado
+  pede fotografias e vídeo antes de se decidir. (Confirmado diretamente pelo
+  lojista, 19 de setembro de 2026: "produtos que já foram abertos, como
+  smartwatch, inpods e fones p9 são produtos que após a abertura não podem
+  ser devolvidos e apenas trocados por questões de higiene, sempre isto é
+  regra para estes 3 produtos".)
 - Para os restantes produtos, sem essa restrição de contacto com a pele
   (ex.: carregadores, baterias, capas), o cliente escolhe entre reembolso
   total ou substituição do produto.
@@ -733,6 +760,30 @@ Sem essa evidência no fio:
   nem inventar que o artigo foi recebido ou está em análise.
 
 (Confirmado diretamente pelo lojista, 15 de setembro de 2026.)
+
+> [!CAUTION] À segunda vez que o cliente pergunta, confirma-se
+> A regra acima vale para a **primeira** vez que o cliente pergunta pelo
+> estado. Quando é a segunda vez (ou mais) que ele pergunta pelo mesmo
+> artigo, a resposta deixa de ser "vamos verificar" e passa a confirmar que
+> o artigo já chegou e está em análise. É regra da loja, não uma leitura do
+> fio, e é resposta completa — não escala.
+>
+> O alcance é este: o cliente já enviou o artigo, ou a loja já o tem. Quando
+> o fio não mostra envio nenhum — o cliente só descreveu o problema e
+> perguntou de novo —, não há artigo para estar em análise e não se afirma
+> que está: aí continua a valer o corpo seguro descrito acima. A regra é
+> sobre não adiar uma confirmação que a loja pode dar, não sobre inventar
+> uma receção que não houve.
+>
+> Vale que a regra vem daqui: o lojista pôs-se duas vezes nesta posição, sobre casos diferentes.
+> (Confirmado diretamente pelo lojista, 15 e 19 de setembro de 2026:
+> "à segunda vez que ele pergunta isso confirmamos logo que o produto em
+> questão já está em análise"; "já foi a segunda vez que o cliente
+> perguntou, e quando é assim é regra dizer que já chegou e está em
+> análise".)
+>
+> Continua a valer o resto da secção: não se inventa a **conclusão** da
+> análise, nem data de resposta. Confirma-se a receção e o estado, mais nada.
 
 ## Cancelamento de encomenda
 

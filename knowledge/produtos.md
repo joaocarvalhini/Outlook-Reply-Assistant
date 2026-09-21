@@ -36,6 +36,15 @@ Fonte: /pages/termos-e-condicoes, /products/capa-personalizada
   substituição do modelo ficou registada antes de dar seguimento à
   encomenda.
 
+### Como o kit vem embalado
+
+Cada produto do kit vem dentro da sua própria caixa, e todas elas vão dentro
+de uma caixa global da Tripat3s. Um cliente que tenha recebido um kit antigo
+todo encaixado numa só caixa pode estranhar: hoje já não é assim, e é o que
+se vê nos vídeos da loja. Responder a isto é resposta normal, não é caso para
+confirmar internamente. (Confirmado diretamente pelo lojista, 18 de setembro
+de 2026.)
+
 ### Falta um componente dentro de um kit
 
 Quando o artigo sem stock é um dos componentes de um **kit** (por exemplo, os
