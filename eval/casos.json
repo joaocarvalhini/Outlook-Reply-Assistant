@@ -2148,5 +2148,41 @@
     "expect_categoria": "DADOS_ENCOMENDA_EM_FALTA",
     "expect_sem_corpo": true,
     "note": "Guarda da correcao de 16/09/2026. Delimitar a escalacao ao que depende dos dados da encomenda nao pode virar licenca para responder a perguntas de estado sem os ter: aqui o email nao pede mais nada, tudo o que pergunta depende da consulta que veio vazia, e continua a escalar com o corpo vazio. Se este caso passar a rascunhar, a correcao foi longe demais."
+  },
+  {
+    "id": "garantia-troca-por-modelo-diferente-da-os-passos",
+    "email": {
+      "from": "rui.fonseca@gmail.com",
+      "from_name": "Rui Fonseca",
+      "subject": "Re: Acionamento de Garantia - Avaria em InPods Pro 2.0",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, como combinado vou enviar os InPods Pro 2.0 avariados para a garantia. Em vez do mesmo modelo, era possivel receber antes os InPods Pro 2? E quais sao os passos exatos para vos enviar isto?"
+    },
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "(registad|envi)"
+    ],
+    "note": "A base (provas-e-defeitos.md, 'A troca sem custo e sempre a primeira oferta') diz que trocar por um produto diferente do original se avanca diretamente, e que perguntar pelos passos ja e ter decidido: dao-se os passos (correio registado / envelope DPD) na mesma resposta. Escalava por 'trocar' e 'garantia' estarem crus nas categorias ACAO_SOBRE_ENCOMENDA e JULGAMENTO_HUMANO. Caso real de producao, 21/08/2026."
+  },
+  {
+    "id": "defeito-sem-prova-pede-a-prova-mesmo-pedindo-reembolso",
+    "email": {
+      "from": "sofia.brito@gmail.com",
+      "from_name": "Sofia Brito",
+      "subject": "Re: Relogio Z69 ultra",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, o relogio Z69 Ultra nao liga por NFC e a bateria dura muito menos do que o anunciado. Quero devolver e ser reembolsada."
+    },
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "(fotografia|foto|v[ií]deo)"
+    ],
+    "note": "'Pedir a prova e a resposta' (provas-e-defeitos.md) e uma resposta completa desta loja. Enquanto a prova nao foi vista nao ha decisao de reembolso a tomar, por isso o pedido de reembolso nao puxa o caso para escalar. Caso real de producao, 20/08/2026."
   }
 ]

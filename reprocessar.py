@@ -76,6 +76,13 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  --   {assunto[:44]:44}  já não está na caixa")
             continue
 
+        # As categorias que a própria passagem pôs no email ao decidir são o
+        # primeiro descarte de triar() ("ja-processado") -- sem as tirar aqui,
+        # --acao escalar e --acao rascunhar saltavam sempre 100% dos casos e a
+        # ferramenta nunca reprocessava nada. Tira-se só na cópia em memória:
+        # reprocessar.py não escreve na caixa, a marca fica lá intacta.
+        msg["categorias"] = [c for c in msg["categorias"]
+                             if c not in (cfg.cat_rascunho, cfg.cat_humano)]
         if a.triar(msg, cfg, bloqueados):
             contagem["saltar"] += 1
             continue
