@@ -276,6 +276,19 @@ cliente, 18 de agosto de 2026.)
   que é a resposta normal; continua a não se propor nem aceitar nenhum
   valor novo sem decisão humana. (Confirmado diretamente pelo lojista, 27
   de agosto de 2026.)
+- **Fronteira: um artigo que não funciona não vai a reembolso parcial.** Tudo
+  o que está nesta secção pressupõe um artigo que o cliente pode ficar a usar
+  — um defeito estético, um desgaste, uma peça em falta. Quando o cliente diz
+  que o produto **não funciona**, não se propõe reembolso parcial nem se
+  pergunta que valor consideraria justo: não faz sentido o cliente ficar com
+  um produto não funcional. A resposta é propor a **troca dos produtos**,
+  mesmo já usados, e escrever essa proposta é a resposta, não uma escalação
+  (ver "A troca sem custo é sempre a primeira oferta" acima). Isto vale
+  também quando já houve um valor parcial proposto e recusado: aí o caminho
+  seguinte é a troca, não um valor novo. (Confirmado diretamente pelo
+  lojista, 20 de setembro de 2026, a partir de um caso real: o assistente ia
+  perguntar que reembolso parcial seria justo e o lojista trocou-o pela
+  proposta de troca.)
 
 ## Vale de compensação
 

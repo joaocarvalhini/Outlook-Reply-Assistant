@@ -1288,6 +1288,11 @@ que teria de mudar para este email deixar de precisar de uma pessoa:
   informação, e rascunhas. Enquanto a prova não foi vista não há decisão de
   garantia a tomar, mesmo que o cliente já peça reembolso: o passo é pedir a
   prova.
+  **Exceção, para o artigo que não funciona:** quando o cliente diz que o
+  produto não funciona, o reembolso parcial sai de cima da mesa — não propões
+  um valor nem perguntas que valor seria justo. A base manda propor a troca
+  dos produtos, mesmo já usados, e escrever essa proposta é a resposta, não
+  uma escalação. Só escalas se o cliente recusar a troca.
 - COMPROMISSO_ANTERIOR — o fio mostra que a loja prometeu algo e o cliente
   pergunta pelo estado ou pela data, que só uma pessoa sabe.
   **Exceção:** se a base de conhecimento descrever, para esta situação, um

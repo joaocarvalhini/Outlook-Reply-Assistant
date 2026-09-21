@@ -2282,5 +2282,27 @@
       "an[áa]lise\\s+(?:(?:j[áa]\\s+)?(?:foi|est[áa])\\s+)?(?:conclu\\w*|termin\\w*|finaliz\\w*)"
     ],
     "note": "devolucoes.md, 15 e 19/09/2026: o cliente enviou o artigo, ja perguntou duas vezes e a loja nunca passou de 'vamos verificar'. A terceira nao-resposta nao se escreve: confirma-se que chegou e esta em analise. E a forma real da regra do lojista -- distingue-se de analise-segunda-pergunta-com-evidencia-confirma (onde a confirmacao ja tinha sido dada e o que falta e a conclusao) e de analise-arrastada-artigo-ainda-com-o-cliente-pede-envio (onde o artigo nunca saiu de casa do cliente)."
+  },
+  {
+    "id": "produto-nao-funciona-propoe-troca-nao-parcial",
+    "email": {
+      "from": "melvin.costa@gmail.com",
+      "from_name": "Melvin Costa",
+      "subject": "Re: Fones que nao funcionam",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Nao quero ficar com um artigo que nao funciona. Isto nao liga de todo, ja tentei tudo o que me disseram."
+    },
+    "historico": "[2026-09-14 10:00] CLIENTE: os fones que comprei nao funcionam, envio video a mostrar.\n[2026-09-14 15:00] LOJA: Recebemos o video e confirmamos o problema.",
+    "expect": "rascunhar",
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "(troc|substitu)"
+    ],
+    "expect_texto_nao_regex": [
+      "(?i)(parcial|que valor|valor considera)"
+    ],
+    "note": "provas-e-defeitos.md, 20/09/2026: artigo que NAO funciona sai do caminho do reembolso parcial -- nao se pergunta que valor seria justo, propoe-se a troca dos produtos mesmo ja usados. Escrever a proposta e a resposta, nao escala."
   }
 ]
