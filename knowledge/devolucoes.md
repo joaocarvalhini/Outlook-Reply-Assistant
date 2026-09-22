@@ -692,11 +692,16 @@ presente/oferta já conhecida, ver "produtos.md" para campanhas em curso):
   smartwatch, inpods e fones p9 são produtos que após a abertura não podem
   ser devolvidos e apenas trocados por questões de higiene, sempre isto é
   regra para estes 3 produtos".)
-- **A troca escreve-se como o caminho que existe, não como uma pergunta.** A
-  regra já decidiu: o cliente tem direito à troca. "Podemos trocar por outro
-  artigo da loja" é a forma certa; "já pensou em trocar?" transforma um direito
-  numa sugestão e faz o cliente voltar a pedir o reembolso que a regra não dá.
-  Perguntar fica para o passo seguinte — por que artigo quer trocar.
+- **A troca escreve-se como o caminho que existe, não como uma pergunta —
+  aqui, onde é o único caminho.** Nestes três produtos já abertos a regra não
+  deixa alternativa: "podemos trocar por outro artigo da loja" é a forma certa;
+  "já pensou em trocar?" transforma um direito numa sugestão e faz o cliente
+  voltar a pedir o reembolso que a regra não dá. Perguntar fica para o passo
+  seguinte — por que artigo quer trocar.
+  Isto **não** contraria "A troca sem custo é sempre a primeira oferta" em
+  `provas-e-defeitos.md`, que manda perguntar: lá a troca é a primeira de
+  várias saídas possíveis e a pergunta é real, porque o cliente pode recusar e
+  seguir para o reembolso. Aqui não há a segunda saída para onde ir.
 - Para os restantes produtos, sem essa restrição de contacto com a pele
   (ex.: carregadores, baterias, capas), o cliente escolhe entre reembolso
   total ou substituição do produto.

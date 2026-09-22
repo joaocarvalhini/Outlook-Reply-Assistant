@@ -4491,6 +4491,19 @@ class AvaliarContratosFeedbackLojista(unittest.TestCase):
                 passou = resultado[0] in eval_mod.acoes_esperadas(self.casos[caso_id])
                 self.assertEqual(passou, deve_passar, resultado)
 
+    def test_datas_relativas_nos_casos(self) -> None:
+        """Um caso cuja validade depende da distancia a hoje nao pode levar
+        datas fixas: o da encomenda #23108 passou a testar "prazo expirado"
+        sozinho, doze dias depois de ter sido escrito."""
+        from datetime import date
+
+        texto = "entregue em {hoje-4}\nprazo termina em {hoje+10}\nhoje: {hoje}"
+        self.assertEqual(
+            eval_mod.resolver_datas(texto, date(2026, 9, 22)),
+            "entregue em 2026-09-18\nprazo termina em 2026-10-02\nhoje: 2026-09-22",
+        )
+        self.assertEqual(eval_mod.resolver_datas("sem marcas"), "sem marcas")
+
     def test_normalizacao_maiusculas_acentos_e_espacos(self) -> None:
         self.assertEqual(eval_mod.normalizar_texto("  ANÁLISE\n\tconcluída  "), "analise concluida")
 

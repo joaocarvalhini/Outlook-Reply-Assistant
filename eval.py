@@ -32,6 +32,7 @@ import os
 import re
 import sys
 import unicodedata
+from datetime import date, timedelta
 from pathlib import Path
 
 import assistente as a
@@ -207,6 +208,25 @@ def carregar_imagens(nomes: list[str], pasta: Path) -> tuple[dict, ...]:
     return tuple(imagens)
 
 
+_DATA_RELATIVA = re.compile(r"\{hoje([+-]\d+)?\}")
+
+
+def resolver_datas(texto: str, hoje: date | None = None) -> str:
+    """Troca {hoje}, {hoje-4} e {hoje+10} pela data ISO correspondente.
+
+    Um caso com datas fixas apodrece: a 31/08/2026 o prazo de devolução da
+    encomenda #23108 ainda estava aberto, e a 22/09 o mesmo caso passou a
+    testar outra coisa (prazo expirado) sem ninguém lhe tocar. O modelo
+    recebia a data de hoje e tinha razão; a falha era do caso. Quem escreve
+    um caso cuja validade depende da distância a hoje usa estas marcas.
+    """
+    base = hoje or date.today()
+    def troca(m: re.Match) -> str:
+        dias = int(m.group(1)) if m.group(1) else 0
+        return (base + timedelta(days=dias)).isoformat()
+    return _DATA_RELATIVA.sub(troca, texto)
+
+
 def construir_msg(caso: dict, caixa: str) -> dict:
     """Monta a mensagem tal como o Graph a teria entregue.
 
@@ -224,7 +244,7 @@ def construir_msg(caso: dict, caixa: str) -> dict:
         "id": f"eval-{caso['id']}",
         "message_id": f"<{caso['id']}@eval.local>",
         "conversation_id": f"conv-{caso['id']}",
-        "assunto": email.get("subject", ""),
+        "assunto": resolver_datas(email.get("subject", "")),
         "de": resolver(email.get("from", "")),
         "nome": email.get("from_name", ""),
         "para": [resolver(x) for x in email.get("to", [])],
@@ -232,7 +252,7 @@ def construir_msg(caso: dict, caixa: str) -> dict:
         "recebido": "2026-08-06T10:00:00Z",
         "categorias": email.get("categories", []),
         "cabecalhos": [(str(k), str(v)) for k, v in email.get("headers", [])],
-        "corpo": email.get("body", ""),
+        "corpo": resolver_datas(email.get("body", "")),
     }
 
 
@@ -271,8 +291,10 @@ def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
     try:
         d = a.decidir(
             cliente, cfg, prompt, msg,
-            caso.get("dados_encomenda", ""), caso.get("historico", ""),
-            caso.get("aviso_identidade", ""), caso.get("compromissos", ""),
+            resolver_datas(caso.get("dados_encomenda", "")),
+            resolver_datas(caso.get("historico", "")),
+            caso.get("aviso_identidade", ""),
+            resolver_datas(caso.get("compromissos", "")),
             imagens, caso.get("nota_anexos", ""),
         )
     except Exception as exc:

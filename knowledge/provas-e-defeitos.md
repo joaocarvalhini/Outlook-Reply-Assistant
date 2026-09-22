@@ -248,7 +248,11 @@ cliente, 18 de agosto de 2026.)
   abaixo de 12 a 15€; para qualquer outro produto, não se cita um valor
   preciso — diz-se apenas que os portes de devolução não são baratos.
 - Se o cliente não responder à primeira proposta, ou recusar sem mais,
-  tenta-se uma segunda vez antes de aceitar o reembolso total: reforça-se
+  tenta-se uma segunda vez antes de aceitar o reembolso total — **e isto vale
+  só para um artigo que o cliente pode continuar a usar.** Se ele disse que o
+  produto não funciona, não há segunda tentativa de parcial nenhuma: o passo é
+  a troca (ver a fronteira no fim desta secção). Na segunda tentativa,
+  reforça-se
   que a decisão do cliente vai ser respeitada, mas confirma-se mais uma
   vez se não há mesmo interesse nenhum num valor parcial, e explicam-se os
   prazos do reembolso total (até 5 dias úteis após a receção para análise,
@@ -296,6 +300,12 @@ cliente, 18 de agosto de 2026.)
   artigo tem defeito confirmado e o reembolso é um direito dele. A partir daí
   a decisão (parcial, saldo, ou dinheiro) é de uma pessoa: escala-se, com a
   resposta de retenção escrita.
+  **Excepto nos três produtos de contacto com a pele** — smartwatches, InPods
+  e fones P9 já usados. Aí o reembolso não é mesmo uma opção, e dizê-lo não é
+  inventar uma recusa: é a regra de 21 de agosto de 2026 ("Produto com
+  defeito" em `devolucoes.md`), que vale mesmo com defeito confirmado e mesmo
+  o cliente insistindo. Nesses casos explica-se o motivo outra vez — a higiene
+  do artigo já usado — e não se escala.
 
 ## Vale de compensação
 
