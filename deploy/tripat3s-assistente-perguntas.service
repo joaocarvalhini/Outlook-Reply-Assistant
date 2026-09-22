@@ -21,8 +21,13 @@ WorkingDirectory=/opt/assistente
 ExecStart=/opt/assistente/.venv/bin/python /opt/assistente/aprender.py --perguntar 3 --enviar --extra-ficheiro /opt/assistente/pergunta-extra.txt
 
 # Vai ao Graph buscar o email original de cada caso, mais uma chamada ao
-# modelo. Cinco minutos é folga larga.
-TimeoutStartSec=300
+# modelo. Cinco minutos pareciam folga larga e não eram: a 20/09/2026 a
+# passagem levou 4m38s e a 21/09 passou dos 300s, foi morta a meio e o lojista
+# não recebeu as perguntas dessa noite. O tempo é dominado pelo Graph, que
+# varia com o número de casos e com o tamanho dos fios, por isso o limite
+# passa a 15 minutos -- é um travão contra um processo pendurado, não um
+# orçamento de tempo.
+TimeoutStartSec=900
 
 NoNewPrivileges=true
 PrivateTmp=true
