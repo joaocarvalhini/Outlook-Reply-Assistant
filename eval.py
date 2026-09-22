@@ -238,8 +238,14 @@ def construir_msg(caso: dict, caixa: str) -> dict:
 
 def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
             cliente: object | None, prompt: str,
-            pasta_fixtures: Path = Path("eval/fixtures")) -> tuple[str, str, str]:
-    """Devolve (obtido, etapa, detalhe)."""
+            pasta_fixtures: Path = Path("eval/fixtures"),
+            registo: dict | None = None) -> tuple[str, str, str]:
+    """Devolve (obtido, etapa, detalhe).
+
+    `registo`, quando dado, recebe a decisão crua do modelo por id de caso: uma
+    falha de texto não se diagnostica sem o rascunho que a causou, e repetir a
+    corrida só para o ver é pagar duas vezes a mesma resposta.
+    """
     msg = construir_msg(caso, cfg.mailbox)
 
     motivo = a.triar(msg, cfg, bloqueados)
@@ -271,6 +277,9 @@ def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
         )
     except Exception as exc:
         return ERRO, "modelo", f"{type(exc).__name__}: {exc}"[:110]
+
+    if registo is not None:
+        registo[caso["id"]] = d
 
     if d["acao"] == "rascunhar" and not d["corpo"].strip():
         return "escalar", "modelo", "escolheu rascunhar sem corpo"
@@ -409,6 +418,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--casos", type=Path, default=Path("eval/casos.json"))
     p.add_argument("--triagem", action="store_true", help="só as regras determinísticas")
     p.add_argument("--caixa", help="sobrepõe MAILBOX; os casos interpolam-na")
+    p.add_argument("--dump", type=Path,
+                   help="grava as decisões do modelo em JSON, para diagnóstico")
     args = p.parse_args(argv)
     a.saida_utf8()
 
@@ -467,10 +478,16 @@ def main(argv: list[str] | None = None) -> int:
     print(f"{len(casos)} caso(s) · {etapa} · {args.casos} · caixa {cfg.mailbox}")
 
     pasta_fixtures = args.casos.parent / "fixtures"
+    registo: dict | None = {} if args.dump else None
     resultados = [
-        (c, avaliar(c, cfg, bloqueados, cliente, prompt or "", pasta_fixtures))
+        (c, avaliar(c, cfg, bloqueados, cliente, prompt or "", pasta_fixtures, registo))
         for c in casos
     ]
+    if args.dump and registo is not None:
+        args.dump.write_text(
+            json.dumps(registo, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"decisões gravadas em {args.dump}")
+        print()
     return relatar(resultados, args.triagem)
 
 

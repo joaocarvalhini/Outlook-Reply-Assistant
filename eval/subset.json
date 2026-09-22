@@ -185,8 +185,15 @@
       "body": "Boa tarde, encomendei sem querer uma unidade extra dos InPods Pro 2.0, e a unidade que eu queria mesmo avariou 5 minutos depois de os usar. Quero devolver as duas unidades e o reembolso total."
     },
     "dados_encomenda": "Encomenda #22550\nFeita em: 2026-08-15\nPagamento: pago\nEnvio: entregue\nValor: 79.80 EUR",
-    "expect": "escalar",
-    "note": "cliente pede reembolso total de 2 unidades: uma extra (por engano) e outra que usou e avariou. Regra confirmada diretamente pelo cliente, 21/08/2026: fones e smartwatches sao contacto direto com a pele -- a unidade USADA que avariou so tem direito a TROCA por uma nova, nunca reembolso, mesmo com defeito confirmado, porque ja nao cumpre a condicao de higiene para devolucao. A unidade EXTRA (nunca usada) pode ser devolvida normalmente. Verificacao manual do texto: a resposta (dossie ou corpo) deve propor troca (nao reembolso) para a unidade avariada e aceitar devolucao da unidade extra, nao aprovar reembolso total das duas."
+    "expect": "rascunhar",
+    "note": "cliente pede reembolso total de 2 unidades: uma extra (por engano) e outra que usou e avariou. O defeito ainda nao tem prova, por isso o passo e pedir fotografia e video -- pedir a prova e a resposta, nao uma escalacao (regra de 13/09/2026). A expectativa antiga era escalar, de 21/08/2026, anterior a essa regra. A resposta nao pode prometer reembolso total: a unidade USADA so tem direito a troca por higiene (contacto com a pele, 21/08/2026) e a unidade EXTRA nunca usada pode ser devolvida normalmente -- isso decide-se depois da prova.",
+    "expect_corpo": true,
+    "expect_texto_pedido_regex": [
+      "(fotografia|foto|video|vídeo)"
+    ],
+    "expect_texto_nao_regex": [
+      "reembolso total"
+    ]
   },
   {
     "id": "reembolso-propoe-saldo-antes-de-dinheiro",
@@ -215,9 +222,15 @@
       "body": "Não, prefiro mesmo devolver os fones, não me interessa ficar com eles."
     },
     "historico": "[2026-08-15 10:00] CLIENTE: os fones P9 pararam de funcionar de um lado, envio foto e video.\n[2026-08-15 16:00] LOJA: Recebemos e confirmamos o defeito. Antes de avançarmos com a devolução, estaria disponível para aceitar um reembolso parcial, ficando com os fones? Assim evita o processo de devolução.",
-    "expect": "escalar",
-    "note": "cliente ja recusou reembolso parcial uma vez no fio, insiste em devolver. Regra (provas-e-defeitos.md, 18/08/2026): tenta-se uma segunda vez antes de aceitar a devolucao total, agora tambem explicando os prazos do reembolso total para comparacao, e respeitando a decisao se recusar de novo. Verificacao manual do texto: a resposta sugerida deve tentar mais uma vez, sem insistir uma terceira.",
-    "expect_corpo": true
+    "expect": "rascunhar",
+    "note": "fones que pararam de funcionar: a fronteira de 20/09/2026 (provas-e-defeitos.md) tira o reembolso parcial de cima da mesa para um artigo que nao funciona, mesmo depois de um parcial recusado. O passo e propor a troca, nao a segunda tentativa de parcial da regra de 18/08 -- essa vale para artigo utilizavel. Verificacao manual: propor troca, sem valor nem percentagem.",
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "(troc|substitu)"
+    ],
+    "expect_texto_nao_regex": [
+      "\\d+\\s*(?:%|euros|€)"
+    ]
   },
   {
     "id": "bateria-inchada-avisa-antes-de-pedir-prova",
@@ -477,13 +490,16 @@
     },
     "expect": "rascunhar",
     "expect_corpo": true,
-    "expect_texto_regex": [
-      "garantia"
-    ],
     "expect_texto_nao_regex": [
       "\\d+\\s*(?:%|euros|€)"
     ],
-    "note": "provas-e-defeitos.md, 15/09/2026: partido nao e defeito de fabrico, a garantia nao cobre. Explica-se como deve ser e oferece-se unidade nova por valor muito abaixo do site, sem indicar o valor (confirma-se internamente). Verificacao manual: a resposta deve recusar a garantia e oferecer a unidade nova, sem pedir de novo as fotos que a cliente ja enviou."
+    "note": "provas-e-defeitos.md, 15/09/2026: partido nao e defeito de fabrico, a garantia nao cobre. Explica-se como deve ser e oferece-se unidade nova por valor muito abaixo do site, sem indicar o valor (confirma-se internamente). Verificacao manual: a resposta deve recusar a garantia e oferecer a unidade nova, sem pedir de novo as fotos que a cliente ja enviou.",
+    "expect_texto_contem": [
+      "garantia"
+    ],
+    "expect_texto_regex": [
+      "(unidade nova|abaixo)"
+    ]
   },
   {
     "id": "smartwatch-aberto-so-troca",

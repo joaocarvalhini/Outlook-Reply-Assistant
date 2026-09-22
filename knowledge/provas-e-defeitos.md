@@ -289,6 +289,13 @@ cliente, 18 de agosto de 2026.)
   lojista, 20 de setembro de 2026, a partir de um caso real: o assistente ia
   perguntar que reembolso parcial seria justo e o lojista trocou-o pela
   proposta de troca.)
+- **Fronteira da fronteira: isto é a ordem das propostas, não uma recusa do
+  reembolso.** A troca é o passo seguinte enquanto ainda não foi recusada. Se
+  o cliente já recusou a troca neste fio e insiste no reembolso, não se volta
+  a propor a mesma troca nem se escreve que o reembolso "não é possível" — o
+  artigo tem defeito confirmado e o reembolso é um direito dele. A partir daí
+  a decisão (parcial, saldo, ou dinheiro) é de uma pessoa: escala-se, com a
+  resposta de retenção escrita.
 
 ## Vale de compensação
 
