@@ -17,6 +17,10 @@ Fonte: /pages/termos-e-condicoes, /products/capa-personalizada
   está indicada na página desse produto específico, na loja online.
 - Não existe uma regra geral de compatibilidade válida para todos os produtos:
   varia de artigo para artigo.
+- **As capas de telemóvel só se vendem para iPhone.** Quem pergunta por uma
+  capa (de qualquer tema) para um Android — Xiaomi, Samsung, etc. — recebe a
+  resposta direta de que não há; não é caso para verificar internamente.
+  (Confirmado diretamente pelo lojista, 27 de setembro de 2026.)
 
 ## Encomenda sem stock — troca por modelo superior com diferença por MB Way
 

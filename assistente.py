@@ -41,6 +41,7 @@ import re
 import sqlite3
 import sys
 import time
+import unicodedata
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -95,6 +96,7 @@ class Config:
     # Ultimo e com omissao: os dubles de Config nos testes constroem-na por
     # posicao, e um campo obrigatorio a meio da lista partia-os todos.
     cache_ttl: str = "1h"
+    fios_irmaos: bool = False
 
     @property
     def dominio(self) -> str:
@@ -193,6 +195,12 @@ def carregar_config(dry_run_flag: bool | None) -> Config:
         # (ver docs/05-reliability/escalation.md).
         notas_internas=ligado("ENABLE_INTERNAL_NOTES", "false"),
         registo_compromissos=ligado("ENABLE_COMMITMENT_REGISTRY", "true"),
+        # Ligar conversas do mesmo caso (mesmo cliente e assunto, até 21 dias,
+        # e a mesma encomenda) para o histórico e os compromissos. Desligada
+        # por omissão de propósito: a ativação em produção é explícita, por
+        # ambiente, enquanto se junta experiência real. Desligada volta a olhar
+        # só a conversa atual.
+        fios_irmaos=ligado("ENABLE_SIBLING_THREADS", "false"),
         # Respostas parciais: rascunhar a parte coberta de um email com vários
         # assuntos, em vez de escalar o email todo. Desligar volta ao
         # comportamento anterior, em que um assunto descoberto deitava fora a
@@ -1863,16 +1871,37 @@ def seguimento_do_fio(con: sqlite3.Connection, conversation_id: str,
                 and confianca_antes not in _CONFIANCA_COM_DADOS)
 
 
-def compromissos_do_fio(con: sqlite3.Connection, conversation_id: str) -> list[dict]:
+def compromissos_do_fio(con: sqlite3.Connection, conversation_id: str,
+                        irmas: tuple[str, ...] = ()) -> list[dict]:
+    """Os compromissos pendentes deste caso.
+
+    `irmas` são as conversas que fio_do_mesmo_caso() já provou serem o mesmo
+    caso -- nunca "as do mesmo cliente". Para cada tipo vale o estado mais
+    recente (`atualizado_em`) entre esta conversa e as irmãs, seja de onde for:
+    um "envio concluído" mais recente numa irmã não pode ser ofuscado por um
+    "pendente" antigo desta. A conversa atual só desempata. Um tipo cujo
+    estado mais recente já não é pendente não aparece.
+    """
     if not conversation_id:
         return []
+    ids = (conversation_id, *(c for c in irmas if c and c != conversation_id))
+    marcas = ",".join("?" * len(ids))
     linhas = con.execute(
         "SELECT tipo, descricao, estado, data_prometida, "
-        " COALESCE(criado_em, atualizado_em) "
-        "FROM compromissos WHERE conversation_id = ? AND estado = 'pendente' "
-        "ORDER BY atualizado_em DESC",
-        (conversation_id,),
+        " COALESCE(criado_em, atualizado_em), conversation_id "
+        f"FROM compromissos WHERE conversation_id IN ({marcas}) "
+        "ORDER BY atualizado_em DESC, (conversation_id = ?) DESC",
+        (*ids, conversation_id),
     ).fetchall()
+    vistos: set[str] = set()
+    decisivas = []
+    for linha in linhas:
+        if linha[0] in vistos:
+            continue
+        vistos.add(linha[0])
+        if linha[2] == "pendente":
+            decisivas.append(linha)
+    linhas = decisivas
     hoje = agora()
     # A idade conta desde que o compromisso foi registado, não desde a última
     # vez que o modelo voltou a vê-lo no fio. Com o atualizado_em, cada email
@@ -1882,8 +1911,8 @@ def compromissos_do_fio(con: sqlite3.Connection, conversation_id: str) -> list[d
     # aviso de "pode já ter sido cumprido" nunca chegou a aparecer uma vez.
     return [
         {"tipo": t, "descricao": d, "estado": e, "data": dt, "em": criado,
-         "dias": dias_desde(criado, hoje)}
-        for t, d, e, dt, criado in linhas
+         "dias": dias_desde(criado, hoje), "irma": conv != conversation_id}
+        for t, d, e, dt, criado, conv in linhas
     ]
 
 
@@ -1901,16 +1930,27 @@ def resumir_compromissos(compromissos: list[dict], emails_antes: int = 0) -> str
                      "cumprido sem ninguém o ter registado")
         else:
             idade = f", há {dias} dia(s)"
+        origem = ", numa conversa anterior do mesmo caso" if c.get("irma") else ""
         linhas.append(
             f"- {c['tipo']}: {c['descricao']} (estado: {c['estado']}{data}, "
-            f"registado em {c['em'][:10]}{idade})"
+            f"registado em {c['em'][:10]}{idade}{origem})"
         )
     # Só a partir da segunda: dizer "já escreveu 1 vez" não acrescenta nada e
     # gasta uma linha do pedido em todos os fios com duas mensagens.
-    if emails_antes >= 2:
-        linhas.append(f"Este cliente já escreveu {emails_antes} vezes nesta "
-                      "conversa antes deste email.")
+    repeticao = linha_repeticao(emails_antes)
+    if repeticao:
+        linhas.append(repeticao)
     return "\n".join(linhas)
+
+
+def linha_repeticao(emails_antes: int) -> str:
+    """O número que o modelo não consegue tirar do fio -- que só traz as
+    últimas mensagens. Vive à parte de resumir_compromissos() porque a
+    repetição não depende de haver compromissos: um cliente que pergunta pela
+    terceira vez sem nenhum compromisso registado ficava sem o sinal."""
+    if emails_antes < 2:
+        return ""
+    return f"Este cliente já escreveu {emails_antes} vezes nesta conversa antes deste email."
 
 
 def gravar_compromisso(con: sqlite3.Connection, conversation_id: str, tipo: str,
@@ -2385,12 +2425,203 @@ def resumir_historico(anteriores: list[dict], caixa: str) -> str:
         # sido enviado. Marca-se mesmo quando não há texto nenhum, porque é
         # aí que o silêncio engana mais.
         marca = " [levava um anexo, que não consigo ver]" if m.get("tem_anexos") else ""
+        # Vinda de outra conversa do mesmo caso (ver combinar_historico): o
+        # modelo tem de saber que não é a mensagem anterior a esta.
+        origem = " (fio anterior)" if m.get("irma") else ""
         if texto or marca:
-            linhas.append(f"[{m['em']}] {quem}: {texto}{marca}")
+            linhas.append(f"[{m['em']}] {quem}{origem}: {texto}{marca}")
     return "\n".join(linhas)
 
 
-def resumir_encomenda(encomenda: dict, shopify: "Shopify | None" = None) -> str:
+# ─────────────────────────────────────────────────────────────────────────────
+# Fios-irmãos -- o mesmo caso, noutra conversa
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# O Exchange abre uma conversa nova quando o cliente escreve de novo sem
+# responder à mensagem anterior (visto em produção, 30/09/2026: o caso da Marta
+# Alves andou por quatro conversas com o mesmo assunto, e o acordo estava na
+# de 21/09). historico() e os compromissos só olhavam a conversa atual, por isso
+# o que estava na irmã nunca chegava ao modelo. Medido a 30 dias: 9,4% das
+# mensagens de clientes têm uma irmã anterior.
+#
+# Ligar por engano dois casos do mesmo cliente é pior do que não ligar, por
+# isso todas as guardas vão para o lado de não ligar. E o que uma irmã traz
+# ocupa lugares que já existiam: nunca aumenta o número de mensagens do fio.
+
+DIAS_FIO_IRMAO = 21
+MAX_FIOS_IRMAOS = 2
+# Páginas de 50 que se leem, no máximo, para decidir uma ligação. Passado isto
+# não se sabe o que falta ler, e sem os dados todos não se liga.
+PAGINAS_FIO_IRMAO = 3
+# O máximo de mensagens que as irmãs juntas trazem ao fio. Com o fio cheio
+# tiram o lugar às mais antigas da atual; com lugares livres ocupam-nos, mas
+# só até aqui: numa conversa nova, sem histórico, é onde está o contexto todo,
+# e mesmo assim não passa de duas.
+MENSAGENS_IRMAS_MAX = 2
+
+_PREFIXO_ASSUNTO = re.compile(r"^\s*(?:(?:re|fw|fwd|enc|res|rv)\s*:\s*)+", re.I)
+# O que uma mensagem da loja diz quando assume ou comunica uma decisão.
+_SINAL_DECISAO_DA_LOJA = re.compile(
+    r"€|\beuros?\b|gratuit|oferec|\bvale\b|cr[eé]dito|vamos enviar|enviamos"
+    r"|substitu|reembols|\btroca",
+    re.I,
+)
+
+
+def assunto_normalizado(assunto: str) -> str:
+    """Sem "RE:"/"FW:", sem acentos, sem maiúsculas nem espaços a mais."""
+    sem_prefixo = _PREFIXO_ASSUNTO.sub("", assunto or "")
+    sem_acentos = "".join(
+        c for c in unicodedata.normalize("NFKD", sem_prefixo) if not unicodedata.combining(c)
+    )
+    return " ".join(sem_acentos.casefold().split())
+
+
+def _instante(marca: str) -> datetime | None:
+    try:
+        return datetime.fromisoformat(str(marca).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def conversas_irmas(atual: dict, mensagens_do_cliente: list[dict],
+                    dias: int = DIAS_FIO_IRMAO, maximo: int = MAX_FIOS_IRMAOS) -> list[str]:
+    """Ids das conversas candidatas a irmãs, da mais recente para a mais antiga.
+
+    Só metadados: mesmo remetente, mesmo assunto normalizado (igual, não
+    parecido), anterior a esta mensagem e no máximo `dias` antes dela. Quem
+    escolhe se são mesmo o mesmo caso é fio_do_mesmo_caso(), que já vê o texto.
+    """
+    alvo = assunto_normalizado(atual["assunto"])
+    agora_ = _instante(atual["recebido"])
+    if not alvo or agora_ is None or not atual.get("conversation_id"):
+        return []
+    limite = agora_ - timedelta(days=dias)
+    ultima: dict[str, datetime] = {}
+    for m in mensagens_do_cliente:
+        quando = _instante(m["recebido"])
+        if (quando is None or m["conversation_id"] in ("", atual["conversation_id"])
+                or m["de"] != atual["de"]
+                or assunto_normalizado(m["assunto"]) != alvo
+                or not limite <= quando < agora_):
+            continue
+        ultima[m["conversation_id"]] = max(quando, ultima.get(m["conversation_id"], quando))
+    return sorted(ultima, key=lambda c: ultima[c], reverse=True)[:maximo]
+
+
+def fio_do_mesmo_caso(numeros_atuais: set[str], numeros_irma: set[str]) -> bool:
+    """A conversa candidata trata do mesmo caso que a atual?
+
+    Só com um identificador determinístico em comum, e um só: o número da
+    encomenda de que as duas falam, dito nas duas. Mesmo remetente, mesmo
+    assunto e "a única compra que a Shopify vê" não chegam -- o mesmo cliente
+    pode ter dois problemas com o mesmo título, e a Shopify pode não ver as
+    encomendas antigas.
+
+    Igualdade, não interseção: uma irmã que fala da 23111 e da 23000 não se
+    liga a um email sobre a 23111, porque os compromissos dela podem ser da
+    23000 e não há forma de os separar. Vários números de cada lado, idem.
+    """
+    return len(numeros_atuais) == 1 and numeros_atuais == numeros_irma
+
+
+def combinar_historico(atuais: list[dict], irmas: list[dict], quantas: int,
+                       caixa: str) -> list[dict]:
+    """O fio que vai ao modelo, com o limite de mensagens que já havia.
+
+    A conversa atual manda. Das irmãs só entram mensagens da loja -- é onde
+    estão os acordos e as decisões --, preferindo as que assumem alguma coisa
+    (valores, ofertas, envios) e, a igualdade, as mais recentes. No máximo
+    MENSAGENS_IRMAS_MAX: ocupam lugares livres e, se não os houver, tiram o
+    lugar às mensagens mais antigas da atual. Nunca sai daqui um fio maior do
+    que `quantas`, nem com mais de duas mensagens de fora.
+    """
+    da_loja = [m for m in irmas if e_da_loja(m["de"], caixa) and m.get("texto")]
+    if not da_loja or quantas <= 0:
+        return atuais
+    da_loja.sort(key=lambda m: (bool(_SINAL_DECISAO_DA_LOJA.search(m["texto"])), m["em"]),
+                 reverse=True)
+    quantas_irmas = min(len(da_loja), MENSAGENS_IRMAS_MAX, quantas)
+    escolhidas = [{**m, "irma": True} for m in da_loja[:quantas_irmas]]
+    mantidas = atuais if len(atuais) + len(escolhidas) <= quantas else atuais[len(atuais) - (quantas - len(escolhidas)):]
+    return sorted([*escolhidas, *mantidas], key=lambda m: m["em"])
+
+
+def montar_fio(anteriores: list[dict], quantas: int, max_chars: int) -> list[dict]:
+    """As últimas `quantas` de `anteriores` (já por ordem), no formato do fio."""
+    limpos = {
+        id(m): cortar_citacao(para_texto(str((m.get("body") or {}).get("content", ""))))
+        for m in anteriores[-quantas:]
+    }
+    return [
+        {
+            "de": str((m.get("from") or {}).get("emailAddress", {}).get("address", "")).lower(),
+            "em": str(m.get("receivedDateTime", ""))[:16].replace("T", " "),
+            # O corpo traz a citação colada a seguir ao texto novo. Sem
+            # cortar, uma resposta de quatro palavras gastava o orçamento
+            # todo a repetir mensagens que já estão noutras linhas do fio.
+            "texto": limpos[id(m)][:max_chars],
+            # Lidos no texto inteiro, não no cortado: só servem para
+            # perceber se duas conversas são o mesmo caso (fio_do_mesmo_caso)
+            # e nunca vão para o modelo.
+            "encomendas": extrair_numeros_encomenda("", limpos[id(m)]),
+            # Só se diz QUE havia anexo, não se lê o anexo. As imagens do
+            # fio anterior não vão para o modelo (custam tokens e são
+            # quase sempre irrelevantes), mas ignorá-las por completo
+            # levou a um erro real: a 03/09/2026 a loja mandou o código
+            # da encomenda num print, o cliente respondeu a seguir, e o
+            # assistente ofereceu-se para "verificar internamente" uma
+            # coisa que já tinha sido enviada uma mensagem antes.
+            "tem_anexos": bool(m.get("hasAttachments")),
+        }
+        for m in anteriores[-quantas:]
+    ]
+
+
+def _numeros_das_mensagens(mensagens: list[dict]) -> set[str]:
+    """Números de encomenda no texto inteiro (sem a citação) de mensagens do Graph."""
+    return {
+        n for m in mensagens
+        for n in extrair_numeros_encomenda(
+            "", cortar_citacao(para_texto(str((m.get("body") or {}).get("content", "")))))
+    }
+
+
+def buscar_fios_irmaos(graph: "Graph", msg: dict,
+                       cfg: "Config") -> list[tuple[str, list[dict]]]:
+    """[(id da conversa, as suas mensagens anteriores a `msg`)] das conversas
+    que tratam do mesmo caso. Vazio quando não há nenhuma -- que é o normal.
+
+    Primeiro decide-se de que encomenda se fala, lendo o fio ATUAL inteiro
+    (até ao limite de páginas) e não só as mensagens que vão ao modelo: um
+    número que o THREAD_MESSAGES deixou de fora também é do caso. Sem exatamente
+    um número, ou com o fio por ler até ao fim, não há nada a ligar e nem se
+    procuram irmãs. O que vai ao modelo continua com os limites de sempre.
+
+    Só liga com os dados completos: se a lista de mensagens do cliente ou o
+    fio de uma candidata não couberam nas páginas permitidas, não liga essa.
+    Uma falha do Graph sobe -- quem chama continua com a conversa atual.
+    """
+    numeros_fio, completo = graph.numeros_do_fio(msg["conversation_id"], msg["recebido"])
+    if not completo:
+        return []
+    numeros_atuais = numeros_fio | set(extrair_numeros_encomenda(msg["assunto"], msg["corpo"]))
+    if len(numeros_atuais) != 1:
+        return []
+    do_cliente, completo = graph.mensagens_do_cliente(msg)
+    if not completo:
+        return []
+    ligadas = []
+    for cid in conversas_irmas(msg, do_cliente):
+        mensagens, numeros_irma, completo = graph.fio_irmao(
+            cid, cfg.fio_mensagens, cfg.fio_chars, msg["recebido"])
+        if completo and fio_do_mesmo_caso(numeros_atuais, numeros_irma):
+            ligadas.append((cid, mensagens))
+    return ligadas
+
+
+def resumir_encomenda(encomenda: dict, shopify: "Shopify | None" = None,
+                      sem_rastreio: bool = False) -> str:
     """Texto curto para o prompt: só os factos que respondem a "onde está a
     minha encomenda" e "até quando posso devolver", nunca dados de
     pagamento nem morada completa.
@@ -2400,6 +2631,11 @@ def resumir_encomenda(encomenda: dict, shopify: "Shopify | None" = None) -> str:
     encomenda entregue, só quando a encomenda já vai ser revelada ao
     cliente. Sem `shopify`, a data de entrega e o prazo de devolução ficam
     de fora (ex.: em testes).
+
+    `sem_rastreio` tira do resumo tudo o que vem dos fulfillments (código,
+    transportadora, estado do envio, link, data de entrega). É o que se usa
+    quando o cliente diz que não consegue rastrear: o que o modelo não vê não
+    pode copiar para a resposta.
     """
     linhas = [
         f"Encomenda {encomenda.get('name', '?')}",
@@ -2411,6 +2647,8 @@ def resumir_encomenda(encomenda: dict, shopify: "Shopify | None" = None) -> str:
     estado = encomenda.get("fulfillment_status")
     linhas.append(f"Envio: {_TRADUCAO_EXPEDICAO.get(estado, estado or 'ainda não expedida')}")
     for f in encomenda.get("fulfillments") or []:
+        if sem_rastreio:
+            continue
         rastreio = f.get("tracking_number")
         if rastreio:
             linhas.append(f"Código de rastreio: {rastreio}")
@@ -2594,27 +2832,84 @@ class Graph:
             if m.get("internetMessageId") != msg["message_id"]
         ]
         anteriores.sort(key=lambda m: m.get("receivedDateTime", ""))
-        return [
+        return montar_fio(anteriores, quantas, max_chars)
+
+    def _paginar(self, url: str, params: dict | None,
+                 max_paginas: int) -> tuple[list[dict], bool]:
+        """(itens, completo). Segue o @odata.nextLink até `max_paginas`; se
+        ainda houver mais, `completo` é False e quem chama não decide com isto."""
+        itens: list[dict] = []
+        lidas = 0
+        while url:
+            if lidas >= max_paginas:
+                return itens, False
+            dados = self._pedir("GET", url, params=params)
+            itens.extend(dados.get("value", []))
+            url, params = dados.get("@odata.nextLink"), None
+            lidas += 1
+        return itens, True
+
+    def mensagens_do_cliente(self, msg: dict,
+                             dias: int = DIAS_FIO_IRMAO) -> tuple[list[dict], bool]:
+        """(metadados, completo) das mensagens que este remetente escreveu nos
+        `dias` anteriores a esta, em qualquer pasta e conversa. Serve
+        conversas_irmas(); o corpo só se lê depois, e só das candidatas."""
+        recebido = _instante(msg["recebido"])
+        if recebido is None or not msg.get("de"):
+            return [], True
+        desde = (recebido - timedelta(days=dias)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        endereco = msg["de"].replace("'", "''")
+        itens, completo = self._paginar(
+            f"{self.base}/messages",
             {
-                "de": str((m.get("from") or {}).get("emailAddress", {}).get("address", "")).lower(),
-                "em": str(m.get("receivedDateTime", ""))[:16].replace("T", " "),
-                # O corpo traz a citação colada a seguir ao texto novo. Sem
-                # cortar, uma resposta de quatro palavras gastava o orçamento
-                # todo a repetir mensagens que já estão noutras linhas do fio.
-                "texto": cortar_citacao(
-                    para_texto(str((m.get("body") or {}).get("content", "")))
-                )[:max_chars],
-                # Só se diz QUE havia anexo, não se lê o anexo. As imagens do
-                # fio anterior não vão para o modelo (custam tokens e são
-                # quase sempre irrelevantes), mas ignorá-las por completo
-                # levou a um erro real: a 03/09/2026 a loja mandou o código
-                # da encomenda num print, o cliente respondeu a seguir, e o
-                # assistente ofereceu-se para "verificar internamente" uma
-                # coisa que já tinha sido enviada uma mensagem antes.
-                "tem_anexos": bool(m.get("hasAttachments")),
-            }
-            for m in anteriores[-quantas:]
-        ]
+                "$filter": (f"from/emailAddress/address eq '{endereco}' "
+                            f"and receivedDateTime ge {desde} "
+                            f"and receivedDateTime lt {msg['recebido']}"),
+                "$select": "conversationId,internetMessageId,subject,from,receivedDateTime",
+                "$top": "50",
+            },
+            PAGINAS_FIO_IRMAO,
+        )
+        return [self._converter(m) for m in itens], completo
+
+    def _fio_anterior(self, conversation_id: str,
+                      antes_de: str) -> tuple[list[dict], bool]:
+        """(mensagens da conversa anteriores a `antes_de`, completo), por ordem.
+        `antes_de` é o receivedDateTime do email, completo: a mensagem do próprio
+        email (mesma hora) fica de fora."""
+        itens, completo = self._paginar(
+            f"{self.base}/messages",
+            {
+                "$filter": f"conversationId eq '{conversation_id}'",
+                "$select": "internetMessageId,from,receivedDateTime,body,hasAttachments",
+                "$top": "50",
+            },
+            PAGINAS_FIO_IRMAO,
+        )
+        anteriores = sorted(
+            (m for m in itens if str(m.get("receivedDateTime", "")) < antes_de),
+            key=lambda m: m.get("receivedDateTime", ""),
+        )
+        return anteriores, completo
+
+    def numeros_do_fio(self, conversation_id: str, antes_de: str) -> tuple[set[str], bool]:
+        """(números de encomenda, completo) de TODAS as mensagens da conversa
+        anteriores a `antes_de`. Serve só para decidir de que caso se fala: o
+        fio que vai ao modelo continua a ser o de historico()."""
+        anteriores, completo = self._fio_anterior(conversation_id, antes_de)
+        return _numeros_das_mensagens(anteriores), completo
+
+    def fio_irmao(self, conversation_id: str, quantas: int, max_chars: int,
+                  antes_de: str) -> tuple[list[dict], set[str], bool]:
+        """(fio, números de encomenda, completo) de uma conversa candidata, só
+        com as mensagens anteriores a `antes_de`.
+
+        Os números leem-se em TODAS essas mensagens, e não só nas `quantas` que
+        vão ao modelo: um número que está mais atrás também é dela. Se o fio
+        não coube nas páginas permitidas, `completo` é False."""
+        anteriores, completo = self._fio_anterior(conversation_id, antes_de)
+        return (montar_fio(anteriores, quantas, max_chars),
+                _numeros_das_mensagens(anteriores), completo)
 
     def criar_rascunho(self, message_id: str, corpo_html: str,
                        nota_html: str = "") -> str:
@@ -2843,6 +3138,18 @@ def nota_anexos_ignorados(ignorados: list[dict]) -> str:
             "mostrar a tentativa de ligação, ou o LED do produto no estado "
             "descrito)."
         )
+    # size == 0, não "sem size": um Graph que não devolve o tamanho não prova
+    # que o ficheiro está vazio.
+    vazios = [a for a in outros if a.get("size") == 0]
+    outros = [a for a in outros if a.get("size") != 0]
+    if vazios:
+        nomes = ", ".join(a.get("name") or "(sem nome)" for a in vazios[:3])
+        nota += (
+            f"\n\nO anexo do cliente chegou VAZIO, com 0 bytes ({nomes}): não "
+            "contém nada, seja o que for que o cliente diga ter enviado (ex.: "
+            "IBAN, comprovativo, fotografia). Nunca confirmes a receção nem o "
+            "conteúdo; diz que o anexo chegou vazio e pede que o voltem a enviar."
+        )
     if outros:
         nomes = ", ".join(a.get("name") or "(sem nome)" for a in outros[:3])
         nota += (
@@ -2851,6 +3158,136 @@ def nota_anexos_ignorados(ignorados: list[dict]) -> str:
             "Trata isto como se não tivesse chegado prova nenhuma."
         )
     return nota
+
+
+# "Em anexo" no texto não é um anexo: o cliente pode escrever que enviou e o
+# ficheiro nunca ter chegado (visto em produção, 24/09/2026: um IBAN "em
+# anexo" cujo anexo vinha vazio, e o rascunho confirmou a receção só pelo
+# texto).
+_DIZ_QUE_ANEXOU = re.compile(
+    r"\bem\s+anexo\b|\bno\s+anexo\b|\bsegue\s+anexo\b|\banexei\b|\banexad[oa]s?\b"
+    r"|\bconforme\s+anexo\b|\battached\b",
+    re.I,
+)
+
+
+def nota_anexo_em_falta(texto: str) -> str:
+    """Para quando o cliente diz que anexou algo e nenhum anexo chegou ao
+    sistema (nem imagem, nem ficheiro ignorado). Quem chama garante que os
+    anexos foram mesmo inspecionados -- sem isso, não se sabe se faltam."""
+    if not _DIZ_QUE_ANEXOU.search(texto or ""):
+        return ""
+    return (
+        "\n\nO cliente diz ter enviado um anexo, mas não chegou nenhum anexo que "
+        "este sistema consiga ver. Nunca confirmes a receção nem o conteúdo (ex.: "
+        "IBAN, comprovativo); diz que não conseguem ver nenhum anexo no email e "
+        "pede que o voltem a enviar."
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Sinais do pedido -- factos que o código já sabe
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Cada sinal é uma frase curta, acrescentada ao pedido só nos emails em que
+# se aplica. O que o código consegue saber não se deixa ao modelo para inferir,
+# e nada disto toca no prompt de sistema (por isso não reescreve a cache).
+# Falham todos para o lado seguro: sem dados que o provem, não dizem nada, e o
+# modelo continua a fazer o que fazia -- verificar internamente.
+
+_VERBO_ALTERAR = r"(?:alter|mud|troc|corrig|atualiz)\w*"
+_ALVO_ENTREGA = r"(?:morada|ponto\s+de\s+(?:recolha|entrega|levantamento)|pick\s*-?\s*up)"
+_PEDE_ALTERAR_ENTREGA = re.compile(
+    # No máximo três palavras entre o verbo e o alvo: com cinco, "a morada da
+    # loja para enviar a troca" (uma pergunta de devolução) também apanhava.
+    rf"\b{_VERBO_ALTERAR}\W+(?:\w+\W+){{0,3}}?{_ALVO_ENTREGA}"
+    rf"|{_ALVO_ENTREGA}\W+(?:\w+\W+){{0,3}}?\b{_VERBO_ALTERAR}",
+    re.I,
+)
+
+
+def sinal_alteracao_entrega(texto: str, encomenda: dict | None) -> str:
+    """Alterar morada ou ponto DPD Pickup: depende de a encomenda já estar
+    processada, e isso é o código de rastreio (regra do lojista, 26/09/2026).
+
+    Só diz "é possível" quando os dados provam que não há nenhum fulfillment;
+    qualquer outra coisa -- rastreio, expedição parcial, encomenda cancelada,
+    estado que não se conhece -- ou não diz nada ou manda não garantir.
+    """
+    if encomenda is None or not _PEDE_ALTERAR_ENTREGA.search(texto or ""):
+        return ""
+    if encomenda.get("cancelled_at"):
+        return ""
+    fulfillments = encomenda.get("fulfillments") or []
+    if not fulfillments and encomenda.get("fulfillment_status") in (None, "unfulfilled"):
+        return (
+            "Se o cliente pede para alterar a morada ou o ponto de entrega: a "
+            "encomenda ainda não tem código de rastreio associado, por isso "
+            "podes dizer que a alteração é possível. Não digas porquê, nem que "
+            "ainda não foi expedida, nem que já está feita."
+        )
+    if any(f.get("tracking_number") for f in fulfillments):
+        return (
+            "Se o cliente pede para alterar a morada ou o ponto de entrega: a "
+            "encomenda já tem código de rastreio associado. Não garantas que a "
+            "alteração é possível; diz que vão verificar internamente, sem "
+            "certeza nenhuma."
+        )
+    return ""
+
+
+_NAO_CONSEGUE_RASTREAR = re.compile(
+    r"\bn[aã]o\s+(?:consigo|consegui|conseguimos|estou\s+a\s+conseguir|d[aá]\s+para)\s+"
+    r"(?:\w+\s+){0,3}?(?:rastrear|rastreio"
+    r"|(?:seguir|acompanhar|localizar|ver)\s+(?:o\s+|a\s+)?(?:meu\s+|minha\s+)?"
+    r"(?:encomenda|envio|pedido|pacote))"
+    r"|\b(?:rastreio|tracking)\s+n[aã]o\s+(?:funciona|abre|d[aá]|aparece|mostra)",
+    re.I,
+)
+
+
+def cliente_nao_consegue_rastrear(texto: str) -> bool:
+    return bool(_NAO_CONSEGUE_RASTREAR.search(texto or ""))
+
+
+SINAL_SEM_RASTREIO = (
+    "O cliente diz que não consegue rastrear a encomenda. O código de rastreio, "
+    "a transportadora e o estado do envio foram retirados destes dados de "
+    "propósito: não os indiques nem os inventes, e não afirmes o estado do "
+    "envio. Diz que vão analisar já o que se passa e que voltam a contactar "
+    "muito em breve."
+)
+
+
+def sinais_da_encomenda(texto: str, encomenda: dict, encomendas_no_email: int) -> tuple[bool, list[str]]:
+    """Os sinais que dependem de a encomenda já estar provada como sua.
+
+    Devolve (sem_rastreio, sinais): `sem_rastreio` decide também o que
+    resumir_encomenda() deixa passar, por isso quem chama precisa dele. Com
+    duas encomendas no mesmo email não se sabe a qual se refere um pedido de
+    alteração: sem sinal, o modelo pergunta qual, como já fazia.
+    """
+    sem_rastreio = cliente_nao_consegue_rastrear(texto)
+    sinais = [SINAL_SEM_RASTREIO] if sem_rastreio else []
+    if encomendas_no_email <= 1:
+        alteracao = sinal_alteracao_entrega(texto, encomenda)
+        if alteracao:
+            sinais.append(alteracao)
+    return sem_rastreio, sinais
+
+
+def formatar_sinais(sinais: list[str]) -> str:
+    return "\n".join(f"- {s}" for s in sinais)
+
+
+def nota_dos_anexos(anexos: list[dict], texto: str) -> tuple[list[dict], str]:
+    """(imagens a enviar ao modelo, nota sobre o que ele não vê), a partir dos
+    metadados dos anexos. É o que processar() e o eval partilham."""
+    candidatos, ignorados = selecionar_anexos_de_imagem(anexos)
+    nota = nota_anexos_ignorados(ignorados)
+    if not candidatos and not ignorados:
+        nota += nota_anexo_em_falta(texto)
+    return candidatos, nota
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2908,6 +3345,7 @@ def decidir(
     cliente: object, cfg: Config, prompt: str, msg: dict,
     dados_encomenda: str = "", historico: str = "", aviso_identidade: str = "",
     compromissos: str = "", imagens: tuple[dict, ...] = (), nota_anexos: str = "",
+    sinais: str = "",
 ) -> dict:
     """Devolve a decisão do modelo. Levanta em caso de falha técnica.
 
@@ -2946,6 +3384,8 @@ def decidir(
         pedido += f"\n\n({len(imagens)} fotografia(s) anexada(s) a seguir.)"
     if nota_anexos:
         pedido += nota_anexos
+    if sinais:
+        pedido += f"\n\nSinais verificados pelo sistema:\n{sinais}"
 
     # Soma do que cada chamada gastou, para o registo saber o custo real deste
     # email. Sem isto não há forma de provar que uma alteração de cache ou de
@@ -3341,10 +3781,14 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
 
     imagens: list[dict] = []
     nota_anexos = ""
-    if cfg.processar_imagens and msg.get("tem_anexos"):
+    texto_email = f"{msg['assunto']}\n{msg['corpo']}"
+    # Só se afirma que "não chegou anexo nenhum" quando se olhou mesmo: o Graph
+    # diz que não há anexos, ou a lista foi lida sem erro (nota_dos_anexos).
+    if not msg.get("tem_anexos"):
+        nota_anexos = nota_anexo_em_falta(texto_email)
+    elif cfg.processar_imagens:
         try:
-            candidatos, ignorados = selecionar_anexos_de_imagem(graph.anexos(msg))
-            nota_anexos = nota_anexos_ignorados(ignorados)
+            candidatos, nota_anexos = nota_dos_anexos(graph.anexos(msg), texto_email)
             for a in candidatos:
                 conteudo = graph.conteudo_anexo(msg, a["id"])
                 if len(conteudo) <= _TAMANHO_MAX_ANEXO:
@@ -3358,7 +3802,11 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
             log("erro-anexos", email=msg["message_id"][:40],
                 erro=f"{type(exc).__name__}: {exc}")
 
+    # `historico` é o fio da conversa atual e nada mais: é dele que se tiram o
+    # número da encomenda e os indícios de identidade, que não podem passar a
+    # depender de uma conversa irmã.
     historico = ""
+    anteriores: list[dict] = []
     if msg["conversation_id"]:
         try:
             anteriores = graph.historico(msg, cfg.fio_mensagens, cfg.fio_chars)
@@ -3368,13 +3816,13 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
             # escala, que é o que fazia antes de isto existir.
             log("erro-historico", email=msg["message_id"][:40],
                 erro=f"{type(exc).__name__}: {exc}")
-
-    compromissos = ""
-    if cfg.registo_compromissos and msg["conversation_id"]:
-        compromissos = resumir_compromissos(
-            compromissos_do_fio(con, msg["conversation_id"]),
-            emails_anteriores(con, msg["conversation_id"]),
-        )
+            anteriores = []
+            historico_lido = False
+        else:
+            historico_lido = True
+    else:
+        historico_lido = False
+    sinais: list[str] = []
 
     dados_encomenda = ""
     aviso_identidade = ""
@@ -3402,8 +3850,41 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         achado = Correspondencia(None, "nenhuma", ("erro_na_consulta",))
 
     confianca = achado.confianca
+
+    # Fios-irmãos e compromissos. `historico_modelo` é o que o modelo lê.
+    historico_modelo = historico
+    irmas: list[tuple[str, list[dict]]] = []
+    if cfg.fios_irmaos and historico_lido:
+        try:
+            irmas = buscar_fios_irmaos(graph, msg, cfg)
+            if irmas:
+                historico_modelo = resumir_historico(combinar_historico(
+                    anteriores, [m for _, ms in irmas for m in ms],
+                    cfg.fio_mensagens, cfg.mailbox), cfg.mailbox)
+                log("fios-irmaos", email=msg["message_id"][:40], n=len(irmas))
+        except Exception as exc:
+            # Sem a irmã fica o comportamento de antes.
+            irmas = []
+            log("erro-fios-irmaos", email=msg["message_id"][:40],
+                erro=f"{type(exc).__name__}: {exc}")
+
+    emails_antes = emails_anteriores(con, msg["conversation_id"])
+    compromissos = ""
+    if cfg.registo_compromissos and msg["conversation_id"]:
+        compromissos = resumir_compromissos(
+            compromissos_do_fio(con, msg["conversation_id"], tuple(c for c, _ in irmas)),
+            emails_antes,
+        )
+    # Sem compromissos, a contagem não vai no bloco deles: vai aqui.
+    if not compromissos and linha_repeticao(emails_antes):
+        sinais.append(linha_repeticao(emails_antes))
+
     if achado.pode_revelar and achado.encomenda is not None:
-        dados_encomenda = resumir_encomenda(achado.encomenda, shopify)
+        sem_rastreio, sinais_encomenda = sinais_da_encomenda(
+            texto_email, achado.encomenda,
+            len(extrair_numeros_encomenda(msg["assunto"], msg["corpo"])))
+        sinais.extend(sinais_encomenda)
+        dados_encomenda = resumir_encomenda(achado.encomenda, shopify, sem_rastreio)
         # Um email pode falar de mais do que uma encomenda (ex.: duas
         # devoluções no mesmo pedido) -- sem isto, só a primeira chegava ao
         # modelo e a segunda ficava sem resposta (visto em produção,
@@ -3422,7 +3903,8 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
                         erro=f"{type(exc).__name__}: {exc}")
                     continue
                 if outro_achado.pode_revelar and outro_achado.encomenda is not None:
-                    outras_encomendas.append(resumir_encomenda(outro_achado.encomenda, shopify))
+                    outras_encomendas.append(
+                        resumir_encomenda(outro_achado.encomenda, shopify, sem_rastreio))
         if outras_encomendas:
             # Só ter os dados das duas não bastou em teste: o modelo continuava
             # a responder só à primeira, sem se aperceber de que havia uma
@@ -3500,8 +3982,9 @@ def processar(msg: dict, cfg: Config, graph: Graph, shopify: Shopify,
         )
 
     try:
-        decisao = decidir(cliente, cfg, prompt, msg, dados_encomenda, historico,
-                          aviso_identidade, compromissos, tuple(imagens), nota_anexos)
+        decisao = decidir(cliente, cfg, prompt, msg, dados_encomenda, historico_modelo,
+                          aviso_identidade, compromissos, tuple(imagens), nota_anexos,
+                          formatar_sinais(sinais))
     except Exception as exc:
         # Uma falha técnica não é uma decisão. Fica por marcar para a passagem
         # seguinte tentar outra vez — nunca se perde um email por causa disto.

@@ -256,10 +256,45 @@ def construir_msg(caso: dict, caixa: str) -> dict:
     }
 
 
+def contexto_derivado(caso: dict, msg: dict, sem_sinais: bool) -> tuple[str, str, str, list[str]]:
+    """(dados_encomenda, nota_anexos, compromissos, sinais) de um caso.
+
+    Um caso com "encomenda" (Shopify em bruto), "anexos" (metadados do Graph)
+    ou "emails_anteriores" passa pelas mesmas funções que a produção usa em
+    processar() -- é isso que se está a medir, não um texto escrito à mão que
+    imita o que elas dariam. `sem_sinais` reproduz o comportamento de antes
+    deles, para comparar a mesma pergunta com e sem: dados completos, 0 bytes
+    como "não processável" e nenhum sinal.
+    """
+    texto = f"{msg['assunto']}\n{msg['corpo']}"
+    dados = resolver_datas(caso.get("dados_encomenda", ""))
+    nota = caso.get("nota_anexos", "")
+    compromissos = resolver_datas(caso.get("compromissos", ""))
+    sinais: list[str] = []
+    if "encomenda" in caso:
+        sem_rastreio, do_pedido = a.sinais_da_encomenda(
+            texto, caso["encomenda"],
+            len(a.extrair_numeros_encomenda(msg["assunto"], msg["corpo"])))
+        dados = a.resumir_encomenda(caso["encomenda"], None, sem_rastreio and not sem_sinais)
+        if not sem_sinais:
+            sinais += do_pedido
+    if "anexos" in caso:
+        if sem_sinais:
+            antigos = [{**x, "size": None} if x.get("size") == 0 else x for x in caso["anexos"]]
+            nota = a.nota_anexos_ignorados(a.selecionar_anexos_de_imagem(antigos)[1])
+        else:
+            nota = a.nota_dos_anexos(caso["anexos"], texto)[1]
+    if "emails_anteriores" in caso and not compromissos and not sem_sinais:
+        linha = a.linha_repeticao(caso["emails_anteriores"])
+        if linha:
+            sinais.append(linha)
+    return dados, nota, compromissos, sinais
+
+
 def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
             cliente: object | None, prompt: str,
             pasta_fixtures: Path = Path("eval/fixtures"),
-            registo: dict | None = None) -> tuple[str, str, str]:
+            registo: dict | None = None, sem_sinais: bool = False) -> tuple[str, str, str]:
     """Devolve (obtido, etapa, detalhe).
 
     `registo`, quando dado, recebe a decisão crua do modelo por id de caso: uma
@@ -288,20 +323,21 @@ def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
         return "passou", "triagem", "chegou ao modelo"
 
     imagens = carregar_imagens(caso.get("imagens", []), pasta_fixtures)
+    dados, nota_anexos, compromissos, sinais = contexto_derivado(caso, msg, sem_sinais)
     try:
         d = a.decidir(
             cliente, cfg, prompt, msg,
-            resolver_datas(caso.get("dados_encomenda", "")),
+            dados,
             resolver_datas(caso.get("historico", "")),
             caso.get("aviso_identidade", ""),
-            resolver_datas(caso.get("compromissos", "")),
-            imagens, caso.get("nota_anexos", ""),
+            compromissos,
+            imagens, nota_anexos, a.formatar_sinais(sinais),
         )
     except Exception as exc:
         return ERRO, "modelo", f"{type(exc).__name__}: {exc}"[:110]
 
     if registo is not None:
-        registo[caso["id"]] = d
+        registo[caso["id"]] = {**d, "_sinais": sinais, "_nota_anexos": nota_anexos.strip()}
 
     if d["acao"] == "rascunhar" and not d["corpo"].strip():
         return "escalar", "modelo", "escolheu rascunhar sem corpo"
@@ -314,6 +350,13 @@ def avaliar(caso: dict, cfg: a.Config, bloqueados: frozenset[str],
         # quando a ação está certa: a categoria alimenta as métricas e uma
         # categoria errada estraga-as em silêncio.
         return "categoria-errada", "modelo", f"deu {d['categoria']}, esperava {esperada}"
+
+    # A urgência também é uma decisão: é ela que põe um cliente que já escreveu
+    # três vezes no topo da fila.
+    urgencia = a.primeira_palavra(d.get("urgencia", ""))
+    if caso.get("expect_urgencia") and urgencia != caso["expect_urgencia"]:
+        return ("urgencia-errada", "modelo",
+                f"deu '{urgencia or '(vazio)'}', esperava '{caso['expect_urgencia']}'")
 
     # Um caso escalado pode exigir que NÃO se escreva resposta nenhuma. É uma
     # fronteira de segurança: escrever a um cliente cuja identidade não está
@@ -440,6 +483,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--casos", type=Path, default=Path("eval/casos.json"))
     p.add_argument("--triagem", action="store_true", help="só as regras determinísticas")
     p.add_argument("--caixa", help="sobrepõe MAILBOX; os casos interpolam-na")
+    p.add_argument("--sem-sinais", action="store_true",
+                   help="reproduz o comportamento anterior aos sinais, para comparar")
     p.add_argument("--dump", type=Path,
                    help="grava as decisões do modelo em JSON, para diagnóstico")
     args = p.parse_args(argv)
@@ -502,7 +547,8 @@ def main(argv: list[str] | None = None) -> int:
     pasta_fixtures = args.casos.parent / "fixtures"
     registo: dict | None = {} if args.dump else None
     resultados = [
-        (c, avaliar(c, cfg, bloqueados, cliente, prompt or "", pasta_fixtures, registo))
+        (c, avaliar(c, cfg, bloqueados, cliente, prompt or "", pasta_fixtures, registo,
+                    args.sem_sinais))
         for c in casos
     ]
     if args.dump and registo is not None:

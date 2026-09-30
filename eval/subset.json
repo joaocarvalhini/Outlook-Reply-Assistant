@@ -605,5 +605,601 @@
       "(?i)(parcial|que valor|valor considera)"
     ],
     "note": "provas-e-defeitos.md, 20/09/2026: artigo que NAO funciona sai do caminho do reembolso parcial -- nao se pergunta que valor seria justo, propoe-se a troca dos produtos mesmo ja usados. Escrever a proposta e a resposta, nao escala."
+  },
+  {
+    "id": "sinal-dpd-sem-fulfillment",
+    "email": {
+      "from": "lucia.faria@gmail.com",
+      "from_name": "Lucia Faria",
+      "subject": "Encomenda 23110",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, fiz a encomenda 23110 com entrega no ponto DPD Pickup de Lisboa mas gostava de a mudar para o de Viseu. Conseguem alterar o ponto de recolha? Obrigada."
+    },
+    "encomenda": {
+      "name": "#23110",
+      "created_at": "2026-09-27T10:00:00Z",
+      "financial_status": "paid",
+      "fulfillment_status": null,
+      "fulfillments": [],
+      "current_total_price": "39.90",
+      "currency": "EUR"
+    },
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "possivel|podemos|conseguimos"
+    ],
+    "expect_texto_nao_regex": [
+      "nao (foi|foram) (expedid|enviad)",
+      "ainda nao (esta )?(expedid|enviad)",
+      "ja (esta|foi) (feita|alterad)"
+    ],
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "note": "sem fulfillment (nada processado): regra do lojista, 26/09/2026 -- pode dizer-se que a alteracao e possivel, sem dizer porque nem que ainda nao foi expedida"
+  },
+  {
+    "id": "sinal-dpd-com-rastreio",
+    "email": {
+      "from": "lucia.faria@gmail.com",
+      "from_name": "Lucia Faria",
+      "subject": "Encomenda 23111",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, fiz a encomenda 23111 com entrega no ponto DPD Pickup de Lisboa mas gostava de a mudar para o de Viseu. Conseguem alterar o ponto de recolha? Obrigada."
+    },
+    "encomenda": {
+      "name": "#23111",
+      "created_at": "2026-09-24T10:00:00Z",
+      "financial_status": "paid",
+      "fulfillment_status": "fulfilled",
+      "fulfillments": [
+        {
+          "id": 1,
+          "tracking_number": "RR998877665PT",
+          "tracking_company": "CTT",
+          "shipment_status": "in_transit",
+          "tracking_url": "https://tracking.ctt.pt/RR998877665PT"
+        }
+      ],
+      "current_total_price": "39.90",
+      "currency": "EUR"
+    },
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "verificar"
+    ],
+    "expect_texto_nao_regex": [
+      "e possivel alterar",
+      "podemos alterar",
+      "conseguimos alterar",
+      "alteracao (e|esta) possivel",
+      "sem problema"
+    ],
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "note": "com codigo de rastreio: nao se garante -- vamos verificar internamente, sem certeza"
+  },
+  {
+    "id": "sinal-morada-da-loja-nao-e-alteracao",
+    "email": {
+      "from": "rui.matos@gmail.com",
+      "from_name": "Rui Matos",
+      "subject": "Encomenda 23111",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, os fones da encomenda 23111 chegaram com defeito. Qual e a morada da loja para enviar a troca?"
+    },
+    "encomenda": {
+      "name": "#23111",
+      "created_at": "2026-09-24T10:00:00Z",
+      "financial_status": "paid",
+      "fulfillment_status": "fulfilled",
+      "fulfillments": [
+        {
+          "id": 1,
+          "tracking_number": "RR998877665PT",
+          "tracking_company": "CTT",
+          "shipment_status": "in_transit",
+          "tracking_url": "https://tracking.ctt.pt/RR998877665PT"
+        }
+      ],
+      "current_total_price": "39.90",
+      "currency": "EUR"
+    },
+    "expect_texto_nao_regex": [
+      "e possivel alterar (a )?(morada|ponto)"
+    ],
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "note": "controlo de falso positivo: 'morada' e 'troca' na mesma frase nao e um pedido de alteracao de entrega"
+  },
+  {
+    "id": "sinal-dpd-sem-dados-da-encomenda",
+    "email": {
+      "from": "lucia.faria@gmail.com",
+      "from_name": "Lucia Faria",
+      "subject": "Encomenda 23110",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, fiz a encomenda 23110 com entrega no ponto DPD Pickup de Lisboa mas gostava de a mudar para o de Viseu. Conseguem alterar o ponto de recolha? Obrigada."
+    },
+    "aviso_identidade": "O cliente indicou o numero de encomenda 23110, mas a consulta nao conseguiu encontrar nem validar essa encomenda para esta pessoa. Nao afirmes nenhum facto especifico dela: a parte do pedido que depender de dados especificos dessa encomenda escala, com a categoria DADOS_ENCOMENDA_EM_FALTA.",
+    "expect_texto_nao_regex": [
+      "e possivel alterar",
+      "podemos alterar",
+      "conseguimos alterar"
+    ],
+    "expect": "escalar",
+    "note": "sem dados da Shopify nao ha sinal e nao se garante nada (fail-closed)"
+  },
+  {
+    "id": "sinal-nao-consegue-rastrear",
+    "email": {
+      "from": "paulo.reis@gmail.com",
+      "from_name": "Paulo Reis",
+      "subject": "Encomenda 23111",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, ja passaram 48h e nao consigo rastrear a encomenda 23111. Podem ajudar?"
+    },
+    "encomenda": {
+      "name": "#23111",
+      "created_at": "2026-09-24T10:00:00Z",
+      "financial_status": "paid",
+      "fulfillment_status": "fulfilled",
+      "fulfillments": [
+        {
+          "id": 1,
+          "tracking_number": "RR998877665PT",
+          "tracking_company": "CTT",
+          "shipment_status": "in_transit",
+          "tracking_url": "https://tracking.ctt.pt/RR998877665PT"
+        }
+      ],
+      "current_total_price": "39.90",
+      "currency": "EUR"
+    },
+    "expect_corpo": true,
+    "expect_texto_nao_contem": [
+      "RR998877665PT",
+      "CTT",
+      "tracking.ctt.pt"
+    ],
+    "expect_texto_regex": [
+      "analis"
+    ],
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "note": "caso #23028 (29/09/2026): o assistente colou codigo e transportadora a quem dizia nao conseguir rastrear; o lojista quer 'vamos analisar logo o que se passa'"
+  },
+  {
+    "id": "sinal-pergunta-normal-de-rastreio",
+    "email": {
+      "from": "paulo.reis@gmail.com",
+      "from_name": "Paulo Reis",
+      "subject": "Encomenda 23111",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, a encomenda 23111 ja foi enviada? Qual e o codigo de rastreio?"
+    },
+    "encomenda": {
+      "name": "#23111",
+      "created_at": "2026-09-24T10:00:00Z",
+      "financial_status": "paid",
+      "fulfillment_status": "fulfilled",
+      "fulfillments": [
+        {
+          "id": 1,
+          "tracking_number": "RR998877665PT",
+          "tracking_company": "CTT",
+          "shipment_status": "in_transit",
+          "tracking_url": "https://tracking.ctt.pt/RR998877665PT"
+        }
+      ],
+      "current_total_price": "39.90",
+      "currency": "EUR"
+    },
+    "expect_texto_contem": [
+      "RR998877665PT"
+    ],
+    "expect": "rascunhar",
+    "note": "negativo: uma pergunta normal de rastreio continua a receber o codigo"
+  },
+  {
+    "id": "sinal-nao-consegue-rastrear-sem-fulfillment",
+    "email": {
+      "from": "paulo.reis@gmail.com",
+      "from_name": "Paulo Reis",
+      "subject": "Encomenda 23110",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, nao consigo rastrear a encomenda 23110. Podem ajudar?"
+    },
+    "encomenda": {
+      "name": "#23110",
+      "created_at": "2026-09-27T10:00:00Z",
+      "financial_status": "paid",
+      "fulfillment_status": null,
+      "fulfillments": [],
+      "current_total_price": "39.90",
+      "currency": "EUR"
+    },
+    "expect_corpo": true,
+    "expect_texto_nao_regex": [
+      "nao (foi|foram) (expedid|enviad)",
+      "ainda nao (esta )?(expedid|enviad)"
+    ],
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "note": "interacao com a regra [!IMPORTANT] de entregas.md: mesmo sem fulfillment nunca se diz que ainda nao foi expedida"
+  },
+  {
+    "id": "sinal-anexo-vazio-iban",
+    "email": {
+      "from": "ines.lopes@gmail.com",
+      "from_name": "Ines Lopes",
+      "subject": "Reembolso encomenda 23111",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, envio em anexo o meu IBAN para receber o reembolso da encomenda 23111. Obrigada."
+    },
+    "encomenda": {
+      "name": "#23111",
+      "created_at": "2026-09-24T10:00:00Z",
+      "financial_status": "paid",
+      "fulfillment_status": "fulfilled",
+      "fulfillments": [
+        {
+          "id": 1,
+          "tracking_number": "RR998877665PT",
+          "tracking_company": "CTT",
+          "shipment_status": "in_transit",
+          "tracking_url": "https://tracking.ctt.pt/RR998877665PT"
+        }
+      ],
+      "current_total_price": "39.90",
+      "currency": "EUR"
+    },
+    "anexos": [
+      {
+        "@odata.type": "#microsoft.graph.fileAttachment",
+        "id": "a1",
+        "name": "iban.pdf",
+        "contentType": "application/pdf",
+        "size": 0,
+        "isInline": false
+      }
+    ],
+    "expect_corpo": true,
+    "expect_texto_nao_regex": [
+      "recebemos o (seu )?iban",
+      "recebemos o anexo",
+      "rececionamos",
+      "iban recebido",
+      "vamos processar (a )?transferencia"
+    ],
+    "expect_texto_regex": [
+      "vazio"
+    ],
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "note": "caso do IBAN (27/09/2026): o anexo vinha vazio e o rascunho confirmou a rececao so pelo texto"
+  },
+  {
+    "id": "sinal-anexo-ausente-iban",
+    "email": {
+      "from": "ines.lopes@gmail.com",
+      "from_name": "Ines Lopes",
+      "subject": "Reembolso encomenda 23111",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, envio em anexo o meu IBAN para receber o reembolso da encomenda 23111. Obrigada."
+    },
+    "encomenda": {
+      "name": "#23111",
+      "created_at": "2026-09-24T10:00:00Z",
+      "financial_status": "paid",
+      "fulfillment_status": "fulfilled",
+      "fulfillments": [
+        {
+          "id": 1,
+          "tracking_number": "RR998877665PT",
+          "tracking_company": "CTT",
+          "shipment_status": "in_transit",
+          "tracking_url": "https://tracking.ctt.pt/RR998877665PT"
+        }
+      ],
+      "current_total_price": "39.90",
+      "currency": "EUR"
+    },
+    "anexos": [],
+    "expect_corpo": true,
+    "expect_texto_nao_regex": [
+      "recebemos o (seu )?iban",
+      "recebemos o anexo",
+      "rececionamos",
+      "iban recebido",
+      "vamos processar (a )?transferencia"
+    ],
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "note": "o cliente diz que anexou e nao chegou nenhum anexo: nao se confirma a rececao"
+  },
+  {
+    "id": "sinal-anexo-real-com-promessa-de-anexo",
+    "email": {
+      "from": "ines.lopes@gmail.com",
+      "from_name": "Ines Lopes",
+      "subject": "Fones com defeito - encomenda 23111",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, seguem em anexo as fotografias do defeito dos fones da encomenda 23111."
+    },
+    "encomenda": {
+      "name": "#23111",
+      "created_at": "2026-09-24T10:00:00Z",
+      "financial_status": "paid",
+      "fulfillment_status": "fulfilled",
+      "fulfillments": [
+        {
+          "id": 1,
+          "tracking_number": "RR998877665PT",
+          "tracking_company": "CTT",
+          "shipment_status": "in_transit",
+          "tracking_url": "https://tracking.ctt.pt/RR998877665PT"
+        }
+      ],
+      "current_total_price": "39.90",
+      "currency": "EUR"
+    },
+    "imagens": [
+      "rachadura-visivel.png"
+    ],
+    "anexos": [
+      {
+        "@odata.type": "#microsoft.graph.fileAttachment",
+        "id": "a1",
+        "name": "defeito.png",
+        "contentType": "image/png",
+        "size": 500000,
+        "isInline": false
+      }
+    ],
+    "expect_texto_nao_regex": [
+      "nao (chegou|conseguimos ver|recebemos) (nenhum )?anexo",
+      "anexo (chegou )?vazio"
+    ],
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "note": "negativo: ha imagem real, por isso a nota de 'nao chegou anexo' nao pode aparecer"
+  },
+  {
+    "id": "sinal-repeticao-terceira-vez",
+    "email": {
+      "from": "sofia.gil@gmail.com",
+      "from_name": "Sofia Gil",
+      "subject": "Fones P9 - encomenda 23111",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, ja e a terceira vez que pergunto, o que vai ser feito aos meus fones? Encomenda 23111."
+    },
+    "encomenda": {
+      "name": "#23111",
+      "created_at": "2026-09-24T10:00:00Z",
+      "financial_status": "paid",
+      "fulfillment_status": "fulfilled",
+      "fulfillments": [
+        {
+          "id": 1,
+          "tracking_number": "RR998877665PT",
+          "tracking_company": "CTT",
+          "shipment_status": "in_transit",
+          "tracking_url": "https://tracking.ctt.pt/RR998877665PT"
+        }
+      ],
+      "current_total_price": "39.90",
+      "currency": "EUR"
+    },
+    "historico": "[2026-09-24 10:12] CLIENTE: Boa tarde, os fones P9 da encomenda 23111 deixaram de ligar. Ja fiz os testes que indicaram e nada. O que faco?\n[2026-09-24 14:00] LOJA: Ola, lamentamos. Vamos verificar internamente o que fazer e respondemos assim que possivel.\n[2026-09-27 09:30] CLIENTE: Bom dia, ja ha novidades sobre os fones?\n[2026-09-27 15:00] LOJA: Ola, vamos verificar internamente o ponto de situacao e damos resposta em breve.",
+    "emails_anteriores": 2,
+    "expect_texto_regex": [
+      "(envi|remet)[^.]*(fone|unidade|artigo|produto)"
+    ],
+    "expect_texto_nao_regex": [
+      "vamos verificar",
+      "verificar internamente"
+    ],
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "note": "N=2: dois emails antes e duas promessas de verificar, com o artigo ainda em casa da cliente -- o passo seguinte e pedir o envio, nao uma terceira promessa. Antes e depois do sinal o modelo ja pedia o envio (por escalar com corpo); o caso mede o comportamento, nao a acao",
+    "expect_corpo": true
+  },
+  {
+    "id": "sinal-repeticao-so-uma-vez-antes",
+    "email": {
+      "from": "sofia.gil@gmail.com",
+      "from_name": "Sofia Gil",
+      "subject": "Fones P9 - encomenda 23111",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Bom dia, ja ha novidades sobre os fones?"
+    },
+    "encomenda": {
+      "name": "#23111",
+      "created_at": "2026-09-24T10:00:00Z",
+      "financial_status": "paid",
+      "fulfillment_status": "fulfilled",
+      "fulfillments": [
+        {
+          "id": 1,
+          "tracking_number": "RR998877665PT",
+          "tracking_company": "CTT",
+          "shipment_status": "in_transit",
+          "tracking_url": "https://tracking.ctt.pt/RR998877665PT"
+        }
+      ],
+      "current_total_price": "39.90",
+      "currency": "EUR"
+    },
+    "emails_anteriores": 1,
+    "historico": "[2026-09-24 10:12] CLIENTE: Boa tarde, os fones P9 da encomenda 23111 deixaram de ligar. Ja fiz os testes e nada.\n[2026-09-24 14:00] LOJA: Ola, lamentamos. Vamos verificar internamente o que fazer e respondemos assim que possivel.",
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "note": "negativo: N=1 nao leva a linha de repeticao (nao gasta tokens na segunda mensagem)"
+  },
+  {
+    "id": "sinal-capa-xiaomi",
+    "email": {
+      "from": "tiago.nunes@gmail.com",
+      "from_name": "Tiago Nunes",
+      "subject": "Capa do Sporting",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, tem capa do Sporting para um Xiaomi Redmi 15C?"
+    },
+    "expect_texto_regex": [
+      "iphone"
+    ],
+    "expect_texto_nao_regex": [
+      "vamos verificar",
+      "verificar internamente"
+    ],
+    "expect": "rascunhar",
+    "note": "27/09/2026: o lojista respondeu logo que so ha para iPhone; nao e caso para verificar"
+  },
+  {
+    "id": "sinal-capa-samsung",
+    "email": {
+      "from": "tiago.nunes@gmail.com",
+      "from_name": "Tiago Nunes",
+      "subject": "Capas personalizadas",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Bom dia, fazem capas personalizadas para o Samsung Galaxy S24?"
+    },
+    "expect_texto_regex": [
+      "iphone"
+    ],
+    "expect_texto_nao_regex": [
+      "vamos verificar",
+      "verificar internamente"
+    ],
+    "expect": "rascunhar",
+    "note": "mesma regra, outra marca Android"
+  },
+  {
+    "id": "sinal-capa-iphone",
+    "email": {
+      "from": "tiago.nunes@gmail.com",
+      "from_name": "Tiago Nunes",
+      "subject": "Capa do Benfica",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, tem a capa do Benfica para iPhone 15?"
+    },
+    "expect_texto_nao_regex": [
+      "nao (temos|vendemos|ha) (capas?|essa)",
+      "so (vendemos|temos) para android"
+    ],
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "note": "negativo: para iPhone a regra nao pode recusar"
+  },
+  {
+    "id": "sinal-fones-android-nao-e-capa",
+    "email": {
+      "from": "tiago.nunes@gmail.com",
+      "from_name": "Tiago Nunes",
+      "subject": "InPods e Android",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, os InPods Pro 4 funcionam com um telemovel Android da Samsung?"
+    },
+    "expect_texto_nao_regex": [
+      "so (vendemos|fazemos|temos)[^.]*iphone",
+      "apenas[^.]*iphone"
+    ],
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "note": "negativo de ambito: a regra do iPhone e das capas, nao pode passar para os fones"
+  },
+  {
+    "id": "sinal-repeticao-fio-curto",
+    "email": {
+      "from": "sofia.gil@gmail.com",
+      "from_name": "Sofia Gil",
+      "subject": "Fones P9 - encomenda 23111",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, ainda sem resposta sobre os meus fones. Encomenda 23111."
+    },
+    "encomenda": {
+      "name": "#23111",
+      "created_at": "2026-09-24T10:00:00Z",
+      "financial_status": "paid",
+      "fulfillment_status": "fulfilled",
+      "fulfillments": [
+        {
+          "id": 1,
+          "tracking_number": "RR998877665PT",
+          "tracking_company": "CTT",
+          "shipment_status": "delivered",
+          "tracking_url": "https://tracking.ctt.pt/RR998877665PT"
+        }
+      ],
+      "current_total_price": "39.90",
+      "currency": "EUR"
+    },
+    "emails_anteriores": 4,
+    "historico": "[2026-09-29 09:30] CLIENTE: Bom dia, ja ha novidades sobre os fones?\n[2026-09-29 15:00] LOJA: Ola, vamos verificar internamente o ponto de situacao e damos resposta em breve.",
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "expect_corpo": true,
+    "note": "o fio so mostra a ultima ronda mas o registo local sabe que ja foram 4 emails: com a linha de repeticao o modelo marca urgente (regra dos tres ou mais); sem ela nao. Medido a 30/09/2026: 4/4 com o sinal, 0/4 sem ele",
+    "expect_urgencia": "sim"
   }
 ]

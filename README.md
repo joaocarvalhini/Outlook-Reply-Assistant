@@ -217,6 +217,7 @@ clientes de uma loja online usa Gmail.
 | `ENABLE_ORDER_IDENTITY_RESOLUTION` | `true` | Resolução da encomenda por níveis de certeza |
 | `ENABLE_PRE_DRAFTS` | `true` | Preparar o caso quando escala um pedido acionável |
 | `ENABLE_COMMITMENT_REGISTRY` | `true` | Registar e lembrar promessas feitas ao cliente |
+| `ENABLE_SIBLING_THREADS` | `false` | Ligar conversas do mesmo caso: mesmo cliente, assunto igual, até 21 dias **e a mesma encomenda** (número em comum, ou a única compra do cliente). No máximo 2 mensagens da loja e os compromissos, sem passar o limite do fio. Desligada por omissão: ativar por ambiente |
 | `ENABLE_PARTIAL_ANSWERS` | `true` | Responder à parte coberta de um email com vários assuntos |
 | `ENABLE_INTERNAL_NOTES` | `false` | Nota interna dentro do próprio rascunho: o que ficou por tratar e a ação necessária |
 | `DRY_RUN` | `true` | `true` não escreve nada na caixa |

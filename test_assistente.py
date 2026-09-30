@@ -77,7 +77,18 @@ from assistente import (
     emails_anteriores,
     emails_iguais,
     gravar_compromisso,
+    assunto_normalizado,
+    buscar_fios_irmaos,
+    cliente_nao_consegue_rastrear,
+    PAGINAS_FIO_IRMAO,
+    combinar_historico,
+    conversas_irmas,
+    fio_do_mesmo_caso,
+    linha_repeticao,
+    nota_anexo_em_falta,
     nota_anexos_ignorados,
+    sinal_alteracao_entrega,
+    SINAL_SEM_RASTREIO,
     resolver_encomenda,
     resumir_compromissos,
     DIAS_COMPROMISSO_SEM_CONFIRMACAO,
@@ -1142,6 +1153,403 @@ class AnexosDeImagem(unittest.TestCase):
         self.assertIn("fatura.pdf", nota)
 
 
+class SinaisDoPedido(unittest.TestCase):
+    """Factos que o código já sabe, ditos ao modelo só quando se aplicam.
+    Feedback do lojista de 24 a 29/09/2026. Todos falham para o lado seguro."""
+
+    @staticmethod
+    def _encomenda(**over: object) -> dict:
+        base = {"name": "#21910", "fulfillment_status": None, "fulfillments": []}
+        base.update(over)
+        return base
+
+    # --- Alteração de morada / ponto DPD -------------------------------
+
+    def test_pedido_de_alteracao_e_reconhecido(self) -> None:
+        for texto in ("Conseguiram alterar o ponto de recolha para Viseu?",
+                      "Queria mudar a morada de entrega.",
+                      "O ponto DPD Pickup já foi alterado?",
+                      "Preciso de corrigir a morada da encomenda"):
+            with self.subTest(texto):
+                self.assertIn("possível", sinal_alteracao_entrega(texto, self._encomenda()))
+
+    def test_outros_pedidos_nao_disparam(self) -> None:
+        for texto in ("Quando chega a minha encomenda?",
+                      "Qual é a morada da loja para a devolução?",
+                      "Qual e a morada da loja para enviar a troca?",
+                      "Quero trocar os fones por outros"):
+            with self.subTest(texto):
+                self.assertEqual(sinal_alteracao_entrega(texto, self._encomenda()), "")
+
+    def test_sem_rastreio_diz_que_e_possivel_sem_dizer_porque(self) -> None:
+        sinal = sinal_alteracao_entrega("Podem alterar a morada?", self._encomenda())
+        self.assertIn("podes dizer que a alteração é possível", sinal)
+        self.assertIn("Não digas porquê", sinal)
+
+    def test_com_rastreio_nao_garante(self) -> None:
+        enc = self._encomenda(fulfillment_status="fulfilled",
+                              fulfillments=[{"tracking_number": "RR1"}])
+        sinal = sinal_alteracao_entrega("Podem alterar a morada?", enc)
+        self.assertIn("Não garantas", sinal)
+        self.assertNotIn("podes dizer que a alteração é possível", sinal)
+
+    def test_estado_desconhecido_nao_diz_nada(self) -> None:
+        """Expedida sem código, parcial, cancelada, estado que não se conhece:
+        nunca se diz "é possível" sem o dado que o prova."""
+        for enc in (
+            self._encomenda(fulfillment_status="fulfilled", fulfillments=[{"id": 1}]),
+            self._encomenda(fulfillment_status="partial"),
+            self._encomenda(fulfillment_status="restocked"),
+            self._encomenda(cancelled_at="2026-09-20T10:00:00Z"),
+        ):
+            with self.subTest(enc):
+                self.assertEqual(sinal_alteracao_entrega("Podem alterar a morada?", enc), "")
+
+    def test_sem_dados_da_encomenda_nao_diz_nada(self) -> None:
+        self.assertEqual(sinal_alteracao_entrega("Podem alterar a morada?", None), "")
+
+    # --- Cliente não consegue rastrear ---------------------------------
+
+    def test_nao_consegue_rastrear_e_reconhecido(self) -> None:
+        for texto in ("Não consigo rastrear a minha encomenda, já passaram 48h",
+                      "não consigo seguir a encomenda",
+                      "O rastreio não funciona",
+                      "Não estou a conseguir ver o rastreio",
+                      "não dá para rastrear"):
+            with self.subTest(texto):
+                self.assertTrue(cliente_nao_consegue_rastrear(texto))
+
+    def test_outras_frases_de_rastreio_nao_disparam(self) -> None:
+        for texto in ("Quando recebo o código de rastreio?",
+                      "Já tenho o rastreio, obrigado",
+                      "Não consigo seguir as instruções da devolução",
+                      "Já foi enviada?"):
+            with self.subTest(texto):
+                self.assertFalse(cliente_nao_consegue_rastrear(texto))
+
+    def test_resumo_sem_rastreio_nao_leva_nada_dos_fulfillments(self) -> None:
+        enc = {
+            "name": "#23028", "created_at": "2026-09-25T10:00:00Z",
+            "financial_status": "paid", "fulfillment_status": "fulfilled",
+            "fulfillments": [{
+                "tracking_number": "RR123456789PT", "tracking_company": "CTT",
+                "tracking_url": "https://t.pt/RR123456789PT", "shipment_status": "in_transit",
+            }],
+        }
+        resumo = resumir_encomenda(enc, sem_rastreio=True)
+        for proibido in ("RR123456789PT", "CTT", "t.pt", "em trânsito", "Estado do envio"):
+            self.assertNotIn(proibido, resumo)
+        self.assertIn("#23028", resumo)
+        self.assertIn("pago", resumo)
+        # E o comportamento normal não mudou.
+        self.assertIn("RR123456789PT", resumir_encomenda(enc))
+
+    def test_sinal_de_rastreio_proibe_codigo_e_estado(self) -> None:
+        self.assertIn("não os indiques", SINAL_SEM_RASTREIO)
+        self.assertIn("vão analisar já o que se passa", SINAL_SEM_RASTREIO)
+
+    # --- Repetição -----------------------------------------------------
+
+    def test_linha_de_repeticao_so_a_partir_da_segunda(self) -> None:
+        self.assertEqual(linha_repeticao(0), "")
+        self.assertEqual(linha_repeticao(1), "")
+        self.assertIn("já escreveu 2 vezes", linha_repeticao(2))
+
+    # --- Anexos --------------------------------------------------------
+
+    @staticmethod
+    def _anexo(**over: object) -> dict:
+        base = {"@odata.type": "#microsoft.graph.fileAttachment", "id": "a1",
+                "name": "iban.pdf", "contentType": "application/pdf",
+                "size": 0, "isInline": False}
+        base.update(over)
+        return base
+
+    def test_anexo_com_zero_bytes_diz_que_esta_vazio(self) -> None:
+        nota = nota_anexos_ignorados([self._anexo()])
+        self.assertIn("VAZIO", nota)
+        self.assertIn("iban.pdf", nota)
+        self.assertIn("Nunca confirmes a receção", nota)
+        self.assertNotIn("não foi possível processar", nota)
+
+    def test_tamanho_desconhecido_nao_e_tratado_como_vazio(self) -> None:
+        nota = nota_anexos_ignorados([self._anexo(size=None)])
+        self.assertNotIn("VAZIO", nota)
+        self.assertIn("não foi possível processar", nota)
+
+    def test_vazio_e_ficheiro_normal_tem_as_duas_notas(self) -> None:
+        nota = nota_anexos_ignorados([
+            self._anexo(),
+            self._anexo(name="fatura.pdf", size=90_000),
+        ])
+        self.assertIn("VAZIO", nota)
+        self.assertIn("fatura.pdf", nota)
+
+    def test_diz_que_anexou_sem_anexo_nenhum(self) -> None:
+        for texto in ("Envio o IBAN em anexo para o reembolso",
+                      "Segue anexo o comprovativo", "Já anexei as fotografias"):
+            with self.subTest(texto):
+                self.assertIn("não chegou nenhum anexo", nota_anexo_em_falta(texto))
+
+    def test_sem_promessa_de_anexo_nao_diz_nada(self) -> None:
+        for texto in ("Quando chega a minha encomenda?",
+                      "O IBAN é PT50 0000 0000 0000 0000 0000 0"):
+            with self.subTest(texto):
+                self.assertEqual(nota_anexo_em_falta(texto), "")
+
+
+class FiosIrmaos(unittest.TestCase):
+    """O mesmo caso noutra conversa (Marta Alves, 30/09/2026). Tudo aqui é
+    determinístico: nenhum destes testes chama o modelo. Falham todos para o
+    lado de não ligar, e o que uma irmã traz nunca aumenta o fio."""
+
+    CLIENTE = "cliente@gmail.com"
+
+    @staticmethod
+    def _atual(**over: object) -> dict:
+        base = {"conversation_id": "conv-atual", "assunto": "Re: Inpods Pro 2 sem funcionar",
+                "de": "cliente@gmail.com", "recebido": "2026-09-23T18:25:00Z"}
+        base.update(over)
+        return base
+
+    @staticmethod
+    def _do_cliente(conversa: str = "conv-irma", assunto: str = "Inpods Pro 2 sem funcionar",
+                    recebido: str = "2026-09-21T08:02:00Z", de: str = "cliente@gmail.com") -> dict:
+        return {"conversation_id": conversa, "assunto": assunto, "de": de, "recebido": recebido}
+
+    @staticmethod
+    def _m(em: str, de: str, texto: str, encomendas: tuple = ()) -> dict:
+        return {"de": de, "em": em, "texto": texto, "encomendas": list(encomendas),
+                "tem_anexos": False}
+
+    # --- Assunto ---------------------------------------------------------
+
+    def test_assunto_normalizado_ignora_prefixos_acentos_e_espacos(self) -> None:
+        self.assertEqual(assunto_normalizado("RE: Fw:  Devolução   da Encomenda "),
+                         assunto_normalizado("devolucao da encomenda"))
+
+    # --- Candidatas (só metadados) ---------------------------------------
+
+    def test_marta_a_conversa_irma_compativel_e_candidata(self) -> None:
+        self.assertEqual(conversas_irmas(self._atual(), [self._do_cliente()]), ["conv-irma"])
+
+    def test_outro_remetente_nao_e_candidato(self) -> None:
+        self.assertEqual(conversas_irmas(
+            self._atual(), [self._do_cliente(de="outra.pessoa@gmail.com")]), [])
+
+    def test_assunto_parecido_mas_diferente_nao_liga(self) -> None:
+        """Pro 4 não é Pro 2: igual, não parecido."""
+        self.assertEqual(conversas_irmas(
+            self._atual(), [self._do_cliente(assunto="Inpods Pro 4 sem funcionar")]), [])
+
+    def test_irma_com_mais_de_21_dias_nao_liga(self) -> None:
+        self.assertEqual(conversas_irmas(
+            self._atual(), [self._do_cliente(recebido="2026-09-01T10:00:00Z")]), [])
+        self.assertEqual(conversas_irmas(
+            self._atual(), [self._do_cliente(recebido="2026-09-02T18:24:00Z")]), [])
+        self.assertEqual(conversas_irmas(
+            self._atual(), [self._do_cliente(recebido="2026-09-02T18:25:00Z")]), ["conv-irma"])
+
+    def test_conversa_posterior_ou_a_propria_nao_ligam(self) -> None:
+        self.assertEqual(conversas_irmas(
+            self._atual(), [self._do_cliente(recebido="2026-09-29T04:00:00Z"),
+                            self._do_cliente(conversa="conv-atual")]), [])
+
+    def test_no_maximo_duas_irmas_as_mais_recentes(self) -> None:
+        candidatas = [self._do_cliente(conversa=f"c{i}", recebido=f"2026-09-1{i}T10:00:00Z")
+                      for i in range(2, 7)]
+        self.assertEqual(conversas_irmas(self._atual(), candidatas), ["c6", "c5"])
+
+    def test_dados_ilegiveis_nao_ligam(self) -> None:
+        self.assertEqual(conversas_irmas(self._atual(recebido="lixo"), [self._do_cliente()]), [])
+        self.assertEqual(conversas_irmas(self._atual(assunto=""), [self._do_cliente(assunto="")]), [])
+
+    # --- O mesmo caso? (identificador determinístico) ---------------------
+
+    def test_numero_de_encomenda_em_comum_liga(self) -> None:
+        self.assertTrue(fio_do_mesmo_caso({"23111"}, {"23111"}))
+
+    def test_sem_numero_nenhum_nao_liga_mesmo_com_o_assunto_igual(self) -> None:
+        """Mesmo cliente + mesmo assunto + nenhum número (dois casos, duas
+        encomendas): não há nada que os una, por isso não se ligam."""
+        self.assertFalse(fio_do_mesmo_caso(set(), set()))
+
+    def test_encomendas_diferentes_nao_ligam(self) -> None:
+        self.assertFalse(fio_do_mesmo_caso({"23111"}, {"23000"}))
+
+    def test_intersecao_parcial_nao_liga(self) -> None:
+        """A irmã fala da 23111 e da 23000: os compromissos dela podem ser da
+        23000, e não há forma de os separar."""
+        self.assertFalse(fio_do_mesmo_caso({"23111"}, {"23111", "23000"}))
+        self.assertFalse(fio_do_mesmo_caso({"23111", "23000"}, {"23111"}))
+        self.assertFalse(fio_do_mesmo_caso({"23111", "23000"}, {"23111", "23000"}))
+
+    def test_a_unica_compra_visivel_nao_e_identificador(self) -> None:
+        """A Shopify pode não ver as encomendas antigas: "encontrei uma" não é
+        "o cliente só tem uma". fio_do_mesmo_caso já nem aceita esse argumento."""
+        self.assertFalse(fio_do_mesmo_caso(set(), set()))
+        with self.assertRaises(TypeError):
+            fio_do_mesmo_caso(set(), set(), "21742")  # type: ignore[call-arg]
+
+    def test_um_lado_sem_numero_nao_liga(self) -> None:
+        self.assertFalse(fio_do_mesmo_caso({"21742"}, set()))
+        self.assertFalse(fio_do_mesmo_caso(set(), {"21742"}))
+
+    # --- Combinar o fio, sem o aumentar ----------------------------------
+
+    def _fio_atual(self, n: int) -> list[dict]:
+        return [self._m(f"2026-09-22 {10 + i:02d}:00",
+                        self.CLIENTE if i % 2 == 0 else CAIXA, f"atual {i}") for i in range(n)]
+
+    def test_sem_irma_o_fio_fica_exatamente_igual(self) -> None:
+        atuais = self._fio_atual(8)
+        self.assertIs(combinar_historico(atuais, [], 8, CAIXA), atuais)
+        so_do_cliente = [self._m("2026-09-21 07:00", self.CLIENTE, "eu")]
+        self.assertIs(combinar_historico(atuais, so_do_cliente, 8, CAIXA), atuais)
+
+    def test_a_irma_nunca_aumenta_o_numero_de_mensagens(self) -> None:
+        irma = [self._m(f"2026-09-21 0{i}:00", CAIXA, f"irmã {i} €") for i in range(6)]
+        for n_atuais in range(0, 12):
+            for quantas in (4, 8):
+                atuais = self._fio_atual(n_atuais)[-quantas:]
+                saida = combinar_historico(atuais, irma, quantas, CAIXA)
+                self.assertLessEqual(len(saida), max(len(atuais), quantas))
+                self.assertLessEqual(len(saida), quantas)
+
+    def test_fio_cheio_a_irma_desloca_so_as_mais_antigas_e_no_maximo_duas(self) -> None:
+        atuais = self._fio_atual(8)
+        irma = [self._m(f"2026-09-21 0{i}:00", CAIXA, f"irmã {i}") for i in range(5)]
+        saida = combinar_historico(atuais, irma, 8, CAIXA)
+        self.assertEqual(len(saida), 8)
+        self.assertEqual(sum(1 for m in saida if m.get("irma")), 2)
+        # a atual manda: ficam as seis mais recentes, na mesma ordem
+        self.assertEqual([m["texto"] for m in saida if not m.get("irma")],
+                         [f"atual {i}" for i in range(2, 8)])
+
+    def test_com_lugares_livres_nada_da_atual_e_deslocado_e_as_irmas_sao_duas(self) -> None:
+        atuais = self._fio_atual(3)
+        irma = [self._m(f"2026-09-21 0{i}:00", CAIXA, f"irmã {i}") for i in range(6)]
+        saida = combinar_historico(atuais, irma, 8, CAIXA)
+        self.assertEqual([m["texto"] for m in saida if not m.get("irma")],
+                         [m["texto"] for m in atuais])
+        self.assertEqual(sum(1 for m in saida if m.get("irma")), 2)
+        self.assertEqual(len(saida), 5)
+
+    def test_conversa_nova_sem_historico_recebe_no_maximo_duas(self) -> None:
+        irma = [self._m(f"2026-09-21 0{i}:00", CAIXA, f"irmã {i} €") for i in range(6)]
+        self.assertEqual(len(combinar_historico([], irma, 8, CAIXA)), 2)
+
+    def test_a_irma_preferida_e_a_que_assume_alguma_coisa(self) -> None:
+        irma = [self._m("2026-09-21 09:00", CAIXA, "Obrigado pela mensagem, ficamos a aguardar."),
+                self._m("2026-09-21 07:35", CAIXA, "Vamos enviar gratuitamente um artigo adicional."),
+                self._m("2026-09-21 08:00", CAIXA, "Vamos verificar."),
+                self._m("2026-09-21 08:30", CAIXA, "O crédito de 20€ fica na conta.")]
+        saida = combinar_historico(self._fio_atual(8), irma, 8, CAIXA)
+        textos = [m["texto"] for m in saida if m.get("irma")]
+        self.assertEqual(textos, ["Vamos enviar gratuitamente um artigo adicional.",
+                                  "O crédito de 20€ fica na conta."])
+
+    def test_o_limite_de_caracteres_por_mensagem_nao_muda(self) -> None:
+        """O corte a THREAD_CHARS é feito por Graph.historico(), antes daqui: as
+        mensagens da irmã já chegam com o mesmo teto e não se lhes acrescenta texto."""
+        irma = [self._m("2026-09-21 07:35", CAIXA, "x" * 400 + " €")]
+        saida = combinar_historico(self._fio_atual(8), irma, 8, CAIXA)
+        self.assertEqual(next(m for m in saida if m.get("irma"))["texto"], irma[0]["texto"])
+
+    def test_atual_vence_a_irma_contraditoria(self) -> None:
+        atuais = [self._m("2026-09-22 10:00", CAIXA, "O combinado é o vale de 20€.")]
+        irma = [self._m("2026-09-21 07:35", CAIXA, "Vamos enviar um artigo até 20€.")]
+        saida = combinar_historico(atuais, irma, 8, CAIXA)
+        self.assertEqual([m["texto"] for m in saida],
+                         ["Vamos enviar um artigo até 20€.", "O combinado é o vale de 20€."])
+        self.assertTrue(saida[0]["irma"])
+        self.assertNotIn("irma", saida[1])
+        self.assertIn("(fio anterior)", resumir_historico(saida, CAIXA).split("\n")[0])
+        self.assertNotIn("(fio anterior)", resumir_historico(saida, CAIXA).split("\n")[1])
+
+    # --- Compromissos ----------------------------------------------------
+
+    def setUp(self) -> None:
+        pasta = TemporaryDirectory()
+        self.addCleanup(pasta.cleanup)
+        self.con = abrir_db(Path(pasta.name) / "t.db")
+        self.addCleanup(self.con.close)
+
+    def test_marta_compromisso_da_irma_chega_ao_caso(self) -> None:
+        gravar_compromisso(self.con, "conv-irma", "outro",
+                           "artigo adicional gratuito na próxima encomenda", "pendente", "")
+        c = compromissos_do_fio(self.con, "conv-atual", ("conv-irma",))
+        self.assertEqual(len(c), 1)
+        self.assertTrue(c[0]["irma"])
+        self.assertIn("numa conversa anterior do mesmo caso", resumir_compromissos(c))
+
+    def test_compromisso_de_conversa_nao_ligada_nao_atravessa(self) -> None:
+        """Mesmo cliente, outra encomenda: a conversa não foi ligada, por isso
+        o compromisso dela não entra."""
+        gravar_compromisso(self.con, "conv-outra-encomenda", "reembolso",
+                           "reembolso da encomenda 23000", "pendente", "")
+        self.assertEqual(compromissos_do_fio(self.con, "conv-atual"), [])
+        self.assertEqual(compromissos_do_fio(self.con, "conv-atual", ()), [])
+
+    def _marcar(self, conversa: str, tipo: str, atualizado_em: str) -> None:
+        self.con.execute("UPDATE compromissos SET atualizado_em = ? "
+                         "WHERE conversation_id = ? AND tipo = ?", (atualizado_em, conversa, tipo))
+        self.con.commit()
+
+    def test_concluido_recente_na_irma_vence_o_pendente_antigo_da_atual(self) -> None:
+        """A: envio pendente antigo. B: envio concluído mais recente. Chega um
+        email novo em A: o concluído prevalece e o pendente antigo não volta."""
+        gravar_compromisso(self.con, "conv-A", "envio", "vai seguir", "pendente", "")
+        gravar_compromisso(self.con, "conv-B", "envio", "já seguiu", "concluido", "")
+        self._marcar("conv-A", "envio", "2026-09-20T10:00:00Z")
+        self._marcar("conv-B", "envio", "2026-09-22T10:00:00Z")
+        self.assertEqual(compromissos_do_fio(self.con, "conv-A", ("conv-B",)), [])
+
+    def test_a_atual_mais_recente_vence_a_irma(self) -> None:
+        gravar_compromisso(self.con, "conv-A", "envio", "vai seguir", "pendente", "")
+        gravar_compromisso(self.con, "conv-B", "envio", "já seguiu", "concluido", "")
+        self._marcar("conv-A", "envio", "2026-09-22T10:00:00Z")
+        self._marcar("conv-B", "envio", "2026-09-20T10:00:00Z")
+        c = compromissos_do_fio(self.con, "conv-A", ("conv-B",))
+        self.assertEqual([(x["descricao"], x["irma"]) for x in c], [("vai seguir", False)])
+
+    def test_pendente_mais_recente_na_irma_vence_o_concluido_antigo_da_atual(self) -> None:
+        gravar_compromisso(self.con, "conv-A", "envio", "já seguiu", "concluido", "")
+        gravar_compromisso(self.con, "conv-B", "envio", "novo envio", "pendente", "")
+        self._marcar("conv-A", "envio", "2026-09-20T10:00:00Z")
+        self._marcar("conv-B", "envio", "2026-09-22T10:00:00Z")
+        c = compromissos_do_fio(self.con, "conv-A", ("conv-B",))
+        self.assertEqual([(x["descricao"], x["irma"]) for x in c], [("novo envio", True)])
+
+    def test_com_a_mesma_atualizacao_a_atual_desempata(self) -> None:
+        gravar_compromisso(self.con, "conv-A", "envio", "da atual", "pendente", "")
+        gravar_compromisso(self.con, "conv-B", "envio", "da irmã", "pendente", "")
+        self._marcar("conv-A", "envio", "2026-09-22T10:00:00Z")
+        self._marcar("conv-B", "envio", "2026-09-22T10:00:00Z")
+        c = compromissos_do_fio(self.con, "conv-A", ("conv-B",))
+        self.assertEqual([x["descricao"] for x in c], ["da atual"])
+
+    def test_tipos_diferentes_nao_se_afetam_pela_precedencia(self) -> None:
+        gravar_compromisso(self.con, "conv-A", "envio", "vai seguir", "pendente", "")
+        gravar_compromisso(self.con, "conv-B", "reembolso", "20€", "concluido", "")
+        self._marcar("conv-B", "reembolso", "2026-09-25T10:00:00Z")
+        c = compromissos_do_fio(self.con, "conv-A", ("conv-B",))
+        self.assertEqual([x["tipo"] for x in c], ["envio"])
+
+    def test_tipos_diferentes_somam_e_sem_irmas_fica_como_antes(self) -> None:
+        gravar_compromisso(self.con, "conv-irma", "reembolso", "20€", "pendente", "")
+        gravar_compromisso(self.con, "conv-atual", "envio", "vai seguir", "pendente", "")
+        self.assertEqual(sorted(x["tipo"] for x in
+                                compromissos_do_fio(self.con, "conv-atual", ("conv-irma",))),
+                         ["envio", "reembolso"])
+        self.assertEqual([x["tipo"] for x in compromissos_do_fio(self.con, "conv-atual")],
+                         ["envio"])
+
+    def test_a_propria_conversa_na_lista_de_irmas_nao_duplica(self) -> None:
+        gravar_compromisso(self.con, "conv-atual", "envio", "vai seguir", "pendente", "")
+        self.assertEqual(len(compromissos_do_fio(self.con, "conv-atual", ("conv-atual", ""))), 1)
+
+
 class ClienteFalso:
     """Só regista o que decidir() lhe pede, para testar a forma da mensagem
     sem gastar créditos nem depender da rede. O que o modelo decide perante
@@ -1643,7 +2051,21 @@ class GraphFalso:
         marcar: Exception | None = None,
         detalhe_rascunho: dict | None | Exception = "omisso",
         pedir_respostas: dict[str, dict] | None = None,
+        do_cliente: list[dict] | Exception | None = None,
+        fios: dict[str, list[dict]] | None = None,
+        do_cliente_completo: bool = True,
+        fios_completos: dict[str, bool] | None = None,
+        numeros_fio: set[str] | Exception | None = None,
+        fio_atual_completo: bool = True,
     ) -> None:
+        # Fios-irmãos: as mensagens que o remetente escreveu antes (metadados)
+        # e o fio de cada conversa candidata, por conversation_id.
+        self._do_cliente = do_cliente if do_cliente is not None else []
+        self._do_cliente_completo = do_cliente_completo
+        self._numeros_fio = numeros_fio
+        self._fio_atual_completo = fio_atual_completo
+        self._fios = fios or {}
+        self._fios_completos = fios_completos or {}
         # `resultado`: usado só por verificar_restricao_diaria() via _pedir()
         # -- None simula sucesso (200, a caixa foi lida, o cenário mau).
         self._resultado = resultado
@@ -1703,6 +2125,36 @@ class GraphFalso:
         if isinstance(self._historico, Exception):
             raise self._historico
         return list(self._historico)
+
+    def mensagens_do_cliente(self, msg: dict, dias: int = 21) -> tuple[list[dict], bool]:
+        self.chamadas.append(("mensagens_do_cliente", msg["message_id"]))
+        if isinstance(self._do_cliente, Exception):
+            raise self._do_cliente
+        return list(self._do_cliente), self._do_cliente_completo
+
+    def fio_irmao(self, conversation_id: str, quantas: int, max_chars: int,
+                  antes_de: str) -> tuple[list[dict], set[str], bool]:
+        self.chamadas.append(("fio_irmao", conversation_id))
+        fio = self._fios.get(conversation_id, [])
+        if isinstance(fio, Exception):
+            raise fio
+        antes = antes_de[:16].replace("T", " ")
+        fio = [m for m in fio if m["em"] < antes]
+        numeros = {n for m in fio for n in m.get("encomendas", ())}
+        return list(fio), numeros, self._fios_completos.get(conversation_id, True)
+
+    def numeros_do_fio(self, conversation_id: str, antes_de: str) -> tuple[set[str], bool]:
+        """Os números do fio ATUAL inteiro, que pode ser maior do que o que
+        historico() devolve (THREAD_MESSAGES). Por omissão, os do `historico`."""
+        self.chamadas.append(("numeros_do_fio", conversation_id))
+        if isinstance(self._numeros_fio, Exception):
+            raise self._numeros_fio
+        if self._numeros_fio is None:
+            base = {n for m in self._historico if isinstance(self._historico, list)
+                    for n in m.get("encomendas", ())}
+        else:
+            base = set(self._numeros_fio)
+        return base, self._fio_atual_completo
 
     def criar_rascunho(self, message_id: str, corpo_html: str,
                        nota_html: str = "") -> str:
@@ -2269,6 +2721,388 @@ class Processar(unittest.TestCase):
         conteudo = cliente.pedidos[0]["messages"][0]["content"]
         self.assertIn("#21910", conteudo)
         self.assertIn("Dados da encomenda", conteudo)
+
+    # --- Sinais verificados pelo sistema (feedback do lojista, 24-29/09) --
+
+    def _pedido(self, m, encomenda=None, graph=None, shopify=None, **cfg_over) -> str:
+        cliente = ClienteFalso(self._SALTAR)
+        if shopify is None:
+            shopify = ShopifyFalsa(por_numero=[encomenda] if encomenda else [])
+        self._correr(m, cfg(**cfg_over), cliente, graph=graph, shopify=shopify)
+        conteudo = cliente.pedidos[0]["messages"][0]["content"]
+        return conteudo if isinstance(conteudo, str) else conteudo[0]["text"]
+
+    _COM_RASTREIO = {
+        "fulfillment_status": "fulfilled",
+        "fulfillments": [{"id": 1, "tracking_number": "RR123456789PT",
+                          "tracking_company": "CTT", "shipment_status": "in_transit"}],
+    }
+
+    def test_cliente_que_nao_rastreia_nao_recebe_o_codigo_no_pedido(self) -> None:
+        """Caso #23028: o assistente colou código e transportadora a quem
+        dizia não conseguir rastrear."""
+        m = msg(corpo="Encomenda 21910: não consigo rastrear, já passaram 48h.")
+        pedido = self._pedido(m, encomenda_falsa(**self._COM_RASTREIO))
+        self.assertNotIn("RR123456789PT", pedido)
+        self.assertNotIn("CTT", pedido)
+        self.assertIn("Sinais verificados pelo sistema", pedido)
+        self.assertIn("vão analisar já o que se passa", pedido)
+
+    def test_pergunta_normal_de_rastreio_continua_a_receber_o_codigo(self) -> None:
+        m = msg(corpo="Encomenda 21910: já foi enviada?")
+        pedido = self._pedido(m, encomenda_falsa(**self._COM_RASTREIO))
+        self.assertIn("RR123456789PT", pedido)
+        self.assertNotIn("Sinais verificados pelo sistema", pedido)
+
+    def test_alteracao_de_ponto_sem_rastreio_e_possivel(self) -> None:
+        m = msg(corpo="Encomenda 21910: conseguem alterar o ponto de recolha?")
+        pedido = self._pedido(m, encomenda_falsa(fulfillment_status=None, fulfillments=[]))
+        self.assertIn("podes dizer que a alteração é possível", pedido)
+
+    def test_alteracao_de_ponto_com_rastreio_nao_garante(self) -> None:
+        m = msg(corpo="Encomenda 21910: conseguem alterar o ponto de recolha?")
+        pedido = self._pedido(m, encomenda_falsa(**self._COM_RASTREIO))
+        self.assertIn("Não garantas", pedido)
+        self.assertNotIn("podes dizer que a alteração é possível", pedido)
+
+    def test_alteracao_com_shopify_em_baixo_nao_diz_nada(self) -> None:
+        m = msg(corpo="Encomenda 21910: conseguem alterar o ponto de recolha?")
+        pedido = self._pedido(m, shopify=ShopifyFalsa(rebenta=True))
+        self.assertNotIn("Sinais verificados pelo sistema", pedido)
+
+    def test_alteracao_com_identidade_nao_provada_nao_diz_nada(self) -> None:
+        """Existe uma encomenda com esse número mas é de outra pessoa: nada
+        sobre ela chega ao modelo, sinais incluídos."""
+        m = msg(corpo="Encomenda 21910: conseguem alterar o ponto de recolha?")
+        pedido = self._pedido(m, encomenda_falsa(email="dona@gmail.com"))
+        self.assertNotIn("podes dizer", pedido)
+        self.assertNotIn("Não garantas", pedido)
+
+    def test_alteracao_com_duas_encomendas_nao_diz_nada(self) -> None:
+        m = msg(corpo="Encomenda #21910 e #21911: conseguem alterar o ponto de recolha?")
+        shopify = ShopifyFalsa(por_numero=[encomenda_falsa(name="#21910"),
+                                           encomenda_falsa(name="#21911")])
+        pedido = self._pedido(m, shopify=shopify)
+        self.assertIn("mais do que uma encomenda", pedido)  # chegou ao ramo dos dados
+        self.assertNotIn("podes dizer", pedido)
+        self.assertNotIn("Não garantas", pedido)
+
+    def test_repeticao_sem_compromissos_chega_ao_pedido(self) -> None:
+        for i in (1, 2):
+            registar(self.con, msg(message_id=f"<antes{i}@x>"), "saltar", "x", "")
+        pedido = self._pedido(msg(corpo="Alguma novidade?"))
+        self.assertIn("já escreveu 2 vezes", pedido)
+
+    def test_primeira_repeticao_nao_gasta_uma_linha(self) -> None:
+        registar(self.con, msg(message_id="<antes1@x>"), "saltar", "x", "")
+        pedido = self._pedido(msg(corpo="Alguma novidade?"))
+        self.assertNotIn("já escreveu", pedido)
+
+    def test_repeticao_com_compromissos_aparece_uma_vez_so(self) -> None:
+        for i in (1, 2, 3):
+            registar(self.con, msg(message_id=f"<antes{i}@x>"), "saltar", "x", "")
+        gravar_compromisso(self.con, "conv-1", "envio", "vai seguir", "pendente", "")
+        pedido = self._pedido(msg(corpo="Alguma novidade?"))
+        self.assertEqual(pedido.count("já escreveu"), 1)
+
+    def test_anexo_vazio_chega_ao_pedido_como_vazio(self) -> None:
+        """Caso do IBAN: o rascunho confirmou a receção só pelo texto."""
+        graph = GraphFalso(anexos=[{
+            "id": "a1", "name": "iban.pdf", "contentType": "application/pdf", "size": 0,
+            "@odata.type": "#microsoft.graph.fileAttachment", "isInline": False,
+        }])
+        m = msg(tem_anexos=True, corpo="Envio o IBAN em anexo para o reembolso")
+        pedido = self._pedido(m, graph=graph)
+        self.assertIn("VAZIO", pedido)
+        self.assertNotIn("não chegou nenhum anexo", pedido)
+
+    def test_diz_que_anexou_mas_nao_ha_anexo(self) -> None:
+        m = msg(tem_anexos=False, corpo="Envio o IBAN em anexo para o reembolso")
+        self.assertIn("não chegou nenhum anexo", self._pedido(m))
+
+    def test_so_anexos_inline_contam_como_nenhum(self) -> None:
+        """A imagem da assinatura não é o ficheiro que o cliente diz ter enviado."""
+        graph = GraphFalso(anexos=[{
+            "id": "a1", "name": "logo.png", "contentType": "image/png", "size": 4000,
+            "@odata.type": "#microsoft.graph.fileAttachment", "isInline": True,
+        }])
+        m = msg(tem_anexos=True, corpo="Envio o IBAN em anexo")
+        self.assertIn("não chegou nenhum anexo", self._pedido(m, graph=graph))
+
+    def test_anexo_real_com_promessa_de_anexo_nao_leva_a_nota_de_falta(self) -> None:
+        graph = GraphFalso(anexos=[{
+            "id": "a1", "name": "foto.png", "contentType": "image/png", "size": 100,
+            "@odata.type": "#microsoft.graph.fileAttachment", "isInline": False,
+        }], conteudo_anexo=b"bytes")
+        m = msg(tem_anexos=True, corpo="Seguem as fotos em anexo")
+        self.assertNotIn("não chegou nenhum anexo", self._pedido(m, graph=graph))
+
+    def test_anexos_nao_inspecionados_nao_provam_que_faltam(self) -> None:
+        """Falha a listar, ou processamento de imagens desligado: não se sabe
+        se o anexo existe, por isso não se diz que não chegou."""
+        m = msg(tem_anexos=True, corpo="Envio o IBAN em anexo")
+        com_erro = self._pedido(m, graph=GraphFalso(anexos=RuntimeError("Graph 500")))
+        self.assertNotIn("não chegou nenhum anexo", com_erro)
+        m2 = msg(tem_anexos=True, corpo="Envio o IBAN em anexo", message_id="<outro@x>")
+        desligado = self._pedido(m2, processar_imagens=False)
+        self.assertNotIn("não chegou nenhum anexo", desligado)
+
+    # --- Fios-irmãos: o caso da Marta Alves (30/09/2026) ------------------
+
+    @staticmethod
+    def _f(em: str, de: str, texto: str, encomendas: tuple = ()) -> dict:
+        return {"de": de, "em": em, "texto": texto, "encomendas": list(encomendas),
+                "tem_anexos": False}
+
+    _UMA_COMPRA = [{"name": "#21742", "email": "cliente@gmail.com", "fulfillments": [],
+                    "fulfillment_status": None, "financial_status": "paid",
+                    "created_at": "2026-08-10T10:00:00Z",
+                    "customer": {"first_name": "Marta", "last_name": "Alves", "phone": None},
+                    "shipping_address": {"zip": "2620-537", "phone": None}}]
+
+    def _marta(self, corpo: str = "Sobre a encomenda 21742: não estou a perceber o combinado.",
+               assunto_irma: str = "Inpods Pro 2 sem funcionar",
+               irma_em: str = "2026-09-21T08:02:00Z", atuais: int = 2,
+               texto_irma: str = "Vamos enviar-lhe gratuitamente um artigo adicional.",
+               numeros_irma: tuple = ("21742",), **graph_extra):
+        m = msg(conversation_id="conv-atual", assunto="Re: Inpods Pro 2 sem funcionar",
+                recebido="2026-09-23T18:25:00Z", corpo=corpo)
+        fio_atual = [self._f(f"2026-09-22 {10 + i:02d}:00",
+                             "cliente@gmail.com" if i % 2 == 0 else CAIXA, f"mensagem atual {i}")
+                     for i in range(atuais)]
+        irma = {"conversation_id": "conv-irma", "assunto": assunto_irma,
+                "de": "cliente@gmail.com", "recebido": irma_em}
+        graph = GraphFalso(
+            historico=fio_atual, do_cliente=[irma],
+            fios={"conv-irma": [self._f("2026-09-21 07:35", CAIXA, texto_irma, numeros_irma)]},
+            **graph_extra)
+        return m, graph
+
+    def _irma(self, m, graph, compras=None, **cfg_over) -> str:
+        """O pedido ao modelo com os fios-irmãos ligados. Por omissão o cliente
+        tem uma única compra, como a Marta (nenhum dos lados diz número)."""
+        compras = self._UMA_COMPRA if compras is None else compras
+        shopify = ShopifyFalsa(por_email=compras, por_numero=compras)
+        return self._pedido(m, graph=graph, shopify=shopify, fios_irmaos=True, **cfg_over)
+
+    def test_marta_com_o_mesmo_numero_nos_dois_fios_o_acordo_chega_ao_modelo(self) -> None:
+        """O caso real, com o identificador que lhe faltava: a oferta de 21/09
+        numa conversa irmã que o email de 23/09 não continha, e as duas
+        dizem a encomenda 21742."""
+        m, graph = self._marta()
+        gravar_compromisso(self.con, "conv-irma", "outro",
+                           "artigo adicional gratuito na próxima encomenda", "pendente", "")
+        pedido = self._irma(m, graph)
+        self.assertIn("(fio anterior): Vamos enviar-lhe gratuitamente um artigo adicional", pedido)
+        self.assertIn("numa conversa anterior do mesmo caso", pedido)
+        self.assertIn("artigo adicional gratuito na próxima encomenda", pedido)
+
+    def test_marta_real_sem_numero_em_nenhum_fio_nao_liga(self) -> None:
+        """Como o caso aconteceu de facto: nenhum dos fios cita a encomenda, e
+        a Shopify só vê uma compra. Não há identificador seguro, por isso não
+        se liga -- mesmo sendo, neste caso, o mesmo caso."""
+        m, graph = self._marta(corpo="Não estou a perceber o combinado.", numeros_irma=())
+        gravar_compromisso(self.con, "conv-irma", "outro", "artigo adicional gratuito",
+                           "pendente", "")
+        pedido = self._irma(m, graph)   # a Shopify devolve uma única compra
+        self.assertNotIn("fio anterior", pedido)
+        self.assertNotIn("artigo adicional", pedido)
+        self.assertNotIn("Compromissos já registados", pedido)
+        self.assertNotIn(("mensagens_do_cliente", m["message_id"]), graph.chamadas)
+
+    def test_compra_unica_visivel_com_encomenda_antiga_fora_da_vista_nao_liga(self) -> None:
+        """A Shopify mostra só a compra recente; a antiga não aparece. Dois
+        fios sem número, um de cada compra: nada os pode ligar."""
+        recente = [{**self._UMA_COMPRA[0], "name": "#23111", "created_at": "2026-09-15T10:00:00Z"}]
+        m, graph = self._marta(corpo="Não estou a perceber o combinado.", numeros_irma=(),
+                               texto_irma="Sobre a compra antiga: vamos enviar um artigo.")
+        gravar_compromisso(self.con, "conv-irma", "envio", "envio da compra antiga",
+                           "pendente", "")
+        pedido = self._irma(m, graph, compras=recente)
+        self.assertNotIn("fio anterior", pedido)
+        self.assertNotIn("envio da compra antiga", pedido)
+
+    def test_sem_identificador_seguro_o_pedido_e_o_de_antes_dos_fios_irmaos(self) -> None:
+        def sem_hora(p: str) -> str:
+            return "\n".join(l for l in p.split("\n") if not l.startswith("Data e hora"))
+
+        m, graph = self._marta(corpo="Não estou a perceber o combinado.", numeros_irma=())
+        m2, graph2 = self._marta(corpo="Não estou a perceber o combinado.", numeros_irma=())
+        m2["message_id"] = "<segunda@x>"
+        self.assertEqual(
+            sem_hora(self._irma(m, graph)),
+            sem_hora(self._pedido(m2, graph=graph2, fios_irmaos=False,
+                                  shopify=ShopifyFalsa(por_email=self._UMA_COMPRA))))
+
+    def test_sem_numero_e_com_varias_compras_nao_liga(self) -> None:
+        m, graph = self._marta(corpo="Não estou a perceber o combinado.", numeros_irma=())
+        gravar_compromisso(self.con, "conv-irma", "outro", "oferta da outra compra", "pendente", "")
+        duas = [{**self._UMA_COMPRA[0]}, {**self._UMA_COMPRA[0], "name": "#21999"}]
+        pedido = self._irma(m, graph, compras=duas)
+        self.assertNotIn("fio anterior", pedido)
+        self.assertNotIn("oferta da outra compra", pedido)
+
+    # --- O fio atual lido inteiro para decidir (limite de THREAD_MESSAGES) --
+
+    def test_numero_que_o_corte_deixou_de_fora_do_fio_atual_impede_a_ligacao(self) -> None:
+        """Fio atual com 9 mensagens: a mais antiga diz #23000, a recente
+        #23111, e o THREAD_MESSAGES só deixa passar as 8 últimas. O matching
+        vê {23000, 23111} e a irmã de {23111} não liga."""
+        m, graph = self._marta(corpo="Sobre a encomenda 23111: não percebo o combinado.",
+                               numeros_irma=("23111",), atuais=8,
+                               numeros_fio={"23000", "23111"})
+        gravar_compromisso(self.con, "conv-irma", "envio", "envio da 23111", "pendente", "")
+        pedido = self._irma(m, graph)
+        self.assertEqual(len(self._linhas_do_fio(pedido)), 8)  # o modelo continua com 8
+        self.assertNotIn("fio anterior", pedido)
+        self.assertNotIn("envio da 23111", pedido)
+
+    def test_fio_atual_completo_com_um_so_numero_liga(self) -> None:
+        m, graph = self._marta(corpo="Sobre a encomenda 23111: não percebo o combinado.",
+                               numeros_irma=("23111",), numeros_fio={"23111"})
+        self.assertIn("fio anterior", self._irma(m, graph))
+
+    def test_fio_atual_que_nao_coube_nas_paginas_nao_liga(self) -> None:
+        m, graph = self._marta(fio_atual_completo=False)
+        pedido = self._irma(m, graph)
+        self.assertNotIn("fio anterior", pedido)
+        self.assertNotIn("mensagens_do_cliente", [c[0] for c in graph.chamadas])
+        self.assertIn("mensagem atual 0", pedido)
+
+    def test_falha_a_ler_o_fio_atual_continua_sem_irmas(self) -> None:
+        m, graph = self._marta(numeros_fio=RuntimeError("Graph 500 ao ler o fio atual"))
+        pedido = self._irma(m, graph)
+        self.assertNotIn("fio anterior", pedido)
+        self.assertIn("mensagem atual 0", pedido)
+
+    def test_numero_em_comum_liga_mesmo_com_varias_compras(self) -> None:
+        m, graph = self._marta(corpo="Sobre a encomenda 23111: não percebo o combinado.",
+                               numeros_irma=("23111",))
+        duas = [{**self._UMA_COMPRA[0], "name": "#23111"}, {**self._UMA_COMPRA[0], "name": "#23000"}]
+        pedido = self._irma(m, graph, compras=duas)
+        self.assertIn("fio anterior", pedido)
+
+    def test_irma_com_duas_encomendas_nao_liga_e_o_compromisso_da_outra_nao_entra(self) -> None:
+        m, graph = self._marta(corpo="Sobre a encomenda 23111: não percebo o combinado.",
+                               texto_irma="Reembolso da 23000 e envio da 23111.",
+                               numeros_irma=("23111", "23000"))
+        gravar_compromisso(self.con, "conv-irma", "reembolso", "reembolso da 23000",
+                           "pendente", "")
+        pedido = self._irma(m, graph)
+        self.assertNotIn("23000", pedido)
+        self.assertNotIn("Compromissos já registados", pedido)
+
+    def test_irma_so_da_mesma_encomenda_liga_e_o_compromisso_entra(self) -> None:
+        m, graph = self._marta(corpo="Sobre a encomenda 23111: não percebo o combinado.",
+                               numeros_irma=("23111",))
+        gravar_compromisso(self.con, "conv-irma", "envio", "envio da 23111", "pendente", "")
+        pedido = self._irma(m, graph)
+        self.assertIn("envio da 23111", pedido)
+        self.assertIn("fio anterior", pedido)
+
+    def test_mesmo_cliente_outra_encomenda_nao_mistura_contexto_nem_compromisso(self) -> None:
+        m, graph = self._marta(corpo="Sobre a encomenda 23111, não percebo o combinado.",
+                               texto_irma="Reembolso da encomenda 23000 até sexta.",
+                               numeros_irma=("23000",))
+        gravar_compromisso(self.con, "conv-irma", "reembolso",
+                           "reembolso da 23000", "pendente", "")
+        pedido = self._irma(m, graph)
+        self.assertNotIn("23000", pedido)
+        self.assertNotIn("fio anterior", pedido)
+        self.assertNotIn("Compromissos já registados", pedido)
+
+    def test_assunto_parecido_de_outro_caso_nao_mistura(self) -> None:
+        m, graph = self._marta(assunto_irma="Inpods Pro 4 sem funcionar")
+        gravar_compromisso(self.con, "conv-irma", "outro", "oferta do Pro 4", "pendente", "")
+        pedido = self._irma(m, graph)
+        self.assertNotIn("artigo adicional", pedido)
+        self.assertNotIn("oferta do Pro 4", pedido)
+
+    def test_irma_com_mais_de_21_dias_fica_de_fora(self) -> None:
+        m, graph = self._marta(irma_em="2026-08-25T10:00:00Z")
+        gravar_compromisso(self.con, "conv-irma", "outro", "oferta antiga", "pendente", "")
+        pedido = self._irma(m, graph)
+        self.assertNotIn("artigo adicional", pedido)
+        self.assertNotIn("oferta antiga", pedido)
+        self.assertNotIn(("fio_irmao", "conv-irma"), graph.chamadas)
+
+    @staticmethod
+    def _linhas_do_fio(pedido: str) -> list[str]:
+        bloco = pedido.split("Conversa anterior neste fio:\n", 1)[1].split("\n\nEmail novo", 1)[0]
+        return bloco.split("\n")
+
+    def test_a_irma_nao_aumenta_o_fio_que_vai_ao_modelo(self) -> None:
+        m, graph = self._marta(atuais=8)
+        com = self._linhas_do_fio(self._irma(m, graph))
+        m2, graph2 = self._marta(atuais=8)
+        m2["message_id"] = "<segunda@x>"
+        sem = self._linhas_do_fio(self._pedido(m2, graph=graph2))
+        self.assertEqual(len(sem), 8)
+        self.assertEqual(len(com), 8)
+        self.assertEqual(sum("(fio anterior)" in l for l in com), 1)
+        self.assertEqual([l for l in com if "fio anterior" not in l], sem[1:])
+
+    def test_sem_irma_o_pedido_e_igual_ao_de_antes(self) -> None:
+        def sem_hora(p: str) -> str:
+            return "\n".join(l for l in p.split("\n") if not l.startswith("Data e hora"))
+
+        m, graph = self._marta()
+        graph._do_cliente = []
+        m2, graph2 = self._marta()
+        m2["message_id"] = "<segunda@x>"
+        graph2._do_cliente = []
+        antes = self._pedido(m2, graph=graph2, fios_irmaos=False,
+                             shopify=ShopifyFalsa(por_email=self._UMA_COMPRA,
+                                                  por_numero=self._UMA_COMPRA))
+        self.assertEqual(sem_hora(self._irma(m, graph)), sem_hora(antes))
+
+    def test_por_omissao_esta_desligado_e_nem_consulta_o_graph(self) -> None:
+        self.assertFalse(cfg().fios_irmaos)
+        m, graph = self._marta()
+        pedido = self._pedido(m, graph=graph,
+                              shopify=ShopifyFalsa(por_email=self._UMA_COMPRA))
+        self.assertNotIn("fio anterior", pedido)
+        self.assertNotIn("mensagens_do_cliente", [c[0] for c in graph.chamadas])
+
+    def test_falha_a_procurar_irmas_deixa_o_fio_como_estava(self) -> None:
+        m, graph = self._marta()
+        graph._do_cliente = RuntimeError("Graph 500")
+        pedido = self._irma(m, graph)
+        self.assertIn("mensagem atual 0", pedido)
+        self.assertNotIn("fio anterior", pedido)
+
+    def test_falha_a_ler_o_fio_da_irma_deixa_o_fio_como_estava(self) -> None:
+        """Graph falha na página seguinte do fio da irmã: fail-closed, e o
+        email é tratado na mesma com a conversa atual."""
+        m, graph = self._marta()
+        graph._fios["conv-irma"] = RuntimeError("Graph 500 na página 2")
+        pedido = self._irma(m, graph)
+        self.assertIn("mensagem atual 0", pedido)
+        self.assertNotIn("fio anterior", pedido)
+
+    def test_lista_do_cliente_incompleta_nao_liga(self) -> None:
+        m, graph = self._marta(do_cliente_completo=False)
+        pedido = self._irma(m, graph)
+        self.assertNotIn("fio anterior", pedido)
+        self.assertNotIn(("fio_irmao", "conv-irma"), graph.chamadas)
+
+    def test_fio_da_irma_incompleto_nao_liga_e_o_email_e_tratado(self) -> None:
+        m, graph = self._marta(fios_completos={"conv-irma": False})
+        gravar_compromisso(self.con, "conv-irma", "outro", "oferta incompleta", "pendente", "")
+        pedido = self._irma(m, graph)
+        self.assertNotIn("fio anterior", pedido)
+        self.assertNotIn("oferta incompleta", pedido)
+        self.assertIn("mensagem atual 0", pedido)
+
+    def test_o_numero_da_encomenda_nunca_vem_da_conversa_irma(self) -> None:
+        """A irmã fala da 21910 e o email atual não diz número nenhum: a
+        encomenda a consultar não pode passar a ser a da irmã."""
+        m, graph = self._marta(texto_irma="Sobre a encomenda 21910 vamos enviar um artigo.",
+                               numeros_irma=("21910",))
+        shopify = ShopifyFalsa(por_email=self._UMA_COMPRA,
+                               por_numero=[encomenda_falsa(name="#21910")])
+        self._pedido(m, graph=graph, shopify=shopify, fios_irmaos=True)
+        self.assertNotIn(("numero", "21910"), shopify.chamadas)
 
     def test_erro_na_shopify_nao_impede_a_decisao(self) -> None:
         m = msg(corpo="Encomenda 21910, ainda não chegou.")
@@ -4205,12 +5039,240 @@ class GraphHistorico(unittest.TestCase):
         _, saida = self._correr([self._msg("texto simples")])
         self.assertFalse(saida[0]["tem_anexos"])
 
+    def test_le_os_numeros_de_encomenda_do_texto_inteiro_nao_do_cortado(self) -> None:
+        """Só servem para decidir se duas conversas são o mesmo caso; o número
+        que está depois do corte do THREAD_CHARS conta na mesma."""
+        texto = "A" * 700 + " Sobre a encomenda 23111."
+        _, saida = self._correr([self._msg(texto)], max_chars=400)
+        self.assertEqual(len(saida[0]["texto"]), 400)
+        self.assertEqual(saida[0]["encomendas"], ["23111"])
+
     def test_exclui_a_propria_mensagem(self) -> None:
         _, saida = self._correr([
             self._msg("do fio", mid="<outra@x>"),
             self._msg("sou eu", mid="<eu@x>"),
         ])
         self.assertEqual([m["texto"] for m in saida], ["do fio"])
+
+
+class GraphPaginacao(unittest.TestCase):
+    """Fios-irmãos: o Graph pagina, e só se decide com os dados todos.
+
+    Nenhum destes testes chama o Graph nem o modelo: o `_pedir` é um dublê que
+    serve páginas por ordem (a última repete-se, para simular um nextLink sem
+    fim)."""
+
+    class _G:
+        base = "https://graph.example/v1.0/me"
+        _converter = staticmethod(Graph._converter)
+        _paginar = Graph._paginar
+        mensagens_do_cliente = Graph.mensagens_do_cliente
+        fio_irmao = Graph.fio_irmao
+        numeros_do_fio = Graph.numeros_do_fio
+        _fio_anterior = Graph._fio_anterior
+
+        def __init__(self, paginas: list) -> None:
+            self.paginas = paginas
+            self.pedidos: list[tuple[str, dict]] = []
+
+        def _pedir(self, metodo: str, url: str, **kw: object) -> dict:
+            self.pedidos.append((url, dict(kw.get("params") or {})))
+            pagina = self.paginas[min(len(self.pedidos), len(self.paginas)) - 1]
+            if isinstance(pagina, Exception):
+                raise pagina
+            return pagina
+
+    @staticmethod
+    def _m(texto: str, quando: str = "2026-09-21T07:35:00Z", de: str = CAIXA) -> dict:
+        return {"internetMessageId": f"<{abs(hash((texto, quando)))}@x>",
+                "from": {"emailAddress": {"address": de}},
+                "receivedDateTime": quando, "body": {"content": texto}}
+
+    @staticmethod
+    def _pag(itens: list[dict], proxima: str | None = None) -> dict:
+        return {"value": itens, **({"@odata.nextLink": proxima} if proxima else {})}
+
+    ATUAL = {"de": "o'brien@x.pt", "recebido": "2026-09-23T18:25:00Z"}
+
+    # --- Lista de mensagens do cliente -----------------------------------
+
+    def test_filtra_por_remetente_e_janela_e_escapa_aspas(self) -> None:
+        g = self._G([self._pag([])])
+        g.mensagens_do_cliente(self.ATUAL)
+        filtro = g.pedidos[0][1]["$filter"]
+        self.assertIn("from/emailAddress/address eq 'o''brien@x.pt'", filtro)
+        self.assertIn("receivedDateTime ge 2026-09-02T18:25:00Z", filtro)
+        self.assertIn("receivedDateTime lt 2026-09-23T18:25:00Z", filtro)
+        self.assertNotIn("body", g.pedidos[0][1]["$select"])
+        self.assertEqual(g.mensagens_do_cliente({"de": "", "recebido": self.ATUAL["recebido"]}),
+                         ([], True))
+
+    def test_segue_o_nextlink_dentro_do_limite(self) -> None:
+        g = self._G([self._pag([{"conversationId": "c1", "subject": "a", "receivedDateTime": "x"}],
+                               "https://graph.example/pagina2"),
+                     self._pag([{"conversationId": "c2", "subject": "b", "receivedDateTime": "y"}])])
+        itens, completo = g.mensagens_do_cliente(self.ATUAL)
+        self.assertTrue(completo)
+        self.assertEqual([m["conversation_id"] for m in itens], ["c1", "c2"])
+        self.assertEqual(g.pedidos[1], ("https://graph.example/pagina2", {}))
+
+    def test_lista_que_passa_o_limite_fica_incompleta_e_nao_pagina_sem_fim(self) -> None:
+        g = self._G([self._pag([], "https://graph.example/mais")])
+        itens, completo = g.mensagens_do_cliente(self.ATUAL)
+        self.assertFalse(completo)
+        self.assertEqual(len(g.pedidos), PAGINAS_FIO_IRMAO)
+
+    # --- Fio de uma candidata --------------------------------------------
+
+    def test_numero_incompativel_na_segunda_pagina_impede_a_ligacao(self) -> None:
+        """A primeira página parece compatível (23111); a segunda diz 23000."""
+        g = self._G([self._pag([self._m("Sobre a encomenda 23111.")], "https://graph.example/p2"),
+                     self._pag([self._m("Reembolso da encomenda 23000.", "2026-09-21T09:00:00Z")])])
+        _, numeros, completo = g.fio_irmao("c1", 8, 800, "2026-09-23T18:25:00Z")
+        self.assertTrue(completo)
+        self.assertEqual(numeros, {"23111", "23000"})
+        self.assertFalse(fio_do_mesmo_caso({"23111"}, numeros))
+
+    def test_nextlink_com_leitura_completa_decide_certo(self) -> None:
+        g = self._G([self._pag([self._m("Sobre a encomenda 23111.")], "https://graph.example/p2"),
+                     self._pag([self._m("Envio da 23111 na sexta.", "2026-09-21T09:00:00Z")])])
+        fio, numeros, completo = g.fio_irmao("c1", 8, 800, "2026-09-23T18:25:00Z")
+        self.assertTrue(completo)
+        self.assertEqual(numeros, {"23111"})
+        self.assertEqual(len(fio), 2)
+        self.assertTrue(fio_do_mesmo_caso({"23111"}, numeros))
+
+    def test_os_numeros_leem_se_em_todo_o_fio_nao_so_nas_que_vao_ao_modelo(self) -> None:
+        mensagens = [self._m("Sobre a encomenda 23000.", "2026-09-20T09:00:00Z")] + [
+            self._m(f"mensagem {i}", f"2026-09-21T0{i}:00:00Z") for i in range(5)]
+        g = self._G([self._pag(mensagens)])
+        fio, numeros, _ = g.fio_irmao("c1", 3, 800, "2026-09-23T18:25:00Z")
+        self.assertEqual(len(fio), 3)  # o fio que vai ao modelo respeita o limite
+        self.assertEqual(numeros, {"23000"})  # mas o número mais antigo conta
+
+    def test_mensagens_posteriores_ao_email_nao_contam(self) -> None:
+        g = self._G([self._pag([self._m("Sobre a encomenda 23111.", "2026-09-21T09:00:00Z"),
+                                self._m("Agora a 23000.", "2026-09-29T09:00:00Z")])])
+        fio, numeros, _ = g.fio_irmao("c1", 8, 800, "2026-09-23T18:25:00Z")
+        self.assertEqual(numeros, {"23111"})
+        self.assertEqual(len(fio), 1)
+
+    def test_fio_que_passa_o_limite_fica_incompleto(self) -> None:
+        g = self._G([self._pag([self._m("Sobre a encomenda 23111.")], "https://graph.example/mais")])
+        _, _, completo = g.fio_irmao("c1", 8, 800, "2026-09-23T18:25:00Z")
+        self.assertFalse(completo)
+        self.assertEqual(len(g.pedidos), PAGINAS_FIO_IRMAO)
+
+    # --- buscar_fios_irmaos: primeiro o fio ATUAL inteiro, depois as irmãs ---
+
+    ATUAL_FIO = {"conversation_id": "conv-atual", "assunto": "Re: Inpods Pro 2",
+                 "de": "cliente@gmail.com", "recebido": "2026-09-23T18:25:00Z",
+                 "corpo": "Sobre a encomenda 23111."}
+
+    @staticmethod
+    def _do_cliente() -> dict:
+        return {"value": [{"conversationId": "c1", "internetMessageId": "<a@x>",
+                           "subject": "Inpods Pro 2",
+                           "from": {"emailAddress": {"address": "cliente@gmail.com"}},
+                           "receivedDateTime": "2026-09-21T08:00:00Z"}]}
+
+    def _fio_atual(self, *textos: str, proxima: str | None = None) -> dict:
+        return self._pag([self._m(x, f"2026-09-22T0{i}:00:00Z") for i, x in enumerate(textos)],
+                         proxima)
+
+    def test_fio_atual_com_nove_mensagens_o_matching_ve_a_mais_antiga(self) -> None:
+        """A mais antiga diz #23000 e a recente #23111; o THREAD_MESSAGES (8)
+        deixaria a antiga de fora. A leitura dedicada vê as duas."""
+        textos = ["Sobre a encomenda 23000."] + [f"mensagem {i}" for i in range(7)] + [
+            "Agora a encomenda 23111."]
+        g = self._G([self._fio_atual(*textos)])
+        numeros, completo = g.numeros_do_fio("conv-atual", "2026-09-23T18:25:00Z")
+        self.assertTrue(completo)
+        self.assertEqual(numeros, {"23000", "23111"})
+        self.assertEqual(len(textos), 9)
+        self.assertEqual(g.pedidos[0][1]["$top"], "50")
+
+    def test_fio_atual_com_dois_numeros_nao_liga_a_irma_de_um(self) -> None:
+        g = self._G([
+            self._fio_atual("Sobre a encomenda 23000.", "Agora a encomenda 23111."),
+            self._do_cliente(),
+            self._pag([self._m("Sobre a encomenda 23111.")]),
+        ])
+        self.assertEqual(buscar_fios_irmaos(g, self.ATUAL_FIO, cfg()), [])
+        self.assertEqual(len(g.pedidos), 1)  # nem procurou irmãs
+
+    def test_numero_incompativel_so_na_pagina_seguinte_do_fio_atual_nao_liga(self) -> None:
+        g = self._G([
+            self._fio_atual("Sobre a encomenda 23111.", proxima="https://graph.example/p2"),
+            self._fio_atual("Afinal é a encomenda 23000."),
+            self._do_cliente(),
+            self._pag([self._m("Sobre a encomenda 23111.")]),
+        ])
+        self.assertEqual(buscar_fios_irmaos(g, self.ATUAL_FIO, cfg()), [])
+
+    def test_paginacao_do_fio_atual_dentro_do_limite_decide_normalmente(self) -> None:
+        g = self._G([
+            self._fio_atual("Sobre a encomenda 23111.", proxima="https://graph.example/p2"),
+            self._fio_atual("Continua a encomenda 23111."),
+            self._do_cliente(),
+            self._pag([self._m("Sobre a encomenda 23111.")]),
+        ])
+        ligadas = buscar_fios_irmaos(g, self.ATUAL_FIO, cfg())
+        self.assertEqual([c for c, _ in ligadas], ["c1"])
+
+    def test_fio_atual_que_passa_o_limite_nao_liga_e_nao_procura_irmas(self) -> None:
+        g = self._G([self._fio_atual("Sobre a encomenda 23111.", proxima="https://graph.example/mais")])
+        self.assertEqual(buscar_fios_irmaos(g, self.ATUAL_FIO, cfg()), [])
+        self.assertEqual(len(g.pedidos), PAGINAS_FIO_IRMAO)  # e para aí
+
+    def test_falha_a_ler_o_fio_atual_sobe_para_processar_tratar(self) -> None:
+        g = self._G([RuntimeError("Graph 500")])
+        with self.assertRaises(RuntimeError):
+            buscar_fios_irmaos(g, self.ATUAL_FIO, cfg())
+
+    def test_fio_atual_so_conta_mensagens_anteriores_ao_email(self) -> None:
+        g = self._G([self._pag([self._m("Sobre a encomenda 23111.", "2026-09-22T09:00:00Z"),
+                                self._m("Nova: encomenda 23000.", "2026-09-23T18:25:00Z"),
+                                self._m("Depois: encomenda 23000.", "2026-09-29T09:00:00Z")])])
+        numeros, _ = g.numeros_do_fio("conv-atual", "2026-09-23T18:25:00Z")
+        self.assertEqual(numeros, {"23111"})
+
+    def test_fio_atual_sem_numero_nenhum_nao_procura_irmas(self) -> None:
+        g = self._G([self._fio_atual("olá", "e quando chega?")])
+        atual = {**self.ATUAL_FIO, "corpo": "Alguma novidade?"}
+        self.assertEqual(buscar_fios_irmaos(g, atual, cfg()), [])
+        self.assertEqual(len(g.pedidos), 1)
+
+    def test_fio_da_irma_incompleto_nao_liga_e_nao_falha(self) -> None:
+        g = self._G([
+            self._fio_atual("Sobre a encomenda 23111."),
+            self._do_cliente(),
+            self._pag([self._m("Sobre a encomenda 23111.")], "https://graph.example/mais"),
+        ])
+        self.assertEqual(buscar_fios_irmaos(g, self.ATUAL_FIO, cfg()), [])
+
+    def test_fio_atual_completo_com_um_numero_e_irma_igual_liga(self) -> None:
+        g = self._G([
+            self._fio_atual("Sobre a encomenda 23111."),
+            self._do_cliente(),
+            self._pag([self._m("Sobre a encomenda 23111.")]),
+        ])
+        self.assertEqual([c for c, _ in buscar_fios_irmaos(g, self.ATUAL_FIO, cfg())], ["c1"])
+
+    def test_sem_lista_de_mensagens_do_cliente_completa_nao_le_os_fios(self) -> None:
+        g = self._G([self._fio_atual("Sobre a encomenda 23111."),
+                     self._pag([], "https://graph.example/mais")])
+        self.assertEqual(buscar_fios_irmaos(g, self.ATUAL_FIO, cfg()), [])
+
+    def test_falha_na_pagina_seguinte_da_irma_sobe_para_quem_chama_tratar(self) -> None:
+        g = self._G([
+            self._fio_atual("Sobre a encomenda 23111."),
+            self._do_cliente(),
+            self._pag([self._m("Sobre a encomenda 23111.")], "https://graph.example/p2"),
+            RuntimeError("Graph 500 na página 2"),
+        ])
+        with self.assertRaises(RuntimeError):
+            buscar_fios_irmaos(g, self.ATUAL_FIO, cfg())
 
 
 class Aquecer(unittest.TestCase):
