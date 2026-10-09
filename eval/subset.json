@@ -628,7 +628,7 @@
     },
     "expect_corpo": true,
     "expect_texto_regex": [
-      "possivel|podemos|conseguimos"
+      "tentar|possiveis"
     ],
     "expect_texto_nao_regex": [
       "nao (foi|foram) (expedid|enviad)",
@@ -639,7 +639,7 @@
       "rascunhar",
       "escalar"
     ],
-    "note": "sem fulfillment (nada processado): regra do lojista, 26/09/2026 -- pode dizer-se que a alteracao e possivel, sem dizer porque nem que ainda nao foi expedida"
+    "note": "sem fulfillment (nada processado): regra do lojista, 26/09/2026 -- desde 03/10/2026 diz-se que vamos tentar e fazer os possiveis, sem garantir, sem dizer porque nem que ainda nao foi expedida"
   },
   {
     "id": "sinal-dpd-com-rastreio",
@@ -671,7 +671,7 @@
     },
     "expect_corpo": true,
     "expect_texto_regex": [
-      "verificar"
+      "tentar|possiveis"
     ],
     "expect_texto_nao_regex": [
       "e possivel alterar",
@@ -684,7 +684,7 @@
       "rascunhar",
       "escalar"
     ],
-    "note": "com codigo de rastreio: nao se garante -- vamos verificar internamente, sem certeza"
+    "note": "com codigo de rastreio: nao se garante -- vamos tentar e fazer os possiveis, sem certeza"
   },
   {
     "id": "sinal-morada-da-loja-nao-e-alteracao",
