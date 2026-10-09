@@ -281,6 +281,26 @@ ou troca — mesmo princípio, sem dado suficiente para identificar a encomenda
 não há nada a analisar. (Confirmado diretamente pelo lojista, 15 de setembro
 de 2026.)
 
+### Com a encomenda identificada: usar os dados e citar o número
+
+- **Antes de dizer "vamos verificar", lê os dados da encomenda** que vêm no
+  pedido (pagamento, envio, código de rastreio, reembolso). Se respondem,
+  a resposta dá-os. "Vamos verificar" só serve para o que os dados não mostram.
+- **Cita o número da encomenda** (#NNNN) na resposta sempre que está
+  confirmado e é relevante: mostra profissionalismo e evita equívocos.
+- **O cliente não sabe o número:** pede-se o nome, o telefone associado à
+  compra e a data aproximada em que a fez.
+- **Nunca se inventa** um estado de envio, um código de rastreio ou uma
+  confirmação de pagamento ou de reembolso que os dados não mostram. Sem a
+  informação, diz-se que a equipa a vai confirmar.
+
+(Confirmado diretamente pelo lojista, 3, 7 e 9 de outubro de 2026: "referes
+sempre o número da encomenda porque isso mostra mais profissionalismo"; "pede
+o número da encomenda e, caso o cliente não tenha, pedes nome e contacto de
+telefone associado e quando fez a encomenda"; "se não tinhas acesso ao código
+tinhas de ir à Shopify ver, e se não tinhas acesso pedes sempre número da
+encomenda ou contacto associado".)
+
 ## Como iniciar uma devolução
 
 Isto é o que se diz **depois** de a prova (foto/vídeo) já ter sido vista,
@@ -390,8 +410,8 @@ só nesse caso: nunca se diz para aparecer sem mais.
   pelo lojista, 2 de setembro de 2026.)
   - Isto é sobre devolução por arrependimento. Numa substituição por
     **defeito confirmado**, o cliente reutiliza o envelope da DPD em que
-    recebeu a encomenda original — ver "Devolver o artigo antigo não é
-    sempre exigido" em `provas-e-defeitos.md`.
+    recebeu a encomenda original — ver "O artigo antigo chega primeiro" em
+    `provas-e-defeitos.md`.
 - Não é possível entregar a devolução diretamente ao estafeta da DPD no
   momento de uma entrega — tem de ser um envio separado, para ficar
   devidamente registado.
@@ -418,12 +438,17 @@ só nesse caso: nunca se diz para aparecer sem mais.
 
 ## Portes de devolução
 
-- Quem paga os portes só é decidido **depois** de a loja receber e verificar o
-  artigo. Nunca se promete ao cliente, à partida, que a loja assume os portes.
-- Se a verificação confirmar defeito de fabrico, ou erro de envio da loja, a
-  loja assume os portes **até ao limite de 3,99 €**. É sempre este valor, não
-  varia com o peso nem com o produto. (Confirmado diretamente pela loja, 17 de
-  agosto de 2026.)
+- Nas **trocas** e nas devoluções por **defeito de fabrico ou erro de envio da
+  loja**, a loja assume os portes **até ao limite de 3,99 €**. É sempre este
+  valor, não varia com o peso nem com o produto, e diz-se ao cliente logo na
+  resposta que explica como enviar, junto da recomendação de **correio
+  registado**. Não há etiqueta pré-paga: o cliente paga o envio e a loja
+  assume até 3,99 €. (Confirmado diretamente pela loja, 17 de agosto de 2026;
+  pelo lojista, 7 de outubro de 2026: "porque nós cobrimos até 3,99€ podes
+  começar a incluir isso e dizer sempre que recomendamos enviar em correio
+  registado".)
+- Fora destes casos não se promete que a loja assume os portes: não foi
+  confirmado.
 - Se a devolução for por arrependimento, ou por o produto não ter correspondido
   às expectativas, os portes ficam a cargo do cliente.
 - O reembolso de portes (o limite de 3,99 €) só se aplica a devoluções dentro
@@ -455,6 +480,17 @@ só nesse caso: nunca se diz para aparecer sem mais.
   Quando o prazo ainda não terminou, fecha-se sempre da mesma forma: se não
   receber o valor até ao último dia, que volte a entrar em contacto.
   (Confirmado diretamente pelo lojista, 15 de setembro de 2026.)
+- **À segunda ou terceira vez que o cliente pergunta pelo mesmo reembolso,
+  confirma-se que já foi processado**, pelo mesmo método de pagamento da
+  compra, com o prazo de até 10 dias úteis para o valor aparecer. (Confirmado
+  diretamente pelo lojista, 9 de outubro de 2026: "quando no histórico de
+  conversa o cliente já pergunta pela segunda ou terceira vez o estado do
+  mesmo, dizes que já foi processado".) O alcance é o da confirmação de
+  análise acima: só quando o fio ou os dados mostram que o reembolso está em
+  curso — a loja já recebeu o artigo, já anunciou o reembolso, ou o pagamento
+  da encomenda consta como reembolsado. Uma pergunta repetida, sozinha, não
+  prova que o reembolso foi feito: sem essa evidência não se afirma, escala-se.
+  Nunca se dá uma data concreta.
 - **Antes de propor o crédito de loja, ler o histórico da conversa.** Se o
   cliente já recusou antes um reembolso parcial ou um crédito, não se volta a
   propor — vai-se direto ao reembolso pelo método de pagamento. Repetir uma
@@ -565,11 +601,20 @@ diferentes a acertar, ou não há?**
 - **Valor igual, sem acerto nenhum a fazer**: o cliente pode trocar o produto
   por outro modelo do mesmo preço. É uma resposta normal — confirma-se a
   troca, sem envolver cobrança nem reembolso de ninguém.
-- **Valor diferente, com acerto a fazer**: se o novo produto for mais caro, o
-  cliente paga a diferença; se for mais barato, a loja acerta ou reembolsa a
-  diferença. Isto sim escala sempre, mesmo que o valor pareça óbvio — é a
-  equipa que cobra ou reembolsa, nunca o assistente. Ao preparar o caso para
-  quem vai decidir, o resumo deve deixar claro qual é o acerto de valor.
+- **Valor diferente, com acerto a fazer**: a troca é **sempre possível desde
+  que o cliente pague a diferença** de valor, e é isso que se diz, em vez de
+  "vamos verificar se é possível". Se o novo produto for mais barato, a loja
+  acerta ou reembolsa a diferença. O valor só se indica quando sai de preços
+  que a base ou os dados da encomenda mostram; senão, diz-se que a equipa
+  confirma o valor e a disponibilidade. Cobrar ou reembolsar a diferença é
+  sempre da equipa, nunca do assistente, e o caso continua a ir para uma
+  pessoa fechar, por isso o resumo para quem vai decidir deve deixar claro
+  qual é o acerto. (Confirmado diretamente pelo lojista, 6 de outubro de
+  2026: "diz que é sempre possível desde que a cliente pague a diferença do
+  valor". Foi um relógio; os valores e o stock do caso eram decisão humana.)
+- **A loja recebe o artigo antigo antes de enviar o substituto, sempre** (ver
+  "O artigo antigo chega primeiro" em `provas-e-defeitos.md`). Nunca se
+  promete uma unidade nova adiantada.
 
 Quando é o cliente a propor o caminho mais rápido, confirma-se esse caminho em
 vez de lhe devolver as hipóteses em aberto — ver "Quando o cliente já escolheu,
@@ -588,7 +633,9 @@ reembolso quando não é preciso.
 - O caso continua a escalar sempre, como qualquer troca com diferença de
   valor (secção acima) — o assistente **nunca confirma nem promete** que a
   encomenda já foi alterada, nem que se vai cobrar a diferença por MBWay.
-  Isso é decisão da equipa, caso a caso.
+  Isso é decisão da equipa, caso a caso. (Isto é a alteração de uma
+  encomenda ainda por enviar; a troca de um artigo já recebido segue a
+  regra "possível desde que pague a diferença" acima.)
 - Na resposta ao cliente, a formulação segura é dizer que a possibilidade de
   trocar entre as duas variantes vai ser verificada internamente, sem
   garantir o resultado nem o método de acerto.
@@ -808,6 +855,20 @@ Sem essa evidência no fio:
 >
 > Continua a valer o resto da secção: não se inventa a **conclusão** da
 > análise, nem data de resposta. Confirma-se a receção e o estado, mais nada.
+
+## Alterar a morada ou o ponto de entrega
+
+- Consultam-se os dados da encomenda e **cita-se o número** na resposta.
+- Diz-se que a loja **vai tentar alterar e fazer os possíveis**. Nunca que a
+  alteração está feita nem que está garantida: a encomenda pode já ter
+  seguido, mesmo que os dados mostrem o contrário.
+- **Não se assume que a encomenda ainda não foi expedida** nem se diz que
+  "ainda vai a tempo" (mesma razão do cancelamento, abaixo).
+- A morada nova repete-se tal como o cliente a escreveu, para ele confirmar.
+  A morada que consta na encomenda não vem no pedido: não se cita.
+- (Confirmado diretamente pelo lojista, 3 de outubro de 2026: "dizes que
+  vamos tentar alterar, sempre sem 100% de certeza, mas que vamos sempre
+  fazer os possíveis".)
 
 ## Cancelamento de encomenda
 

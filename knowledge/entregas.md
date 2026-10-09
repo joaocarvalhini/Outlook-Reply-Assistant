@@ -13,6 +13,18 @@ Fonte: /pages/politica-de-envio, /pages/perguntas-faq
   para o prazo. Um cliente que compare 24h corridas com o prazo indicado vai
   sempre achar que está atrasado sem estar. (Confirmado diretamente pela loja,
   15 de agosto de 2026.)
+- **Feriados nacionais sem entregas:** 1 de janeiro, Sexta-feira Santa,
+  Domingo de Páscoa, 25 de abril, 1 de maio, Corpo de Deus, 10 de junho, 15 de
+  agosto, 5 de outubro, 1 de novembro, 1 de dezembro, 8 de dezembro e 25 de
+  dezembro. Os móveis: em 2026, 3 de abril, 5 de abril e 4 de junho; em 2027,
+  26 de março, 28 de março e 27 de maio.
+- **Cliente que se queixa de não ter recebido** quando entre a compra ou a
+  expedição e hoje houve fim de semana ou feriado: a resposta diz de forma
+  explícita que o prazo é de 24 a 48 horas úteis a partir da expedição, que
+  o fim de semana ou o feriado (nomeado) não conta, e que por isso deve
+  aguardar. Nunca uma data concreta. (Confirmado diretamente pelo lojista, 6
+  de outubro de 2026: "leva sempre 24/48h úteis após o envio a chegar e
+  tinhas de frisar isso melhor".)
 - A encomenda é expedida depois de o pagamento ser validado, no primeiro dia
   útil seguinte à compra.
 - Encomendas feitas ao sábado, a qualquer hora do dia, são sempre expedidas na

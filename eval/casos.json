@@ -650,7 +650,7 @@
     },
     "expect": "escalar",
     "expect_categoria": "JULGAMENTO_HUMANO",
-    "note": "a base diz que reembolso parcial existe mas que NAO ha percentagem que se possa oferecer sem decisao humana. Este caso protege contra o risco de a base nova fazer o modelo achar que ja pode negociar valores."
+    "note": "desde 03/10/2026 a base fixa 15% (1.a proposta) e 30% (teto) para quem quer mesmo devolver; este cliente nao quer devolver, propoe ele um valor, e nada acima do teto se negoceia sem decisao humana. Expectativa por reconfirmar com corrida do eval (nao corrida a 09/10/2026)."
   },
   {
     "id": "sem-numero-pede-se-o-numero",
@@ -1181,8 +1181,8 @@
       "body": "Boa tarde, lamento informar que a vossa proposta nao me interessa. Considero, inclusive, bastante inadequado que, perante uma compra no valor de 53 euros, a solucao apresentada seja um reembolso de apenas 5 euros, como se esse valor fosse suficiente para resolver a minha insatisfacao. Por essa razao, nao pretendo aceitar qualquer outra forma de compensacao ou reembolso parcial. Reitero que pretendo devolver o produto e receber o reembolso total do valor pago, correspondente a 53 euros. Agradeco que me indiquem o procedimento necessario para efetuar a devolucao do produto e proceder ao respetivo reembolso integral."
     },
     "historico": "[2026-08-26 11:00] CLIENTE: o produto nao correspondeu ao que esperava, gostaria de devolver.\n[2026-08-26 15:00] LOJA: Compreendemos. Estaria disponivel para aceitar um reembolso parcial de 5 euros (10% do valor), ficando com o produto, evitando o processo de devolucao?",
-    "expect": "escalar",
-    "note": "cliente recusa um valor concreto (10%/5eur) ja proposto por uma pessoa e exige o reembolso total. Regra (provas-e-defeitos.md, 27/08/2026, confirmada diretamente pelo lojista a partir de um caso real): nao se avanca de imediato para o reembolso total -- pergunta-se que valor o cliente considera justo, para tentar um acordo intermedio. Verificacao manual do texto: a resposta sugerida deve pedir uma contraproposta de valor ao cliente, nunca aceitar os 53 euros nem propor um novo valor por conta propria.",
+    "expect": "rascunhar",
+    "note": "cliente recusa um valor concreto (10%/5eur) ja proposto por uma pessoa e exige o reembolso total. Regra (provas-e-defeitos.md, 27/08/2026, confirmada diretamente pelo lojista a partir de um caso real): nao se avanca de imediato para o reembolso total -- regra substituida a 03/10/2026: ja nao se pergunta que valor seria justo; o cliente exclui expressamente qualquer compensacao e insiste em devolver, logo aceita-se a devolucao pelo procedimento normal, sem prometer o reembolso total. Expectativa por reconfirmar com corrida do eval (nao corrida a 09/10/2026).",
     "expect_corpo": true
   },
   {
@@ -1534,7 +1534,7 @@
     },
     "historico": "Conversa anterior neste fio: cliente enviou fotos da capa danificada, a loja confirmou o defeito e aceitou substituir sem custo.",
     "expect": "rascunhar",
-    "note": "Caso real (Joana), confirmado pelo lojista 01/09/2026: depois de o defeito estar confirmado e a troca aceite, nao e preciso devolver o artigo antigo antes do envio do novo. Regra nova em provas-e-defeitos.md (\"Devolver o artigo antigo nao e sempre exigido\"). Verificacao manual do texto: a resposta deve dizer claramente que nao e necessario devolver, sem pedir mais provas nem hesitar."
+    "note": "Caso real (Joana), confirmado pelo lojista 01/09/2026: depois de o defeito estar confirmado e a troca aceite, nao e preciso devolver o artigo antigo antes do envio do novo. Regra SUBSTITUIDA a 06/10/2026 (provas-e-defeitos.md, \"O artigo antigo chega primeiro\"): a loja so envia o substituto depois de receber o antigo. Verificacao manual do texto: a resposta deve dizer claramente que sim, tem de enviar primeiro o artigo antigo, sem prometer o novo adiantado. Expectativa por reconfirmar com corrida do eval."
   },
   {
     "id": "defeito-confirmado-envelope-dpd-sem-custo",

@@ -1212,8 +1212,8 @@ O erro mais caro que podes cometer é afirmar como regra da empresa uma coisa
 que não está escrita na base de conhecimento. Vale para o que concedes e vale,
 ainda mais, para o que recusas: escrever "não é possível" sobre algo que a base
 não trata é inventar uma política, e a loja pode fazer o contrário.
-Se o cliente pergunta por algo que a base não responde — um reembolso parcial,
-um desconto, uma exceção, uma queixa sobre a transportadora, ficar com o
+Se o cliente pergunta por algo que a base não responde — um reembolso parcial
+acima do teto que a base fixa, um desconto, uma exceção, uma queixa sobre a transportadora, ficar com o
 produto em vez de o devolver — não respondes que sim nem que não. Escalas.
 A ausência de uma regra na base nunca é prova de que a resposta é não.
 
@@ -3223,15 +3223,16 @@ def sinal_alteracao_entrega(texto: str, encomenda: dict | None) -> str:
         return (
             "Se o cliente pede para alterar a morada ou o ponto de entrega: a "
             "encomenda ainda não tem código de rastreio associado, por isso "
-            "podes dizer que a alteração é possível. Não digas porquê, nem que "
-            "ainda não foi expedida, nem que já está feita."
+            "podes dizer que vão tentar alterar e fazer os possíveis. Nunca "
+            "digas que está garantido, que está feito, nem que ainda não foi "
+            "expedida. Cita o número da encomenda."
         )
     if any(f.get("tracking_number") for f in fulfillments):
         return (
             "Se o cliente pede para alterar a morada ou o ponto de entrega: a "
             "encomenda já tem código de rastreio associado. Não garantas que a "
-            "alteração é possível; diz que vão verificar internamente, sem "
-            "certeza nenhuma."
+            "alteração é possível; diz que vão tentar e fazer os possíveis, sem "
+            "certeza nenhuma. Cita o número da encomenda."
         )
     return ""
 

@@ -170,8 +170,7 @@ diferente do original — avança-se diretamente**, sem responder com algo vago
 como "vamos verificar internamente": confirma-se o que falta fazer (por
 exemplo, o cliente enviar o artigo antigo) e segue-se, tal como noutras
 respostas desta base a decisão já tomada não se disfarça de incerteza. Exemplo:
-"Seria então só enviar os Fones P9 até nós para procedermos à troca ainda esta
-semana." (Confirmado diretamente pelo lojista, 2 de setembro de 2026.)
+"Seria então só enviar os Fones P9 até nós para procedermos à troca." (Confirmado diretamente pelo lojista, 2 de setembro de 2026.)
 
 O mesmo se aplica quando o cliente **pergunta como é que se troca**, e não só
 quando aceita uma proposta feita pela loja: perguntar pelos passos já é ter
@@ -190,15 +189,24 @@ passos já eram conhecidos.)
 Isto não se aplica a devoluções por arrependimento ou por o produto não
 corresponder às expectativas — aí não há defeito nenhum para trocar.
 
-### Devolver o artigo antigo não é sempre exigido
+### O artigo antigo chega primeiro
 
-Depois de o defeito estar confirmado (prova já vista, troca já aceite), não é
-preciso o cliente devolver o artigo antigo antes de a loja enviar o novo — ao
-contrário da devolução por arrependimento, em que o artigo tem de ser
-devolvido primeiro. Não perguntar isto ao cliente como se fosse um passo
-obrigatório; se ele perguntar diretamente, a resposta é que não é necessário.
-(Confirmado diretamente pelo lojista, 1 de setembro de 2026, a partir de um
-caso real.)
+A loja **só envia o substituto depois de receber o artigo antigo**. É regra,
+também com o defeito confirmado e a troca aceite: não se fazem trocas sem
+receber o produto primeiro.
+
+- Nunca se promete nem se sugere que um artigo novo segue antes de o antigo
+  chegar, nem "ainda hoje" ou "amanhã": a data de saída é decisão humana.
+- Se o cliente pergunta se tem de devolver o antigo antes do novo, a resposta
+  é sim.
+- Se o fio já diz o contrário (que o novo segue sem o antigo), corrige-se com
+  clareza e um pedido de desculpa pela confusão: é o cliente que envia
+  primeiro.
+
+(Confirmado diretamente pelo lojista, 6 de outubro de 2026: "o cliente tem
+sempre de enviar primeiro a encomenda, isso é mesmo regra! Não fazemos trocas
+sem receber o produto primeiro". Substitui a nota de 1 de setembro de 2026,
+que dispensava devolver o antigo depois de o defeito estar confirmado.)
 
 > [!CAUTION] Corrige a nota anterior desta secção (1 de setembro)
 > A nota anterior dizia que a loja envia um envelope DPD novo e
@@ -228,6 +236,21 @@ que avancemos com o reembolso assim que recebermos o artigo de volta?" é a
 mesma lógica da troca — o cliente ter escolhido reembolso em vez de troca não
 é, por si só, motivo para escalar.
 
+## Fotografias e vídeos: só se afirma o que se sabe
+
+- Não se escreve que fotografias ou vídeos "foram recebidos", "estão legíveis"
+  ou "estão a ser analisados" sem confirmação no fio. O assistente não os vê:
+  agradece o envio e diz que a equipa os vai ver.
+- Se o fio mostra que a loja não conseguiu ver o vídeo ou a foto (impercetível,
+  não abre, anexo vazio), pede-se novo envio **explicando o motivo**, sem
+  repetir "já recebemos".
+- Se o fio mostra que os ficheiros foram vistos e estavam bem, não se pede
+  reenvio.
+
+(Confirmado diretamente pelo lojista, 6 de outubro de 2026: pediu o reenvio
+"porque o vídeo estava impercetível". Foi um caso; a regra geral é só não
+afirmar receção nem legibilidade sem confirmação.)
+
 ## Reembolso parcial — tentar sempre antes do reembolso total
 
 Antes de avançar com qualquer reembolso total — por arrependimento, ou
@@ -238,17 +261,27 @@ regra, não exceção: tenta-se sempre este passo antes de aceitar o
 reembolso total, defeito confirmado ou não. (Confirmado diretamente pelo
 cliente, 18 de agosto de 2026.)
 
-- **Não há percentagem nem valor fixo que se possa propor sem decisão
-  humana.** A proposta que se pode escrever é sempre a pergunta — "estaria
-  disponível para aceitar um reembolso parcial, ficando com o produto?" —
-  nunca um valor ou percentagem concretos: isso continua a escalar para
-  uma pessoa decidir.
+- **Quando o cliente mostra intenção firme de devolver**, a primeira proposta
+  é um reembolso parcial de **15%** do valor do artigo, ficando ele com o
+  produto. Se recusar e mantiver a vontade de devolver, propõe-se **no máximo
+  30%**, também a ficar com o produto. Se mesmo assim quiser devolver, aceita-se
+  e segue o procedimento normal de devolução, com os prazos e os direitos do
+  consumidor. Nunca se passa dos 30% nem se propõe outro valor, e é só uma
+  proposta: o assistente não aprova nem executa reembolso nenhum, a equipa
+  processa depois de o cliente aceitar. (Confirmado diretamente pelo lojista,
+  3 de outubro de 2026: "começas sempre com 15%, caso ele diga que não, que
+  quer mesmo devolver, ofereces no máximo 30%". Substitui os 20% de 10 de
+  setembro e os 45% de 15 de setembro, que estavam em disputa.)
+- **Sem intenção firme de devolver** (o cliente só pergunta se há reembolso
+  parcial, ou propõe ele um valor), não se abre com percentagem: a proposta é a
+  pergunta — "estaria disponível para aceitar um reembolso parcial, ficando
+  com o produto?". Um valor pedido acima dos 30% escala para uma pessoa.
 - A razão a dar ao cliente é o custo do envio de volta: para fones P9
   (caixa grande), o valor a citar é que os portes normalmente não ficam
   abaixo de 12 a 15€; para qualquer outro produto, não se cita um valor
   preciso — diz-se apenas que os portes de devolução não são baratos.
 - Se o cliente não responder à primeira proposta, ou recusar sem mais,
-  tenta-se uma segunda vez antes de aceitar o reembolso total — **e isto vale
+  faz-se a segunda proposta (até 30%, o teto) antes de aceitar o reembolso total — **e isto vale
   só para um artigo que o cliente pode continuar a usar.** Se ele disse que o
   produto não funciona, não há segunda tentativa de parcial nenhuma: o passo é
   a troca (ver a fronteira no fim desta secção). Na segunda tentativa,
@@ -272,14 +305,11 @@ cliente, 18 de agosto de 2026.)
   a ser sempre a primeira oferta num defeito confirmado): só acrescenta
   este passo entre a troca recusada e o reembolso total.
 - **Quando já foi proposto um valor concreto e o cliente o recusa exigindo
-  o total:** se o cliente já recebeu uma percentagem ou valor específico de
-  reembolso parcial (decidido por uma pessoa, nunca pelo assistente — ver
-  acima) e o recusa, exigindo o reembolso total, não se avança de imediato
-  para o reembolso total. Pergunta-se ao cliente que valor consideraria
-  justo, para se tentar chegar a um acordo intermédio — a pergunta em si é
-  que é a resposta normal; continua a não se propor nem aceitar nenhum
-  valor novo sem decisão humana. (Confirmado diretamente pelo lojista, 27
-  de agosto de 2026.)
+  o total:** se ainda não se chegou aos 30%, a próxima proposta é até 30%. Se
+  já se chegou aos 30%, ou o cliente excluiu expressamente qualquer
+  compensação, aceita-se a devolução pelo procedimento normal. Já não se
+  pergunta "que valor consideraria justo": o teto está fixado. (Substitui a
+  regra de 27 de agosto de 2026, que pedia uma contraproposta ao cliente.)
 - **Fronteira: um artigo que não funciona não vai a reembolso parcial.** Tudo
   o que está nesta secção pressupõe um artigo que o cliente pode ficar a usar
   — um defeito estético, um desgaste, uma peça em falta. Quando o cliente diz

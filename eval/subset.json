@@ -156,7 +156,7 @@
     },
     "expect": "escalar",
     "expect_categoria": "JULGAMENTO_HUMANO",
-    "note": "a base diz que reembolso parcial existe mas que NAO ha percentagem que se possa oferecer sem decisao humana. Este caso protege contra o risco de a base nova fazer o modelo achar que ja pode negociar valores."
+    "note": "desde 03/10/2026 a base fixa 15% (1.a proposta) e 30% (teto) para quem quer mesmo devolver; este cliente nao quer devolver, propoe ele um valor, e nada acima do teto se negoceia sem decisao humana. Expectativa por reconfirmar com corrida do eval (nao corrida a 09/10/2026)."
   },
   {
     "id": "defeito-oferece-troca-antes-de-devolucao",

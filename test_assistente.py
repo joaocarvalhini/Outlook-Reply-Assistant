@@ -1171,7 +1171,7 @@ class SinaisDoPedido(unittest.TestCase):
                       "O ponto DPD Pickup já foi alterado?",
                       "Preciso de corrigir a morada da encomenda"):
             with self.subTest(texto):
-                self.assertIn("possível", sinal_alteracao_entrega(texto, self._encomenda()))
+                self.assertIn("fazer os possíveis", sinal_alteracao_entrega(texto, self._encomenda()))
 
     def test_outros_pedidos_nao_disparam(self) -> None:
         for texto in ("Quando chega a minha encomenda?",
@@ -1181,17 +1181,20 @@ class SinaisDoPedido(unittest.TestCase):
             with self.subTest(texto):
                 self.assertEqual(sinal_alteracao_entrega(texto, self._encomenda()), "")
 
-    def test_sem_rastreio_diz_que_e_possivel_sem_dizer_porque(self) -> None:
+    def test_sem_rastreio_diz_que_vao_tentar_sem_garantir(self) -> None:
         sinal = sinal_alteracao_entrega("Podem alterar a morada?", self._encomenda())
-        self.assertIn("podes dizer que a alteração é possível", sinal)
-        self.assertIn("Não digas porquê", sinal)
+        self.assertIn("vão tentar alterar e fazer os possíveis", sinal)
+        self.assertIn("Nunca digas que está garantido", sinal)
+        self.assertIn("nem que ainda não foi expedida", sinal)
+        self.assertIn("Cita o número da encomenda", sinal)
 
     def test_com_rastreio_nao_garante(self) -> None:
         enc = self._encomenda(fulfillment_status="fulfilled",
                               fulfillments=[{"tracking_number": "RR1"}])
         sinal = sinal_alteracao_entrega("Podem alterar a morada?", enc)
         self.assertIn("Não garantas", sinal)
-        self.assertNotIn("podes dizer que a alteração é possível", sinal)
+        self.assertIn("fazer os possíveis", sinal)
+        self.assertNotIn("vão tentar alterar e fazer os possíveis", sinal)
 
     def test_estado_desconhecido_nao_diz_nada(self) -> None:
         """Expedida sem código, parcial, cancelada, estado que não se conhece:
@@ -2757,13 +2760,13 @@ class Processar(unittest.TestCase):
     def test_alteracao_de_ponto_sem_rastreio_e_possivel(self) -> None:
         m = msg(corpo="Encomenda 21910: conseguem alterar o ponto de recolha?")
         pedido = self._pedido(m, encomenda_falsa(fulfillment_status=None, fulfillments=[]))
-        self.assertIn("podes dizer que a alteração é possível", pedido)
+        self.assertIn("vão tentar alterar e fazer os possíveis", pedido)
 
     def test_alteracao_de_ponto_com_rastreio_nao_garante(self) -> None:
         m = msg(corpo="Encomenda 21910: conseguem alterar o ponto de recolha?")
         pedido = self._pedido(m, encomenda_falsa(**self._COM_RASTREIO))
         self.assertIn("Não garantas", pedido)
-        self.assertNotIn("podes dizer que a alteração é possível", pedido)
+        self.assertNotIn("vão tentar alterar e fazer os possíveis", pedido)
 
     def test_alteracao_com_shopify_em_baixo_nao_diz_nada(self) -> None:
         m = msg(corpo="Encomenda 21910: conseguem alterar o ponto de recolha?")
