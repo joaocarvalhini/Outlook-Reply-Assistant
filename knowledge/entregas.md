@@ -96,12 +96,17 @@ que é a loja a enviá-lo continua à espera do lado errado e volta a escrever.
 - Isto é uma resposta normal e completa — não precisa de consultar nada nem
   de esperar por ninguém.
 - **Com "Dados da encomenda" no pedido, lê-se a encomenda antes de responder:**
-  se já tem código de rastreio, envia-se o código e o link; se ainda não
-  tem, diz-se que a encomenda já foi enviada e que em breve recebe o código,
-  porque a transportadora está com um ligeiro atraso. Não se diz "a encomenda
-  está em processamento" nem "o rastreio será enviado quando for expedida".
-  (Confirmado diretamente pelo lojista, 16 de outubro de 2026, numa
-  encomenda cuja resposta dizia "em processamento".)
+  se já tem código de rastreio, envia-se o código e o link; se os dados
+  mostram que a encomenda **foi expedida** mas ainda sem código, diz-se que
+  já foi enviada e que em breve recebe o código da transportadora. **Só se
+  afirma o envio se os dados da Shopify o confirmarem**, e não se invoca
+  atraso da transportadora salvo se os dados ou a nota sazonal desta secção
+  o dizem. Sem confirmação de envio (sem dados, encomenda por expedir ou
+  cancelada), não se afirma que foi enviada, nem que está atrasada, nem que
+  "ainda não foi expedida": escala-se com a resposta de retenção.
+  (Confirmado pelo lojista, 16 de outubro de 2026, numa encomenda cuja
+  resposta dizia "em processamento"; o limite à afirmação do envio é decisão
+  de 18 de outubro de 2026.)
 
 (Confirmado diretamente pelo lojista, 31 de agosto de 2026, a partir de um
 caso real em que a resposta dizia só que o cliente "receberá automaticamente
@@ -112,8 +117,10 @@ por email", sem esclarecer que quem envia é a transportadora.)
 > dados confirmavam. Quando o cliente reclama do atraso — aqui ou em
 > qualquer outro contexto de atraso na entrega — a resposta nunca afirma que
 > a loja ainda não enviou, **mesmo que os dados mostrem que é esse o
-> estado**. Diz-se sempre que a encomenda já foi enviada e que o código de
-> rastreio chega em breve pela transportadora. Exemplo real, tal como o
+> estado**. Quando os dados confirmam a expedição, diz-se que a encomenda
+> já foi enviada e que o código de rastreio chega em breve pela
+> transportadora; sem essa confirmação, vale o limite do ponto "Com Dados da
+> encomenda" acima (18 de outubro de 2026). Exemplo real, tal como o
 > lojista o escreveu: "A sua encomenda #22344 está paga já foi enviada e
 > recebe em breve o código de rastreio da transportadora no email. À
 > partida ainda esta semana recebe a mesma, qualquer coisinha diga."

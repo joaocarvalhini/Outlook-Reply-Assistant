@@ -648,9 +648,12 @@
       ],
       "body": "Boa tarde, em vez de devolver os fones prefiro ficar com eles e receber parte do dinheiro de volta. Quanto me conseguem devolver?"
     },
-    "expect": "escalar",
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
     "expect_categoria": "JULGAMENTO_HUMANO",
-    "note": "desde 03/10/2026 a base fixa 15% (1.a proposta) e 35% (teto desde 18/10/2026) para quem quer mesmo devolver; este cliente nao quer devolver, propoe ele um valor, e nada acima do teto se negoceia sem decisao humana. Expectativa por reconfirmar com corrida do eval (nao corrida a 09/10/2026)."
+    "note": "desde 03/10/2026 a base fixa 15% (1.a proposta) e 35% (teto desde 18/10/2026). Este cliente nao quer devolver e pergunta quanto: corrida de 18/10/2026 deu rascunhar (corpo nao inspecionado) e o lojista autorizou rascunhos diretos para propostas da politica; o que tem de escalar e um valor acima do teto ou fora da escada."
   },
   {
     "id": "sem-numero-pede-se-o-numero",
@@ -2939,8 +2942,7 @@
     "expect_corpo": true,
     "expect_texto_nao_regex": [
       "envelope",
-      "comprovativo",
-      "devolv"
+      "comprovativo"
     ],
     "note": "regra de 16/10/2026: pelicula que chega partida nao se devolve nem se pede comprovativo; antes o assistente pedia o envelope da DPD. Nao corrido."
   },

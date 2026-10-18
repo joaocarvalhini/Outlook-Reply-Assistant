@@ -231,12 +231,13 @@ sempre de enviar primeiro a encomenda, isso é mesmo regra! Não fazemos trocas
 sem receber o produto primeiro". Substitui a nota de 1 de setembro de 2026,
 que dispensava devolver o antigo depois de o defeito estar confirmado.)
 
-**Excepção: película que chega partida.** Não se pede para devolver a
-película partida nem comprovativo de envio: está partida, não há nada a
-analisar. Depois de a prova (fotografia) mostrar que veio partida, confirma-se
-o modelo de iPhone e a morada, se faltarem, e diz-se que se envia uma nova. É
-só para películas; qualquer outro artigo continua a seguir a regra acima. Sem
-data de envio. (Confirmado diretamente pelo lojista, 16 de outubro de 2026:
+**Excepção: película que chega partida.** A prova visual continua a vir
+primeiro, como em qualquer reclamação. Depois de ela mostrar que a película
+veio partida, não se pede para a devolver nem comprovativo de envio: está
+partida, não há nada a analisar. Diz-se que se envia uma nova, sem data, e o
+resto do processo (dados que ainda faltem, por exemplo) segue como já estava;
+nada é acrescentado nem dispensado além do envio de volta e do comprovativo.
+É só para películas; qualquer outro artigo continua a seguir a regra acima. (Confirmado diretamente pelo lojista, 16 de outubro de 2026:
 "quando a película chega partida não precisamos de pedir para enviar até
 nós, porque está partida mesmo".)
 
@@ -308,6 +309,13 @@ cliente, 18 de agosto de 2026.)
   passas para 35%, se aceitar fica aí, se não aceitar pedes para enviar até
   nós sem enviares a morada". Substitui o teto de 30% de 3 de outubro, os
   20% de 10 de setembro e os 45% de 15 de setembro.)
+- **Escrever a proposta da escada é a resposta, não uma escalação.** O
+  rascunho propõe o passo certo (15% à primeira; 35% só se o fio mostra que
+  recusou os 15%) e a equipa revê-o antes de sair; o assistente não executa
+  nada. Continua a escalar quando o cliente propõe ele um valor, pede mais de
+  35%, o artigo não funciona, é um dos três produtos de contacto com a pele,
+  ou o fio é ambíguo sobre o que já foi proposto. (Decisão de 18 de outubro de
+  2026.)
 - **Oferecido o parcial, não se verifica nada internamente.** A resposta
   escreve o valor e pergunta se o cliente aceita; nunca "vamos verificar
   internamente o valor" nem "voltamos a contactar", porque a percentagem já

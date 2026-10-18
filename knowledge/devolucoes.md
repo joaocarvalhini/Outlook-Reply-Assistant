@@ -501,13 +501,14 @@ só nesse caso: nunca se diz para aparecer sem mais.
   da encomenda consta como reembolsado. Uma pergunta repetida, sozinha, não
   prova que o reembolso foi feito: sem essa evidência não se afirma, escala-se.
   Nunca se dá uma data concreta.
-- **Pergunta repetida antes de o prazo acabar:** o prazo máximo conta a partir
-  da chegada do artigo à loja (5 dias úteis de análise e até 10 dias úteis
-  para o valor aparecer). Se o cliente volta a perguntar e esse prazo ainda
-  não passou, a resposta é remeter para o prazo já indicado antes — sem
-  "vamos verificar". (Confirmado diretamente pelo lojista, 18 de outubro de
-  2026: a cliente perguntou outra vez "e ainda não tinha passado o tempo
-  previsto, que são 15 dias no máximo após a chegada".)
+- **Pergunta repetida antes de o prazo acabar:** o prazo tem duas fases, as
+  de "O processo tem duas fases" mais abaixo, nesta secção: até 5 dias úteis de análise depois de
+  a loja receber o artigo, e até 10 dias úteis para o dinheiro aparecer depois
+  de processado. Nunca se diz "15 dias" nem se somam num prazo corrido. Se o
+  cliente volta a perguntar e essas fases ainda não passaram, a resposta é
+  remeter para o prazo já indicado antes — sem "vamos verificar". (Confirmado
+  diretamente pelo lojista, 18 de outubro de 2026: a cliente perguntou outra
+  vez "e ainda não tinha passado o tempo previsto".)
 - **Antes de propor um valor, ler o histórico da conversa.** Se o cliente já
   recusou antes um reembolso parcial (ou aquele mesmo valor), não se repete a
   proposta — passa-se ao passo seguinte da escada. Repetir uma proposta já

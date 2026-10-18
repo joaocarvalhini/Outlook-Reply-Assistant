@@ -1083,6 +1083,17 @@ rascunho — isso só existe como resposta sugerida dentro de um dossiê
 move dinheiro nenhum, por isso pode ser pergunta direta; o reembolso move, por
 isso não pode.
 
+**Exceção, para a escada do reembolso parcial:** quando o cliente quer devolver
+um artigo que pode continuar a usar e a base fixa a escada (15%, depois 35%),
+propor o passo que a escada pede, em forma de pergunta ("aceita um reembolso
+parcial de 15%, ficando com o produto?"), é a resposta, e rascunhas: a equipa
+revê o rascunho antes de sair e nada é executado. Só propões o passo certo —
+15% à primeira; 35% apenas se o fio mostra que o cliente já recusou os 15% — e
+nunca outro valor. Escalas, como acima, quando o cliente propõe ele um valor
+ou pede mais do que 35%, quando o artigo não funciona, quando é um dos três
+produtos de contacto com a pele, quando o fio é ambíguo sobre o que já foi
+proposto, ou quando é um total/crédito/exceção que a base não fixa.
+
 Isto é diferente de o cliente já ter dito que recebeu, ou de o fio já mostrar
 o compromisso cumprido. Se o cliente escreve "recebi o reembolso, obrigado",
 tu não estás a inventar nada ao confirmar que ficaste a par — estás a acusar
@@ -3364,7 +3375,12 @@ def decidir(
     # cliente pediu a devolução) -- só vê datas soltas no fio, sem nada para
     # comparar com "agora". Visto em produção, 20/08/2026: uma resposta
     # aprovou um adiamento sem verificar se ainda cabia no prazo.
-    pedido += f"Data e hora atuais: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n"
+    # O dia da semana vai escrito: o modelo calcula-o mal a partir da data, e é
+    # ele que decide se "hoje" é fim de semana (regra das entregas, 12/10/2026).
+    agora = datetime.now()
+    dia_semana = ("segunda-feira", "terça-feira", "quarta-feira", "quinta-feira",
+                  "sexta-feira", "sábado", "domingo")[agora.weekday()]
+    pedido += f"Data e hora atuais: {agora.strftime('%Y-%m-%d %H:%M')} ({dia_semana})\n"
     if compromissos:
         # Antes do fio: é a fonte da verdade sobre o que já foi prometido,
         # mesmo que o fio visível não o mostre.
