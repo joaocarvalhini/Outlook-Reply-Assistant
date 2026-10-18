@@ -3006,5 +3006,28 @@
       "5 dias uteis"
     ],
     "note": "regra de 16/10/2026: fones ja no escritorio, a garantia leva sempre 5 dias uteis a ter resposta. Nao corrido."
+  },
+  {
+    "id": "parcial-smartwatch-usado-propoe-15",
+    "email": {
+      "from": "hugo.neves@gmail.com",
+      "from_name": "Hugo Neves",
+      "subject": "Smartwatch",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, usei o smartwatch alguns dias e nao gostei. Quero devolver e receber o dinheiro."
+    },
+    "expect": "rascunhar",
+    "expect_texto_contem": [
+      "15%"
+    ],
+    "expect_texto_nao_contem": [
+      "35%"
+    ],
+    "expect_texto_nao_regex": [
+      "credito"
+    ],
+    "note": "18/10/2026: o lojista ofereceu 15% em relogios (16 e 18/10); sem proposta anterior recusada, o rascunho propoe 15% para revisao humana. Nao ha excecao por contacto com a pele no parcial. Corrido uma vez a 18/10 antes de retirar a excecao (rascunhou 15%) e uma vez depois."
   }
 ]

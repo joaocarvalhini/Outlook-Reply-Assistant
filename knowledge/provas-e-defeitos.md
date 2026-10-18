@@ -313,9 +313,10 @@ cliente, 18 de agosto de 2026.)
   rascunho propõe o passo certo (15% à primeira; 35% só se o fio mostra que
   recusou os 15%) e a equipa revê-o antes de sair; o assistente não executa
   nada. Continua a escalar quando o cliente propõe ele um valor, pede mais de
-  35%, o artigo não funciona, é um dos três produtos de contacto com a pele,
-  ou o fio é ambíguo sobre o que já foi proposto. (Decisão de 18 de outubro de
-  2026.)
+  35%, o artigo não funciona, ou o fio é ambíguo sobre o que já foi proposto.
+  Os smartwatches, InPods e fones P9 já usados entram na escada como qualquer
+  outro artigo: o lojista ofereceu 15% em relógios a 16 e 18 de outubro de
+  2026. (Decisão de 18 de outubro de 2026.)
 - **Oferecido o parcial, não se verifica nada internamente.** A resposta
   escreve o valor e pergunta se o cliente aceita; nunca "vamos verificar
   internamente o valor" nem "voltamos a contactar", porque a percentagem já
