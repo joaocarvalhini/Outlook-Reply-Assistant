@@ -72,6 +72,14 @@ MagSafe acima, onde a fotografia é pedida antes de explicar as películas.
   mostrar o processo de emparelhamento e os dois dispositivos separados a
   surgirem na lista de Bluetooth.
 - Nunca se promete reembolso, troca ou assunção de portes antes da análise.
+- **Devolução ou reembolso a pedido do cliente: prova visual sempre**, mesmo
+  que ele garanta que o produto está selado, intacto ou que só a caixa vem
+  amassada. Pedem-se fotografias e, quando faz sentido, vídeo, **de vários
+  ângulos** do estado do produto, e diz-se que é uma questão de segurança da
+  loja. Não se avança para o reembolso nem para o parcial sem a loja ver.
+  (Confirmado diretamente pelo lojista, 16 de outubro de 2026: "pedir sempre
+  prova visual com vários ângulos do estado do produto e indica sempre que é
+  uma questão de segurança nossa".)
 
 ## Bateria inchada — segurança primeiro
 
@@ -100,6 +108,13 @@ Para fones e baterias, antes de avançar para garantia, pede-se ao cliente que:
 
 Só depois do resultado destes testes é que se avança.
 
+Se o cliente diz que os fones P9 não funcionam com o iPhone dele, a loja
+quer perceber se o problema é daquele par em concreto: propõe-se testar uma
+unidade nova no escritório e, se funcionar, avançar para a troca. É uma
+proposta em forma de pergunta, sem data. (Confirmado pelo lojista, 18 de
+outubro de 2026: "queria perceber se o problema pode ser dos fones em
+específico". Um caso, com a razão dada; não se estende a outros produtos.)
+
 ## O que a garantia cobre
 
 - A garantia é de 3 anos e cobre apenas defeitos de fabrico.
@@ -120,6 +135,14 @@ aconteceu várias vezes, e a resposta tem uma forma própria:
 - Não se indica esse valor. Diz-se que se vai confirmar internamente quanto
   fica, deixando claro que fica bastante abaixo do preço do site. O valor
   concreto é decisão de uma pessoa.
+- Pede-se sempre o **número da encomenda** na mesma resposta.
+- Vale também quando o erro foi da loja noutra coisa (por exemplo, a cor
+  errada) e o dano — água, queda — é do cliente: a garantia não cobre o
+  dano e a oferta é a mesma, dita com o lado humano de quem percebe que não
+  foi por mal. (Confirmado diretamente pelo lojista, 18 de outubro de 2026,
+  num smartwatch que parou com água e veio na cor errada: "precisamos de
+  ter um lado humano... tentamos vender por um valor inferior, vais
+  verificar internamente mas pedes sempre o número da encomenda".)
 
 **Escrever esta recusa com a oferta é a resposta, não uma escalação.** Não
 exige consultar a encomenda nem esperar confirmação de ninguém — é o passo
@@ -141,8 +164,8 @@ Perante um defeito confirmado, a loja propõe por esta ordem:
 
 O reembolso não é a primeira proposta. E quando se chega mesmo ao reembolso,
 esse passo tem a sua própria ordem — reembolso parcial primeiro (ver
-"Reembolso parcial" abaixo), depois crédito da loja antes de dinheiro a
-sério (ver "Reembolso" em `devolucoes.md`).
+"Reembolso parcial" abaixo), depois o reembolso a sério (ver "Reembolso" em
+`devolucoes.md`). Não há crédito de loja pelo meio.
 
 ## A troca sem custo é sempre a primeira oferta
 
@@ -208,6 +231,15 @@ sempre de enviar primeiro a encomenda, isso é mesmo regra! Não fazemos trocas
 sem receber o produto primeiro". Substitui a nota de 1 de setembro de 2026,
 que dispensava devolver o antigo depois de o defeito estar confirmado.)
 
+**Excepção: película que chega partida.** Não se pede para devolver a
+película partida nem comprovativo de envio: está partida, não há nada a
+analisar. Depois de a prova (fotografia) mostrar que veio partida, confirma-se
+o modelo de iPhone e a morada, se faltarem, e diz-se que se envia uma nova. É
+só para películas; qualquer outro artigo continua a seguir a regra acima. Sem
+data de envio. (Confirmado diretamente pelo lojista, 16 de outubro de 2026:
+"quando a película chega partida não precisamos de pedir para enviar até
+nós, porque está partida mesmo".)
+
 > [!CAUTION] Corrige a nota anterior desta secção (1 de setembro)
 > A nota anterior dizia que a loja envia um envelope DPD novo e
 > pré-endereçado. Não é assim: o envelope da DPD em que o cliente **já
@@ -264,24 +296,34 @@ cliente, 18 de agosto de 2026.)
 - **Quando o cliente mostra intenção firme de devolver**, a primeira proposta
   é um reembolso parcial de **15%** do valor do artigo, ficando ele com o
   produto. Se recusar e mantiver a vontade de devolver, propõe-se **no máximo
-  30%**, também a ficar com o produto. Se mesmo assim quiser devolver, aceita-se
-  e segue o procedimento normal de devolução, com os prazos e os direitos do
-  consumidor. Nunca se passa dos 30% nem se propõe outro valor, e é só uma
-  proposta: o assistente não aprova nem executa reembolso nenhum, a equipa
-  processa depois de o cliente aceitar. (Confirmado diretamente pelo lojista,
-  3 de outubro de 2026: "começas sempre com 15%, caso ele diga que não, que
-  quer mesmo devolver, ofereces no máximo 30%". Substitui os 20% de 10 de
-  setembro e os 45% de 15 de setembro, que estavam em disputa.)
+  35%**, também a ficar com o produto. Se aceitar um dos dois, o assunto
+  fecha aí. Se mesmo assim quiser devolver, pede-se que envie o artigo até à
+  loja **sem lhe dar a morada** — só se dá quando ele a pedir (ver "Para onde
+  enviar a devolução" em `devolucoes.md`) — e segue o procedimento normal de
+  devolução, com os prazos e os direitos do consumidor. Nunca se passa dos
+  35% nem se propõe outro valor, e é só uma proposta: o assistente não
+  aprova nem executa reembolso nenhum, a equipa processa depois de o cliente
+  aceitar. (Confirmado diretamente pelo lojista, 16 e 18 de outubro de 2026:
+  "o que vais fazer é oferecer um reembolso parcial de 15%, se não aceitar
+  passas para 35%, se aceitar fica aí, se não aceitar pedes para enviar até
+  nós sem enviares a morada". Substitui o teto de 30% de 3 de outubro, os
+  20% de 10 de setembro e os 45% de 15 de setembro.)
+- **Oferecido o parcial, não se verifica nada internamente.** A resposta
+  escreve o valor e pergunta se o cliente aceita; nunca "vamos verificar
+  internamente o valor" nem "voltamos a contactar", porque a percentagem já
+  está fixada. (Confirmado diretamente pelo lojista, 18 de outubro de 2026:
+  "não precisas de verificar internamente a partir do momento que oferecemos
+  reembolso parcial".)
 - **Sem intenção firme de devolver** (o cliente só pergunta se há reembolso
   parcial, ou propõe ele um valor), não se abre com percentagem: a proposta é a
   pergunta — "estaria disponível para aceitar um reembolso parcial, ficando
-  com o produto?". Um valor pedido acima dos 30% escala para uma pessoa.
+  com o produto?". Um valor pedido acima dos 35% escala para uma pessoa.
 - A razão a dar ao cliente é o custo do envio de volta: para fones P9
   (caixa grande), o valor a citar é que os portes normalmente não ficam
   abaixo de 12 a 15€; para qualquer outro produto, não se cita um valor
   preciso — diz-se apenas que os portes de devolução não são baratos.
 - Se o cliente não responder à primeira proposta, ou recusar sem mais,
-  faz-se a segunda proposta (até 30%, o teto) antes de aceitar o reembolso total — **e isto vale
+  faz-se a segunda proposta (até 35%, o teto) antes de aceitar o reembolso total — **e isto vale
   só para um artigo que o cliente pode continuar a usar.** Se ele disse que o
   produto não funciona, não há segunda tentativa de parcial nenhuma: o passo é
   a troca (ver a fronteira no fim desta secção). Na segunda tentativa,
@@ -305,8 +347,8 @@ cliente, 18 de agosto de 2026.)
   a ser sempre a primeira oferta num defeito confirmado): só acrescenta
   este passo entre a troca recusada e o reembolso total.
 - **Quando já foi proposto um valor concreto e o cliente o recusa exigindo
-  o total:** se ainda não se chegou aos 30%, a próxima proposta é até 30%. Se
-  já se chegou aos 30%, ou o cliente excluiu expressamente qualquer
+  o total:** se ainda não se chegou aos 35%, a próxima proposta é até 35%. Se
+  já se chegou aos 35%, ou o cliente excluiu expressamente qualquer
   compensação, aceita-se a devolução pelo procedimento normal. Já não se
   pergunta "que valor consideraria justo": o teto está fixado. (Substitui a
   regra de 27 de agosto de 2026, que pedia uma contraproposta ao cliente.)

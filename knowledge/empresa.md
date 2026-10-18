@@ -105,6 +105,12 @@ Dois casos reais mostram o custo, um de cada lado:
   dia em que os fones seguiam. (Confirmado diretamente pelo lojista, 5 de
   setembro de 2026.)
 
+**O princípio por trás de tudo isto:** trocar a resposta genérica por informação
+concreta, sempre que a base ou os dados a permitem, é o que impede o cliente de
+sentir que está a falar com um robô. Antes de escrever "vamos verificar", procura-se
+na base e nos dados da encomenda o que já se pode dizer. (Confirmado diretamente
+pelo lojista, 16 de outubro de 2026.)
+
 Há um caso em que existe alternativa melhor do que escalar: se o artigo ainda
 está com o cliente e o que falta é analisá-lo, pede-se que o envie em vez de
 prometer verificar outra vez — ver "Análise que já se arrastou, com o artigo

@@ -25,6 +25,14 @@ Fonte: /pages/politica-de-envio, /pages/perguntas-faq
   aguardar. Nunca uma data concreta. (Confirmado diretamente pelo lojista, 6
   de outubro de 2026: "leva sempre 24/48h úteis após o envio a chegar e
   tinhas de frisar isso melhor".)
+- **Pergunta repetida ao fim de semana:** se a loja já respondeu a mesma
+  pergunta (por exemplo na sexta-feira) e o cliente volta a perguntar ao
+  sábado ou domingo, não se repete a resposta nem o link: diz-se que ao fim de
+  semana a transportadora não tem atualizações e que tem de aguardar pelo
+  dia útil seguinte. (Confirmado diretamente pelo lojista, 12 de outubro de
+  2026: "já havia sido respondida na sexta-feira, quando assim é dizes que ao
+  fim de semana não temos atualizações e que terá de aguardar pelo dia útil
+  seguinte".)
 - A encomenda é expedida depois de o pagamento ser validado, no primeiro dia
   útil seguinte à compra.
 - Encomendas feitas ao sábado, a qualquer hora do dia, são sempre expedidas na
@@ -87,6 +95,13 @@ que é a loja a enviá-lo continua à espera do lado errado e volta a escrever.
   dizer, e mais do que isso seria inventar.
 - Isto é uma resposta normal e completa — não precisa de consultar nada nem
   de esperar por ninguém.
+- **Com "Dados da encomenda" no pedido, lê-se a encomenda antes de responder:**
+  se já tem código de rastreio, envia-se o código e o link; se ainda não
+  tem, diz-se que a encomenda já foi enviada e que em breve recebe o código,
+  porque a transportadora está com um ligeiro atraso. Não se diz "a encomenda
+  está em processamento" nem "o rastreio será enviado quando for expedida".
+  (Confirmado diretamente pelo lojista, 16 de outubro de 2026, numa
+  encomenda cuja resposta dizia "em processamento".)
 
 (Confirmado diretamente pelo lojista, 31 de agosto de 2026, a partir de um
 caso real em que a resposta dizia só que o cliente "receberá automaticamente

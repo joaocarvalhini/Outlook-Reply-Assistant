@@ -350,6 +350,11 @@ primeiro (secção acima) — não isto.
 processo de devolução. Só se envia quando o cliente pergunta diretamente qual
 é a morada. (Confirmado diretamente pelo lojista, 2 de setembro de 2026.)
 
+Quando o cliente **pergunta** pela morada (ou pelos dados para enviar), dá-se
+logo, completa, na mesma resposta — sem "vamos verificar o pedido": se a
+devolução ou a troca já foi aceite, não há nada a confirmar antes. (Confirmado
+diretamente pelo lojista, 18 de outubro de 2026.)
+
 Esta regra já sobreviveu a uma contradição do próprio lojista: a 4 de setembro
 de 2026 ele adiantou a morada completa num caso em que o cliente só tinha
 confirmado que ia enviar os fones, e o assistente tinha seguido a regra.
@@ -458,20 +463,25 @@ só nesse caso: nunca se diz para aparecer sem mais.
 - O correio registado normal chega, e é ele que cumpre o rastreio obrigatório
   (ver "Etiqueta de devolução"). Não são precisos serviços adicionais como a
   notificação por SMS, que apenas encarecem o envio.
+- **Cliente que se queixa do preço pedido nos CTT** (a devolução fica muito
+  mais cara do que devia): explica-se que o preço que lhe indicaram ao balcão
+  é o do serviço mais caro, que não precisa de pagar tanto, e que basta pedir
+  **correio registado simples**, sem serviços de entrega dispendiosos. Responde-se
+  logo, sem "vamos verificar". (Confirmado diretamente pelo lojista, 12 de
+  outubro de 2026.)
 
 ## Reembolso
 
-- Antes de reembolsar a dinheiro, a loja tenta primeiro que o cliente aceite o
-  valor em **crédito de loja** — um saldo na conta do cliente, para gastar
-  como quiser em compras futuras (não é um vale preso a um produto específico
-  de valor igual). Só se o cliente não aceitar — ou se o próprio método de
-  pagamento recusar o crédito e exigir o reembolso para a conta (já aconteceu
-  com a Klarna, que abriu uma reclamação a exigir isto) — é que se avança
-  para o reembolso a sério, pelo mesmo método usado na compra. Vale para
-  qualquer método de pagamento, não só Klarna. É sempre uma proposta ao
-  cliente, nunca uma confirmação de que já vai ser assim: a decisão final e a
-  execução continuam a ser de uma pessoa, como qualquer reembolso.
-  (Confirmado diretamente pelo cliente, 17 e 18 de agosto de 2026.)
+- **Não se propõe crédito de loja.** Quem quer devolver prefere dinheiro na
+  conta (100% dos clientes, segundo o lojista), por isso o primeiro passo é o
+  reembolso parcial de 15% e, se recusar, 35% (ver "Reembolso parcial" em
+  `provas-e-defeitos.md`). Só depois, se mesmo assim quiser devolver, segue
+  o reembolso a sério, pelo mesmo método usado na compra. É sempre uma
+  proposta ao cliente, nunca uma confirmação: a decisão final e a execução
+  continuam a ser de uma pessoa. (Confirmado diretamente pelo lojista, 16 de
+  outubro de 2026: "quando quer devolver não é para dizermos que vamos
+  reembolsar em crédito de loja porque 100% dos clientes preferem em
+  dinheiro na conta". Substitui a regra de 17 e 18 de agosto de 2026.)
 - **Quando já se disse ao cliente que o reembolso foi ordenado, não se
   recua.** Se o fio mostra a loja a confirmar a ordem de reembolso e uma
   data, a resposta seguinte é afirmativa — confirma-se a data e explica-se
@@ -491,16 +501,23 @@ só nesse caso: nunca se diz para aparecer sem mais.
   da encomenda consta como reembolsado. Uma pergunta repetida, sozinha, não
   prova que o reembolso foi feito: sem essa evidência não se afirma, escala-se.
   Nunca se dá uma data concreta.
-- **Antes de propor o crédito de loja, ler o histórico da conversa.** Se o
-  cliente já recusou antes um reembolso parcial ou um crédito, não se volta a
-  propor — vai-se direto ao reembolso pelo método de pagamento. Repetir uma
-  proposta já recusada obriga o cliente a dizer não duas vezes e lê-se como se
-  não se tivesse lido o que ele escreveu, que é o oposto do que a proposta
-  pretende. (Confirmado diretamente pelo lojista, 7 de setembro de 2026: numa
-  devolução já a caminho da loja, encomenda #22197, ele cortou da resposta a
-  pergunta sobre crédito de loja porque a cliente já o tinha recusado antes.)
-- Fora desta preferência por crédito, o reembolso é feito pelo mesmo método de
-  pagamento usado na compra, salvo acordo em contrário.
+- **Pergunta repetida antes de o prazo acabar:** o prazo máximo conta a partir
+  da chegada do artigo à loja (5 dias úteis de análise e até 10 dias úteis
+  para o valor aparecer). Se o cliente volta a perguntar e esse prazo ainda
+  não passou, a resposta é remeter para o prazo já indicado antes — sem
+  "vamos verificar". (Confirmado diretamente pelo lojista, 18 de outubro de
+  2026: a cliente perguntou outra vez "e ainda não tinha passado o tempo
+  previsto, que são 15 dias no máximo após a chegada".)
+- **Antes de propor um valor, ler o histórico da conversa.** Se o cliente já
+  recusou antes um reembolso parcial (ou aquele mesmo valor), não se repete a
+  proposta — passa-se ao passo seguinte da escada. Repetir uma proposta já
+  recusada obriga o cliente a dizer não duas vezes e lê-se como se não se
+  tivesse lido o que ele escreveu. (Confirmado diretamente pelo lojista, 7 de
+  setembro de 2026: numa devolução já a caminho da loja, encomenda #22197, ele
+  cortou da resposta a pergunta sobre crédito de loja porque a cliente já o
+  tinha recusado antes.)
+- O reembolso é feito pelo mesmo método de pagamento usado na compra, salvo
+  acordo em contrário.
 - **Nunca dar uma data concreta** para o reembolso estar feito ("fica tratado
   na segunda-feira de manhã"). Quando é uma transferência manual, quem a faz é
   o lojista e só ele sabe quando: não há acesso à conta bancária a partir daqui,
@@ -589,9 +606,8 @@ quer reembolso ou devolução de **um** desses artigos, não do pack todo:
   diretamente pelo lojista, 21 de agosto de 2026.)
 - Exemplo: pack de 3 artigos por 90€ → 30€ por artigo, seja qual for o
   artigo em causa.
-- O resto do processo segue a regra normal de "Reembolso" acima (tentar
-  crédito de loja primeiro, depois reembolso a sério pelo método de
-  pagamento), só o **valor de base** do artigo é que se calcula assim.
+- O resto do processo segue a regra normal de "Reembolso" acima (reembolso
+  parcial primeiro, depois reembolso a sério pelo método de pagamento), só o **valor de base** do artigo é que se calcula assim.
 
 ## Trocas
 
@@ -706,6 +722,12 @@ presente/oferta já conhecida, ver "produtos.md" para campanhas em curso):
   esperar confirmação de ninguém.
 - Se o cliente pedir explicitamente para falar com uma pessoa, ou insistir
   sem acrescentar nada de novo depois de já se ter pedido a prova, escala.
+- Vale também quando o cliente pergunta por um **presente extra** que a base
+  não identifica (se o que lhe prometeram foi um cupão ou um artigo à escolha):
+  não se tenta adivinhar nem se promete verificar — pede-se fotografia de
+  **tudo** o que recebeu, sempre. (Confirmado diretamente pelo lojista, 16 de
+  outubro de 2026: "quando não sabe o que é o presente extra pedes foto a 100%
+  de tudo o que recebeu sempre".)
 
 (Confirmado diretamente pelo lojista, 28 de agosto de 2026.)
 
@@ -719,7 +741,7 @@ presente/oferta já conhecida, ver "produtos.md" para campanhas em curso):
 - **Fones e smartwatches (contacto direto com a pele): defeito confirmado só
   dá direito a troca por uma unidade nova — nunca a reembolso, nem sequer
   como alternativa se o cliente insistir.** Isto não é o "tenta primeiro"
-  de outras secções (crédito de loja, reembolso parcial): aqui o reembolso
+  de outras secções (reembolso parcial): aqui o reembolso
   não é uma opção disponível, ponto final — o artigo já usado deixou de
   cumprir a condição de higiene exigida para devolução (a mesma exigência
   de "Estado exigido" acima). Não interessa que o motivo seja um defeito e
@@ -819,6 +841,13 @@ Sem essa evidência no fio:
   nem inventar que o artigo foi recebido ou está em análise.
 
 (Confirmado diretamente pelo lojista, 15 de setembro de 2026.)
+
+**Fones já na loja:** quando há evidência de que os fones chegaram ao escritório
+e o cliente pergunta pela garantia, diz-se o prazo fixo — a análise de garantia
+leva sempre **5 dias úteis** depois da chegada para ter resposta —, em vez de
+"vamos verificar". Não é uma data. (Confirmado diretamente pelo lojista, 16 de
+outubro de 2026: "quando os fones dão chegada no nosso escritório a garantia
+leva sempre 5 dias úteis até dar resposta".)
 
 > [!CAUTION] À segunda vez que o cliente pergunta, confirma-se
 > A regra acima vale para a **primeira** vez que o cliente pergunta pelo

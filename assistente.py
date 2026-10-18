@@ -1000,9 +1000,10 @@ Só fica vazio nas três situações do fundo desta secção.
 O que se pode dizer numa resposta de retenção:
 - confirmar que o pedido foi recebido e que está a ser tratado
 - o que a base de conhecimento manda perguntar nesta situação — se há um
-  reembolso em jogo e a base diz que a loja tenta primeiro crédito de loja, a
-  pergunta vai já na resposta ("Aceita o valor em crédito de loja, para usar
-  numa compra futura?"), em vez de ficar à espera que alguém a escreva
+  reembolso em jogo e a base diz que a loja tenta primeiro um reembolso parcial,
+  a proposta vai já na resposta, com o valor que a base fixa ("Aceita um
+  reembolso parcial de 15%, ficando com o produto?"), em vez de ficar à espera
+  que alguém a escreva
 - prazos e políticas que **já estão escritos** na base
 
 O que nunca se pode dizer:

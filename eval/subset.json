@@ -156,7 +156,7 @@
     },
     "expect": "escalar",
     "expect_categoria": "JULGAMENTO_HUMANO",
-    "note": "desde 03/10/2026 a base fixa 15% (1.a proposta) e 30% (teto) para quem quer mesmo devolver; este cliente nao quer devolver, propoe ele um valor, e nada acima do teto se negoceia sem decisao humana. Expectativa por reconfirmar com corrida do eval (nao corrida a 09/10/2026)."
+    "note": "desde 03/10/2026 a base fixa 15% (1.a proposta) e 35% (teto desde 18/10/2026) para quem quer mesmo devolver; este cliente nao quer devolver, propoe ele um valor, e nada acima do teto se negoceia sem decisao humana. Expectativa por reconfirmar com corrida do eval (nao corrida a 09/10/2026)."
   },
   {
     "id": "defeito-oferece-troca-antes-de-devolucao",
@@ -208,7 +208,10 @@
     },
     "historico": "[2026-08-16 10:00] CLIENTE: os fones pararam de funcionar, envio foto e video.\n[2026-08-16 16:00] LOJA: Recebemos e confirmamos o defeito.",
     "expect": "escalar",
-    "note": "cliente recusou a troca, pede reembolso. ATUALIZADO 18/08/2026: desde a regra 'reembolso parcial sempre antes do total' (provas-e-defeitos.md), a resposta sugerida no dossie deve agora propor reembolso parcial primeiro -- so depois disso, se recusado, e que entra a proposta de saldo/credito antes de dinheiro (regra de 17/08/2026). Verificacao manual do texto, nao ha assercao automatica para conteudo de dossie_resposta."
+    "note": "cliente recusou a troca, pede reembolso. Desde 16/10/2026 nao se propoe credito de loja: a escada e parcial 15%, depois 35%, depois reembolso. Verificacao manual do dossie (nao ha assercao automatica para dossie_resposta); o corpo de retencao nao pode falar de credito de loja. Nao corrido.",
+    "expect_texto_nao_regex": [
+      "credito de loja"
+    ]
   },
   {
     "id": "reembolso-parcial-recusado-uma-vez-tenta-outra",
@@ -1201,5 +1204,90 @@
     "expect_corpo": true,
     "note": "o fio so mostra a ultima ronda mas o registo local sabe que ja foram 4 emails: com a linha de repeticao o modelo marca urgente (regra dos tres ou mais); sem ela nao. Medido a 30/09/2026: 4/4 com o sinal, 0/4 sem ele",
     "expect_urgencia": "sim"
+  },
+  {
+    "id": "pelicula-partida-nao-pede-devolucao",
+    "email": {
+      "from": "carla.santos@gmail.com",
+      "from_name": "Carla Santos",
+      "subject": "Re: Pelicula partida",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, a pelicula e para iPhone 17 e a morada e a mesma da encomenda. Obrigada."
+    },
+    "historico": "[2026-10-14 10:00] CLIENTE: a pelicula chegou partida, envio foto em anexo.\n[2026-10-14 15:00] LOJA: Recebemos a foto, lamentamos. Confirma-nos o modelo de iPhone e a morada para enviar outra?",
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "expect_corpo": true,
+    "expect_texto_nao_regex": [
+      "envelope",
+      "comprovativo",
+      "devolv"
+    ],
+    "note": "regra de 16/10/2026: pelicula que chega partida nao se devolve nem se pede comprovativo; antes o assistente pedia o envelope da DPD. Nao corrido."
+  },
+  {
+    "id": "rastreio-pergunta-repetida-ao-fim-de-semana",
+    "email": {
+      "from": "nuno.pires@gmail.com",
+      "from_name": "Nuno Pires",
+      "subject": "Re: Encomenda 23321",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Bom dia, ainda nao chegou a minha encomenda. Ja devia ter chegado."
+    },
+    "encomenda": {
+      "name": "#23321",
+      "created_at": "2026-10-12T10:00:00Z",
+      "financial_status": "paid",
+      "fulfillment_status": "fulfilled",
+      "fulfillments": [
+        {
+          "id": 1,
+          "tracking_number": "DPD15501234567",
+          "tracking_company": "DPD",
+          "shipment_status": "in_transit",
+          "tracking_url": "https://tracking.dpd.pt/DPD15501234567"
+        }
+      ],
+      "current_total_price": "29.90",
+      "currency": "EUR"
+    },
+    "historico": "[2026-10-16 11:00] CLIENTE: Quando chega a minha encomenda 23321?\n[2026-10-16 16:00] LOJA: Ola, a sua encomenda esta em transito. Pode acompanhar aqui: https://tracking.dpd.pt/DPD15501234567",
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "fim de semana"
+    ],
+    "note": "regra de 12/10/2026: a loja ja respondeu na sexta e o cliente repete ao sabado; diz-se que ao fim de semana nao ha atualizacoes e que e preciso aguardar o dia util seguinte. A data real do eval nao e sabado: a verificacao e do texto. Nao corrido."
+  },
+  {
+    "id": "fones-no-escritorio-garantia-5-dias-uteis",
+    "email": {
+      "from": "rui.lopes@gmail.com",
+      "from_name": "Rui Lopes",
+      "subject": "Re: Fones com defeito",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, ja ha novidades sobre os fones que enviei?"
+    },
+    "historico": "[2026-10-08 10:00] CLIENTE: os fones P9 pararam de funcionar, envio video.\n[2026-10-08 15:00] LOJA: Recebemos o video, envie os fones ate nos por correio registado.\n[2026-10-13 09:00] CLIENTE: Enviei os fones, segue o comprovativo.\n[2026-10-14 12:00] LOJA: Os fones chegaram ao nosso escritorio, ja estao em analise.",
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "5 dias uteis"
+    ],
+    "note": "regra de 16/10/2026: fones ja no escritorio, a garantia leva sempre 5 dias uteis a ter resposta. Nao corrido."
   }
 ]
