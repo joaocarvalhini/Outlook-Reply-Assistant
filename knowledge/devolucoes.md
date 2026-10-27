@@ -281,6 +281,20 @@ ou troca — mesmo princípio, sem dado suficiente para identificar a encomenda
 não há nada a analisar. (Confirmado diretamente pelo lojista, 15 de setembro
 de 2026.)
 
+**Um código que o cliente envia não é, por si, o número da encomenda.** Se só
+traz uma "referência" ou o código de rastreio do envio (uma sequência longa de
+dígitos, muitas vezes com uma letra no fim, como 09812338012148S, sem o
+#NNNNN da loja), trata-se do código do envio — não de uma referência de
+pagamento. A resposta diz que esse é o código do envio e pede o número da
+encomenda — é com ele que a loja localiza o caso. Não se
+agradece "a confirmação" nem se diz que se vai verificar uma transferência ou o
+ponto de situação com esse código. O mesmo vale para quem escreve que não
+recebeu a encomenda e não diz qual é: pede-se o número em vez de "vamos
+verificar o ponto de situação". (Confirmado diretamente pelo lojista, 22 de
+outubro de 2026: "o que a cliente enviou foi o código de rastreio, mas é
+sempre preciso o número da encomenda"; "com o número da encomenda conseguimos
+localizar".)
+
 ### Com a encomenda identificada: usar os dados e citar o número
 
 - **Antes de dizer "vamos verificar", lê os dados da encomenda** que vêm no
@@ -509,6 +523,16 @@ só nesse caso: nunca se diz para aparecer sem mais.
   remeter para o prazo já indicado antes — sem "vamos verificar". (Confirmado
   diretamente pelo lojista, 18 de outubro de 2026: a cliente perguntou outra
   vez "e ainda não tinha passado o tempo previsto".)
+- **Cliente que pergunta quando recebe o reembolso, ou se a devolução
+  chegou, tem resposta concreta, não vaga.** Se o fio ou os dados mostram que
+  a loja já tem o artigo, confirma-se a chegada e dão-se as duas fases
+  contadas desde essa chegada (até 5 dias úteis de análise, até 10 dias úteis
+  para o valor aparecer depois de processado): um artigo que chegou há dois
+  dias ainda está dentro dos 5 de análise. É um prazo, não uma data de
+  calendário — a regra de não prometer data mantém-se. Sem evidência de
+  chegada não se afirma que chegou. Não se responde "vamos verificar". (Confirmado
+  diretamente pelo lojista, 22 e 25 de outubro de 2026: "sempre que o cliente
+  o questiona, não dar respostas vagas".)
 - **Antes de propor um valor, ler o histórico da conversa.** Se o cliente já
   recusou antes um reembolso parcial (ou aquele mesmo valor), não se repete a
   proposta — passa-se ao passo seguinte da escada. Repetir uma proposta já
@@ -685,6 +709,12 @@ loja" abaixo. (Confirmado diretamente pelo lojista, 27 de agosto de 2026.)
 Escrever esta pergunta é a resposta normal — não exige consultar a encomenda
 nem esperar por confirmação de ninguém.
 
+**Quando o fio não mostra nenhuma troca de cor por falta de stock** e o
+cliente diz que a cor recebida não é a correta, não se escreve que se vai
+verificar o que ficou combinado: pede-se uma fotografia do artigo recebido, e
+é com ela que a loja vê o que se passou. (Confirmado diretamente pelo lojista,
+22 de outubro de 2026: "porque o cliente disse que não era a cor correta".)
+
 ## Erro de envio pela loja
 
 Quando a loja envia um **produto ou modelo** diferente do pedido (não uma
@@ -783,6 +813,14 @@ caso é uma substituição ou um defeito por analisar, e o **cliente ainda tem o
 artigo consigo**, o passo seguinte deixa de ser verificar: pede-se ao cliente
 que envie a unidade com defeito, para a loja a analisar presencialmente e dar
 uma resposta concreta.
+
+**O mesmo vale quando o cliente enviou fotografias ou vídeos e a loja só
+respondeu que iam passar para análise**, e ele volta a escrever (a perguntar
+pelas novidades, ou a queixar-se da demora). Uma só resposta dessas chega:
+pede-se desculpa pela demora e pergunta-se se pode enviar o artigo, ou os
+artigos, até à loja para análise. Não se escreve que o vídeo foi recebido nem
+que o artigo "já está em análise" — o artigo ainda está em casa dele.
+(Confirmado diretamente pelo lojista, 25 de outubro de 2026.)
 
 Isto não contraria "Repetir uma não-resposta é pior do que escalar" em
 `empresa.md` — completa-a. Essa regra manda escalar quando não há nada novo

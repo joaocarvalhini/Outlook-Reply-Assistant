@@ -151,6 +151,16 @@ Na resposta ao cliente:
 correção de 2 de setembro de 2026 acima — é contexto interno adicional, a
 frase dita ao cliente não muda.)
 
+**Exceção: a encomenda foi expedida hoje.** Quando o pedido traz o sinal de
+que a Shopify marca a expedição com a data de hoje, não é falta de registo
+nenhuma: o código só fica ativo no site da transportadora até ao fim do dia.
+Diz-se que pode acompanhar a encomenda pelo link de rastreio e que aguarde até
+ao final do dia para a conseguir rastrear — sem prometer contactar a
+transportadora e sem dizer que não foi expedida. Sem esse sinal, vale o que está
+acima. (Confirmado diretamente pelo lojista, 22 de outubro de 2026, num código
+que a cliente dizia não ser reconhecido: "poderia rastrear com o link e deveria
+aguardar até ao final do dia".)
+
 ### Cliente diz só que a encomenda está atrasada, sem apontar um problema concreto
 
 Regra evergreen, independente da época do ano — não depende do aviso sazonal

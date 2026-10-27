@@ -44,7 +44,7 @@ import time
 import unicodedata
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from html.parser import HTMLParser
 from io import StringIO
 from pathlib import Path
@@ -1155,8 +1155,11 @@ e decide entre estas situações:
 - Há dúvida genuína sobre se a imagem mostra ou não o problema. Não decidas a
   favor do cliente nem contra: trata como prova insuficiente, igual ao ponto
   anterior.
-- Chegou uma nota a dizer que um ficheiro anexado não foi possível processar.
-  Trata isso da mesma forma — como se não tivesse chegado prova nenhuma.
+- Chegou uma nota a dizer que um vídeo ou um ficheiro anexado não se consegue
+  abrir. Isso não é prova insuficiente: a equipa abre-o. Não pedes reenvio
+  nem dizes que não consegues abri-lo — agradeces o envio e dizes que vai
+  passar para análise. O mesmo vale para um link (WeTransfer, Drive) que o
+  cliente mande com a prova. (Lojista, 22 e 25 de outubro de 2026.)
 
 Nunca inventes o que uma imagem mostra. Se não estás mesmo a ver o defeito
 descrito, não escreves que o confirmaste. A mesma prudência que já tens com qualquer facto que não
@@ -3132,9 +3135,10 @@ def nota_anexos_ignorados(ignorados: list[dict]) -> str:
     formato ou o tamanho -- pedir para reenviar "num formato mais comum"
     engana o cliente, porque nenhum formato de vídeo chega a ser visto.
     Visto em produção, 22/08/2026: mais do que um cliente ficou preso a
-    reenviar vídeos (às vezes porque uma resposta anterior tinha pedido
-    vídeo), sem nunca ser isso a resolver. A instrução certa é pedir fotos
-    ou capturas de ecrã do momento exato do problema.
+    reenviar vídeos, sem nunca ser isso a resolver. Regra do lojista, 22 e
+    25/10/2026: quem abre os vídeos e os ficheiros é a equipa, por isso
+    nada se pede de novo -- diz-se que vão passar para análise (substitui a
+    instrução de 22/08 de pedir fotos em vez do vídeo).
     """
     if not ignorados:
         return ""
@@ -3143,13 +3147,10 @@ def nota_anexos_ignorados(ignorados: list[dict]) -> str:
     nota = ""
     if videos:
         nota += (
-            "\n\nO cliente anexou vídeo, que este sistema nunca consegue "
-            "ver, seja qual for o formato -- não peças para reenviar "
-            "\"noutro formato\" ou \"mais comum\" (ex.: MP4), isso não "
-            "resolve nada. Em vez de vídeo, pede fotografias ou capturas de "
-            "ecrã do momento exato do problema (ex.: o ecrã do telemóvel a "
-            "mostrar a tentativa de ligação, ou o LED do produto no estado "
-            "descrito)."
+            "\n\nO cliente anexou vídeo. Este sistema não consegue ver vídeo, "
+            "mas a equipa vê: não peças para reenviar, nem noutro formato, nem "
+            "fotografias em vez do vídeo, e não digas que não consegues abri-lo. "
+            "Agradece o envio e diz que o vídeo vai passar para análise."
         )
     # size == 0, não "sem size": um Graph que não devolve o tamanho não prova
     # que o ficheiro está vazio.
@@ -3167,8 +3168,10 @@ def nota_anexos_ignorados(ignorados: list[dict]) -> str:
         nomes = ", ".join(a.get("name") or "(sem nome)" for a in outros[:3])
         nota += (
             f"\n\nO cliente também anexou {len(outros)} outro(s) ficheiro(s) "
-            f"que não foi possível processar automaticamente ({nomes}). "
-            "Trata isto como se não tivesse chegado prova nenhuma."
+            f"que este sistema não consegue abrir ({nomes}), mas a equipa abre: "
+            "não peças para reenviar nem digas que não consegues abri-los. Não "
+            "descrevas nem confirmes o que contêm; agradece o envio e diz que "
+            "vão passar para análise."
         )
     return nota
 
@@ -3192,9 +3195,12 @@ def nota_anexo_em_falta(texto: str) -> str:
         return ""
     return (
         "\n\nO cliente diz ter enviado um anexo, mas não chegou nenhum anexo que "
-        "este sistema consiga ver. Nunca confirmes a receção nem o conteúdo (ex.: "
-        "IBAN, comprovativo); diz que não conseguem ver nenhum anexo no email e "
-        "pede que o voltem a enviar."
+        "este sistema consiga ver. Nunca confirmes a receção nem o conteúdo. Se "
+        "são fotografias ou vídeos do problema (a equipa vê-os por si), não "
+        "digas que não chegou nada nem peças reenvio: agradece o envio e diz que "
+        "vai passar para análise. Se é um dado de que a resposta depende (ex.: "
+        "IBAN, comprovativo de pagamento), diz que não conseguem ver nenhum "
+        "anexo no email e pede que o voltem a enviar."
     )
 
 
@@ -3273,7 +3279,42 @@ SINAL_SEM_RASTREIO = (
 )
 
 
-def sinais_da_encomenda(texto: str, encomenda: dict, encomendas_no_email: int) -> tuple[bool, list[str]]:
+_RASTREIO_NAO_RECONHECIDO = re.compile(
+    r"\b(?:rastreio|tracking|seguimento)\b[^.\n]{0,60}?"
+    r"\bn[aã]o\s+(?:[eé]\s+|est[aá]\s+|foi\s+)?(?:\w+\s+){0,2}?"
+    r"(?:reconhec|encontrad|v[aá]lid|aparec|existe|funcion)"
+    r"|\b(?:rastreio|tracking|seguimento)\b[^.\n]{0,40}?\binv[aá]lid",
+    re.I,
+)
+
+
+def sinal_expedida_hoje(texto: str, encomenda: dict | None,
+                        hoje: date | None = None) -> str:
+    """Código que ainda não se reconhece no site da transportadora, numa
+    encomenda expedida hoje: é normal, fica ativo até ao fim do dia (regra do
+    lojista, 22/10/2026). Só diz isto quando a Shopify prova que o fulfillment
+    é de hoje; noutro dia, ou sem data, vale o que a base já mandava."""
+    if encomenda is None or encomenda.get("cancelled_at"):
+        return ""
+    if not (_RASTREIO_NAO_RECONHECIDO.search(texto or "") or cliente_nao_consegue_rastrear(texto)):
+        return ""
+    hoje = hoje or datetime.now().date()
+    for f in encomenda.get("fulfillments") or []:
+        if f.get("tracking_number") and str(f.get("created_at") or "")[:10] == hoje.isoformat():
+            return (
+                "O cliente diz que o código de rastreio não é reconhecido, e a "
+                "Shopify mostra que esta encomenda foi expedida hoje. É normal: o "
+                "código só fica ativo no site da transportadora até ao fim do dia. "
+                "Diz-lhe que pode acompanhar a encomenda pelo link de rastreio e que "
+                "deve aguardar até ao final do dia para a conseguir rastrear. Não "
+                "digas que ainda não foi expedida nem que vais contactar a "
+                "transportadora. Cita o número da encomenda."
+            )
+    return ""
+
+
+def sinais_da_encomenda(texto: str, encomenda: dict, encomendas_no_email: int,
+                        hoje: date | None = None) -> tuple[bool, list[str]]:
     """Os sinais que dependem de a encomenda já estar provada como sua.
 
     Devolve (sem_rastreio, sinais): `sem_rastreio` decide também o que
@@ -3281,8 +3322,12 @@ def sinais_da_encomenda(texto: str, encomenda: dict, encomendas_no_email: int) -
     duas encomendas no mesmo email não se sabe a qual se refere um pedido de
     alteração: sem sinal, o modelo pergunta qual, como já fazia.
     """
-    sem_rastreio = cliente_nao_consegue_rastrear(texto)
+    expedida_hoje = sinal_expedida_hoje(texto, encomenda, hoje)
+    # Expedida hoje, o código e o link ficam à vista: é com eles que se responde.
+    sem_rastreio = cliente_nao_consegue_rastrear(texto) and not expedida_hoje
     sinais = [SINAL_SEM_RASTREIO] if sem_rastreio else []
+    if expedida_hoje:
+        sinais.append(expedida_hoje)
     if encomendas_no_email <= 1:
         alteracao = sinal_alteracao_entrega(texto, encomenda)
         if alteracao:

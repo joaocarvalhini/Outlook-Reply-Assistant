@@ -1050,21 +1050,6 @@
     "note": "a fotografia anexada nao mostra defeito nenhum (imagem lisa, sem marcas) -- tem de ser tratada como se nao tivesse chegado prova nenhuma, nunca como confirmacao. Espera-se um pedido de fotografia/video mais claro, igual ao fluxo sem imagem nenhuma. Nunca deve confirmar um defeito que a imagem nao mostra. Verificacao manual do texto: o corpo nao pode dizer que o defeito foi confirmado nem oferecer troca."
   },
   {
-    "id": "anexo-nao-suportado-trata-como-sem-prova",
-    "email": {
-      "from": "teresa.gomes@gmail.com",
-      "from_name": "Teresa Gomes",
-      "subject": "Fones com defeito",
-      "to": [
-        "{mailbox}"
-      ],
-      "body": "Boa tarde, os fones pararam de funcionar. Anexo um vídeo a mostrar o problema."
-    },
-    "nota_anexos": "\n\nO cliente anexou 1 ficheiro(s) que não foi possível processar automaticamente (video.mov). Trata isto como se não tivesse chegado prova nenhuma.",
-    "expect": "rascunhar",
-    "note": "o ficheiro anexado (video) nao e um formato suportado pela visao do modelo -- a nota de anexo nao processado tem de ser tratada como se nao tivesse chegado prova nenhuma, pedindo fotografia/video num formato que consiga ser visto, nunca escalando ou inventando que o video foi analisado."
-  },
-  {
     "id": "arrependimento-puro-propoe-troca-primeiro",
     "email": {
       "from": "marisa.leite@gmail.com",
@@ -3029,5 +3014,243 @@
       "credito"
     ],
     "note": "18/10/2026: o lojista ofereceu 15% em relogios (16 e 18/10); sem proposta anterior recusada, o rascunho propoe 15% para revisao humana. Nao ha excecao por contacto com a pele no parcial. Corrido uma vez a 18/10 antes de retirar a excecao (rascunhou 15%) e uma vez depois."
+  },
+  {
+    "id": "referencia-de-rastreio-pede-numero-real-da-encomenda",
+    "email": {
+      "from": "sofia.neves@gmail.com",
+      "from_name": "Sofia Neves",
+      "subject": "Re: Reembolso por transferencia",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, segue a ref. 09812338012148S"
+    },
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "expect_corpo": true,
+    "expect_texto_pedido_regex": [
+      "numero (real )?da encomenda"
+    ],
+    "expect_texto_nao_regex": [
+      "(vamos|iremos) verificar (a|o) (transferencia|pagamento)"
+    ],
+    "note": "regra de 22/10/2026: um codigo de rastreio nao e o numero da encomenda; pede-se o numero real, nao se agradece a confirmacao nem se verifica a transferencia com ele. Nao corrido.",
+    "historico": "[2026-10-19 10:00] CLIENTE: Quero o reembolso por transferencia, como faco?\n[2026-10-19 15:00] LOJA: Ola, para avancarmos preciso de mais alguns dados sobre a sua compra."
+  },
+  {
+    "id": "video-e-link-anexados-vao-para-analise-sem-pedir-reenvio",
+    "email": {
+      "from": "teresa.gomes@gmail.com",
+      "from_name": "Teresa Gomes",
+      "subject": "Re: Fones P9 com defeito",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, segue o video do problema em anexo e tambem o link do WeTransfer com os restantes videos: https://we.tl/t-AbC123xyz"
+    },
+    "anexos": [
+      {
+        "@odata.type": "#microsoft.graph.fileAttachment",
+        "id": "a1",
+        "name": "problema.mov",
+        "contentType": "video/quicktime",
+        "size": 4000000,
+        "isInline": false
+      }
+    ],
+    "historico": "[2026-10-20 10:00] CLIENTE: Os fones P9 pararam de funcionar.\n[2026-10-20 15:00] LOJA: Pedimos um video onde seja possivel ver o problema a acontecer.",
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "analis"
+    ],
+    "expect_texto_nao_contem": [
+      "reenvi",
+      "não conseguimos",
+      "não consigo",
+      "não foi possível"
+    ],
+    "note": "regra de 23/10 e 25/10/2026: o assistente nao abre links nem videos mas a equipa abre; nao se pede reenvio, diz-se que vai para analise. Substitui anexo-nao-suportado-trata-como-sem-prova. Nao corrido."
+  },
+  {
+    "id": "volta-depois-dos-videos-pede-desculpa-e-o-envio-do-artigo",
+    "email": {
+      "from": "rui.lopes@gmail.com",
+      "from_name": "Rui Lopes",
+      "subject": "Re: Fones com defeito",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Bom dia, ja enviei os videos ha uma semana e ainda nao tive resposta. O que posso fazer?"
+    },
+    "historico": "[2026-10-14 10:00] CLIENTE: Os fones pararam de funcionar, envio video.\n[2026-10-14 15:00] LOJA: Obrigado pelo envio, os videos vao passar para analise.",
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "desculp"
+    ],
+    "expect_texto_pedido_regex": [
+      "(artigo|artigos|fones|produto|unidade)"
+    ],
+    "note": "fluxo descrito pelo lojista a 25/10/2026: cliente volta depois de enviar videos e a loja so tinha dito 'vai para analise' -> desculpa pela demora e pedir o envio do artigo. Escrito estreito. Nao corrido.",
+    "expect_texto_nao_regex": [
+      "(video|videos) (foi|foram) recebid",
+      "ja (esta|estao) em analise"
+    ]
+  },
+  {
+    "id": "garantia-rececao-confirmada-sem-prometer-portes",
+    "email": {
+      "from": "ana.faria@gmail.com",
+      "from_name": "Ana Faria",
+      "subject": "Re: Airpods avariados",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, ja enviei os airpods ha 5 dias e ninguem me diz nada. Ja chegaram?"
+    },
+    "historico": "[2026-10-15 10:00] CLIENTE: Os airpods avariaram.\n[2026-10-15 15:00] LOJA: Envie os airpods ate nos por correio registado para analisarmos a garantia.\n[2026-10-24 09:00] LOJA: Confirmamos que os airpods chegaram ao nosso escritorio.",
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "garantia"
+    ],
+    "expect_texto_nao_contem": [
+      "3,99"
+    ],
+    "expect_texto_nao_regex": [
+      "(reembols|assum|pag)\\w* (d)?os portes"
+    ],
+    "note": "regra de 25/10/2026: 'uma coisa de cada vez' -- confirma-se a rececao e a analise da garantia; os portes so depois da decisao. Nao corrido."
+  },
+  {
+    "id": "cor-incorreta-sem-troca-no-fio-pede-fotografia",
+    "email": {
+      "from": "marta.dias@gmail.com",
+      "from_name": "Marta Dias",
+      "subject": "Cor errada",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, a cor que recebi nao e a correta, pedi preto e veio branco. O artigo nao foi usado, ainda estou a espera de resposta."
+    },
+    "dados_encomenda": "Encomenda #23400\nFeita em: {hoje-6}\nPagamento: pago\nEnvio: entregue",
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "expect_corpo": true,
+    "expect_texto_pedido_regex": [
+      "fotograf"
+    ],
+    "expect_texto_nao_regex": [
+      "verificar internamente o que ficou combinado"
+    ],
+    "note": "regra de 22/10/2026: o cliente diz que a cor nao e a correta e o fio nao mostra troca por falta de stock -> pede-se fotografia em vez de 'verificar o que ficou combinado'. Nao corrido."
+  },
+  {
+    "id": "substituto-ja-enviado-pergunta-pela-caixa-do-correio",
+    "email": {
+      "from": "pedro.alves@gmail.com",
+      "from_name": "Pedro Alves",
+      "subject": "Re: Pelicula",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Bom dia, ja reenviaram a pelicula? Nao chegou no dia prometido."
+    },
+    "historico": "[2026-10-16 10:00] CLIENTE: A pelicula chegou partida, segue foto.\n[2026-10-16 15:00] LOJA: Vimos a foto, vamos enviar uma pelicula nova.\n[2026-10-20 11:00] LOJA: A pelicula nova foi enviada hoje por correio registado.",
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "expect_corpo": true,
+    "expect_texto_nao_regex": [
+      "so (avanca|segue) depois"
+    ],
+    "note": "regra de 22/10/2026: o fio mostra que o substituto ja foi enviado -> confirma-se e pergunta-se pela caixa do correio, sem repetir a regra do artigo antigo. Nao corrido.",
+    "expect_texto_contem": [
+      "caixa de correio"
+    ]
+  },
+  {
+    "id": "codigo-nao-reconhecido-encomenda-expedida-hoje",
+    "email": {
+      "from": "carlos.vaz@gmail.com",
+      "from_name": "Carlos Vaz",
+      "subject": "Encomenda 23580",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, o codigo de rastreio 09812340001343O nao e reconhecido no site da transportadora. Podem ajudar?"
+    },
+    "encomenda": {
+      "name": "#23580",
+      "created_at": "{hoje-1}T10:00:00Z",
+      "financial_status": "paid",
+      "fulfillment_status": "fulfilled",
+      "fulfillments": [
+        {
+          "id": 1,
+          "created_at": "{hoje}T09:30:00+01:00",
+          "tracking_number": "09812340001343O",
+          "tracking_company": "DPD",
+          "tracking_url": "https://tracking.dpd.pt/track-and-trace?reference=09812340001343O"
+        }
+      ],
+      "current_total_price": "29.90",
+      "currency": "EUR"
+    },
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "(final|fim) do dia"
+    ],
+    "expect_texto_nao_regex": [
+      "ainda nao foi expedida",
+      "contactar (de imediato )?a transportadora"
+    ],
+    "note": "regra de 22/10/2026: encomenda expedida hoje -> o codigo so fica ativo ate ao fim do dia; pode acompanhar pelo link. Depende do sinal sinal_expedida_hoje. Nao corrido."
+  },
+  {
+    "id": "reembolso-artigo-chegou-ha-dois-dias-da-prazo-concreto",
+    "email": {
+      "from": "ines.matos@gmail.com",
+      "from_name": "Ines Matos",
+      "subject": "Re: Devolucao 22751",
+      "to": [
+        "{mailbox}"
+      ],
+      "body": "Boa tarde, a devolucao ja chegou? Quando recebo o reembolso?"
+    },
+    "historico": "[{hoje-9} 10:00] CLIENTE: Quero devolver a encomenda 22751 e receber o dinheiro.\n[{hoje-9} 15:00] LOJA: Envie o artigo ate nos por correio registado.\n[{hoje-2} 11:00] LOJA: Confirmamos que o artigo da encomenda 22751 chegou ao nosso escritorio.",
+    "expect": [
+      "rascunhar",
+      "escalar"
+    ],
+    "expect_corpo": true,
+    "expect_texto_regex": [
+      "5 dias uteis",
+      "10 dias uteis"
+    ],
+    "expect_texto_nao_regex": [
+      "(vamos|iremos) verificar"
+    ],
+    "note": "regras de 22 e 25/10/2026: a loja ja tem o artigo e o cliente pergunta pelo reembolso -> prazo concreto das duas fases (5+10 dias uteis), sem 'vamos verificar' e sem data de calendario. Nao corrido."
   }
 ]

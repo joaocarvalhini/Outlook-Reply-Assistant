@@ -272,10 +272,12 @@ def contexto_derivado(caso: dict, msg: dict, sem_sinais: bool) -> tuple[str, str
     compromissos = resolver_datas(caso.get("compromissos", ""))
     sinais: list[str] = []
     if "encomenda" in caso:
+        # {hoje} também vale aqui: o sinal de "expedida hoje" depende da data.
+        encomenda = json.loads(resolver_datas(json.dumps(caso["encomenda"])))
         sem_rastreio, do_pedido = a.sinais_da_encomenda(
-            texto, caso["encomenda"],
+            texto, encomenda,
             len(a.extrair_numeros_encomenda(msg["assunto"], msg["corpo"])))
-        dados = a.resumir_encomenda(caso["encomenda"], None, sem_rastreio and not sem_sinais)
+        dados = a.resumir_encomenda(encomenda, None, sem_rastreio and not sem_sinais)
         if not sem_sinais:
             sinais += do_pedido
     if "anexos" in caso:

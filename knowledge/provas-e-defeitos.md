@@ -72,6 +72,10 @@ MagSafe acima, onde a fotografia é pedida antes de explicar as películas.
   mostrar o processo de emparelhamento e os dois dispositivos separados a
   surgirem na lista de Bluetooth.
 - Nunca se promete reembolso, troca ou assunção de portes antes da análise.
+  Vale também quando o artigo já chegou à loja: ao confirmar a receção só se
+  confirma a receção e que vai ser analisado na garantia; os portes (até
+  3,99 €) só se mencionam depois de a garantia estar decidida. (Confirmado
+  diretamente pelo lojista, 25 de outubro de 2026: "uma coisa de cada vez".)
 - **Devolução ou reembolso a pedido do cliente: prova visual sempre**, mesmo
   que ele garanta que o produto está selado, intacto ou que só a caixa vem
   amassada. Pedem-se fotografias e, quando faz sentido, vídeo, **de vários
@@ -231,6 +235,12 @@ sempre de enviar primeiro a encomenda, isso é mesmo regra! Não fazemos trocas
 sem receber o produto primeiro". Substitui a nota de 1 de setembro de 2026,
 que dispensava devolver o antigo depois de o defeito estar confirmado.)
 
+**Se o fio ou os dados mostram que o substituto já foi enviado** e o cliente
+pergunta se foi reenviado, ou diz que não chegou, não se repete a regra acima:
+confirma-se que já seguiu e pergunta-se se já verificou a caixa do correio.
+(Confirmado diretamente pelo lojista, 22 de outubro de 2026: "porque já tinha
+sido enviada".) Sem esse registo no fio, não se afirma que seguiu.
+
 **Excepção: película que chega partida.** A prova visual continua a vir
 primeiro, como em qualquer reclamação. Depois de ela mostrar que a película
 veio partida, não se pede para a devolver nem comprovativo de envio: está
@@ -274,11 +284,29 @@ mesma lógica da troca — o cliente ter escolhido reembolso em vez de troca nã
 - Não se escreve que fotografias ou vídeos "foram recebidos", "estão legíveis"
   ou "estão a ser analisados" sem confirmação no fio. O assistente não os vê:
   agradece o envio e diz que a equipa os vai ver.
-- Se o fio mostra que a loja não conseguiu ver o vídeo ou a foto (impercetível,
-  não abre, anexo vazio), pede-se novo envio **explicando o motivo**, sem
-  repetir "já recebemos".
-- Se o fio mostra que os ficheiros foram vistos e estavam bem, não se pede
-  reenvio.
+- **O assistente não abre links (WeTransfer, Drive), vídeos nem ficheiros que
+  não sejam imagens, mas a equipa abre.** Por isso nunca se diz ao cliente que
+  não se consegue aceder, nem se pede reenvio por esse motivo: agradece-se o
+  envio e diz-se que os vídeos, fotografias ou ficheiros vão passar para
+  análise. (Confirmado diretamente pelo lojista, 25 de outubro de 2026:
+  "parece que não consegues abrir links ou ficheiros, mas não tem problema
+  porque eu consigo, podes sempre dizer que os vídeos vão passar para
+  análise". Substitui a instrução de pedir fotografias em vez do vídeo.)
+- Só se pede novo envio quando é o **fio** a mostrar que a *loja* não
+  conseguiu ver (impercetível, anexo vazio), **explicando o motivo**, sem
+  repetir "já recebemos". Se o fio mostra que os ficheiros foram vistos e
+  estavam bem, não se pede reenvio.
+- **Uma coisa de cada vez.** Na resposta que acusa a prova enviada não se
+  mencionam o prazo de devolução ultrapassado, a falta de anexos nem os portes:
+  diz-se que se vai analisar primeiro na garantia e que se responde em breve.
+  (Confirmado diretamente pelo lojista, 25 de outubro de 2026: "vamos analisar
+  primeiro na garantia e só depois dar resposta a 100%".)
+- **Cliente que volta a escrever depois de enviar os vídeos ou fotografias**,
+  quando a última resposta da loja só dizia que iam para análise: pede-se
+  desculpa pela demora e pergunta-se se pode enviar o artigo, ou os artigos,
+  até à loja para análise — sem dar a morada por iniciativa. (O lojista
+  descreveu este fluxo a 25 de outubro de 2026 sobre uma troca; escrito
+  estreito.)
 
 (Confirmado diretamente pelo lojista, 6 de outubro de 2026: pediu o reenvio
 "porque o vídeo estava impercetível". Foi um caso; a regra geral é só não

@@ -17,7 +17,7 @@ import json
 import re
 import sqlite3
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from unittest.mock import patch
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -80,6 +80,8 @@ from assistente import (
     assunto_normalizado,
     buscar_fios_irmaos,
     cliente_nao_consegue_rastrear,
+    sinal_expedida_hoje,
+    sinais_da_encomenda,
     PAGINAS_FIO_IRMAO,
     combinar_historico,
     conversas_irmas,
@@ -1130,27 +1132,29 @@ class AnexosDeImagem(unittest.TestCase):
         self.assertIn("relatorio.pdf", nota)
         self.assertIn("1", nota)
 
-    def test_video_pede_fotos_em_vez_de_reenviar(self) -> None:
-        """Visto em produção, 22/08/2026: pedir para reenviar 'noutro formato'
-        engana o cliente -- nenhum formato de vídeo chega a ser visto."""
+    def test_video_vai_para_analise_sem_pedir_reenvio(self) -> None:
+        """Regra do lojista, 25/10/2026: a equipa abre o vídeo, por isso nada se
+        pede de novo (substitui a instrução de 22/08 de pedir fotos)."""
         nota = nota_anexos_ignorados(
             [self._anexo(name="problema.mov", contentType="video/quicktime")]
         )
-        self.assertIn("fotografias ou capturas de ecrã", nota)
-
-    def test_video_instrui_a_nao_pedir_reenvio(self) -> None:
-        nota = nota_anexos_ignorados(
-            [self._anexo(name="video.mp4", contentType="video/mp4")]
-        )
+        self.assertIn("vai passar para análise", nota)
         self.assertIn("não peças para reenviar", nota)
+        self.assertNotIn("capturas de ecrã", nota)
 
     def test_video_e_outro_ficheiro_tem_as_duas_notas(self) -> None:
         nota = nota_anexos_ignorados([
             self._anexo(name="problema.mov", contentType="video/quicktime"),
             self._anexo(name="fatura.pdf", contentType="application/pdf"),
         ])
-        self.assertIn("fotografias ou capturas de ecrã", nota)
+        self.assertIn("o vídeo vai passar para análise", nota)
         self.assertIn("fatura.pdf", nota)
+        self.assertIn("vão passar para análise", nota)
+
+    def test_anexo_em_falta_distingue_prova_de_dado(self) -> None:
+        nota = nota_anexo_em_falta("Segue em anexo as fotografias dos fones")
+        self.assertIn("vai passar para análise", nota)
+        self.assertIn("IBAN", nota)
 
 
 class SinaisDoPedido(unittest.TestCase):
@@ -1278,7 +1282,7 @@ class SinaisDoPedido(unittest.TestCase):
     def test_tamanho_desconhecido_nao_e_tratado_como_vazio(self) -> None:
         nota = nota_anexos_ignorados([self._anexo(size=None)])
         self.assertNotIn("VAZIO", nota)
-        self.assertIn("não foi possível processar", nota)
+        self.assertIn("não consegue abrir", nota)
 
     def test_vazio_e_ficheiro_normal_tem_as_duas_notas(self) -> None:
         nota = nota_anexos_ignorados([
@@ -1299,6 +1303,62 @@ class SinaisDoPedido(unittest.TestCase):
                       "O IBAN é PT50 0000 0000 0000 0000 0000 0"):
             with self.subTest(texto):
                 self.assertEqual(nota_anexo_em_falta(texto), "")
+
+
+class SinalExpedidaHoje(unittest.TestCase):
+    """Código que a transportadora ainda não reconhece, numa encomenda expedida
+    hoje (lojista, 22/10/2026). Só com a data de hoje provada pela Shopify."""
+
+    HOJE = date(2026, 10, 21)
+
+    @staticmethod
+    def _enc(criado: str, **over: object) -> dict:
+        f = {"id": 1, "tracking_number": "09812340001343O", "created_at": criado,
+             "tracking_url": "https://t.pt/09812340001343O"}
+        f.update(over)
+        return {"name": "#23580", "fulfillment_status": "fulfilled", "fulfillments": [f]}
+
+    def test_expedida_hoje_diz_para_aguardar_ate_ao_fim_do_dia(self) -> None:
+        sinal = sinal_expedida_hoje(
+            "O código de rastreio 09812340001343O não é reconhecido no site da DPD",
+            self._enc("2026-10-21T09:30:00+01:00"), self.HOJE)
+        self.assertIn("expedida hoje", sinal)
+        self.assertIn("final do dia", sinal)
+        self.assertIn("link de rastreio", sinal)
+
+    def test_outro_dia_ou_sem_data_nao_diz_nada(self) -> None:
+        texto = "O código de rastreio não é reconhecido"
+        for criado in ("2026-10-20T09:30:00+01:00", "", None):
+            with self.subTest(criado):
+                self.assertEqual(sinal_expedida_hoje(texto, self._enc(criado), self.HOJE), "")
+
+    def test_sem_queixa_de_rastreio_nao_diz_nada(self) -> None:
+        enc = self._enc("2026-10-21T09:30:00+01:00")
+        for texto in ("Quando chega a minha encomenda?", "O código de desconto não funciona"):
+            with self.subTest(texto):
+                self.assertEqual(sinal_expedida_hoje(texto, enc, self.HOJE), "")
+
+    def test_sem_rastreio_nem_encomenda_nao_diz_nada(self) -> None:
+        texto = "O rastreio não aparece"
+        self.assertEqual(sinal_expedida_hoje(texto, None, self.HOJE), "")
+        self.assertEqual(sinal_expedida_hoje(
+            texto, self._enc("2026-10-21T09:30:00+01:00", tracking_number=None), self.HOJE), "")
+
+    def test_expedida_hoje_deixa_ver_codigo_e_link(self) -> None:
+        """Em vez do sinal de "sem rastreio", que retira código e link."""
+        enc = self._enc("2026-10-21T09:30:00+01:00")
+        sem_rastreio, sinais = sinais_da_encomenda(
+            "Não consigo rastrear a encomenda", enc, 1, self.HOJE)
+        self.assertFalse(sem_rastreio)
+        self.assertEqual(len(sinais), 1)
+        self.assertIn("expedida hoje", sinais[0])
+
+    def test_outro_dia_mantem_o_sinal_de_sem_rastreio(self) -> None:
+        enc = self._enc("2026-10-19T09:30:00+01:00")
+        sem_rastreio, sinais = sinais_da_encomenda(
+            "Não consigo rastrear a encomenda", enc, 1, self.HOJE)
+        self.assertTrue(sem_rastreio)
+        self.assertIn("não consegue rastrear", sinais[0])
 
 
 class FiosIrmaos(unittest.TestCase):
